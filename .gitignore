@@ -1,0 +1,45 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Ruby / Rails (backend arrives in 0.2)
+backend/.bundle/
+backend/vendor/bundle/
+backend/log/
+backend/tmp/
+backend/storage/
+backend/coverage/
+backend/.rspec_status
+backend/config/master.key
+backend/config/credentials/*.key
+
+# Node / frontend (scaffold in 0.4)
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+frontend/.vite/
+
+# Tooling
+.mise.toml.local
+.ruby-lsp/
+.byebug_history
+
+# Docker / ops noise
+ops/backups/*.dump
+ops/backups/*.sql
+ops/coturn/turnserver.conf
+
+# Misc
+*.log
+tmp/

@@ -1,0 +1,109 @@
+# Production stack for Oracle Always Free (or any host) — TARGET §1 / §1.1.
+# Portability guarantee: same file runs behind Cloudflare Tunnel on self-hosted
+# hardware if Oracle capacity is refused (MASTER_PLAN P0 risk R-1).
+#
+# Images are skeletons until session 0.2 (Rails) and later phases fill them in.
+# Do not expect `docker compose up` to serve a real API yet.
+#
+# Key env indirection (set in .env / host environment):
+#   DATABASE_URL
+#   REDIS_URL
+#   CABLE_ADAPTER=redis|solid
+#   CACHE_STORE=redis|solid
+#   SECRET_KEY_BASE
+#   FRONTEND_ORIGIN=https://rajya.pages.dev
+
+services:
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: rajya-web:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      RAILS_ENV: production
+      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@postgres:5432/rajya_production}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CABLE_ADAPTER: ${CABLE_ADAPTER:-redis}
+      CACHE_STORE: ${CACHE_STORE:-redis}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-replace-me}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-https://rajya.pages.dev}
+      # Solid Queue runs in the worker service — never SOLID_QUEUE_IN_PUMA here.
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/up || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  worker:
+    image: rajya-web:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      RAILS_ENV: production
+      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@postgres:5432/rajya_production}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CABLE_ADAPTER: ${CABLE_ADAPTER:-redis}
+      CACHE_STORE: ${CACHE_STORE:-redis}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-replace-me}
+    command: ["bundle", "exec", "jobs", "start"]
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-rajya_production}
+    volumes:
+      - rajya_pg_data:/var/lib/postgresql/data
+      - ./ops/backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - rajya_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - rajya_ollama_data:/root/.ollama
+    # Exposed only on the Compose network by default (AI floor — TARGET §6).
+
+  coturn:
+    image: coturn/coturn:latest
+    restart: unless-stopped
+    network_mode: host
+    # Host networking required for TURN relay. Configure realm/secrets via
+    # ./ops/coturn/turnserver.conf once the Oracle box exists (session docs).
+    volumes:
+      - ./ops/coturn:/etc/coturn:ro
+
+volumes:
+  rajya_pg_data:
+  rajya_redis_data:
+  rajya_ollama_data:

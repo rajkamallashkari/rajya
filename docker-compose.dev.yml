@@ -1,0 +1,55 @@
+# Hybrid local DX — stateful deps only (TARGET §1.2).
+# Rails + Vite run natively on the host via bin/dev (wired in later P0 sessions).
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml down -v   # reset state
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: rajya-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rajya_development
+    ports:
+      - "5432:5432"
+    volumes:
+      - rajya_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rajya_development"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: rajya-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - rajya_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: rajya-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # UI
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  rajya_pg_data:
+  rajya_redis_data:

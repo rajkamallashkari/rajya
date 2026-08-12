@@ -1,0 +1,11 @@
+# coturn config placeholder — filled when the Oracle / self-host box is provisioned.
+# See README → Hosting (manual) for firewall + security-list steps.
+#
+# listening-port=3478
+# fingerprint
+# lt-cred-mech
+# use-auth-secret
+# static-auth-secret=REPLACE_ME
+# realm=rajya
+# total-quota=100
+# bosh-default-realm=rajya

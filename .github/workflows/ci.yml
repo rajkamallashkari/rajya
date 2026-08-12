@@ -1,0 +1,95 @@
+name: CI
+
+# Path-filtered stub (TARGET §8). Real RuboCop / RSpec / Vitest / Playwright /
+# OpenAPI drift jobs land in later P0 sessions. This workflow proves the
+# filter wiring: docs-only changes skip backend and frontend placeholders.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect paths
+    runs-on: ubuntu-latest
+    outputs:
+      docs: ${{ steps.filter.outputs.docs }}
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      contract: ${{ steps.filter.outputs.contract }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            docs:
+              - 'docs/**'
+              - '**.md'
+            backend:
+              - 'backend/**'
+              - 'docker-compose.yml'
+              - 'docker-compose.dev.yml'
+              - '.github/workflows/**'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/**'
+            contract:
+              - 'backend/**'
+              - 'frontend/**'
+              - 'docs/SCHEMA_DESIGN.md'
+
+  docs:
+    name: Docs check (stub)
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder markdown presence check
+        run: |
+          test -f docs/CONVENTIONS.md
+          test -f docs/MASTER_PLAN.md
+          test -f docs/SESSION_STARTER.md
+          echo "Docs stub OK — link checker arrives later."
+
+  backend:
+    name: Backend (stub)
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder
+        run: |
+          echo "RSpec / RuboCop / SimpleCov gate wired in sessions 0.2–0.3."
+          test -d backend
+
+  frontend:
+    name: Frontend (stub)
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder
+        run: |
+          echo "Vitest / ESLint / Playwright / tsc wired in session 0.4."
+          test -d frontend
+          test -f frontend/src/assets/brand/logo_light.png
+          test -f frontend/src/assets/brand/logo_dark.png
+
+  contract:
+    name: OpenAPI drift (stub)
+    needs: changes
+    if: needs.changes.outputs.contract == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder
+        run: echo "OpenAPI generate + drift check wired in session 0.3."
