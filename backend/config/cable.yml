@@ -1,0 +1,25 @@
+# Real-time transport — TARGET_ARCHITECTURE.md §3: Redis when available (true
+# pub/sub, no latency floor), Solid Cable as the zero-infra fallback. Nothing in
+# application code knows which is active (config value only). Toggle locally
+# with CABLE_ADAPTER=redis|solid in .env.
+redis: &redis
+  adapter: redis
+  url: <%= ENV.fetch("REDIS_URL", "redis://localhost:6379/0") %>
+  channel_prefix: rajya_<%= Rails.env %>
+
+solid: &solid
+  adapter: solid_cable
+  connects_to:
+    database:
+      writing: cable
+  polling_interval: 0.1.seconds
+  message_retention: 1.day
+
+development:
+  <<: <%= ENV.fetch("CABLE_ADAPTER", "redis") == "solid" ? "*solid" : "*redis" %>
+
+test:
+  adapter: test
+
+production:
+  <<: <%= ENV.fetch("CABLE_ADAPTER", "redis") == "solid" ? "*solid" : "*redis" %>

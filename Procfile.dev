@@ -1,5 +1,5 @@
-# web / worker / vite — filled when backend (0.2) and frontend (0.4) scaffold.
-# Until then `bin/dev` is not expected to boot application processes.
-web: echo "session 0.2: backend web process"
-worker: echo "session 0.2: solid queue worker"
+# web / worker / vite — run via `bin/dev` (foreman). Stateful deps (Postgres,
+# Redis, Mailpit) run in Docker: `docker compose -f docker-compose.dev.yml up -d`.
+web: cd backend && bin/rails server -p 3000
+worker: cd backend && bin/jobs
 vite: echo "session 0.4: vite dev server"

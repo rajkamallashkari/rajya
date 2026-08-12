@@ -1,0 +1,73 @@
+# PostgreSQL. Versions 9.5 and up are supported.
+#
+# Install the pg driver:
+#   gem install pg
+# On macOS with Homebrew:
+#   gem install pg -- --with-pg-config=/opt/homebrew/bin/pg_config
+# On Windows:
+#   gem install pg
+#       Choose the win32 build.
+#       Install PostgreSQL and put its /bin directory on your path.
+#
+# Configure Using Gemfile
+# gem "pg"
+#
+# Rajya connects via DATABASE_URL in every environment (docker-compose.dev.yml
+# locally, docker-compose.yml in production) — see .env.example. The `database:`
+# key below is only the fallback used when DATABASE_URL is unset.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  # For details on connection pooling, see Rails configuration guide
+  # https://guides.rubyonrails.org/configuring.html#database-pooling
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+# One physical Postgres database per environment holds every role (primary,
+# cache, queue, cable) — matches the single POSTGRES_DB Compose provisions
+# (docker-compose.dev.yml / docker-compose.yml) and ops/backups/restore.sh,
+# which restore one database, not four. Solid Queue/Cache/Cable table names
+# don't collide with app tables, so sharing one database is safe at this scale.
+development:
+  primary: &primary_development
+    <<: *default
+    url: <%= ENV.fetch("DATABASE_URL", "postgres://postgres:postgres@localhost:55432/rajya_development") %>
+  cache:
+    <<: *primary_development
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_development
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *primary_development
+    migrations_paths: db/cable_migrate
+
+# Warning: The database defined as "test" will be erased and
+# re-generated from your development database when you run "rake".
+# Do not set this db to the same as development or production.
+test:
+  primary: &primary_test
+    <<: *default
+    url: <%= ENV.fetch("TEST_DATABASE_URL", "postgres://postgres:postgres@localhost:55432/rajya_test") %>
+  cache:
+    <<: *primary_test
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_test
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *primary_test
+    migrations_paths: db/cable_migrate
+
+production:
+  primary: &primary_production
+    <<: *default
+    url: <%= ENV["DATABASE_URL"] %>
+  cache:
+    <<: *primary_production
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_production
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *primary_production
+    migrations_paths: db/cable_migrate

@@ -1,0 +1,30 @@
+# Omakase Ruby styling for Rails
+inherit_gem: { rubocop-rails-omakase: rubocop.yml }
+
+require:
+  - rubocop-rspec
+  - rubocop-factory_bot
+
+# Overwrite or add rules to create your own house style
+#
+# # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
+# Layout/SpaceInsideArrayLiteralBrackets:
+#   Enabled: false
+
+# CONVENTIONS.md §6.1: coverage measures execution, not correctness — an
+# example with no expectation is as good as no test.
+RSpec/NoExpectationExample:
+  Enabled: true
+
+# A handful of closely related assertions about one scenario (e.g. "invalid,
+# and for this specific reason") read better together than split across
+# examples that each re-derive the same setup.
+RSpec/MultipleExpectations:
+  Max: 3
+
+AllCops:
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "db/**/*"
+    - "bin/**/*"

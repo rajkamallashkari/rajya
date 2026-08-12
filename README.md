@@ -52,8 +52,8 @@ docker compose -f docker-compose.dev.yml ps
 open http://localhost:8025   # Mailpit UI
 ```
 
-Postgres: `postgres://postgres:postgres@localhost:5432/rajya_development`  
-Redis: `redis://localhost:6379/0`  
+Postgres: `postgres://postgres:postgres@localhost:55432/rajya_development` (host port 55432, not 5432 — avoids clashing with a native Postgres)  
+Redis: `redis://localhost:6380/0` (host port 6380, not 6379 — same reason)  
 Mailpit SMTP: `localhost:1025` · UI: `http://localhost:8025`
 
 Copy `.env.example` → `.env` when you start Rails (0.2).

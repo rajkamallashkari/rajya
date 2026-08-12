@@ -14,7 +14,9 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: rajya_development
     ports:
-      - "5432:5432"
+      # Host port 55432 (not 5432) — avoids clashing with native/Homebrew
+      # Postgres installs, which on this machine occupy *both* 5432 and 5433.
+      - "55432:5432"
     volumes:
       - rajya_pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -28,7 +30,9 @@ services:
     container_name: rajya-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      # Host port 6380 (not 6379) — avoids clashing with a native/Homebrew
+      # Redis already listening on 6379 on some dev machines.
+      - "6380:6379"
     volumes:
       - rajya_redis_data:/data
     healthcheck:
