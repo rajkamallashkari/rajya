@@ -28,12 +28,12 @@ class Message < ApplicationRecord
   def system_event_present_iff_system_kind
     return if (kind == "system") == system_event.present?
 
-    errors.add(:system_event, "must be present only for system messages")
+    errors.add(:system_event, Catalog.t("errors.models.message.system_event"))
   end
 
   def sender_required_unless_system
     return if kind == "system" || sender_account.present? || sender_snapshot.present?
 
-    errors.add(:sender_account_id, "or sender_snapshot is required for non-system messages")
+    errors.add(:sender_account_id, Catalog.t("errors.models.message.sender_required"))
   end
 end

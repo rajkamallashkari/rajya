@@ -9,6 +9,7 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 # return unless Rails.env.test?
 require 'rspec/rails'
 require 'pundit/rspec'
+require 'rswag/specs'
 # Add additional requires below this line. Rails is not loaded until this point!
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
@@ -73,4 +74,6 @@ RSpec.configure do |config|
 
   # FactoryBot only — no fixtures, no parallel Minitest suite (CONVENTIONS.md §2.7).
   config.include FactoryBot::Syntax::Methods
+
+  config.before { Rails.cache.clear }
 end

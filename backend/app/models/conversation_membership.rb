@@ -22,6 +22,6 @@ class ConversationMembership < ApplicationRecord
     return if last_seen_position.nil? || last_read_position.nil?
     return if last_seen_position >= last_read_position
 
-    errors.add(:last_seen_position, "must be greater than or equal to last_read_position")
+    errors.add(:last_seen_position, Catalog.t("errors.models.conversation_membership.seen_position"))
   end
 end

@@ -12,6 +12,11 @@ Consumer chat PWA — **Rails 8** API + **React 19 / TypeScript / Vite** client.
 This repository was scaffolded in **session 0.1**. Application code arrives in
 0.2 (Rails), 0.3 (contract + Tier 1 config), and 0.4 (Vite PWA shell).
 
+Session **0.3** shipped: OpenAPI via rswag, `GET /up` + `GET /health`, the
+Tier 1 config stack (`Settings.fetch`, `FeatureFlag.enabled?`, `Catalog.t`,
+`Ai::PromptTemplate.fetch`, `theme_overrides`), and the magic-number /
+string-literal RuboCop cops.
+
 ---
 
 ## Layout
@@ -129,12 +134,26 @@ See `docs/BRAND_IDENTIFIERS.md`. Logos live under
 
 ---
 
+## Verify session 0.3
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+cd backend && bundle exec rspec && bundle exec rubocop
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/up     # 200
+curl -s http://localhost:3000/health                                  # per-dependency JSON
+cd backend && bin/openapi                                             # regenerate swagger + TS types
+```
+
+Frontend ESLint (hex / raw strings / z-index) lands in session 0.4 with the Vite scaffold.
+
+---
+
 ## What is deliberately not here yet
 
 | Session | Delivers |
 | --- | --- |
-| 0.2 | Rails skeleton, schema, factories, health endpoints |
-| 0.3 | OpenAPI pipeline, Tier 1 registries, magic-number CI guards |
+| 0.2 | Rails skeleton, schema, factories |
+| 0.3 | OpenAPI pipeline, health endpoints, Tier 1 registries, magic-number CI guards — **done** |
 | 0.4 | Vite PWA, tokens, i18n, Vitest gate, `Logo` component |
 
 Production `docker compose up` and Pages deploy turn green once those land —

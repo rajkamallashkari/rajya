@@ -24,12 +24,12 @@ class Conversation < ApplicationRecord
   def direct_key_only_for_direct
     return if (kind == "direct") == direct_key.present?
 
-    errors.add(:direct_key, "must be present only for direct conversations")
+    errors.add(:direct_key, Catalog.t("errors.models.conversation.direct_key"))
   end
 
   def groups_have_titles
     return if kind == "direct" || title.present?
 
-    errors.add(:title, "can't be blank for non-direct conversations")
+    errors.add(:title, Catalog.t("errors.models.conversation.title"))
   end
 end

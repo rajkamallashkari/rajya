@@ -16,8 +16,8 @@ RSpec.describe Errors do
       expect(described_class.message_for(:not_found)).to be_a(String)
     end
 
-    it "humanizes the code when no translation exists" do
-      expect(described_class.message_for(:totally_unmapped_code)).to eq("Totally unmapped code")
+    it "falls back to the catalog key when no translation exists" do
+      expect(described_class.message_for(:totally_unmapped_code)).to eq("errors.totally_unmapped_code")
     end
   end
 

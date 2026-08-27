@@ -37,7 +37,8 @@ Rails.application.configure do
   # Change to "debug" to log everything (including potentially personally-identifiable information!).
   config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
 
-  # Prevent health checks from clogging up the logs.
+  # Prevent health checks from clogging up the logs. `/health` (readiness) is
+  # allowed to log — a failing dependency is an event, not a heartbeat.
   config.silence_healthcheck_path = "/up"
 
   # Don't log any deprecations.

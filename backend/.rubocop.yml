@@ -4,12 +4,8 @@ inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 require:
   - rubocop-rspec
   - rubocop-factory_bot
-
-# Overwrite or add rules to create your own house style
-#
-# # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
-# Layout/SpaceInsideArrayLiteralBrackets:
-#   Enabled: false
+  - ./lib/rubocop/cop/rajya/no_magic_numbers
+  - ./lib/rubocop/cop/rajya/no_user_facing_strings
 
 # CONVENTIONS.md §6.1: coverage measures execution, not correctness — an
 # example with no expectation is as good as no test.
@@ -20,7 +16,33 @@ RSpec/NoExpectationExample:
 # and for this specific reason") read better together than split across
 # examples that each re-derive the same setup.
 RSpec/MultipleExpectations:
-  Max: 3
+  Max: 4
+
+RSpec/ExampleLength:
+  Max: 12
+
+# rswag `path` / `get` / `response` groups are not RSpec examples.
+RSpec/EmptyExampleGroup:
+  Exclude:
+    - spec/requests/**/*
+
+# SCHEMA_DESIGN.md §8 / CONVENTIONS.md §5 — numeric literals in domain code
+# fail the build unless they are 0, 1, -1, or an annotated disable.
+Rajya/NoMagicNumbers:
+  Include:
+    - "app/operations/**/*"
+    - "app/queries/**/*"
+    - "app/policies/**/*"
+    - "app/models/**/*"
+
+# TARGET §7.2 — sentence-like string literals must go through Catalog.t.
+Rajya/NoUserFacingStrings:
+  Include:
+    - "app/operations/**/*"
+    - "app/queries/**/*"
+    - "app/policies/**/*"
+    - "app/models/**/*"
+    - "app/controllers/**/*"
 
 AllCops:
   NewCops: enable
@@ -28,3 +50,5 @@ AllCops:
   Exclude:
     - "db/**/*"
     - "bin/**/*"
+    - "vendor/**/*"
+    - "node_modules/**/*"

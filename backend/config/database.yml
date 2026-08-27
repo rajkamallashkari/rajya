@@ -34,12 +34,15 @@ development:
   cache:
     <<: *primary_development
     migrations_paths: db/cache_migrate
+    schema_format: ruby
   queue:
     <<: *primary_development
     migrations_paths: db/queue_migrate
+    schema_format: ruby
   cable:
     <<: *primary_development
     migrations_paths: db/cable_migrate
+    schema_format: ruby
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -51,12 +54,15 @@ test:
   cache:
     <<: *primary_test
     migrations_paths: db/cache_migrate
+    schema_format: ruby
   queue:
     <<: *primary_test
     migrations_paths: db/queue_migrate
+    schema_format: ruby
   cable:
     <<: *primary_test
     migrations_paths: db/cable_migrate
+    schema_format: ruby
 
 production:
   primary: &primary_production
@@ -65,9 +71,12 @@ production:
   cache:
     <<: *primary_production
     migrations_paths: db/cache_migrate
+    schema_format: ruby
   queue:
     <<: *primary_production
     migrations_paths: db/queue_migrate
+    schema_format: ruby
   cable:
     <<: *primary_production
     migrations_paths: db/cable_migrate
+    schema_format: ruby

@@ -16,15 +16,19 @@
 
 # CONVENTIONS.md §2.7 / MASTER_PLAN.md §8: 100% line and branch coverage from
 # the first commit. The exclusion list is closed — see MASTER_PLAN.md §8.
-require "simplecov"
-SimpleCov.start "rails" do
-  enable_coverage :branch
-  minimum_coverage line: 100, branch: 100
+# OpenAPI generation re-runs request specs with --dry-run; skip the gate there.
+unless ENV["COVERAGE"] == "false"
+  require "simplecov"
+  SimpleCov.start "rails" do
+    enable_coverage :branch
+    minimum_coverage line: 100, branch: 100
 
-  skip "/config/"
-  skip "/db/"
-  skip "/bin/"
-  skip "/spec/"
+    skip "/config/"
+    skip "/db/"
+    skip "/bin/"
+    skip "/spec/"
+    skip "/lib/rubocop/"
+  end
 end
 
 RSpec.configure do |config|

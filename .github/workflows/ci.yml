@@ -1,13 +1,12 @@
 name: CI
 
-# Path-filtered stub (TARGET §8). Real RuboCop / RSpec / Vitest / Playwright /
-# OpenAPI drift jobs land in later P0 sessions. This workflow proves the
-# filter wiring: docs-only changes skip backend and frontend placeholders.
+# Path-filtered (TARGET §8). Backend runs RuboCop + RSpec (100% SimpleCov) and
+# the OpenAPI drift check. Frontend jobs stay stubbed until session 0.4.
 
 on:
   push:
     branches: [main, master]
-  pull_request:
+    pull_request:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -59,16 +58,55 @@ jobs:
           echo "Docs stub OK — link checker arrives later."
 
   backend:
-    name: Backend (stub)
+    name: Backend
     needs: changes
     if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      RAILS_ENV: test
+      CI: true
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/rajya_test
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/rajya_test
+      REDIS_URL: redis://localhost:6379/0
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rajya_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      - name: Placeholder
-        run: |
-          echo "RSpec / RuboCop / SimpleCov gate wired in sessions 0.2–0.3."
-          test -d backend
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.3"
+          bundler-cache: true
+          working-directory: backend
+      - name: Prepare database
+        run: bin/rails db:prepare
+      - name: RuboCop
+        run: bin/rubocop
+      - name: RSpec
+        run: bundle exec rspec
 
   frontend:
     name: Frontend (stub)
@@ -85,11 +123,56 @@ jobs:
           test -f frontend/src/assets/brand/logo_dark.png
 
   contract:
-    name: OpenAPI drift (stub)
+    name: OpenAPI drift
     needs: changes
     if: needs.changes.outputs.contract == 'true'
     runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: test
+      CI: true
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/rajya_test
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/rajya_test
+      REDIS_URL: redis://localhost:6379/0
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rajya_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      - name: Placeholder
-        run: echo "OpenAPI generate + drift check wired in session 0.3."
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.3"
+          bundler-cache: true
+          working-directory: backend
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Prepare database
+        working-directory: backend
+        run: bin/rails db:prepare
+      - name: Regenerate contract artefacts
+        working-directory: backend
+        run: bin/openapi
+      - name: Fail on drift
+        run: git diff --exit-code -- backend/swagger frontend/src/shared/lib

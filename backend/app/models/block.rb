@@ -11,6 +11,6 @@ class Block < ApplicationRecord
     return if blocker_account_id.blank? || blocked_account_id.blank?
     return if blocker_account_id != blocked_account_id
 
-    errors.add(:blocked_account_id, "can't be the same as the blocking account")
+    errors.add(:blocked_account_id, Catalog.t("errors.models.block.self"))
   end
 end

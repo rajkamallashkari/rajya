@@ -1,0 +1,17 @@
+{
+  "name": "rajya",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "generate:api": "openapi-typescript ../backend/swagger/v1/swagger.yaml -o src/shared/lib/api/schema.d.ts"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.14.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.9.1"
+  }
+}

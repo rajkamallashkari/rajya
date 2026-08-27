@@ -1,7 +1,13 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 17.10 (Debian 17.10-1.pgdg12+1)
+-- Dumped by pg_dump version 17.10 (Debian 17.10-1.pgdg12+1)
+
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -707,6 +713,41 @@ ALTER SEQUENCE public.conversations_id_seq OWNED BY public.conversations.id;
 
 
 --
+-- Name: feature_flags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.feature_flags (
+    id bigint NOT NULL,
+    key public.citext NOT NULL,
+    description text NOT NULL,
+    enabled boolean DEFAULT false NOT NULL,
+    rollout jsonb DEFAULT '{}'::jsonb NOT NULL,
+    updated_by_user_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: feature_flags_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.feature_flags_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: feature_flags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.feature_flags_id_seq OWNED BY public.feature_flags.id;
+
+
+--
 -- Name: font_configs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1326,6 +1367,41 @@ CREATE TABLE public.storage_quotas (
 
 
 --
+-- Name: theme_overrides; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.theme_overrides (
+    id bigint NOT NULL,
+    theme character varying NOT NULL,
+    token_name character varying NOT NULL,
+    value character varying NOT NULL,
+    updated_by_user_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT ck_theme_overrides_theme CHECK (((theme)::text = ANY ((ARRAY['light'::character varying, 'dark'::character varying])::text[])))
+);
+
+
+--
+-- Name: theme_overrides_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.theme_overrides_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: theme_overrides_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.theme_overrides_id_seq OWNED BY public.theme_overrides.id;
+
+
+--
 -- Name: translation_strings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1593,6 +1669,13 @@ ALTER TABLE ONLY public.conversations ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: feature_flags id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.feature_flags ALTER COLUMN id SET DEFAULT nextval('public.feature_flags_id_seq'::regclass);
+
+
+--
 -- Name: font_configs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1702,6 +1785,13 @@ ALTER TABLE ONLY public.scheduled_messages ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.storage_buckets ALTER COLUMN id SET DEFAULT nextval('public.storage_buckets_id_seq'::regclass);
+
+
+--
+-- Name: theme_overrides id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.theme_overrides ALTER COLUMN id SET DEFAULT nextval('public.theme_overrides_id_seq'::regclass);
 
 
 --
@@ -1885,6 +1975,14 @@ ALTER TABLE ONLY public.conversations
 
 
 --
+-- Name: feature_flags feature_flags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.feature_flags
+    ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: font_configs font_configs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2042,6 +2140,14 @@ ALTER TABLE ONLY public.storage_buckets
 
 ALTER TABLE ONLY public.storage_quotas
     ADD CONSTRAINT storage_quotas_pkey PRIMARY KEY (account_id);
+
+
+--
+-- Name: theme_overrides theme_overrides_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.theme_overrides
+    ADD CONSTRAINT theme_overrides_pkey PRIMARY KEY (id);
 
 
 --
@@ -2420,6 +2526,13 @@ CREATE INDEX index_conversations_on_last_activity_at ON public.conversations USI
 
 
 --
+-- Name: index_feature_flags_on_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_feature_flags_on_key ON public.feature_flags USING btree (key);
+
+
+--
 -- Name: index_font_configs_on_name; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2578,6 +2691,13 @@ CREATE UNIQUE INDEX index_storage_buckets_on_service_name ON public.storage_buck
 --
 
 CREATE INDEX index_storage_buckets_on_status_and_priority ON public.storage_buckets USING btree (status, priority);
+
+
+--
+-- Name: index_theme_overrides_on_theme_and_token_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_theme_overrides_on_theme_and_token_name ON public.theme_overrides USING btree (theme, token_name);
 
 
 --
@@ -2787,6 +2907,14 @@ ALTER TABLE ONLY public.join_requests
 
 ALTER TABLE ONLY public.ai_usage_events
     ADD CONSTRAINT fk_rails_3eafbbc4a8 FOREIGN KEY (account_id) REFERENCES public.accounts(id) ON DELETE SET NULL;
+
+
+--
+-- Name: feature_flags fk_rails_42c3909528; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.feature_flags
+    ADD CONSTRAINT fk_rails_42c3909528 FOREIGN KEY (updated_by_user_id) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -3030,6 +3158,14 @@ ALTER TABLE ONLY public.attachments
 
 
 --
+-- Name: theme_overrides fk_rails_b94bab4178; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.theme_overrides
+    ADD CONSTRAINT fk_rails_b94bab4178 FOREIGN KEY (updated_by_user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: pinned_messages fk_rails_bda7591d4f; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3148,6 +3284,8 @@ ALTER TABLE ONLY public.message_link_previews
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260826143000'),
 ('20260812025731'),
 ('20260812025517');
+
 

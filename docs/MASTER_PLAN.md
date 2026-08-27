@@ -1902,6 +1902,7 @@ here; a new exclusion is a decision, not a convenience:
 | `config/` initializers and environments              | Executed at boot; verified by the app booting in CI, and by request specs for the ones with observable output such as CSP headers |
 | Generated OpenAPI types and the generated API client | Machine-generated; guarded by the drift check                                                                                     |
 | `bin/`, Docker and CI files                          | Not Ruby or TypeScript under test                                                                                                 |
+| `backend/lib/rubocop/`                               | RuboCop engines; proven by cop specs and by CI failing on a deliberate violation. Not domain code.                                |
 | `*.stories.tsx` / `dev/gallery`                      | Development-only surfaces                                                                                                         |
 
 

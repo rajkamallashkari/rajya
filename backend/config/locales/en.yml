@@ -16,7 +16,7 @@
 #
 # This would use the information in config/locales/es.yml.
 #
-# To learn more about the API, please read the Rails Internationalization guide
+# To use the information, please read the Rails Internationalization guide
 # at https://guides.rubyonrails.org/i18n.html.
 #
 # Be aware that YAML interprets the following case-insensitive strings as
@@ -31,8 +31,7 @@ en:
   hello: "Hello world"
 
   # Error taxonomy default copy (app/lib/errors.rb, TARGET_ARCHITECTURE.md §4.6).
-  # Superseded by the `translation_strings` DB catalog in session 0.3 — same
-  # keys, so nothing here needs to move.
+  # DB rows in translation_strings override these via Catalog.t.
   errors:
     not_found: "The requested resource could not be found."
     unauthenticated: "You need to sign in to continue."
@@ -42,3 +41,24 @@ en:
     rate_limited: "Too many requests. Please slow down and try again."
     quota_exceeded: "Storage quota exceeded."
     upstream_failed: "An upstream service failed. Please try again."
+    models:
+      message:
+        system_event: "must be present only for system messages"
+        sender_required: "or sender_snapshot is required for non-system messages"
+      conversation:
+        direct_key: "must be present only for direct conversations"
+        title: "can't be blank for non-direct conversations"
+      conversation_membership:
+        seen_position: "must be greater than or equal to last_read_position"
+      block:
+        self: "can't be the same as the blocking account"
+      app_setting:
+        below_min: "is below the registered minimum"
+        above_max: "is above the registered maximum"
+        wrong_type: "does not match the registered type"
+      theme_override:
+        contrast: "would drop contrast below WCAG AA against its paired token"
+
+  health:
+    redis_unexpected: "Redis did not answer PONG."
+    solid_queue_stale: "No Solid Queue process has heartbeated recently."

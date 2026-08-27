@@ -42,6 +42,9 @@ gem "alba"
 # Authorization — enforced via after_action :verify_authorized (TARGET_ARCHITECTURE §4.4)
 gem "pundit"
 
+# OpenAPI 3 generated from annotated request specs (TARGET_ARCHITECTURE §4.5)
+gem "rswag-api"
+
 # ActiveRecord type support for the pgvector `vector` column (bot memory — SCHEMA_DESIGN §8)
 gem "pgvector"
 
@@ -66,6 +69,7 @@ group :development, :test do
   # RSpec — the only test framework (CONVENTIONS.md §2.7: no parallel Minitest suite)
   gem "rspec-rails"
   gem "factory_bot_rails"
+  gem "rswag-specs"
 end
 
 group :test do

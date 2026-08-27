@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Regenerate the OpenAPI document, settings registry JSON, and TS types.
+# CI diffs these artefacts — a request-spec change that is not regenerated fails.
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$root/backend"
+
+bundle exec env COVERAGE=false rake rswag:specs:swaggerize
+bundle exec rake rajya:export_registry
+
+cd "$root/frontend"
+openapi_bin="node_modules/.bin/openapi-typescript"
+if [[ ! -x "$openapi_bin" ]]; then
+  echo "Installing frontend packages..."
+  # User/global npmrc (npm 11 allow-scripts) can wait on a TTY with no output.
+  user_rc="$(mktemp)"
+  global_rc="$(mktemp)"
+  cleanup() { rm -f "$user_rc" "$global_rc"; }
+  trap cleanup EXIT
+  npm_flags=(--userconfig "$user_rc" --globalconfig "$global_rc" --ignore-scripts --no-audit --no-fund)
+  if [[ -f package-lock.json ]]; then
+    npm "${npm_flags[@]}" ci
+  else
+    npm "${npm_flags[@]}" install
+  fi
+fi
+
+echo "Generating TypeScript types..."
+"$openapi_bin" ../backend/swagger/v1/swagger.yaml -o src/shared/lib/api/schema.d.ts
+echo "Done."

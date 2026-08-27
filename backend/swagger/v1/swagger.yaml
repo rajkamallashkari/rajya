@@ -1,0 +1,91 @@
+---
+openapi: 3.0.1
+info:
+  title: Rajya API
+  version: v1
+  description: Rajya HTTP API. Generated from rswag-annotated request specs (TARGET
+    §4.5).
+paths:
+  "/up":
+    get:
+      summary: Liveness
+      tags:
+      - Operational
+      description: Process is running. No dependency checks (NR-10).
+      responses:
+        '200':
+          description: alive
+  "/health":
+    get:
+      summary: Readiness
+      tags:
+      - Operational
+      description: Postgres, Redis, Solid Queue heartbeat, and object storage (NR-10).
+      responses:
+        '200':
+          description: ready
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Health"
+        '503':
+          description: a dependency is down
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Health"
+servers:
+- url: http://localhost:3000
+  description: Local development
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+          required:
+          - code
+          - message
+          - details
+    HealthCheck:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - ok
+          - error
+        message:
+          type: string
+      required:
+      - status
+    Health:
+      type: object
+      required:
+      - status
+      - checks
+      properties:
+        status:
+          type: string
+          enum:
+          - ok
+          - error
+        checks:
+          type: object
+          properties:
+            postgres:
+              "$ref": "#/components/schemas/HealthCheck"
+            redis:
+              "$ref": "#/components/schemas/HealthCheck"
+            solid_queue:
+              "$ref": "#/components/schemas/HealthCheck"
+            r2:
+              "$ref": "#/components/schemas/HealthCheck"

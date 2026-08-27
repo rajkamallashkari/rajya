@@ -1,10 +1,7 @@
 # The error taxonomy (TARGET_ARCHITECTURE.md §4.6, CONVENTIONS.md §2.3): one
 # mapping from a symbolic code to an HTTP status, and one response shape,
 # `{ error: { code, message, details } }`. `message` is resolved through the
-# string catalog so it stays admin-editable and translatable — the catalog
-# (`translation_strings` + `t()`) lands in session 0.3; until then this reads
-# Rails' own locale files under the same `errors.*` keys, so call sites do not
-# change when the DB-backed catalog arrives.
+# string catalog so it stays admin-editable and translatable.
 module Errors
   TAXONOMY = {
     not_found: 404,
@@ -27,7 +24,7 @@ module Errors
     end
 
     def message_for(code)
-      I18n.t(code, scope: :errors, default: code.to_s.humanize)
+      Catalog.t("errors.#{code}")
     end
 
     def render(code, message: nil, details: {})
