@@ -24,6 +24,9 @@ describe("BottomSheet", () => {
     );
     await user.click(screen.getByRole("button", { name: "Open sheet" }));
     expect(await screen.findByText("Filters")).toBeInTheDocument();
+    expect(screen.getByText("Filters").closest("[role='dialog']")?.className).toContain(
+      "min-h-[var(--sheet-min-height)]",
+    );
     await user.click(screen.getByRole("button", { name: "Close" }));
   });
 });

@@ -10,30 +10,29 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 1.1 |
-| **Next session** | 1.2 |
+| **Last completed** | 1.2 |
+| **Next session** | 1.3 |
 | **Phase** | P1 — Design system & chat shell |
-| **Sessions remaining in phase** | 4 (1.2 → 1.5) |
+| **Sessions remaining in phase** | 3 (1.3 → 1.5) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 1.2 — `MessageBubble`, grouping, formatting, ticks, system messages**
+**Session 1.3 — `Composer`, voice UI, long-press, context menu, `ChatListItem`**
 
-Deliverable: `MessageBubble`, `MessageGroup`, `MessageContent` with the symmetric
-formatting set and spoilers, `TickIndicator`, `SystemMessage`, dividers.
+Deliverable: `Composer`, voice UI, long-press, context menu, `ChatListItem` with
+swipe, pin and unread affordances.
 
-Docs: `DESIGN_SYSTEM.md §4 (incl. the DS-6 formatting table), §5.1, §5.2; AUDIT §1.2`
+Docs: `DESIGN_SYSTEM §5.1, §5.3, §7; AUDIT §1.2`
 
 Legacy to read:
-- `legacy/botverse/src/components/chat/MessageBubble.tsx`
-- `legacy/botverse/src/components/chat/MessageView.tsx`
-- `legacy/botverse/src/components/chat/SystemEventBubble.tsx`
-- `legacy/botverse/src/components/chat/CallMessageBubble.tsx`
-
-Extract: grouping rules, jumbo-emoji branch, tick rendering, **and the
-incoming-formatted / sent-plain inconsistency being fixed**.
+- `legacy/botverse/src/components/chat/ChatInput.tsx`
+- `legacy/botverse/src/components/chat/VoiceRecorder.tsx`
+- `legacy/botverse/src/components/chat/MessageContextMenu.tsx`
+- `legacy/botverse/src/hooks/useLongPress.ts`
+- `legacy/botverse/src/hooks/useVoiceRecorder.ts`
+- `legacy/botverse/src/hooks/usePressHold.ts`
 
 ---
 
@@ -46,6 +45,7 @@ incoming-formatted / sent-plain inconsistency being fixed**.
 | 0.3 | OpenAPI pipeline, health endpoints, Tier 1 config stack, CI guards | — |
 | 0.4 | Vite scaffold, token layers, applyTheme, deriveTypography, i18next, lint rules, Vitest gate | — |
 | 1.1 | Primitives on Radix, `/dev/gallery` | Shared UI kit on Radix; gallery at `/dev/gallery`. Visual values derive from token layers so density/settings can restyle without component variants. |
+| 1.2 | Message thread surface: bubble, group, content, ticks, system, dividers | Symmetric DS-6 formatting (sent = received, human = bot); spoilers; jumbo emoji; NR-2 ticks; TypingBubble. |
 
 ---
 

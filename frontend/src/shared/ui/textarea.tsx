@@ -26,7 +26,9 @@ function assignRef(
 
 function resize(el: HTMLTextAreaElement): void {
   el.style.height = "auto";
-  el.style.height = `${el.scrollHeight}px`;
+  const maxPx = Number.parseFloat(getComputedStyle(el).maxHeight);
+  const next = Number.isFinite(maxPx) ? Math.min(el.scrollHeight, maxPx) : el.scrollHeight;
+  el.style.height = `${next}px`;
 }
 
 export function Textarea({
@@ -52,7 +54,7 @@ export function Textarea({
       }}
       rows={rows}
       className={cn(
-        "block w-full resize-none overflow-hidden px-[var(--control-pad-x-sm)] py-[var(--control-pad-y)]",
+        "block w-full max-h-[var(--textarea-max-height)] resize-none overflow-x-hidden overflow-y-auto px-[var(--control-pad-x-sm)] py-[var(--control-pad-y)]",
         CONTROL_SURFACE,
         FOCUS_RING,
         "placeholder:text-[var(--text-tertiary)]",

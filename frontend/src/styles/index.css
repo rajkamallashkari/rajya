@@ -2,6 +2,7 @@
 @import "./tokens.css";
 @import "./base.css";
 @import "./motion.css";
+@import "./messages.css";
 
 @theme inline {
   --color-surface-app: var(--surface-app);

@@ -66,7 +66,14 @@
       "empty_state": "Empty state",
       "scroll_area": "Scroll area",
       "separator": "Separator",
-      "progress_ring": "Progress ring"
+      "progress_ring": "Progress ring",
+      "message_bubble": "Message bubble",
+      "message_content": "Message content",
+      "tick_indicator": "Tick indicator",
+      "system_message": "System message",
+      "date_divider": "Date divider",
+      "unread_divider": "Unread divider",
+      "typing_bubble": "Typing bubble"
     },
     "button": {
       "primary": "Primary",
@@ -163,6 +170,46 @@
     },
     "progress": {
       "label": "Upload"
+    },
+    "messages": {
+      "formatted": "**Bold**, *italic*, ~~strike~~, and `code`.\n\n||hidden||\n\n- list item\n\n1. numbered\n\n> quoted\n\n[Rajya](https://rajya.pages.dev) @ada\n\n```javascript\nconst ok = 1;\n```\n\n# heading\n\n| a | b |\n\n<b>html</b>",
+      "plain": "Same formatting on both sides.",
+      "jumbo": "🎉",
+      "today": "Today",
+      "sender": "Ada Lovelace",
+      "queued": "On its way",
+      "failed": "Could not send",
+      "body": "Hello from the gallery"
+    }
+  },
+  "messages": {
+    "ticks": {
+      "sent": "Sent",
+      "delivered": "Delivered",
+      "read": "Read",
+      "failed": "Not sent, tap to retry"
+    },
+    "code": {
+      "copy": "Copy code",
+      "copied": "Copied"
+    },
+    "spoiler": {
+      "hidden": "Hidden content, tap to reveal",
+      "revealed": "Hidden content, tap to hide"
+    },
+    "mention": "@{{handle}}",
+    "typing": "Someone is typing",
+    "unread": "Unread",
+    "system": {
+      "member_joined": "{{name}} joined",
+      "member_left": "{{name}} left",
+      "member_removed": "{{name}} was removed",
+      "member_promoted": "{{name}} is now an admin",
+      "member_demoted": "{{name}} is now a member",
+      "ownership_transferred": "{{name}} is the new owner",
+      "title_changed": "Group renamed to {{title}}",
+      "icon_changed": "Group icon updated",
+      "chat_created": "Group created by {{name}}"
     }
   }
 }

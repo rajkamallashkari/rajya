@@ -3,6 +3,17 @@ import { type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useThemeControls } from "@/app/theme-provider";
 import {
+  DateDivider,
+  MessageBubble,
+  MessageContent,
+  MessageGroup,
+  SystemMessage,
+  TickIndicator,
+  TypingBubble,
+  UnreadDivider,
+  type TickStatus,
+} from "@/features/messages";
+import {
   accentContrast,
   ACCENT_CONTRAST_NEAR_BLACK,
   ACCENT_CONTRAST_WHITE,
@@ -95,6 +106,13 @@ export const GALLERY_SECTION_KEYS = [
   "scroll_area",
   "separator",
   "progress_ring",
+  "message_bubble",
+  "message_content",
+  "tick_indicator",
+  "system_message",
+  "date_divider",
+  "unread_divider",
+  "typing_bubble",
 ] as const;
 
 const THEME_CHOICES = ["light", "dark", "system"] as const;
@@ -151,6 +169,14 @@ function CombinationFrame({ theme, density }: { theme: ResolvedTheme; density: D
           <Button size="sm">{t("gallery.button.primary")}</Button>
           <Badge>{t("gallery.badge.unread")}</Badge>
           <Switch aria-label={t("gallery.switch.label")} />
+        </div>
+        <div className="mt-[var(--space-3)]">
+          <MessageBubble
+            body={t("gallery.messages.body")}
+            createdAt="2026-08-27T12:00:00.000Z"
+            side="sent"
+            status="read"
+          />
         </div>
       </div>
     </div>
@@ -445,6 +471,75 @@ export function GalleryPage() {
 
       <Section sectionKey="progress_ring">
         <ProgressRing value={progressDemo} label={t("gallery.progress.label")} />
+      </Section>
+
+      <Section sectionKey="message_bubble">
+        <div className="flex flex-col gap-[var(--space-4)]">
+          <MessageGroup
+            messages={[
+              { body: t("gallery.messages.body"), createdAt: "2026-08-27T12:00:00.000Z", id: "g1" },
+              {
+                body: t("gallery.messages.plain"),
+                createdAt: "2026-08-27T12:01:00.000Z",
+                id: "g2",
+              },
+            ]}
+            senderName={t("gallery.messages.sender")}
+            side="received"
+          />
+          <MessageBubble
+            body={t("gallery.messages.jumbo")}
+            createdAt="2026-08-27T12:02:00.000Z"
+            side="sent"
+            status="delivered"
+          />
+          <MessageBubble
+            body={t("gallery.messages.queued")}
+            createdAt="2026-08-27T12:03:00.000Z"
+            side="sent"
+            status="queued"
+          />
+          <MessageBubble
+            body={t("gallery.messages.failed")}
+            createdAt="2026-08-27T12:04:00.000Z"
+            side="sent"
+            status="failed"
+          />
+        </div>
+      </Section>
+
+      <Section sectionKey="message_content">
+        <div className="flex flex-col gap-[var(--space-4)]">
+          <MessageBubble body={t("gallery.messages.formatted")} side="received" />
+          <MessageBubble body={t("gallery.messages.formatted")} side="sent" status="sent" />
+          <MessageContent body={t("gallery.messages.formatted")} />
+        </div>
+      </Section>
+
+      <Section sectionKey="tick_indicator">
+        <div className={rowClass()}>
+          {(["queued", "sent", "delivered", "read", "failed"] as const satisfies TickStatus[]).map(
+            (status) => (
+              <TickIndicator key={status} status={status} />
+            ),
+          )}
+        </div>
+      </Section>
+
+      <Section sectionKey="system_message">
+        <SystemMessage eventKey="member_joined" values={{ name: t("gallery.messages.sender") }} />
+      </Section>
+
+      <Section sectionKey="date_divider">
+        <DateDivider label={t("gallery.messages.today")} />
+      </Section>
+
+      <Section sectionKey="unread_divider">
+        <UnreadDivider />
+      </Section>
+
+      <Section sectionKey="typing_bubble">
+        <TypingBubble senderName={t("gallery.messages.sender")} />
       </Section>
     </main>
   );

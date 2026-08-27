@@ -1,7 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/features/messages/model/highlight", () => ({
+  highlightCode: vi.fn().mockResolvedValue(null),
+}));
+
 import { GALLERY_SECTION_KEYS, GalleryPage } from "@/app/dev/gallery-page";
 import { AppProviders } from "@/app/providers";
 import { appRoutes, createRouter } from "@/app/router";

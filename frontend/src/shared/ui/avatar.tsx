@@ -13,7 +13,8 @@ export interface AvatarProps {
   className?: string;
 }
 
-const SIZE = "h-[var(--avatar-size)] w-[var(--avatar-size)]";
+const SIZE = "size-[var(--avatar-size)]";
+const FACE = "size-full overflow-hidden rounded-[var(--radius-full)]";
 
 export function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -48,20 +49,16 @@ export function Avatar({ src, name, presence, className }: AvatarProps) {
 
   return (
     <AvatarPrimitive.Root
-      className={cn("relative inline-flex shrink-0", SIZE, className)}
+      className={cn("relative inline-flex shrink-0 rounded-[var(--radius-full)]", SIZE, className)}
       aria-label={label}
     >
       {src ? (
-        <AvatarPrimitive.Image
-          src={src}
-          alt={label}
-          className={cn(SIZE, "rounded-[var(--radius-full)] object-cover")}
-        />
+        <AvatarPrimitive.Image src={src} alt={label} className={cn(FACE, "object-cover")} />
       ) : null}
       <AvatarPrimitive.Fallback
         className={cn(
-          SIZE,
-          "flex items-center justify-center rounded-[var(--radius-full)] text-[length:var(--text-sm)] [font-weight:var(--font-weight-emphasis)] text-[var(--accent-contrast)]",
+          FACE,
+          "flex items-center justify-center text-[length:var(--text-sm)] [font-weight:var(--font-weight-emphasis)] text-[var(--accent-contrast)]",
         )}
         style={{ background: `var(${tone})` }}
         delayMs={0}

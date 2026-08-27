@@ -22,5 +22,10 @@ describe("Avatar", () => {
     expect(screen.getByLabelText("Avatar")).toBeInTheDocument();
     rerender(<Avatar name="Ada Lovelace" />);
     expect(document.querySelector("[data-presence]")).toBeNull();
+    rerender(<Avatar className="size-[var(--bubble-avatar-size)]" name="Ada" presence="online" />);
+    expect(screen.getByLabelText("Ada").className).toContain("size-[var(--bubble-avatar-size)]");
+    expect(screen.getByLabelText("Ada").className).not.toContain("overflow-hidden");
+    expect(screen.getByText("AD").className).toContain("overflow-hidden");
+    expect(document.querySelector("[data-presence='online']")).not.toBeNull();
   });
 });
