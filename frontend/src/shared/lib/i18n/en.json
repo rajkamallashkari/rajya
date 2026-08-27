@@ -1,0 +1,23 @@
+{
+  "brand": {
+    "logo_alt": "Rajya"
+  },
+  "app": {
+    "tagline": "Chat",
+    "loading": "Loading"
+  },
+  "errors": {
+    "app": {
+      "title": "Something went wrong",
+      "retry": "Try again"
+    },
+    "route": {
+      "title": "This page could not be loaded",
+      "retry": "Try again"
+    },
+    "list": {
+      "title": "Could not load this list",
+      "retry": "Try again"
+    }
+  }
+}

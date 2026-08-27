@@ -55,49 +55,49 @@ verify — then stop for review.
 
 
 
-## What you type in Cursor (copy these)
+## What you type in Cursor
 
-Attach with `@` from the `rajya/` repo root:
+### Normal case — just continue
 
-```text
+Attach three files and type one word:
+
+```
+@docs/SESSION_STARTER.md @docs/CONVENTIONS.md @docs/MASTER_PLAN.md @docs/PROGRESS.md
+
+Continue.
+```
+
+The agent reads `PROGRESS.md`, sees the next session id and its brief, executes
+it, then **updates `PROGRESS.md`** before stopping so the following chat is
+already set up.
+
+### If you want to steer (optional extra line)
+
+```
+@docs/SESSION_STARTER.md @docs/CONVENTIONS.md @docs/MASTER_PLAN.md @docs/PROGRESS.md
+
+Continue. Skip Oracle if blocked; document manual steps in README instead.
+```
+
+### Override — jump to a specific session
+
+```
 @docs/SESSION_STARTER.md @docs/CONVENTIONS.md @docs/MASTER_PLAN.md
-```
 
-### Next chat — session 0.2
-
-```text
-@docs/SESSION_STARTER.md @docs/CONVENTIONS.md @docs/MASTER_PLAN.md
-
-Session 0.2. Agent mode. Execute only that §5 brief. Stop when done.
-```
-
-### Every later chat
-
-```text
-@docs/SESSION_STARTER.md @docs/CONVENTIONS.md @docs/MASTER_PLAN.md
-
-Session <N.x>. Agent mode. Execute only that §5 brief. Stop when done.
-```
-
-Examples:
-
-```text
-Session 0.3. Agent mode. Execute only that §5 brief. Stop when done.
-```
-
-```text
 Session 3.2. Agent mode. Execute only that §5 brief. Stop when done.
 ```
 
-Optional one-liners if you need to steer without a long prompt:
+---
 
-```text
-Session 0.2. Prefer asking over guessing on any SCHEMA conflict.
-```
+## Agent: what "Continue." means
 
-```text
-Session 1.2. Prefer asking over guessing on any BR-n conflict.
-```
+1. Read `PROGRESS.md` — "Next session" is your session id.
+2. Look up that row in `MASTER_PLAN.md` §5 (Session briefs table) — those are
+   your deliverables, doc slices, and legacy files.
+3. Execute only that one session. Stop when done.
+4. Update `PROGRESS.md`: advance "Last completed" / "Next session", fill in the
+   new "Next session brief" block from the §5 table, add a row to "Completed".
+5. Report: what shipped, what was deferred, commands to verify.
 
 ---
 

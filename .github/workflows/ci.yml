@@ -1,7 +1,7 @@
 name: CI
 
-# Path-filtered (TARGET §8). Backend runs RuboCop + RSpec (100% SimpleCov) and
-# the OpenAPI drift check. Frontend jobs stay stubbed until session 0.4.
+# Path-filtered (TARGET §8). Backend: RuboCop + RSpec (100% SimpleCov) and
+# OpenAPI drift. Frontend: ESLint, Prettier, tsc, Vitest 100%, Playwright.
 
 on:
   push:
@@ -109,18 +109,42 @@ jobs:
         run: bundle exec rspec
 
   frontend:
-    name: Frontend (stub)
+    name: Frontend
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - name: Placeholder
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: ESLint
+        run: npm run lint
+      - name: Prettier
+        run: npm run format:check
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Prove lint rules
+        run: npm run prove:lint
+      - name: Vitest
+        run: npm test
+      - name: Prove coverage gate
+        run: npm run prove:coverage-gate
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Playwright
+        run: npm run test:e2e
+      - name: Brand assets
         run: |
-          echo "Vitest / ESLint / Playwright / tsc wired in session 0.4."
-          test -d frontend
-          test -f frontend/src/assets/brand/logo_light.png
-          test -f frontend/src/assets/brand/logo_dark.png
+          test -f src/assets/brand/logo_light.png
+          test -f src/assets/brand/logo_dark.png
 
   contract:
     name: OpenAPI drift

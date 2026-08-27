@@ -9,13 +9,11 @@ Consumer chat PWA — **Rails 8** API + **React 19 / TypeScript / Vite** client.
 | Public URL | `https://rajya.pages.dev` |
 | Token | `rajya` |
 
-This repository was scaffolded in **session 0.1**. Application code arrives in
-0.2 (Rails), 0.3 (contract + Tier 1 config), and 0.4 (Vite PWA shell).
+Session **0.4** shipped the Vite PWA shell: four token layers, `applyTheme` /
+`deriveTypography`, i18next, shadcn `Button`, ESLint guards, and the 100% Vitest
+gate.
 
-Session **0.3** shipped: OpenAPI via rswag, `GET /up` + `GET /health`, the
-Tier 1 config stack (`Settings.fetch`, `FeatureFlag.enabled?`, `Catalog.t`,
-`Ai::PromptTemplate.fetch`, `theme_overrides`), and the magic-number /
-string-literal RuboCop cops.
+---
 
 ---
 
@@ -24,13 +22,13 @@ string-literal RuboCop cops.
 ```
 rajya/
   backend/                 Rails 8 API-only (session 0.2+)
-  frontend/                React PWA (session 0.4+)
+  frontend/                React PWA
   docs/                    Planning + session contracts
   ops/                     Backup restore + coturn placeholders
   docker-compose.dev.yml   Postgres + Redis + Mailpit
   docker-compose.yml       Production stack (Oracle / self-host)
   .tool-versions           Ruby + Node via mise
-  Procfile.dev             bin/dev processes (stub until 0.2 / 0.4)
+  Procfile.dev             bin/dev: web, worker, vite
 ```
 
 Legacy apps live **outside** this repo at `../legacy/{cognify,botverse}`
@@ -90,8 +88,8 @@ Tunnel using the same `docker-compose.yml`. Do not block local work on cloud.
 ### Cloudflare Pages
 
 1. Create a Pages project named **`rajya`** (output URL `https://rajya.pages.dev`).
-2. Connect this GitHub repo; build root `frontend/`; build command and output
-   dir will be set once Vite exists (session 0.4). Until then, skip auto-deploy.
+2. Connect this GitHub repo; build root `frontend/`; build command `npm run build`;
+   output directory `dist`.
 3. Custom domain is optional and out of the $0 default path.
 
 ### Cloudflare Tunnel (API / Cable)
@@ -134,27 +132,23 @@ See `docs/BRAND_IDENTIFIERS.md`. Logos live under
 
 ---
 
-## Verify session 0.3
+## Verify session 0.4
 
 ```bash
-docker compose -f docker-compose.dev.yml up -d
-cd backend && bundle exec rspec && bundle exec rubocop
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/up     # 200
-curl -s http://localhost:3000/health                                  # per-dependency JSON
-cd backend && bin/openapi                                             # regenerate swagger + TS types
+cd frontend
+npm test                  # Vitest + 100% coverage
+npm run lint              # ESLint including the five Rajya rules
+npm run prove:lint        # each deliberate violation fails
+npm run prove:coverage-gate
+npm run typecheck
+npm run test:e2e          # Playwright (installs Chromium on first run)
+npm run dev               # Vite on http://localhost:5173
 ```
 
-Frontend ESLint (hex / raw strings / z-index) lands in session 0.4 with the Vite scaffold.
+From the repo root, `bin/dev` starts Rails + the worker + Vite.
 
 ---
 
 ## What is deliberately not here yet
 
-| Session | Delivers |
-| --- | --- |
-| 0.2 | Rails skeleton, schema, factories |
-| 0.3 | OpenAPI pipeline, health endpoints, Tier 1 registries, magic-number CI guards — **done** |
-| 0.4 | Vite PWA, tokens, i18n, Vitest gate, `Logo` component |
-
-Production `docker compose up` and Pages deploy turn green once those land —
-local Compose deps are healthy from this session.
+P0 foundation sessions 0.1–0.4 are done. Domain UI and auth start in **P1 / P2**.

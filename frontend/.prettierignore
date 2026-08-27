@@ -1,0 +1,14 @@
+dist
+coverage
+playwright-report
+test-results
+node_modules
+package-lock.json
+src/shared/lib/api/schema.d.ts
+src/shared/lib/config/settings-registry.json
+src/shared/lib/config/settings-registry.d.ts
+public/icons
+public/favicon.ico
+src/assets
+*.png
+*.ico

@@ -29,6 +29,7 @@ frontend/coverage/
 frontend/playwright-report/
 frontend/test-results/
 frontend/.vite/
+frontend/src/__gate_probe__.ts
 
 # Tooling
 .mise.toml.local

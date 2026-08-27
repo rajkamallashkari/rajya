@@ -1,0 +1,157 @@
+/*
+ * Four token layers (DESIGN_SYSTEM.md §3). Hex / rgb / hsl live in this file
+ * only. Components reference semantic or component tokens, never primitives.
+ */
+
+:root {
+  /* ── 1. Primitives ─────────────────────────────────────────────────── */
+  --tg-950: #0e1621;
+  --tg-900: #17212b;
+  --tg-800: #1a2534;
+  --tg-700: #232e3c;
+  --tg-600: #2c3a4b;
+  --tg-500: #2e3d4f;
+  --tg-400: #344a5e;
+  --tg-300: #3a5068;
+  --blue-50: #eff6ff;
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-800: #1e293b;
+  --bubble-sent-light: #dbeafe;
+  --bubble-recv-light: #f8fafc;
+  --bubble-sent-dark: #2b5278;
+  --bubble-recv-dark: #182533;
+  --accent-boot: #4f46e5;
+  --rose-100: #ffe4e6;
+  --status-success-hex: #16a34a;
+  --status-warning-hex: #d97706;
+  --status-danger-hex: #dc2626;
+  --status-info-hex: #2563eb;
+
+  --space-0_5: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --touch-target-min: 44px;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-bubble: 18px;
+  --radius-full: 9999px;
+
+  --elevation-0: none;
+  --elevation-1: 0 1px 2px color-mix(in oklab, black 6%, transparent);
+  --elevation-2: 0 4px 12px color-mix(in oklab, black 10%, transparent);
+  --elevation-3: 0 12px 32px color-mix(in oklab, black 16%, transparent);
+
+  --motion-instant: 80ms;
+  --motion-fast: 140ms;
+  --motion-base: 220ms;
+  --motion-slow: 320ms;
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-layer: 100;
+  --z-drawer: 200;
+  --z-sheet: 300;
+  --z-popover: 400;
+  --z-menu: 500;
+  --z-modal: 600;
+  --z-call-overlay: 700;
+  --z-toast: 800;
+  --z-critical: 900;
+
+  /* ── 2. Semantic (light) ───────────────────────────────────────────── */
+  --surface-app: #eff6ff;
+  --surface-chat: #eff6ff;
+  --surface-panel: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-input: #ffffff;
+  --surface-hover: #f8fafc;
+  --surface-active: #eff6ff;
+  --surface-selected: #eff6ff;
+  --border-subtle: #e2e8f0;
+  --border-default: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-tertiary: #94a3b8;
+  --text-inverse: #ffffff;
+  --bubble-sent-bg: #dbeafe;
+  --bubble-received-bg: #f8fafc;
+  --status-success: #16a34a;
+  --status-warning: #d97706;
+  --status-danger: #dc2626;
+  --status-info: #2563eb;
+
+  /* ── 3. Component ──────────────────────────────────────────────────── */
+  --bubble-sent-fill: var(--bubble-sent-bg);
+  --bubble-received-fill: var(--bubble-received-bg);
+  --composer-height: 52px;
+
+  /* ── 4. Runtime (JS-injected; boot defaults) ───────────────────────── */
+  --color-accent-primary: var(--accent-boot);
+  --accent: var(--color-accent-primary);
+  --accent-hover: color-mix(in srgb, var(--color-accent-primary) 85%, black);
+  --accent-muted: color-mix(in srgb, var(--color-accent-primary) 70%, white);
+  --accent-subtle: color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
+  --accent-contrast: #ffffff;
+  --app-size-multiplier: 1;
+  --app-font-weight: 400;
+  --app-line-height: 1.5;
+  --app-letter-spacing: 0em;
+  --app-font-family: inherit;
+  --space-list-y: var(--space-3);
+  --space-list-x: var(--space-4);
+}
+
+html.dark {
+  --surface-app: #0e1621;
+  --surface-chat: #0e1621;
+  --surface-panel: #232e3c;
+  --surface-raised: #2c3a4b;
+  --surface-input: #1a2534;
+  --surface-hover: #2c3a4b;
+  --surface-active: #344a5e;
+  --surface-selected: #344a5e;
+  --border-subtle: #2e3d4f;
+  --border-default: #2e3d4f;
+  --border-strong: #3a5068;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --text-inverse: #0e1621;
+  --bubble-sent-bg: #2b5278;
+  --bubble-received-bg: #182533;
+  --status-success: #22c55e;
+  --status-warning: #fbbf24;
+  --status-danger: #f87171;
+  --status-info: #60a5fa;
+
+  --accent-hover: color-mix(in srgb, var(--color-accent-primary) 85%, black);
+  --accent-muted: color-mix(in srgb, var(--color-accent-primary) 70%, black);
+  --accent-subtle: color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
+
+  --elevation-1: 0 1px 2px color-mix(in oklab, black 0%, transparent);
+  --elevation-2: 0 4px 12px color-mix(in oklab, black 0%, transparent);
+  --elevation-3: 0 12px 32px color-mix(in oklab, black 4%, transparent);
+}
