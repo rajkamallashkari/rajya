@@ -12,5 +12,6 @@ describe("AppRouter", () => {
       </AppProviders>,
     );
     expect(screen.getByText("Chat")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Gallery" })).toBeInTheDocument();
   });
 });

@@ -1,3 +1,100 @@
+@keyframes rajya-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rajya-skeleton {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rajya-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rajya-fade-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rajya-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes rajya-drawer-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes rajya-drawer-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.ui-spinner {
+  animation: rajya-spin var(--motion-slow) linear infinite;
+}
+
+.ui-skeleton {
+  animation: rajya-skeleton var(--motion-slow) ease-in-out infinite alternate;
+}
+
+.ui-scrim {
+  animation: rajya-fade var(--motion-fast) var(--ease-out);
+}
+
+.ui-dialog {
+  animation: rajya-fade-scale var(--motion-fast) var(--ease-out);
+}
+
+.ui-popover {
+  animation: rajya-fade var(--motion-fast) var(--ease-out);
+}
+
+.ui-sheet {
+  animation: rajya-sheet-up var(--motion-base) var(--ease-out);
+}
+
+.ui-drawer-right {
+  animation: rajya-drawer-right var(--motion-base) var(--ease-out);
+}
+
+.ui-drawer-left {
+  animation: rajya-drawer-left var(--motion-base) var(--ease-out);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

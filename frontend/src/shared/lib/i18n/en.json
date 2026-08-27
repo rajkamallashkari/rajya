@@ -4,7 +4,8 @@
   },
   "app": {
     "tagline": "Chat",
-    "loading": "Loading"
+    "loading": "Loading",
+    "gallery": "Gallery"
   },
   "errors": {
     "app": {
@@ -18,6 +19,150 @@
     "list": {
       "title": "Could not load this list",
       "retry": "Try again"
+    }
+  },
+  "ui": {
+    "close": "Close",
+    "avatar_unnamed": "Avatar",
+    "select_placeholder": "Select"
+  },
+  "gallery": {
+    "title": "Component gallery",
+    "theme_legend": "Theme",
+    "density_legend": "Density",
+    "combinations": "Theme and density",
+    "theme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "density": {
+      "comfortable": "Comfortable",
+      "compact": "Compact"
+    },
+    "sections": {
+      "button": "Button",
+      "icon_button": "Icon button",
+      "input": "Input",
+      "textarea": "Textarea",
+      "select": "Select",
+      "switch": "Switch",
+      "slider": "Slider",
+      "checkbox": "Checkbox",
+      "radio": "Radio",
+      "avatar": "Avatar",
+      "badge": "Badge",
+      "tooltip": "Tooltip",
+      "popover": "Popover",
+      "dropdown_menu": "Dropdown menu",
+      "context_menu": "Context menu",
+      "dialog": "Dialog",
+      "bottom_sheet": "Bottom sheet",
+      "drawer": "Drawer",
+      "tabs": "Tabs",
+      "skeleton": "Skeleton",
+      "spinner": "Spinner",
+      "toast": "Toast",
+      "empty_state": "Empty state",
+      "scroll_area": "Scroll area",
+      "separator": "Separator",
+      "progress_ring": "Progress ring"
+    },
+    "button": {
+      "primary": "Primary",
+      "secondary": "Secondary",
+      "ghost": "Ghost",
+      "danger": "Danger",
+      "sm": "Small",
+      "md": "Medium",
+      "lg": "Large"
+    },
+    "icon_button": {
+      "label": "Star"
+    },
+    "input": {
+      "placeholder": "Message"
+    },
+    "textarea": {
+      "placeholder": "Write a message"
+    },
+    "select": {
+      "apple": "Apple",
+      "orange": "Orange"
+    },
+    "switch": {
+      "label": "Notifications"
+    },
+    "slider": {
+      "label": "Volume"
+    },
+    "checkbox": {
+      "label": "Remember this device"
+    },
+    "radio": {
+      "label": "Who can add you",
+      "everyone": "Everyone",
+      "contacts": "Contacts"
+    },
+    "avatar": {
+      "name": "Ada Lovelace",
+      "single": "Ada"
+    },
+    "badge": {
+      "unread": "Unread",
+      "muted": "Muted"
+    },
+    "tooltip": {
+      "trigger": "Hint",
+      "content": "Send a message"
+    },
+    "popover": {
+      "trigger": "Details",
+      "content": "More information"
+    },
+    "menu": {
+      "trigger": "Actions",
+      "edit": "Edit",
+      "delete": "Delete",
+      "context_target": "Press and hold for actions"
+    },
+    "dialog": {
+      "trigger": "Open dialog",
+      "title": "Sign out",
+      "description": "You can sign back in anytime.",
+      "confirm": "Confirm"
+    },
+    "sheet": {
+      "trigger": "Open sheet",
+      "title": "Filters",
+      "body": "Sheet content"
+    },
+    "drawer": {
+      "trigger": "Open drawer",
+      "title": "Account",
+      "body": "Drawer content"
+    },
+    "tabs": {
+      "one": "One",
+      "two": "Two",
+      "one_body": "First tab",
+      "two_body": "Second tab"
+    },
+    "toast": {
+      "trigger": "Show toast",
+      "title": "Saved",
+      "description": "Your changes are stored."
+    },
+    "empty": {
+      "title": "No conversations yet",
+      "description": "Start a new chat to see it here.",
+      "action": "New chat"
+    },
+    "scroll": {
+      "item": "Row {{n}}"
+    },
+    "progress": {
+      "label": "Upload"
     }
   }
 }

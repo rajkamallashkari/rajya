@@ -14,7 +14,7 @@ export function Logo({ resolvedTheme }: LogoProps) {
     <img
       src={src}
       alt={t("brand.logo_alt")}
-      className="h-[var(--space-10)] w-[var(--space-10)] object-contain"
+      className="h-[var(--logo-size)] w-[var(--logo-size)] object-contain"
     />
   );
 }

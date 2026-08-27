@@ -1,6 +1,8 @@
 /*
- * Four token layers (DESIGN_SYSTEM.md §3). Hex / rgb / hsl live in this file
- * only. Components reference semantic or component tokens, never primitives.
+ * Four token layers (DESIGN_SYSTEM.md §3). Hex / rgb / hsl live in layer 1
+ * only. Semantic tokens alias primitives. Component tokens alias semantic +
+ * space/type roles. Components reference semantic or component tokens — never
+ * primitives, Tailwind type scale, or opacity literals.
  */
 
 :root {
@@ -13,10 +15,12 @@
   --tg-500: #2e3d4f;
   --tg-400: #344a5e;
   --tg-300: #3a5068;
+  --white: #ffffff;
   --blue-50: #eff6ff;
   --slate-50: #f8fafc;
   --slate-100: #f1f5f9;
   --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
   --slate-400: #94a3b8;
   --slate-500: #64748b;
   --slate-800: #1e293b;
@@ -30,9 +34,14 @@
   --status-warning-hex: #d97706;
   --status-danger-hex: #dc2626;
   --status-info-hex: #2563eb;
+  --status-success-dark: #22c55e;
+  --status-warning-dark: #fbbf24;
+  --status-danger-dark: #f87171;
+  --status-info-dark: #60a5fa;
 
   --space-0_5: 2px;
   --space-1: 4px;
+  --space-1_5: 6px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
@@ -43,6 +52,8 @@
   --space-12: 48px;
   --space-16: 64px;
   --touch-target-min: 44px;
+  --font-size-root: 16px;
+  --hairline: 1px;
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
@@ -80,33 +91,105 @@
   --z-toast: 800;
   --z-critical: 900;
 
-  /* ── 2. Semantic (light) ───────────────────────────────────────────── */
-  --surface-app: #eff6ff;
-  --surface-chat: #eff6ff;
-  --surface-panel: #ffffff;
-  --surface-raised: #ffffff;
-  --surface-input: #ffffff;
-  --surface-hover: #f8fafc;
-  --surface-active: #eff6ff;
-  --surface-selected: #eff6ff;
-  --border-subtle: #e2e8f0;
-  --border-default: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --text-tertiary: #94a3b8;
-  --text-inverse: #ffffff;
-  --bubble-sent-bg: #dbeafe;
-  --bubble-received-bg: #f8fafc;
-  --status-success: #16a34a;
-  --status-warning: #d97706;
-  --status-danger: #dc2626;
-  --status-info: #2563eb;
+  /* ── 2. Semantic (light) — aliases primitives ──────────────────────── */
+  --surface-app: var(--blue-50);
+  --surface-chat: var(--blue-50);
+  --surface-panel: var(--white);
+  --surface-raised: var(--white);
+  --surface-input: var(--white);
+  --surface-hover: var(--slate-50);
+  --surface-active: var(--blue-50);
+  --surface-selected: var(--blue-50);
+  --border-subtle: var(--slate-200);
+  --border-default: var(--slate-200);
+  --border-strong: var(--slate-300);
+  --text-primary: var(--slate-800);
+  --text-secondary: var(--slate-500);
+  --text-tertiary: var(--slate-400);
+  --text-inverse: var(--white);
+  --bubble-sent-bg: var(--bubble-sent-light);
+  --bubble-received-bg: var(--bubble-recv-light);
+  --status-success: var(--status-success-hex);
+  --status-warning: var(--status-warning-hex);
+  --status-danger: var(--status-danger-hex);
+  --status-info: var(--status-info-hex);
 
-  /* ── 3. Component ──────────────────────────────────────────────────── */
+  /* ── 3. Component — roles the UI actually paints ───────────────────── */
   --bubble-sent-fill: var(--bubble-sent-bg);
   --bubble-received-fill: var(--bubble-received-bg);
-  --composer-height: 52px;
+  --composer-height: calc(var(--touch-target-min) + var(--space-2));
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --font-weight-step: 100;
+  --font-weight-emphasis-max: 700;
+  --font-weight-emphasis: min(
+    var(--font-weight-emphasis-max),
+    calc(var(--app-font-weight) + var(--font-weight-step))
+  );
+
+  --opacity-disabled: 0.5;
+  --overlay-scrim-mix: 40%;
+  --status-tint-mix: 16%;
+  --scrollbar-accent-mix: 30%;
+  --tap-highlight-mix: 16%;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --spinner-border-width: var(--space-0_5);
+  --control-border-width: var(--hairline);
+
+  --control-height: var(--touch-target-min);
+  --control-radius: var(--radius-md);
+  --control-pad-x: var(--space-4);
+  --control-pad-y: var(--space-2);
+  --control-pad-x-sm: var(--space-3);
+  --control-pad-y-sm: var(--space-1);
+  --control-pad-x-lg: var(--space-5);
+  --control-pad-y-lg: var(--space-3);
+  --control-gap: var(--space-3);
+  --control-gap-tight: var(--space-2);
+  --icon-size: var(--space-4);
+  --logo-size: var(--space-10);
+  --avatar-size: var(--space-10);
+  --badge-min-height: var(--space-6);
+  --close-offset: var(--space-3);
+  --inset-page: var(--space-6);
+
+  --menu-min-width: calc(var(--space-16) * 3);
+  --dialog-max-width: calc(var(--space-16) * 6);
+  --drawer-width: calc(var(--space-16) * 5);
+  --toast-width: calc(var(--space-16) * 5);
+  --switch-track-width: calc(var(--space-10) + var(--space-2));
+  --sheet-handle-width: var(--space-10);
+  --progress-ring-size: var(--space-10);
+  --popover-offset: var(--space-1_5);
+  --presence-size: var(--space-2);
+  --avatar-icon-size: var(--space-5);
+  --radio-dot-size: var(--space-3);
+  --slider-thumb-size: var(--space-5);
+  --switch-thumb-size: var(--space-6);
+
+  --overlay-scrim: color-mix(in srgb, var(--text-primary) var(--overlay-scrim-mix), transparent);
+  --status-success-subtle: color-mix(
+    in srgb,
+    var(--status-success) var(--status-tint-mix),
+    transparent
+  );
+  --status-warning-subtle: color-mix(
+    in srgb,
+    var(--status-warning) var(--status-tint-mix),
+    transparent
+  );
+  --status-danger-subtle: color-mix(
+    in srgb,
+    var(--status-danger) var(--status-tint-mix),
+    transparent
+  );
+  --status-danger-hover: color-mix(in srgb, var(--status-danger) 85%, black);
+  --scrollbar-thumb: color-mix(in srgb, var(--accent) var(--scrollbar-accent-mix), transparent);
+  --tap-highlight: color-mix(in srgb, var(--accent) var(--tap-highlight-mix), transparent);
 
   /* ── 4. Runtime (JS-injected; boot defaults) ───────────────────────── */
   --color-accent-primary: var(--accent-boot);
@@ -114,7 +197,7 @@
   --accent-hover: color-mix(in srgb, var(--color-accent-primary) 85%, black);
   --accent-muted: color-mix(in srgb, var(--color-accent-primary) 70%, white);
   --accent-subtle: color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
-  --accent-contrast: #ffffff;
+  --accent-contrast: var(--white);
   --app-size-multiplier: 1;
   --app-font-weight: 400;
   --app-line-height: 1.5;
@@ -125,27 +208,27 @@
 }
 
 html.dark {
-  --surface-app: #0e1621;
-  --surface-chat: #0e1621;
-  --surface-panel: #232e3c;
-  --surface-raised: #2c3a4b;
-  --surface-input: #1a2534;
-  --surface-hover: #2c3a4b;
-  --surface-active: #344a5e;
-  --surface-selected: #344a5e;
-  --border-subtle: #2e3d4f;
-  --border-default: #2e3d4f;
-  --border-strong: #3a5068;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
-  --text-inverse: #0e1621;
-  --bubble-sent-bg: #2b5278;
-  --bubble-received-bg: #182533;
-  --status-success: #22c55e;
-  --status-warning: #fbbf24;
-  --status-danger: #f87171;
-  --status-info: #60a5fa;
+  --surface-app: var(--tg-950);
+  --surface-chat: var(--tg-950);
+  --surface-panel: var(--tg-700);
+  --surface-raised: var(--tg-600);
+  --surface-input: var(--tg-800);
+  --surface-hover: var(--tg-600);
+  --surface-active: var(--tg-400);
+  --surface-selected: var(--tg-400);
+  --border-subtle: var(--tg-500);
+  --border-default: var(--tg-500);
+  --border-strong: var(--tg-300);
+  --text-primary: var(--slate-100);
+  --text-secondary: var(--slate-400);
+  --text-tertiary: var(--slate-500);
+  --text-inverse: var(--tg-950);
+  --bubble-sent-bg: var(--bubble-sent-dark);
+  --bubble-received-bg: var(--bubble-recv-dark);
+  --status-success: var(--status-success-dark);
+  --status-warning: var(--status-warning-dark);
+  --status-danger: var(--status-danger-dark);
+  --status-info: var(--status-info-dark);
 
   --accent-hover: color-mix(in srgb, var(--color-accent-primary) 85%, black);
   --accent-muted: color-mix(in srgb, var(--color-accent-primary) 70%, black);

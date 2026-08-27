@@ -2,12 +2,15 @@
 
 html {
   height: 100%;
-  font-size: calc(16px * var(--app-size-multiplier));
+  font-size: calc(var(--font-size-root) * var(--app-size-multiplier));
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
   min-height: 100%;
+  min-height: 100dvh;
   background-color: var(--surface-app);
   color: var(--text-primary);
   font-family: var(--app-font-family);
@@ -20,6 +23,7 @@ body {
 
 #root {
   min-height: 100%;
+  min-height: 100dvh;
 }
 
 ::selection {
@@ -31,11 +35,21 @@ body {
   overscroll-behavior-x: contain;
 }
 
+a,
+button,
+input,
+textarea,
+select,
+[role="button"] {
+  touch-action: manipulation;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
+  -webkit-tap-highlight-color: var(--tap-highlight);
 }
 
 *:hover {
-  scrollbar-color: color-mix(in srgb, var(--accent) 30%, transparent) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }

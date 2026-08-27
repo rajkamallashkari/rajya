@@ -20,7 +20,7 @@ describe("Button", () => {
     expect(clicked).toBe(true);
   });
 
-  it("supports asChild and variants", () => {
+  it("supports asChild, variants and sizes", () => {
     const { rerender } = render(
       <Button asChild variant="ghost" size="icon">
         <a href="/">go</a>
@@ -28,10 +28,18 @@ describe("Button", () => {
     );
     expect(screen.getByRole("link")).toHaveAttribute("href", "/");
     rerender(
-      <Button variant="outline" type="submit">
+      <Button variant="secondary" size="sm" type="submit">
         {"send"}
       </Button>,
     );
     expect(screen.getByRole("button")).toHaveAttribute("type", "submit");
+    rerender(
+      <Button variant="danger" size="lg">
+        {"danger"}
+      </Button>,
+    );
+    expect(screen.getByRole("button")).toHaveTextContent("danger");
+    rerender(<Button variant="primary">{"primary"}</Button>);
+    expect(screen.getByRole("button")).toHaveTextContent("primary");
   });
 });

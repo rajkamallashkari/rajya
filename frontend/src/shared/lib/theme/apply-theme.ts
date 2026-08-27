@@ -37,8 +37,6 @@ const SIZE_VAR = "--app-size-multiplier";
 const WEIGHT_VAR = "--app-font-weight";
 const LINE_HEIGHT_VAR = "--app-line-height";
 const LETTER_SPACING_VAR = "--app-letter-spacing";
-const DENSITY_Y_VAR = "--space-list-y";
-const DENSITY_X_VAR = "--space-list-x";
 const THEME_COLOR_META = "theme-color";
 
 export function mergeSemanticPalette(
@@ -106,8 +104,10 @@ export function applyTheme(
   setVar(style, WEIGHT_VAR, String(typography.fontWeight));
   setVar(style, LINE_HEIGHT_VAR, String(typography.lineHeight));
   setVar(style, LETTER_SPACING_VAR, typography.letterSpacing);
-  setVar(style, DENSITY_Y_VAR, density.listY);
-  setVar(style, DENSITY_X_VAR, density.listX);
+
+  for (const [name, value] of Object.entries(density)) {
+    setVar(style, name, value);
+  }
 
   updateThemeColorMeta(doc, palette["--surface-app"]);
 

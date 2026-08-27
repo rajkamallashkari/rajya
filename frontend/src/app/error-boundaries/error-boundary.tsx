@@ -39,7 +39,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return (
       <div
         role="alert"
-        className="flex min-h-[var(--touch-target-min)] flex-col items-center justify-center gap-[var(--space-4)] bg-[var(--surface-app)] p-[var(--space-6)] text-[var(--text-primary)]"
+        className="flex min-h-[100dvh] flex-col items-center justify-center gap-[var(--control-gap)] bg-[var(--surface-app)] p-[var(--inset-page)] text-[var(--text-primary)]"
       >
         <p>{i18n.t(titleKey)}</p>
         <Button type="button" onClick={this.handleRetry}>

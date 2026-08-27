@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   applyTheme,
   defaultThemeInput,
@@ -8,23 +16,51 @@ import {
   type ResolvedTheme,
 } from "@/shared/lib/theme";
 
-const ThemeContext = createContext<ResolvedTheme>(FALLBACK_RESOLVED_THEME);
+export interface ThemeControls {
+  input: ApplyThemeInput;
+  resolved: ResolvedTheme;
+  setInput: (patch: Partial<ApplyThemeInput>) => void;
+}
+
+const ThemeContext = createContext<ThemeControls | null>(null);
 const DEFAULT_INPUT = defaultThemeInput();
 
 export function useResolvedTheme(): ResolvedTheme {
-  return useContext(ThemeContext);
+  return useContext(ThemeContext)?.resolved ?? FALLBACK_RESOLVED_THEME;
+}
+
+export function useThemeControls(): ThemeControls {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) {
+    throw new Error("useThemeControls requires ThemeProvider");
+  }
+  return ctx;
 }
 
 export function ThemeProvider({
   children,
-  input = DEFAULT_INPUT,
+  input: inputProp = DEFAULT_INPUT,
 }: {
   children: ReactNode;
   input?: ApplyThemeInput;
 }) {
+  const [input, setInputState] = useState<ApplyThemeInput>(inputProp);
   const [resolved, setResolved] = useState<ResolvedTheme>(() =>
-    resolveTheme(input.theme, window.matchMedia.bind(window)),
+    resolveTheme(inputProp.theme, window.matchMedia.bind(window)),
   );
+
+  useEffect(() => {
+    setInputState(inputProp);
+  }, [inputProp]);
+
+  const setInput = useCallback((patch: Partial<ApplyThemeInput>): void => {
+    setInputState((prev) => ({
+      ...prev,
+      ...patch,
+      sliders: { ...prev.sliders, ...patch.sliders },
+      adminOverrides: patch.adminOverrides ?? prev.adminOverrides,
+    }));
+  }, []);
 
   const applied = useMemo(() => input, [input]);
 
@@ -52,5 +88,10 @@ export function ThemeProvider({
     };
   }, [applied]);
 
-  return <ThemeContext.Provider value={resolved}>{children}</ThemeContext.Provider>;
+  const value = useMemo(
+    () => ({ input: applied, resolved, setInput }),
+    [applied, resolved, setInput],
+  );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

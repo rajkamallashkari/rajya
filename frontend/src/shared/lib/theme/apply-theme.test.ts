@@ -54,6 +54,9 @@ describe("applyTheme", () => {
     expect(document.documentElement.style.getPropertyValue("--space-list-y")).toBe(
       "var(--space-2)",
     );
+    expect(document.documentElement.style.getPropertyValue("--control-pad-x")).toBe(
+      "var(--space-3)",
+    );
     expect(meta.getAttribute("content")).toBe("#0E1621");
     expect(window.localStorage.getItem(THEME_CACHE_KEY)).toContain("compact");
   });

@@ -5,7 +5,7 @@ import { en } from "./catalog";
 
 describe("i18n", () => {
   it("resolves the app version", () => {
-    expect(resolveAppVersion(undefined)).toBe("0.4.0");
+    expect(resolveAppVersion(undefined)).toBe("1.1.0");
     expect(resolveAppVersion("9.9.9")).toBe("9.9.9");
   });
 

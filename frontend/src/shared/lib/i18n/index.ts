@@ -2,7 +2,7 @@ import i18n, { type i18n as I18nInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
 import { DEFAULT_LOCALE, loadCatalog, type Catalog } from "./catalog";
 
-export const DEFAULT_APP_VERSION = "0.4.0";
+export const DEFAULT_APP_VERSION = "1.1.0";
 
 export function resolveAppVersion(value: string | undefined): string {
   return value ?? DEFAULT_APP_VERSION;

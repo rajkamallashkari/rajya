@@ -10,12 +10,17 @@ export { parseThemeCache, readThemeCache, resolveTheme, writeThemeCache } from "
 export { accentContrast, contrastRatio, relativeLuminance, sufficientContrast } from "./contrast";
 export {
   ACCENT_BOOT_HEX,
+  ACCENT_CONTRAST_NEAR_BLACK,
+  ACCENT_CONTRAST_WHITE,
   DEFAULT_DENSITY,
   DEFAULT_THEME,
+  DENSITY_VALUES,
+  DENSITY_VARS,
   FALLBACK_RESOLVED_THEME,
   SEMANTIC_DEFAULTS,
   SEMANTIC_TOKENS,
   THEME_CACHE_KEY,
+  THEME_VALUES,
   type Density,
   type ResolvedTheme,
   type SemanticOverrides,

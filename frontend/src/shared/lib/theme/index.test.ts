@@ -4,6 +4,7 @@ import {
   DEFAULT_DENSITY,
   DEFAULT_THEME,
   FALLBACK_RESOLVED_THEME,
+  DENSITY_VARS,
   SEMANTIC_DEFAULTS,
   SEMANTIC_TOKENS,
   THEME_CACHE_KEY,
@@ -19,6 +20,7 @@ describe("theme barrel", () => {
     expect(THEME_CACHE_KEY).toContain("rajya");
     expect(SEMANTIC_TOKENS.length).toBeGreaterThan(0);
     expect(SEMANTIC_DEFAULTS.light["--accent"]).toBe(ACCENT_BOOT_HEX);
+    expect(DENSITY_VARS.compact["--control-pad-x"]).toBe("var(--space-3)");
     expect(DEFAULT_SLIDERS.size).toBe(0);
     expect(TYPOGRAPHY.sliderMin).toBe(-5);
   });

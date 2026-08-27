@@ -10,27 +10,30 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 0.4 |
-| **Next session** | 1.1 |
+| **Last completed** | 1.1 |
+| **Next session** | 1.2 |
 | **Phase** | P1 — Design system & chat shell |
-| **Sessions remaining in phase** | 5 (1.1 → 1.5) |
+| **Sessions remaining in phase** | 4 (1.2 → 1.5) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 1.1 — Primitives on Radix, `/dev/gallery`**
+**Session 1.2 — `MessageBubble`, grouping, formatting, ticks, system messages**
 
-Deliverable: All shared UI primitives built on Radix + shadcn, a `/dev/gallery`
-route showing every component in isolation.
+Deliverable: `MessageBubble`, `MessageGroup`, `MessageContent` with the symmetric
+formatting set and spoilers, `TickIndicator`, `SystemMessage`, dividers.
 
-Docs: `DESIGN_SYSTEM.md §4 (component list), §2, §7`
+Docs: `DESIGN_SYSTEM.md §4 (incl. the DS-6 formatting table), §5.1, §5.2; AUDIT §1.2`
 
 Legacy to read:
-- `legacy/botverse/src/components/shared/`
+- `legacy/botverse/src/components/chat/MessageBubble.tsx`
+- `legacy/botverse/src/components/chat/MessageView.tsx`
+- `legacy/botverse/src/components/chat/SystemEventBubble.tsx`
+- `legacy/botverse/src/components/chat/CallMessageBubble.tsx`
 
-Extract: inventory the 291 hand-rolled buttons being replaced — understand
-patterns to supersede, not code to copy.
+Extract: grouping rules, jumbo-emoji branch, tick rendering, **and the
+incoming-formatted / sent-plain inconsistency being fixed**.
 
 ---
 
@@ -42,6 +45,7 @@ patterns to supersede, not code to copy.
 | 0.2 | Rails layers, full schema, factories | — |
 | 0.3 | OpenAPI pipeline, health endpoints, Tier 1 config stack, CI guards | — |
 | 0.4 | Vite scaffold, token layers, applyTheme, deriveTypography, i18next, lint rules, Vitest gate | — |
+| 1.1 | Primitives on Radix, `/dev/gallery` | Shared UI kit on Radix; gallery at `/dev/gallery`. Visual values derive from token layers so density/settings can restyle without component variants. |
 
 ---
 

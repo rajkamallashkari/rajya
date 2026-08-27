@@ -94,7 +94,29 @@ export const SEMANTIC_DEFAULTS: Record<ResolvedTheme, Record<SemanticToken, stri
   },
 };
 
-export const DENSITY_VARS: Record<Density, { listY: string; listX: string }> = {
-  comfortable: { listY: "var(--space-3)", listX: "var(--space-4)" },
-  compact: { listY: "var(--space-2)", listX: "var(--space-3)" },
+export const DENSITY_VARS: Record<Density, Record<string, string>> = {
+  comfortable: {
+    "--space-list-y": "var(--space-3)",
+    "--space-list-x": "var(--space-4)",
+    "--control-pad-x": "var(--space-4)",
+    "--control-pad-y": "var(--space-2)",
+    "--control-pad-x-sm": "var(--space-3)",
+    "--control-pad-y-sm": "var(--space-1)",
+    "--control-pad-x-lg": "var(--space-5)",
+    "--control-pad-y-lg": "var(--space-3)",
+    "--control-gap": "var(--space-3)",
+    "--control-gap-tight": "var(--space-2)",
+  },
+  compact: {
+    "--space-list-y": "var(--space-2)",
+    "--space-list-x": "var(--space-3)",
+    "--control-pad-x": "var(--space-3)",
+    "--control-pad-y": "var(--space-1)",
+    "--control-pad-x-sm": "var(--space-2)",
+    "--control-pad-y-sm": "var(--space-0_5)",
+    "--control-pad-x-lg": "var(--space-4)",
+    "--control-pad-y-lg": "var(--space-2)",
+    "--control-gap": "var(--space-2)",
+    "--control-gap-tight": "var(--space-1)",
+  },
 };

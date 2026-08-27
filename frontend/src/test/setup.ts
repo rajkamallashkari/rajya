@@ -38,11 +38,49 @@ Object.defineProperty(globalThis, "localStorage", { configurable: true, value: s
 
 afterEach(() => {
   cleanup();
+  window.history.replaceState({}, "", "/");
 });
 
 beforeAll(async () => {
   await initI18n({ catalog: en });
 });
+
+if (typeof Element !== "undefined") {
+  const proto = Element.prototype as Element & {
+    hasPointerCapture?: (pointerId: number) => boolean;
+    setPointerCapture?: (pointerId: number) => void;
+    releasePointerCapture?: (pointerId: number) => void;
+  };
+  proto.hasPointerCapture ??= () => false;
+  proto.setPointerCapture ??= () => undefined;
+  proto.releasePointerCapture ??= () => undefined;
+  proto.scrollIntoView ??= () => undefined;
+}
+
+if (typeof window.ResizeObserver !== "function") {
+  window.ResizeObserver = class {
+    public observe(): void {
+      return undefined;
+    }
+    public unobserve(): void {
+      return undefined;
+    }
+    public disconnect(): void {
+      return undefined;
+    }
+  };
+}
+
+if (typeof window.PointerEvent !== "function") {
+  class PointerEventShim extends MouseEvent {
+    public readonly pointerId: number;
+    public constructor(type: string, params: MouseEventInit & { pointerId?: number } = {}) {
+      super(type, params);
+      this.pointerId = params.pointerId ?? 1;
+    }
+  }
+  Object.defineProperty(window, "PointerEvent", { configurable: true, value: PointerEventShim });
+}
 
 if (typeof window.matchMedia !== "function") {
   Object.defineProperty(window, "matchMedia", {
