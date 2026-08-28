@@ -11,10 +11,13 @@ export const ICON_CLASS = "h-[var(--icon-size)] w-[var(--icon-size)]";
 export const WEIGHT_EMPHASIS = "[font-weight:var(--font-weight-emphasis)]";
 
 export const MENU_CONTENT_CLASS =
-  "z-[var(--z-menu)] min-w-[var(--menu-min-width)] overflow-hidden rounded-[var(--control-radius)] border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-[var(--space-1)] text-[var(--text-primary)] shadow-[var(--elevation-2)]";
+  "z-[var(--z-menu)] w-max min-w-[var(--menu-min-width)] overflow-hidden rounded-[var(--control-radius)] border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-[var(--space-1)] text-[var(--text-primary)] shadow-[var(--elevation-2)]";
 
 export const MENU_ITEM_CLASS =
-  "flex min-h-[var(--control-height)] cursor-default select-none items-center rounded-[var(--radius-sm)] px-[var(--control-pad-x-sm)] outline-none data-[highlighted]:bg-[var(--surface-hover)] data-[disabled]:pointer-events-none data-[disabled]:opacity-[var(--opacity-disabled)]";
+  "flex min-h-[var(--control-height)] cursor-default select-none items-center justify-start whitespace-nowrap text-left rounded-[var(--radius-sm)] px-[var(--control-pad-x-sm)] outline-none data-[highlighted]:bg-[var(--surface-hover)] data-[disabled]:pointer-events-none data-[disabled]:opacity-[var(--opacity-disabled)]";
+
+export const MENU_ITEM_DANGER_CLASS =
+  "text-[var(--status-danger)] data-[highlighted]:bg-[var(--status-danger-subtle)]";
 
 export const OVERLAY_SCRIM = "fixed inset-0 bg-[var(--overlay-scrim)] ui-scrim";
 

@@ -15,11 +15,13 @@ export {
   ContextMenuTrigger,
 } from "./context-menu";
 export { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "./dialog";
+export { DismissLayer } from "./dismiss-layer";
 export { Drawer, DrawerContent, DrawerTitle, DrawerTrigger } from "./drawer";
 export {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./dropdown-menu";
 export { EmptyState } from "./empty-state";

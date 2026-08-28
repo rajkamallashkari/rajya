@@ -4,6 +4,7 @@ import { TickIndicator } from "@/features/messages/components/tick-indicator";
 import type { BubbleRole, MessageSide, TickStatus } from "@/features/messages/model/constants";
 import { showsTimestampByDefault } from "@/features/messages/model/grouping";
 import { getJumboInfo } from "@/features/messages/model/jumbo-emoji";
+import { useLongPress } from "@/shared/hooks/use-long-press";
 import { cn } from "@/shared/lib/cn";
 import { Avatar } from "@/shared/ui";
 
@@ -39,8 +40,10 @@ export function formatMessageTime(iso: string, locale: string): string {
 export function MessageBubble({
   body,
   createdAt,
+  lifted = false,
   locale = "en",
   onMentionClick,
+  onOpenMenu,
   onRetry,
   reserveAvatar,
   role = "single",
@@ -52,8 +55,10 @@ export function MessageBubble({
 }: {
   body: string;
   createdAt?: string;
+  lifted?: boolean;
   locale?: string;
   onMentionClick?: (handle: string) => void;
+  onOpenMenu?: (point: { clientX: number; clientY: number }) => void;
   onRetry?: () => void;
   reserveAvatar?: boolean;
   role?: BubbleRole;
@@ -71,6 +76,7 @@ export function MessageBubble({
     side === "sent" ? "bg-[var(--bubble-sent-fill)]" : "bg-[var(--bubble-received-fill)]";
   const keepAvatarSlot = reserveAvatar ?? (side === "received" && !showAvatar);
   const showTicks = side === "sent" && Boolean(status);
+  const longPress = useLongPress(onOpenMenu ?? null, { enabled: Boolean(onOpenMenu) });
 
   return (
     <div
@@ -78,13 +84,26 @@ export function MessageBubble({
         "group/msg flex max-w-[var(--bubble-max-width)] items-end gap-[var(--space-1_5)]",
         side === "sent" ? "ml-auto flex-row-reverse" : "mr-auto",
         queued && "opacity-[var(--opacity-queued)]",
+        lifted && "relative z-[var(--z-popover)]",
       )}
+      data-lifted={lifted ? "true" : "false"}
       data-message-bubble=""
       data-role={role}
       data-side={side}
       data-status={status ?? "none"}
+      onContextMenu={(event) => {
+        longPress.onContextMenu(event);
+        if (onOpenMenu) {
+          event.preventDefault();
+          onOpenMenu({ clientX: event.clientX, clientY: event.clientY });
+        }
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onPointerCancel={longPress.onPointerCancel}
+      onPointerDown={longPress.onPointerDown}
+      onPointerMove={longPress.onPointerMove}
+      onPointerUp={longPress.onPointerUp}
     >
       {side === "received" && showAvatar ? (
         <Avatar className="size-[var(--bubble-avatar-size)]" name={senderName} src={senderSrc} />
@@ -98,6 +117,7 @@ export function MessageBubble({
             jumbo
               ? "bg-transparent py-[var(--space-2)]"
               : cn(fill, RADIUS[side][role], "px-[var(--space-4)] py-[var(--space-2)]"),
+            lifted && "shadow-[var(--elevation-3)]",
           )}
           data-jumbo={jumbo ? "true" : "false"}
           data-side={side}

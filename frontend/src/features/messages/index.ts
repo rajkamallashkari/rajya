@@ -2,6 +2,7 @@ export { CodeBlock } from "./components/code-block";
 export { DateDivider } from "./components/date-divider";
 export { MessageBubble, formatMessageTime } from "./components/message-bubble";
 export { MessageContent } from "./components/message-content";
+export { MessageContextMenu, type MessageMenuActions } from "./components/message-context-menu";
 export { MessageGroup, type GroupMessage } from "./components/message-group";
 export { SystemMessage } from "./components/system-message";
 export { TickIndicator } from "./components/tick-indicator";

@@ -1,11 +1,14 @@
 import { Star } from "lucide-react";
-import { type CSSProperties, type ReactNode } from "react";
+import { type CSSProperties, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useThemeControls } from "@/app/theme-provider";
+import { Composer, type VoiceRecorderResult } from "@/features/composer";
+import { ChatListItem } from "@/features/conversations";
 import {
   DateDivider,
   MessageBubble,
   MessageContent,
+  MessageContextMenu,
   MessageGroup,
   SystemMessage,
   TickIndicator,
@@ -79,6 +82,10 @@ import {
 } from "@/shared/ui";
 import { ICON_CLASS, PROGRESS_MAX, SCROLL_DEMO_ROWS } from "@/shared/ui/metrics";
 
+export function galleryAction(): void {}
+
+export async function galleryAsyncAction(): Promise<void> {}
+
 export const GALLERY_SECTION_KEYS = [
   "button",
   "icon_button",
@@ -113,6 +120,9 @@ export const GALLERY_SECTION_KEYS = [
   "date_divider",
   "unread_divider",
   "typing_bubble",
+  "composer",
+  "chat_list_item",
+  "message_context_menu",
 ] as const;
 
 const THEME_CHOICES = ["light", "dark", "system"] as const;
@@ -176,6 +186,15 @@ function CombinationFrame({ theme, density }: { theme: ResolvedTheme; density: D
             createdAt="2026-08-27T12:00:00.000Z"
             side="sent"
             status="read"
+          />
+        </div>
+        <div className="mt-[var(--space-3)]">
+          <ChatListItem
+            lastActivity={{ kind: "text", text: t("gallery.messages.list_preview") }}
+            name={t("gallery.messages.sender")}
+            presence="online"
+            timestampLabel={t("gallery.messages.list_time")}
+            unreadCount={2}
           />
         </div>
       </div>
@@ -541,6 +560,160 @@ export function GalleryPage() {
       <Section sectionKey="typing_bubble">
         <TypingBubble senderName={t("gallery.messages.sender")} />
       </Section>
+
+      <Section sectionKey="composer">
+        <GalleryComposer />
+      </Section>
+
+      <Section sectionKey="chat_list_item">
+        <div className="flex flex-col gap-[var(--space-2)]">
+          <ChatListItem
+            isGroup
+            lastActivity={{
+              kind: "text",
+              senderName: t("gallery.messages.sender"),
+              text: t("gallery.messages.list_preview"),
+            }}
+            name={t("gallery.messages.sender")}
+            pinned
+            presence="online"
+            timestampLabel={t("gallery.messages.list_time")}
+            unreadCount={12}
+          />
+          <ChatListItem
+            lastActivity={{ kind: "typing", text: "" }}
+            muted
+            name={t("gallery.avatar.name")}
+            timestampLabel={t("gallery.messages.list_time")}
+          />
+          <ChatListItem
+            lastActivity={{ kind: "system", text: t("messages.system.icon_changed") }}
+            markedUnread
+            name={t("gallery.avatar.single")}
+            timestampLabel={t("gallery.messages.list_time")}
+          />
+          <ChatListItem
+            lastActivity={{ kind: "media", mediaType: "image", text: "" }}
+            name={t("gallery.messages.sender")}
+            timestampLabel={t("gallery.messages.list_time")}
+          />
+        </div>
+      </Section>
+
+      <Section sectionKey="message_context_menu">
+        <GalleryMessageMenu />
+      </Section>
     </main>
+  );
+}
+
+const GALLERY_VOICE_PEAKS = [
+  0.12, 0.28, 0.55, 0.9, 0.4, 0.22, 0.7, 0.95, 0.6, 0.35, 0.18, 0.5, 0.82, 0.45, 0.3, 0.75, 0.88,
+  0.2, 0.42, 0.65, 0.92, 0.38, 0.15, 0.58, 0.8, 0.48, 0.25, 0.7, 0.33, 0.6, 0.85, 0.44,
+];
+
+const GALLERY_VOICE: VoiceRecorderResult = {
+  canResume: false,
+  cancel: galleryAction,
+  durationMs: 4200,
+  finalPeaks: [],
+  mimeType: "audio/webm",
+  pause: galleryAction,
+  peaks: GALLERY_VOICE_PEAKS,
+  previewBlob: null,
+  resume: galleryAction,
+  start: galleryAsyncAction,
+  state: "recording",
+  stop: galleryAction,
+};
+
+const GALLERY_VOICE_PREVIEW: VoiceRecorderResult = {
+  ...GALLERY_VOICE,
+  canResume: true,
+  durationMs: 65000,
+  finalPeaks: GALLERY_VOICE_PEAKS,
+  previewBlob: new Blob(["gallery-voice"], { type: "audio/webm" }),
+  state: "paused",
+};
+
+function GalleryComposer() {
+  const { t } = useTranslation();
+  const [text, setText] = useState("");
+  const [reply, setReply] = useState(true);
+  const [scheduled, setScheduled] = useState(t("gallery.composer.schedule"));
+  const [files, setFiles] = useState([{ id: "g1", name: t("gallery.composer.attachment") }]);
+  return (
+    <div className="flex flex-col gap-[var(--space-4)]">
+      <Composer
+        attachments={files}
+        onAttach={() =>
+          setFiles((current) => [...current, { id: `g${current.length + 1}`, name: t("gallery.composer.attachment") }])
+        }
+        onChange={setText}
+        onClearSchedule={() => setScheduled("")}
+        onDismissReply={() => setReply(false)}
+        onOpenSchedule={galleryAction}
+        onRemoveAttachment={(id) => setFiles((current) => current.filter((file) => file.id !== id))}
+        onRewrite={galleryAction}
+        onSchedule={() => setScheduled(t("gallery.composer.schedule"))}
+        onSend={() => setText("")}
+        replyTo={
+          reply
+            ? {
+                preview: t("gallery.messages.reply_preview"),
+                senderName: t("gallery.messages.sender"),
+              }
+            : null
+        }
+        scheduledLabel={scheduled || null}
+        value={text}
+      />
+      <Composer
+        defaultValue={t("gallery.messages.body")}
+        editing
+        onDismissEdit={galleryAction}
+        onSend={galleryAction}
+      />
+      <Composer onSend={galleryAction} onVoiceSend={galleryAction} voice={GALLERY_VOICE} />
+      <Composer onSend={galleryAction} onVoiceSend={galleryAction} voice={GALLERY_VOICE_PREVIEW} />
+    </div>
+  );
+}
+
+function GalleryMessageMenu() {
+  const { t } = useTranslation();
+  const [menu, setMenu] = useState<{ clientX: number; clientY: number } | null>(null);
+  return (
+    <div>
+      <MessageBubble
+        body={t("gallery.messages.body")}
+        createdAt="2026-08-27T12:00:00.000Z"
+        lifted={menu !== null}
+        onOpenMenu={setMenu}
+        side="sent"
+        status="delivered"
+      />
+      {menu ? (
+        <MessageContextMenu
+          actions={{
+            canEdit: true,
+            hasText: true,
+            isMine: true,
+            onCopy: galleryAction,
+            onEdit: galleryAction,
+            onForward: galleryAction,
+            onInfo: galleryAction,
+            onPin: galleryAction,
+            onReact: galleryAction,
+            onReply: galleryAction,
+            onSave: galleryAction,
+            onUnsend: galleryAction,
+          }}
+          onClose={() => setMenu(null)}
+          x={menu.clientX}
+          y={menu.clientY}
+        />
+      ) : null}
+    </div>
   );
 }

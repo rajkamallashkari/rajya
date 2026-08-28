@@ -1,0 +1,13 @@
+@keyframes rajya-voice-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: var(--opacity-typing-dot-min);
+  }
+}
+
+.voice-pulse {
+  animation: rajya-voice-pulse var(--motion-slow) ease-in-out infinite;
+}

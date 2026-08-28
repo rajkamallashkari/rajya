@@ -31,6 +31,10 @@
     "theme_legend": "Theme",
     "density_legend": "Density",
     "combinations": "Theme and density",
+    "composer": {
+      "attachment": "notes.pdf",
+      "schedule": "Tomorrow 09:00"
+    },
     "theme": {
       "light": "Light",
       "dark": "Dark",
@@ -73,7 +77,10 @@
       "system_message": "System message",
       "date_divider": "Date divider",
       "unread_divider": "Unread divider",
-      "typing_bubble": "Typing bubble"
+      "typing_bubble": "Typing bubble",
+      "composer": "Composer",
+      "chat_list_item": "Chat list item",
+      "message_context_menu": "Message menu"
     },
     "button": {
       "primary": "Primary",
@@ -179,7 +186,58 @@
       "sender": "Ada Lovelace",
       "queued": "On its way",
       "failed": "Could not send",
-      "body": "Hello from the gallery"
+      "body": "Hello from the gallery",
+      "reply_preview": "Are you free later?",
+      "list_preview": "See you at the gate",
+      "list_time": "14:02"
+    }
+  },
+  "composer": {
+    "attach": "Attach",
+    "attach_files": "Attach files",
+    "clear_schedule": "Clear schedule",
+    "discard_voice": "Discard voice note",
+    "dismiss_edit": "Dismiss edit",
+    "dismiss_reply": "Dismiss reply",
+    "editing": "Editing message",
+    "emoji": "Emoji",
+    "mic": "Record voice note",
+    "pause_voice": "Pause recording",
+    "placeholder": "Type a message",
+    "placeholder_edit": "Edit your message",
+    "preview_clock": "{{elapsed}} / {{total}}",
+    "preview_voice": "Preview voice note",
+    "recording": "Recording",
+    "remove_attachment": "Remove {{name}}",
+    "replying": "Replying to {{name}}",
+    "resume_voice": "Resume recording",
+    "rewrite": "Rewrite",
+    "schedule": "Schedule message",
+    "scheduled": "Scheduled for {{when}}",
+    "seek_preview": "Seek voice preview",
+    "send": "Send",
+    "send_silent": "Send silently",
+    "send_voice": "Send voice note",
+    "stop_preview": "Stop preview"
+  },
+  "conversations": {
+    "typing": "typing…",
+    "muted": "Muted",
+    "pinned": "Pinned",
+    "unread": "Unread",
+    "mark_read": "Mark as read",
+    "mark_unread": "Mark as unread",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "archive": "Archive",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "open": "Open conversation",
+    "media": {
+      "image": "Photo",
+      "video": "Video",
+      "audio": "Voice message",
+      "file": "File"
     }
   },
   "messages": {
@@ -200,6 +258,20 @@
     "mention": "@{{handle}}",
     "typing": "Someone is typing",
     "unread": "Unread",
+    "menu": {
+      "retry": "Retry",
+      "reply": "Reply",
+      "edit": "Edit",
+      "forward": "Forward",
+      "copy": "Copy",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "save": "Save",
+      "unsave": "Unsave",
+      "info": "Info",
+      "unsend": "Unsend",
+      "react": "React with {{emoji}}"
+    },
     "system": {
       "member_joined": "{{name}} joined",
       "member_left": "{{name}} left",

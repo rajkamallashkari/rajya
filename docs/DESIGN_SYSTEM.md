@@ -367,17 +367,42 @@ from "real app" on mobile.
 
 ### 5.2 Composer
 
-Auto-growing textarea capped at ~40% viewport height. Attachment, emoji, and
-voice actions inline. Reply and edit contexts appear as a dismissible strip above
-the input, sharing the composer's surface so it reads as one control.
+**Locked chrome (DS-13).** A clean three-element row, always:
 
-The send button morphs between mic and send based on whether there's content —
-a shared-element transition, not a swap. Voice recording expands in place with a
-live waveform and a slide-to-cancel gesture.
+`[ mic ] [ auto-growing textarea ] [ send ]`
+
+The textarea caps at ~40% viewport height. There is **no** mic↔send morph, **no**
+fourth chrome button (no paperclip, no emoji, no attach on the left). Emoji lives
+in the existing picker sheet, not as composer chrome.
+
+**Send long-press / right-click** (400 ms, same threshold as bubble menus) opens
+one menu with four actions, in this order: attach files, schedule, AI rewrite,
+silent send (**NR-23**). A tap on send always sends (or schedules, if a time is
+armed). Rewrite is the composer's AI affordance (§9) — not a second button on the
+row.
+
+**Mic tap** replaces the **entire** three-element row with the voice recorder.
+That surface supports pause, resume, preview playback, cancel, and send **at any
+point** (during recording or after pause). Leaving voice restores the three-element
+row. Cancel is an explicit control on the recorder, not a slide-off-the-row
+gesture. The waveform sits above the duration. While a preview plays (or after a
+seek), played bars highlight and the clock shows `elapsed / total`
+(for example `0:01 / 0:04`). Tap the waveform to seek.
+
+**Above the row**, sharing the composer surface so it reads as one control:
+
+- Reply and edit dismissible strips (unchanged)
+- A small schedule indicator while a send is armed, until the message is actually
+  sent (tap to edit the time, dismiss to clear)
+- Removable chips for attached files (caption stays in the textarea)
 
 **Composer state survives navigation.** Drafts persist per conversation in
 IndexedDB, restored on return. This exists today and is worth calling out because
 it's easy to lose in a rebuild.
+
+`features/composer` implements this chrome. Do not revert to a mic↔send morph
+or put paperclip/emoji back on the row. Do not restyle it inside the 1.4
+navigation session.
 
 ### 5.3 Chat list
 
@@ -590,10 +615,12 @@ surprises someone. **Resolved (DS-1):** bot profiles carry a clear line —
 bot conversation.
 
 **AI actions need a consistent affordance.** Suggest-reply, rewrite, and translate
-are currently scattered. Target: one accent-tinted "AI" affordance in the composer
-and message context menu, with streaming responses rendering token-by-token into
-the destination rather than into a modal. Anything AI-generated before the user
-commits it is visually marked as provisional.
+are currently scattered. Target: rewrite lives in the composer's send long-press
+menu (**DS-13**); suggest-reply and translate live in the message context menu —
+one accent-tinted "AI" treatment, not a second composer button. Streaming
+responses render token-by-token into the destination rather than into a modal.
+Anything AI-generated before the user commits it is visually marked as
+provisional.
 
 ---
 
@@ -615,6 +642,7 @@ commits it is visually marked as provisional.
 | **DS-10** | New feature components | **Must reuse existing primitives and interaction patterns.** A feature that needs a new interaction pattern needs a design decision first (§4) |
 | **DS-11** | Brand | **Rajya** — see §11. Reuse legacy light/dark logo assets until replaced |
 | **DS-12** | Ephemeral message features | **Do not ship.** No disappearing messages (NR-16), no view-once media (NR-17). Cut in Step 5 |
+| **DS-13** | Composer chrome | **Three-element row** — mic, textarea, send. Send long-press/right-click: attach, schedule, rewrite, silent send. Mic replaces the whole row with the voice recorder (pause, resume, preview, cancel, send at any point). Schedule indicator and attachment chips sit above the row. **No mic↔send morph.** See §5.2 |
 
 ### Still open
 

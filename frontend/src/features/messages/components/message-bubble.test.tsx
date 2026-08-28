@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -93,6 +93,14 @@ describe("MessageBubble", () => {
     rerender(<MessageBubble body="🎉" side="sent" status="read" />);
     expect(document.querySelector("[data-jumbo='true']")).not.toBeNull();
     expect(document.querySelector("[data-tail]")).toBeNull();
+
+    const onOpenMenu = vi.fn();
+    rerender(
+      <MessageBubble body="menu" lifted onOpenMenu={onOpenMenu} side="received" />,
+    );
+    expect(document.querySelector("[data-lifted='true']")).not.toBeNull();
+    fireEvent.contextMenu(document.querySelector("[data-message-bubble]") as HTMLElement);
+    expect(onOpenMenu).toHaveBeenCalled();
 
     expect(formatMessageTime("2026-08-27T15:04:00.000Z", "en-GB")).toMatch(/\d{2}:\d{2}/);
   });

@@ -10,29 +10,25 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 1.2 |
-| **Next session** | 1.3 |
+| **Last completed** | 1.3 |
+| **Next session** | 1.4 |
 | **Phase** | P1 — Design system & chat shell |
-| **Sessions remaining in phase** | 3 (1.3 → 1.5) |
+| **Sessions remaining in phase** | 2 (1.4 → 1.5) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 1.3 — `Composer`, voice UI, long-press, context menu, `ChatListItem`**
+**Session 1.4 — `useLayer` navigation, error boundaries, empty/loading/error states, MSW handlers, the minimal shortcut set**
 
-Deliverable: `Composer`, voice UI, long-press, context menu, `ChatListItem` with
-swipe, pin and unread affordances.
+Deliverable: `useLayer` navigation, error boundaries, empty/loading/error states,
+MSW handlers, the minimal shortcut set.
 
-Docs: `DESIGN_SYSTEM §5.1, §5.3, §7; AUDIT §1.2`
+Docs: `DESIGN_SYSTEM §6, §5.4; TARGET §5.5; AUDIT Q-20`
 
 Legacy to read:
-- `legacy/botverse/src/components/chat/ChatInput.tsx`
-- `legacy/botverse/src/components/chat/VoiceRecorder.tsx`
-- `legacy/botverse/src/components/chat/MessageContextMenu.tsx`
-- `legacy/botverse/src/hooks/useLongPress.ts`
-- `legacy/botverse/src/hooks/useVoiceRecorder.ts`
-- `legacy/botverse/src/hooks/usePressHold.ts`
+- `legacy/botverse/src/navigation/`
+- `legacy/botverse/src/stores/uiStore.ts` — the layer model being formalised
 
 ---
 
@@ -46,6 +42,7 @@ Legacy to read:
 | 0.4 | Vite scaffold, token layers, applyTheme, deriveTypography, i18next, lint rules, Vitest gate | — |
 | 1.1 | Primitives on Radix, `/dev/gallery` | Shared UI kit on Radix; gallery at `/dev/gallery`. Visual values derive from token layers so density/settings can restyle without component variants. |
 | 1.2 | Message thread surface: bubble, group, content, ticks, system, dividers | Symmetric DS-6 formatting (sent = received, human = bot); spoilers; jumbo emoji; NR-2 ticks; TypingBubble. |
+| 1.3 | Composer, voice UI, long-press, context menu, ChatListItem | **DS-13** three-element row (mic · textarea · send). Send long-press/right-click: attach, schedule, rewrite, silent send. Mic takes over the row for voice. Preview: waveform above the clock, played bars highlighted, `elapsed / total` while playing or after seek. Chips + schedule bar above. Swipe/pin/unread list, lifted bubble + message menu. Presentation only. |
 
 ---
 

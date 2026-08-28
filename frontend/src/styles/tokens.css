@@ -118,6 +118,14 @@
   --bubble-sent-fill: var(--bubble-sent-bg);
   --bubble-received-fill: var(--bubble-received-bg);
   --composer-height: calc(var(--touch-target-min) + var(--space-2));
+  --composer-textarea-max-height: 40dvh;
+  --waveform-height: var(--space-8);
+  --waveform-bar-width: var(--space-0_5);
+  --waveform-idle: color-mix(in srgb, var(--text-secondary) 40%, transparent);
+  --swipe-action-width: var(--touch-target-min);
+  --chat-list-avatar-size: var(--space-12);
+  --pin-icon-size: var(--space-3);
+  --voice-dot-size: var(--space-4);
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
