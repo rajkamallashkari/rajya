@@ -8,6 +8,10 @@ class ConversationMembership < ApplicationRecord
 
   has_many :receipt_marks, foreign_key: :membership_id, inverse_of: :membership, dependent: :destroy
 
+  scope :active, -> { where(status: "active") }
+  scope :unarchived, -> { where(archived_at: nil) }
+  scope :admins_or_owners, -> { where(role: %w[admin owner]) }
+
   validates :account_id, uniqueness: { scope: :conversation_id }
   validates :role, presence: true, inclusion: { in: ROLES }
   validates :status, presence: true, inclusion: { in: STATUSES }
@@ -15,6 +19,18 @@ class ConversationMembership < ApplicationRecord
   validates :last_delivered_position, :last_read_position, :last_seen_position, :unread_count,
             numericality: { greater_than_or_equal_to: 0 }
   validate :seen_position_at_least_read_position
+
+  def active?
+    status == "active"
+  end
+
+  def admin_or_owner?
+    role.in?(%w[admin owner])
+  end
+
+  def owner?
+    role == "owner"
+  end
 
   private
 

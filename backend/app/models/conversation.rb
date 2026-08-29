@@ -19,6 +19,22 @@ class Conversation < ApplicationRecord
   validate :direct_key_only_for_direct
   validate :groups_have_titles
 
+  def self.direct_key_for(left_id, right_id)
+    [ left_id.to_i, right_id.to_i ].sort.join(":")
+  end
+
+  def direct?
+    kind == "direct"
+  end
+
+  def group?
+    kind == "group"
+  end
+
+  def channel?
+    kind == "channel"
+  end
+
   private
 
   def direct_key_only_for_direct

@@ -167,6 +167,7 @@ GEM
       drb (~> 2.0)
       prism (~> 1.5)
     msgpack (1.8.4)
+    n_plus_one_control (0.8.0)
     net-imap (0.6.6)
       date
       net-protocol
@@ -415,6 +416,7 @@ DEPENDENCIES
   factory_bot_rails
   image_processing (~> 1.2)
   jwt
+  n_plus_one_control
   pg (~> 1.1)
   pgvector
   puma (>= 5.0)
@@ -504,6 +506,7 @@ CHECKSUMS
   mini_mime (1.1.5) sha256=8681b7e2e4215f2a159f9400b5816d85e9d8c6c6b491e96a12797e798f8bccef
   minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
   msgpack (1.8.4) sha256=4411c22d350dd1c20250f7eada3cca2695438c2f769cf0782f0cd065d90a3e7b
+  n_plus_one_control (0.8.0) sha256=09da5475051afbc9ec3046ed41bfa7327ffad09b34e5d15d46120cb93ab7d266
   net-imap (0.6.6) sha256=96aa4ee50df3060203e649efc341f53480b791d49e150f2fdebf68beb141a8df
   net-pop (0.1.2) sha256=848b4e982013c15b2f0382792268763b748cce91c9e91e36b0f27ed26420dff3
   net-protocol (0.3.0) sha256=ba310c3d4f1cad46bb1ab20336b06669b1ff8f7c568d9cb9342b32a718547472

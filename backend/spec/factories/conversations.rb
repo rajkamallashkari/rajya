@@ -9,5 +9,10 @@ FactoryBot.define do
       title { nil }
       sequence(:direct_key) { |n| "direct-#{n}" }
     end
+
+    trait :channel do
+      kind { "channel" }
+      sequence(:title) { |n| "Channel #{n}" }
+    end
   end
 end

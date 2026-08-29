@@ -10,6 +10,7 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 require 'rspec/rails'
 require 'pundit/rspec'
 require 'rswag/specs'
+require 'n_plus_one_control/rspec'
 # Add additional requires below this line. Rails is not loaded until this point!
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
@@ -77,10 +78,13 @@ RSpec.configure do |config|
   require Rails.root.join("spec/support/auth_helpers")
   require Rails.root.join("spec/support/webauthn_helpers")
   require Rails.root.join("spec/support/whatsapp_helpers")
+  require Rails.root.join("spec/support/conversation_helpers")
+  require Rails.root.join("spec/support/conversation_permission_matrix")
   config.include AuthHelpers, type: :request
   config.include AuthHelpers, type: :channel
   config.include WebauthnHelpers
   config.include WhatsappHelpers
+  config.include ConversationHelpers
 
   config.before { Rails.cache.clear }
 end

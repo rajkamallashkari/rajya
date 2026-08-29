@@ -109,6 +109,9 @@ en:
     redis_unexpected: "Redis did not answer PONG."
     solid_queue_stale: "No Solid Queue process has heartbeated recently."
 
+  conversations:
+    fallback_title: "Group %{token}"
+
   passkeys:
     default_nickname: "Passkey"
 

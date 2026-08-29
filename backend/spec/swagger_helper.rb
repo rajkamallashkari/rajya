@@ -187,6 +187,48 @@ RSpec.configure do |config|
                 ok: { type: :boolean }
               }
             },
+            MessagePreview: {
+              type: :object,
+              required: %w[id kind created_at],
+              properties: {
+                id: { type: :integer },
+                kind: { type: :string },
+                body: { type: :string, nullable: true },
+                created_at: { type: :string, format: :"date-time" }
+              }
+            },
+            ConversationMember: {
+              type: :object,
+              required: %w[role account],
+              properties: {
+                role: { type: :string },
+                account: { "$ref" => "#/components/schemas/Account" }
+              }
+            },
+            Conversation: {
+              type: :object,
+              required: %w[id kind last_activity_at unread_count members],
+              properties: {
+                id: { type: :integer },
+                kind: { type: :string, enum: %w[direct group channel] },
+                title: { type: :string, nullable: true },
+                description: { type: :string, nullable: true },
+                last_activity_at: { type: :string, format: :"date-time" },
+                unread_count: { type: :integer },
+                muted_until: { type: :string, format: :"date-time", nullable: true },
+                role: { type: :string, nullable: true },
+                peer: { "$ref" => "#/components/schemas/Account", nullable: true },
+                last_message: { "$ref" => "#/components/schemas/MessagePreview", nullable: true },
+                members: { type: :array, items: { "$ref" => "#/components/schemas/ConversationMember" } }
+              }
+            },
+            ConversationList: {
+              type: :object,
+              required: %w[conversations],
+              properties: {
+                conversations: { type: :array, items: { "$ref" => "#/components/schemas/Conversation" } }
+              }
+            },
             Passkey: {
               type: :object,
               required: %w[id created_at],

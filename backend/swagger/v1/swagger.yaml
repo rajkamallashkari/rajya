@@ -168,6 +168,103 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Ok"
+  "/api/v1/conversations":
+    get:
+      summary: List the current account's conversations
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: sidebar
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ConversationList"
+    post:
+      summary: Create a conversation
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: group created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+        '404':
+          description: blocked new DM (NR-1)
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+                account_id:
+                  type: integer
+  "/api/v1/conversations/{id}":
+    get:
+      summary: Show a conversation
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: shown
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+        '404':
+          description: not a member
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+    patch:
+      summary: Update conversation info
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: description only
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
   "/api/v1/users/me/password":
     patch:
       summary: Set or change the current user's password
@@ -1247,6 +1344,87 @@ components:
       properties:
         ok:
           type: boolean
+    MessagePreview:
+      type: object
+      required:
+      - id
+      - kind
+      - created_at
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+        body:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    ConversationMember:
+      type: object
+      required:
+      - role
+      - account
+      properties:
+        role:
+          type: string
+        account:
+          "$ref": "#/components/schemas/Account"
+    Conversation:
+      type: object
+      required:
+      - id
+      - kind
+      - last_activity_at
+      - unread_count
+      - members
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+          enum:
+          - direct
+          - group
+          - channel
+        title:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        last_activity_at:
+          type: string
+          format: date-time
+        unread_count:
+          type: integer
+        muted_until:
+          type: string
+          format: date-time
+          nullable: true
+        role:
+          type: string
+          nullable: true
+        peer:
+          "$ref": "#/components/schemas/Account"
+          nullable: true
+        last_message:
+          "$ref": "#/components/schemas/MessagePreview"
+          nullable: true
+        members:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ConversationMember"
+    ConversationList:
+      type: object
+      required:
+      - conversations
+      properties:
+        conversations:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Conversation"
     Passkey:
       type: object
       required:

@@ -10,23 +10,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 2.5 |
-| **Next session** | 3.1 |
+| **Last completed** | 3.1 |
+| **Next session** | 3.2 |
 | **Phase** | P3 — Conversations & messaging core |
-| **Sessions remaining in phase** | 6 (3.1–3.6) |
+| **Sessions remaining in phase** | 5 (3.2–3.6) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 3.1 — Conversations, memberships, the §3.1 permission matrix in Pundit**
+**Session 3.2 — Position/revision allocators, idempotent send, edit, unsend, forward, react, pin, save, schedule**
 
-Deliverable: Conversations, memberships, the §3.1 permission matrix in Pundit
+Deliverable: Position/revision allocators, idempotent send, edit, unsend, forward, react, pin, save, schedule
 
-Docs: `SCHEMA §3, §3.1, §3.2; GAP §2; AUDIT §2.3 (BR-48…61), §5 (F-1, F-13)`
+Docs: `SCHEMA §4, §5 (columns only); GAP §2; AUDIT §2.1 in full (BR-1…30), §5 (F-3, F-4)`
 
 Legacy to read:
-- `legacy/cognify/app/models/chat.rb` (984 lines — the primary extraction target), `chat_participant.rb`, `app/services/chat_membership.rb`, `app/controllers/api/v1/chats_controller.rb`
+- `legacy/cognify/app/controllers/api/v1/messages_controller.rb` (768 lines), `app/services/chat_sequencer.rb`, `app/models/message.rb`, `message_version.rb`, `reaction.rb`, `pinned_message.rb`, `starred_message.rb`, `scheduled_message.rb`
 
 ---
 
@@ -48,6 +48,7 @@ Legacy to read:
 | 2.3 | Passkeys, App Lock, credential management, last-credential guard | Unauthenticated passkey login plus authenticated register/list/rename/destroy. App Lock overlay (passkey + password) does not mint a JWT. Last-credential guard (S-10 / F-8) spans password, Google, email, and passkeys. Security settings panel and Playwright passkey login wait for P12 / 2.4. |
 | 2.4 | Onboarding, multi-account isolation, NR-9 WhatsApp verification, `blocks` | Onboarding: profile → optional password → optional passkey. One active JWT; IndexedDB/outbox namespaced by `account_id` (D-7). WhatsApp click-to-verify (NR-9 / D-6) with sender number as ground truth and admin fallback; poll until Cable (P4.1). `blocks` 404 for mutual profile invisibility (NR-1); DM/search gates wait for P3/P8. Playwright isolation at `/dev/accounts`. |
 | 2.5 | `sessions` with per-token `jti` (NR-44), device list, nicknames (NR-41) | Each login persists a `sessions` row and embeds `jti`. Individual and bulk revoke; revoked-`jti` cache fails closed. `credentials_epoch` still signs out every device (S-20). Contact nicknames are owner-private and never appear on Account/Me/Session/Block payloads (S-22). Device/nickname settings panels wait for P12.3. |
+| 3.1 | Conversations, memberships, the §3.1 permission matrix in Pundit | Unique `direct_key` closes the DM race (F-13). Sidebar reads denormalized `last_message_id` / `last_activity_at` with a reconcile job (F-4). Pundit enforces SCHEMA §3.1; generated policy spec covers every cell; 403s on conversation HTTP. NR-1 blocks new DMs with 404. Add/remove/leave mutations wait for 6.1; send/edit/pin 403s wait for 3.2. |
 
 ---
 

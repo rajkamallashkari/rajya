@@ -29,4 +29,11 @@ RSpec.describe Conversation do
     expect(conversation).not_to be_valid
     expect(conversation.errors[:title]).to include("can't be blank for non-direct conversations")
   end
+
+  it "builds a sorted direct_key and exposes kind predicates" do
+    expect(described_class.direct_key_for(2, 1)).to eq("1:2")
+    expect(build(:conversation, :direct)).to be_direct
+    expect(build(:conversation)).to be_group
+    expect(build(:conversation, :channel)).to be_channel
+  end
 end

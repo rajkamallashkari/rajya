@@ -60,6 +60,7 @@ Rails.application.routes.draw do
       resources :sessions, only: %i[index destroy] do
         collection { delete :others }
       end
+      resources :conversations, only: %i[index show create update]
       resources :contact_nicknames, only: %i[index update destroy], param: :account_id
       namespace :admin do
         post "users/:user_id/verify_phone", to: "phone_verifications#create"

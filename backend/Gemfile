@@ -84,4 +84,6 @@ end
 
 group :test do
   gem "simplecov", require: false
+  # N+1 assertions on queries (CONVENTIONS.md §2.7 / TARGET §8).
+  gem "n_plus_one_control"
 end

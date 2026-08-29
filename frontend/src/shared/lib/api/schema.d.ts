@@ -291,6 +291,153 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the current account's conversations */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description sidebar */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConversationList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create a conversation */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        kind?: string;
+                        account_id?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description group created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Conversation"];
+                    };
+                };
+                /** @description blocked new DM (NR-1) */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Show a conversation */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description shown */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Conversation"];
+                    };
+                };
+                /** @description not a member */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update conversation info */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        description?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description description only */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Conversation"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/v1/users/me/password": {
         parameters: {
             query?: never;
@@ -1971,6 +2118,36 @@ export interface components {
         };
         Ok: {
             ok: boolean;
+        };
+        MessagePreview: {
+            id: number;
+            kind: string;
+            body?: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        ConversationMember: {
+            role: string;
+            account: components["schemas"]["Account"];
+        };
+        Conversation: {
+            id: number;
+            /** @enum {string} */
+            kind: "direct" | "group" | "channel";
+            title?: string | null;
+            description?: string | null;
+            /** Format: date-time */
+            last_activity_at: string;
+            unread_count: number;
+            /** Format: date-time */
+            muted_until?: string | null;
+            role?: string | null;
+            peer?: components["schemas"]["Account"];
+            last_message?: components["schemas"]["MessagePreview"];
+            members: components["schemas"]["ConversationMember"][];
+        };
+        ConversationList: {
+            conversations: components["schemas"]["Conversation"][];
         };
         Passkey: {
             id: number;
