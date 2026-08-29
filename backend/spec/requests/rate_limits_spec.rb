@@ -18,6 +18,13 @@ RSpec.describe "Auth rate limits", type: :request do
     expect(response.parsed_body.dig("error", "code")).to eq("rate_limited")
   end
 
+  it "returns 429 on passkey authentication once the IP limit is exceeded" do
+    stub_limit(:rate_limit_login_attempts, 1)
+    exceed!("/auth/passkeys/authenticate")
+
+    expect(response).to have_http_status(:too_many_requests)
+  end
+
   it "returns 429 on OTP issuance once the destination limit is exceeded" do
     stub_limit(:rate_limit_otp_issuance, 1)
     exceed!("/auth/otp/request", params: { email: "a@example.com" })

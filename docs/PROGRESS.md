@@ -10,26 +10,26 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 2.2 |
-| **Next session** | 2.3 |
+| **Last completed** | 2.3 |
+| **Next session** | 2.4 |
 | **Phase** | P2 — Identity & auth |
-| **Sessions remaining in phase** | 3 (2.3–2.5) |
+| **Sessions remaining in phase** | 2 (2.4–2.5) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 2.3 — Passkeys, App Lock, credential management, last-credential guard**
+**Session 2.4 — Onboarding, multi-account isolation, NR-9 WhatsApp verification, `blocks`**
 
-Deliverable: Passkeys, App Lock, credential management, last-credential guard
+Deliverable: Onboarding, multi-account isolation, NR-9 WhatsApp verification, `blocks`
 
-Docs: `SCHEMA §2 (incl. the S-10 note); AUDIT §1.1, §5 (F-8)`
+Docs: `SCHEMA §2 (phone verification), §3 (blocks); TARGET §4.8; GAP §1; AUDIT Q-8, D-6, D-7`
 
 Legacy to read:
-- `legacy/cognify/app/controllers/api/v1/passkey_auth_controller.rb`
-- `legacy/cognify/app/controllers/api/v1/passkeys_controller.rb`
-- `legacy/cognify/app/models/login_credential.rb`
-- `legacy/botverse/src/stores/lockStore.ts`
+- `legacy/cognify/app/controllers/concerns/contact_change.rb`
+- `legacy/botverse/src/stores/accountsStore.ts`
+- `legacy/botverse/src/stores/authStore.ts`
+- `legacy/botverse/src/lib/db.ts` — the IndexedDB namespacing that must become per-account
 
 ---
 
@@ -48,6 +48,7 @@ Legacy to read:
 | 1.5 | Fourteen new-feature components and DS-8 personalisation | Polls, reaction details, selection toolbar, unified picker (emoji/sticker/GIF/saved-reply tabs), location/contact/transcript, slash menu, wallpaper, QR, report, session list — on mocks. Appearance is token overrides, never component variants. Composer chrome unchanged (**DS-13**). Presentation only. |
 | 2.1 | `accounts`/`users`/`bots`, JWT, epoch on HTTP and Cable, Rack::Attack | `current_user` vs `current_account` from JWT. `credentials_epoch` rejects stale tokens on HTTP **and** Cable (F-6). Rack::Attack covers `/auth/*` plus messages/general API; limits from `app_settings` (F-2). Last-active symmetry (BR-42/43) and discoverability flags (BR-45…47) live on Account via preferences. |
 | 2.2 | Google GIS, password, OTP, magic link; enumeration and `SecureRandom` fixes | GIS is POST `/auth/google` with the JWT in the body; `GET /google/callback` is not routed (F-25). Password register/login/forgot/reset. Email OTP and magic link. Codes from `SecureRandom` (F-23). Request endpoints return the same accepted body for existing and missing accounts, with dummy bcrypt on the miss path (F-24). |
+| 2.3 | Passkeys, App Lock, credential management, last-credential guard | Unauthenticated passkey login plus authenticated register/list/rename/destroy. App Lock overlay (passkey + password) does not mint a JWT. Last-credential guard (S-10 / F-8) spans password, Google, email, and passkeys. Security settings panel and Playwright passkey login wait for P12 / 2.4. |
 
 ---
 

@@ -75,8 +75,10 @@ RSpec.configure do |config|
   # FactoryBot only — no fixtures, no parallel Minitest suite (CONVENTIONS.md §2.7).
   config.include FactoryBot::Syntax::Methods
   require Rails.root.join("spec/support/auth_helpers")
+  require Rails.root.join("spec/support/webauthn_helpers")
   config.include AuthHelpers, type: :request
   config.include AuthHelpers, type: :channel
+  config.include WebauthnHelpers
 
   config.before { Rails.cache.clear }
 end

@@ -4,4 +4,5 @@ class Passkey < ApplicationRecord
   validates :webauthn_credential_id, presence: true, uniqueness: true
   validates :public_key, presence: true
   validates :sign_count, numericality: { greater_than_or_equal_to: 0 }
+  validates :nickname, presence: true
 end

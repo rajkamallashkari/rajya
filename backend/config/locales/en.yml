@@ -54,11 +54,15 @@ en:
         self: "can't be the same as the blocking account"
       user:
         account_kind: "must be a human account"
+        current_password: "is incorrect"
         email_blank: "can't be blank"
         email_taken: "has already been taken"
+        last_credential: "can't remove your last sign-in method"
         name_blank: "can't be blank"
         password_confirmation: "doesn't match password"
         password_too_short: "is too short (minimum is %{count} characters)"
+      passkey:
+        nickname_blank: "can't be blank"
       bot:
         account_kind: "must be a bot account"
       app_setting:
@@ -89,3 +93,6 @@ en:
   health:
     redis_unexpected: "Redis did not answer PONG."
     solid_queue_stale: "No Solid Queue process has heartbeated recently."
+
+  passkeys:
+    default_nickname: "Passkey"

@@ -262,6 +262,10 @@ module Settings
         type: :integer, category: :auth, default: 60, min: 0, max: 3_600,
         description: "Seconds of backgrounding before App Lock engages."
       },
+      webauthn_challenge_ttl: {
+        type: :integer, category: :auth, default: 300, min: 30, max: 3_600,
+        description: "WebAuthn challenge lifetime in seconds."
+      },
       rate_limit_login_attempts: {
         type: :integer, category: :auth, default: 10, min: 1, max: 100,
         description: "Login attempts allowed per period per IP/account (F-2)."

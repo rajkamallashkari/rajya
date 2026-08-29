@@ -561,6 +561,15 @@
     "max": 3600,
     "allow_nil": false
   },
+  "webauthn_challenge_ttl": {
+    "type": "integer",
+    "category": "auth",
+    "default": 300,
+    "description": "WebAuthn challenge lifetime in seconds.",
+    "min": 30,
+    "max": 3600,
+    "allow_nil": false
+  },
   "rate_limit_login_attempts": {
     "type": "integer",
     "category": "auth",

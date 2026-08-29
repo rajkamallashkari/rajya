@@ -6,6 +6,103 @@ info:
   description: Rajya HTTP API. Generated from rswag-annotated request specs (TARGET
     §4.5).
 paths:
+  "/api/v1/users/me/password":
+    patch:
+      summary: Set or change the current user's password
+      tags:
+      - Credentials
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: password set
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Session"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                current_password:
+                  type: string
+                password:
+                  type: string
+                password_confirmation:
+                  type: string
+    delete:
+      summary: Remove the account password
+      tags:
+      - Credentials
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: removed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+  "/api/v1/users/me/verify_password":
+    post:
+      summary: Confirm the current password for App Lock
+      tags:
+      - Credentials
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: matched
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+  "/api/v1/users/me/email":
+    delete:
+      summary: Remove the account email
+      tags:
+      - Credentials
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: removed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+        '409':
+          description: last credential (F-8)
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  "/api/v1/users/me/google":
+    delete:
+      summary: Unlink Google from the account
+      tags:
+      - Credentials
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: removed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
   "/auth/google":
     post:
       summary: Sign in with a Google Identity Services auth code
@@ -135,6 +232,217 @@ paths:
                   type: string
                 code:
                   type: string
+  "/auth/passkeys/authentication_options":
+    post:
+      summary: WebAuthn assertion options for sign-in
+      tags:
+      - Auth
+      parameters: []
+      responses:
+        '200':
+          description: challenge issued
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/WebauthnOptions"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+  "/auth/passkeys/authenticate":
+    post:
+      summary: Sign in with a WebAuthn assertion
+      tags:
+      - Auth
+      parameters: []
+      responses:
+        '200':
+          description: signed in
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Session"
+        '401':
+          description: unknown passkey
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nonce:
+                  type: string
+                credential:
+                  "$ref": "#/components/schemas/WebauthnCredential"
+  "/api/v1/passkeys":
+    get:
+      summary: List the current user's passkeys
+      tags:
+      - Passkeys
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/PasskeyList"
+        '401':
+          description: unauthenticated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  "/api/v1/passkeys/registration_options":
+    post:
+      summary: WebAuthn attestation options
+      tags:
+      - Passkeys
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: challenge issued
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/WebauthnOptions"
+  "/api/v1/passkeys/register":
+    post:
+      summary: Register a WebAuthn credential
+      tags:
+      - Passkeys
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Passkey"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname:
+                  type: string
+                credential:
+                  "$ref": "#/components/schemas/WebauthnCredential"
+  "/api/v1/passkeys/{id}":
+    patch:
+      summary: Rename a passkey
+      tags:
+      - Passkeys
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: renamed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Passkey"
+        '403':
+          description: another user's passkey
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname:
+                  type: string
+    delete:
+      summary: Remove a passkey
+      tags:
+      - Passkeys
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: removed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+        '403':
+          description: another user's passkey
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '409':
+          description: last credential (F-8)
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  "/api/v1/passkeys/lock_options":
+    post:
+      summary: WebAuthn assertion options for App Lock
+      tags:
+      - Passkeys
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: challenge issued
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/WebauthnOptions"
+  "/api/v1/passkeys/assert_lock":
+    post:
+      summary: Verify an App Lock assertion
+      tags:
+      - Passkeys
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: unlocked
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                credential:
+                  "$ref": "#/components/schemas/WebauthnCredential"
   "/auth/register":
     post:
       summary: Register with email and password
@@ -281,6 +589,11 @@ servers:
 - url: http://localhost:3000
   description: Local development
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     Error:
       type: object
@@ -353,6 +666,8 @@ components:
       required:
       - id
       - onboarded
+      - has_password
+      - has_passkey
       properties:
         id:
           type: integer
@@ -360,6 +675,10 @@ components:
           type: string
           nullable: true
         onboarded:
+          type: boolean
+        has_password:
+          type: boolean
+        has_passkey:
           type: boolean
     Session:
       type: object
@@ -381,3 +700,67 @@ components:
       properties:
         accepted:
           type: boolean
+    Ok:
+      type: object
+      required:
+      - ok
+      properties:
+        ok:
+          type: boolean
+    Passkey:
+      type: object
+      required:
+      - id
+      - created_at
+      properties:
+        id:
+          type: integer
+        nickname:
+          type: string
+          nullable: true
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    PasskeyList:
+      type: object
+      required:
+      - passkeys
+      properties:
+        passkeys:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Passkey"
+    WebauthnCredential:
+      type: object
+      additionalProperties: true
+    WebauthnOptions:
+      type: object
+      required:
+      - challenge
+      properties:
+        challenge:
+          type: string
+        nonce:
+          type: string
+        timeout:
+          type: integer
+        rpId:
+          type: string
+        userVerification:
+          type: string
+        allowCredentials:
+          type: array
+          items:
+            type: object
+            required:
+            - id
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+      additionalProperties: true

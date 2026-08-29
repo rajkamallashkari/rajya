@@ -14,6 +14,8 @@ module RateLimits
   AUTH_MAGIC_VERIFY = "/auth/magic_link/verify"
   AUTH_FORGOT = "/auth/forgot_password"
   AUTH_RESET = "/auth/reset_password"
+  AUTH_PASSKEY_OPTIONS = "/auth/passkeys/authentication_options"
+  AUTH_PASSKEY_AUTHENTICATE = "/auth/passkeys/authenticate"
   API_MESSAGES = "/api/v1/messages"
   API_PREFIX = "/api/"
   BEARER = "Bearer"
@@ -33,7 +35,7 @@ module RateLimits
   end
 
   def login_ip(req)
-    req.ip if post_one_of?(req, AUTH_LOGIN, AUTH_GOOGLE)
+    req.ip if post_one_of?(req, AUTH_LOGIN, AUTH_GOOGLE, AUTH_PASSKEY_OPTIONS, AUTH_PASSKEY_AUTHENTICATE)
   end
 
   def login_account(req)

@@ -17,6 +17,9 @@ gem "jwt"
 # Auth and API throttles; limits are read from app_settings (TARGET §4.7 / F-2).
 gem "rack-attack"
 
+# WebAuthn passkeys (session 2.3). Challenges live in Rails.cache, not cookies.
+gem "webauthn"
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 

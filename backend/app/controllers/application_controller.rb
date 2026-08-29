@@ -13,7 +13,7 @@ class ApplicationController < ActionController::API
   after_action :verify_authorized, unless: :skip_authorization?
   after_action :verify_policy_scoped, if: :index_action?
 
-  rescue_from Pundit::NotAuthorizedError, with: -> { render_error(:forbidden) }
+  rescue_from Pundit::NotAuthorizedError, with: :render_forbidden
   rescue_from ActiveRecord::RecordNotFound, with: -> { render_error(:not_found) }
   rescue_from Errors::UnknownErrorCode, with: -> { render_error(:validation_failed) }
 
@@ -68,6 +68,12 @@ class ApplicationController < ActionController::API
     else
       render_error(result.error_code, details: result.error_details)
     end
+  end
+
+  def render_forbidden
+    skip_authorization
+    skip_policy_scope
+    render_error(:forbidden)
   end
 
   def render_error(code, details: {})

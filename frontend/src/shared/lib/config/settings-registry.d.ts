@@ -63,6 +63,7 @@ export type SettingKey =
   | "username_max_length"
   | "session_lifetime"
   | "app_lock_threshold"
+  | "webauthn_challenge_ttl"
   | "rate_limit_login_attempts"
   | "rate_limit_login_period"
   | "rate_limit_otp_issuance"

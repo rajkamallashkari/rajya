@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { ImpersonationBanner } from "@/app/banners/impersonation-banner";
 import { OfflineBanner } from "@/app/banners/offline-banner";
+import { AppLockOverlay } from "@/features/auth/components/app-lock-overlay";
 import { ListErrorBoundary } from "@/app/error-boundaries/error-boundary";
 import { LayerHost } from "@/app/navigation/layer-host";
 import { ConversationList } from "@/features/conversations/components/conversation-list";
@@ -51,6 +52,7 @@ export function AppShell() {
         <ImpersonationBanner name={impersonatingName} onExit={() => setImpersonatingName(null)} />
       ) : null}
       <OfflineBanner />
+      <AppLockOverlay />
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <ListErrorBoundary>
           <LayerHost

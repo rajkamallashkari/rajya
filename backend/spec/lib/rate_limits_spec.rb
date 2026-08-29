@@ -58,8 +58,10 @@ RSpec.describe RateLimits do
       expect(described_class.login_account(req)).to be_nil
     end
 
-    it "keys Google GIS by the login IP throttle" do
+    it "keys Google GIS and passkey login by the login IP throttle" do
       expect(described_class.login_ip(attack_request(path: "/auth/google"))).to be_present
+      expect(described_class.login_ip(attack_request(path: "/auth/passkeys/authenticate"))).to be_present
+      expect(described_class.login_ip(attack_request(path: "/auth/passkeys/authentication_options"))).to be_present
     end
 
     it "keys magic-link and forgot-password issuance by email" do

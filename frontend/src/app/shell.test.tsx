@@ -36,6 +36,7 @@ describe("AppShell", () => {
       "/dev/gallery",
     );
     expect(screen.getByRole("alert")).toHaveTextContent("Ada");
+    expect(screen.queryByRole("dialog")).toBeNull();
     await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
     expect(useShellStore.getState().impersonatingName).toBeNull();
     expect(useLayerStore.getState().layers).toEqual([

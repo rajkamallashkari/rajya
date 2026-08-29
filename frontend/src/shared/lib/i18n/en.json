@@ -7,6 +7,26 @@
     "loading": "Loading",
     "gallery": "Gallery"
   },
+  "auth": {
+    "lock": {
+      "aria": "App locked",
+      "cloned": "Security violation detected.",
+      "failed": "Unlock failed. Please try again.",
+      "loading": "Loading",
+      "offline": "Reconnect to the internet to unlock.",
+      "password_incorrect": "Incorrect password.",
+      "password_placeholder": "Your password",
+      "password_prompt": "Enter your password to continue.",
+      "passkey_prompt": "Use Face ID, Touch ID, or your biometrics to continue.",
+      "subtitle_no_method": "You don't have a password or biometrics set up.",
+      "title": "App Locked",
+      "unlock_passkey": "Unlock with biometrics",
+      "unlock_password": "Unlock",
+      "unlocking": "Unlocking",
+      "use_passkey": "Use biometrics instead",
+      "use_password": "Use password instead"
+    }
+  },
   "errors": {
     "app": {
       "title": "Something went wrong",

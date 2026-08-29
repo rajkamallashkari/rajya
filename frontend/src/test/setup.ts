@@ -1,49 +1,22 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, beforeAll } from "vitest";
+import "@/test/memory-storage";
+import { setAccessSession } from "@/features/auth/model/access-session";
+import { resetLockStore } from "@/features/auth/store/lock-store";
 import { initI18n } from "@/shared/lib/i18n";
 import { en } from "@/shared/lib/i18n/catalog";
 import { _testReset as resetLayerStack } from "@/shared/lib/navigation/layer-stack";
 import { resetLayerStore } from "@/shared/lib/navigation/layer-store";
 import { FakeAudio } from "@/test/fake-audio";
 
-class MemoryStorage implements Storage {
-  private readonly store = new Map<string, string>();
-
-  public get length(): number {
-    return this.store.size;
-  }
-
-  public clear(): void {
-    this.store.clear();
-  }
-
-  public getItem(key: string): string | null {
-    return this.store.get(key) ?? null;
-  }
-
-  public key(index: number): string | null {
-    return [...this.store.keys()][index] ?? null;
-  }
-
-  public removeItem(key: string): void {
-    this.store.delete(key);
-  }
-
-  public setItem(key: string, value: string): void {
-    this.store.set(key, String(value));
-  }
-}
-
-const storage = new MemoryStorage();
-Object.defineProperty(window, "localStorage", { configurable: true, value: storage });
-Object.defineProperty(globalThis, "localStorage", { configurable: true, value: storage });
-
 afterEach(() => {
   cleanup();
   FakeAudio.reset();
   window.history.replaceState({}, "", "/");
   window.localStorage.clear();
+  setAccessSession(null);
+  resetLockStore();
   resetLayerStore();
   resetLayerStack();
 });
