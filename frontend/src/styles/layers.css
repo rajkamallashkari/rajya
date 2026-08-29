@@ -21,9 +21,31 @@
   height: 100%;
 }
 
-.layer-host-desktop .layer-base,
-.layer-host-desktop .layer-frame {
+.layer-host-desktop .layer-base {
+  flex: 0 0 auto;
+}
+
+.layer-host-desktop .layer-frame:not(.layer-frame-stacked) {
   flex: 1 1 0;
+}
+
+.layer-detail-column {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.layer-frame-stacked {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-layer);
+  background: var(--surface-panel);
+}
+
+.layer-host-desktop .layer-frame-stacked {
+  flex: none;
 }
 
 .layer-frame-mobile {

@@ -3,11 +3,13 @@ import { Composer } from "@/features/composer";
 import { conversationById, type DemoMessage } from "@/features/conversations/model/demo";
 import { MessageGroup } from "@/features/messages";
 import { LayerHeader } from "@/app/navigation/layer-header";
+import { useMobileViewport } from "@/shared/hooks/use-mobile-viewport";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
 
 export function ConversationThread({ conversationId }: { conversationId: string }): ReactNode {
   const conversation = conversationById(conversationId);
   const pushLayer = useLayerStore((state) => state.pushLayer);
+  const mobile = useMobileViewport();
   const [messages, setMessages] = useState<DemoMessage[]>(conversation?.messages ?? []);
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -34,6 +36,7 @@ export function ConversationThread({ conversationId }: { conversationId: string 
             title: conversation.name,
           })
         }
+        showBack={mobile}
         title={conversation.name}
       />
       <div

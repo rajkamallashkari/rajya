@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { ChatListItem } from "@/features/conversations/components/chat-list-item";
 import { DEMO_CONVERSATIONS } from "@/features/conversations/model/demo";
-import { useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { ListView, type ListViewStatus } from "@/shared/ui/list-view";
@@ -21,7 +21,7 @@ export function ConversationList({
 }): ReactNode {
   const { t } = useTranslation();
   const resolvedTheme = useResolvedTheme();
-  const pushLayer = useLayerStore((state) => state.pushLayer);
+  const openConversation = useLayerStore((state) => state.openConversation);
   const layers = useLayerStore((state) => state.layers);
   const [query, setQuery] = useState("");
   const localRef = useRef<HTMLInputElement>(null);
@@ -78,14 +78,7 @@ export function ConversationList({
               key={item.id}
               lastActivity={item.lastActivity}
               name={item.name}
-              onOpen={() =>
-                pushLayer({
-                  conversationId: item.id,
-                  id: `conversation:${item.id}`,
-                  kind: "conversation",
-                  title: item.name,
-                })
-              }
+              onOpen={() => openConversation(conversationLayer(item.id, item.name))}
               selected={selectedId === item.id}
               timestampLabel={item.timestampLabel}
               unreadCount={item.unreadCount}

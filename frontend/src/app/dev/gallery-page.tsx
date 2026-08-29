@@ -85,7 +85,7 @@ import {
   showToast,
   SimpleTooltip,
 } from "@/shared/ui";
-import { useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { ICON_CLASS, PROGRESS_MAX, SCROLL_DEMO_ROWS } from "@/shared/ui/metrics";
 import { GalleryFeatureSections } from "@/app/dev/gallery-features";
 
@@ -772,21 +772,14 @@ function GalleryMessageMenu() {
 
 function GalleryLayerDemo() {
   const { t } = useTranslation();
-  const pushLayer = useLayerStore((state) => state.pushLayer);
+  const openConversation = useLayerStore((state) => state.openConversation);
   const demo = ADA_DEMO;
   return (
     <div className="h-[calc(var(--space-16)*8)] overflow-hidden rounded-[var(--radius-md)] border border-[var(--border-subtle)]">
       <LayerHost
         base={
           <Button
-            onClick={() =>
-              pushLayer({
-                conversationId: demo.id,
-                id: `conversation:${demo.id}`,
-                kind: "conversation",
-                title: demo.name,
-              })
-            }
+            onClick={() => openConversation(conversationLayer(demo.id, demo.name))}
             type="button"
           >
             {t("layers.push_demo")}

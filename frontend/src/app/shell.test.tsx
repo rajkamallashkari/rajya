@@ -10,17 +10,26 @@ import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
 
+function renderShell(): void {
+  render(
+    <AppProviders>
+      <MemoryRouter>
+        <AppShell />
+      </MemoryRouter>
+    </AppProviders>,
+  );
+}
+
 describe("AppShell", () => {
   it("renders the chat list, impersonation banner, shortcuts, and gallery link", async () => {
     const user = userEvent.setup();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 1280,
+    });
     useShellStore.setState({ impersonatingName: "Ada" });
-    render(
-      <AppProviders>
-        <MemoryRouter>
-          <AppShell />
-        </MemoryRouter>
-      </AppProviders>,
-    );
+    renderShell();
     expect(screen.getByAltText(en.brand.logo_alt)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: en.app.gallery })).toHaveAttribute(
       "href",
@@ -29,18 +38,42 @@ describe("AppShell", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Ada");
     await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
     expect(useShellStore.getState().impersonatingName).toBeNull();
-    await user.click(screen.getByText(ADA_DEMO.name));
+    expect(useLayerStore.getState().layers).toEqual([
+      expect.objectContaining({ conversationId: ADA_DEMO.id, kind: "conversation" }),
+    ]);
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
     expect(useLayerStore.getState().layers).toHaveLength(1);
     await user.click(screen.getByRole("button", { name: en.shell.open_profile }));
     expect(useLayerStore.getState().layers.some((layer) => layer.kind === "profile")).toBe(true);
     window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
-    expect(useLayerStore.getState().layers).toHaveLength(1);
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
-    expect(useLayerStore.getState().layers).toHaveLength(0);
+    expect(useLayerStore.getState().layers).toEqual([
+      expect.objectContaining({ conversationId: ADA_DEMO.id, kind: "conversation" }),
+    ]);
+    await user.click(screen.getByText("Team"));
+    expect(useLayerStore.getState().layers).toEqual([
+      expect.objectContaining({ conversationId: "team", kind: "conversation" }),
+    ]);
     window.dispatchEvent(
       new KeyboardEvent("keydown", { key: SHORTCUTS.focusSearch, bubbles: true }),
     );
     expect(screen.getByLabelText(en.search.label)).toHaveFocus();
     window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
+  });
+
+  it("lets mobile close the conversation back to the list", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    renderShell();
+    expect(useLayerStore.getState().layers).toHaveLength(0);
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
+    expect(useLayerStore.getState().layers).toHaveLength(0);
+    await user.click(screen.getByText(ADA_DEMO.name));
+    expect(useLayerStore.getState().layers).toHaveLength(1);
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
+    expect(useLayerStore.getState().layers).toHaveLength(0);
   });
 });

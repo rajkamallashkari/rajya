@@ -31,6 +31,7 @@ describe("conversation layers", () => {
     expect(screen.getByText("edited")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.shell.open_profile }));
     expect(useLayerStore.getState().layers.some((layer) => layer.kind === "profile")).toBe(true);
+    expect(screen.queryByRole("button", { name: en.shell.back })).not.toBeInTheDocument();
   });
 
   it("returns nothing for unknown ids and skips edit when the draft is dirty", async () => {
@@ -64,5 +65,17 @@ describe("conversation layers", () => {
       </AppProviders>,
     );
     expect(screen.getByText(en.shell.profile_subtitle)).toBeInTheDocument();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    window.dispatchEvent(new Event("resize"));
+    rerender(
+      <AppProviders>
+        <ConversationThread conversationId="ada" />
+      </AppProviders>,
+    );
+    expect(screen.getByRole("button", { name: en.shell.back })).toBeInTheDocument();
   });
 });

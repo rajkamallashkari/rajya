@@ -7,7 +7,7 @@ import { en } from "@/shared/lib/i18n/catalog";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
 
 describe("LayerHeader", () => {
-  it("pops on back and renders a plain title", async () => {
+  it("pops on back and can hide the back control", async () => {
     const user = userEvent.setup();
     useLayerStore.getState().pushLayer({
       conversationId: "ada",
@@ -15,7 +15,7 @@ describe("LayerHeader", () => {
       kind: "conversation",
       title: "Ada",
     });
-    render(
+    const { unmount } = render(
       <AppProviders>
         <LayerHeader title="Ada" />
       </AppProviders>,
@@ -23,5 +23,12 @@ describe("LayerHeader", () => {
     expect(screen.getByText("Ada")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.shell.back }));
     expect(useLayerStore.getState().layers).toHaveLength(0);
+    unmount();
+    render(
+      <AppProviders>
+        <LayerHeader showBack={false} title="Ada" />
+      </AppProviders>,
+    );
+    expect(screen.queryByRole("button", { name: en.shell.back })).not.toBeInTheDocument();
   });
 });

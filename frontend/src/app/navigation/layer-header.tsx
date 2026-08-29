@@ -10,19 +10,23 @@ import { cn } from "@/shared/lib/cn";
 export function LayerHeader({
   children,
   onTitleClick,
+  showBack = true,
   title,
 }: {
   children?: ReactNode;
   onTitleClick?: () => void;
+  showBack?: boolean;
   title: string;
 }): ReactNode {
   const { t } = useTranslation();
   const popLayer = useLayerStore((state) => state.popLayer);
   return (
     <header className="flex items-center gap-[var(--control-gap)] px-[var(--space-list-x)] py-[var(--space-list-y)]">
-      <IconButton aria-label={t("shell.back")} onClick={() => popLayer()} type="button">
-        <ChevronLeft className="h-[var(--icon-size)] w-[var(--icon-size)]" />
-      </IconButton>
+      {showBack ? (
+        <IconButton aria-label={t("shell.back")} onClick={() => popLayer()} type="button">
+          <ChevronLeft className="h-[var(--icon-size)] w-[var(--icon-size)]" />
+        </IconButton>
+      ) : null}
       {onTitleClick ? (
         <Button
           aria-label={t("shell.open_profile")}

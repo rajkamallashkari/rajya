@@ -59,9 +59,8 @@ test.describe("layer navigation", () => {
   test.describe("desktop panels", () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
-    test("renders the same stack as side-by-side panels", async ({ page }) => {
+    test("renders side-by-side panels with independently sized edge columns", async ({ page }) => {
       await page.goto("/");
-      await page.getByText("Ada Lovelace").first().click();
       await expect(page.locator("[data-layer-host]")).toHaveAttribute(
         "data-presentation",
         "desktop",
@@ -70,8 +69,10 @@ test.describe("layer navigation", () => {
       await expect(page.locator("[data-conversation-list]")).toBeVisible();
       await expect(page.locator("[data-conversation-thread]")).toBeVisible();
       await expect(page.locator("[data-layer='base']")).not.toHaveAttribute("inert");
-      const handle = page.locator("[data-resize-delta]");
+      const list = page.locator("[data-layer='base']");
       const panel = page.locator("[data-layer='conversation']");
+      const handle = page.locator("[data-resize-edge='list']");
+      const listBeforeResize = await list.evaluate((node) => node.getBoundingClientRect().width);
       const before = await panel.evaluate((node) => node.getBoundingClientRect().width);
       const box = await handle.boundingBox();
       expect(box).toBeTruthy();
@@ -84,6 +85,38 @@ test.describe("layer navigation", () => {
       await page.mouse.up();
       const after = await panel.evaluate((node) => node.getBoundingClientRect().width);
       expect(after).toBeLessThan(before);
+      const listAfterResize = await list.evaluate((node) => node.getBoundingClientRect().width);
+      expect(listAfterResize).toBeGreaterThan(listBeforeResize);
+
+      const listBeforeProfile = await list.evaluate((node) => node.getBoundingClientRect().width);
+      await page.getByRole("button", { name: "Open profile" }).click();
+      await expect(page.locator("[data-layer-host]")).toHaveAttribute("data-desktop-columns", "3");
+      await expect(page.locator("[data-layer-column='detail']")).toBeVisible();
+      await expect(page.locator("[data-conversation-thread]")).toHaveCount(1);
+      await expect(page.locator("[data-conversation-list]")).toBeVisible();
+      const listAfterProfile = await list.evaluate((node) => node.getBoundingClientRect().width);
+      expect(Math.abs(listAfterProfile - listBeforeProfile)).toBeLessThan(3);
+      const detail = page.locator("[data-layer-column='detail']");
+      const detailBefore = await detail.evaluate((node) => node.getBoundingClientRect().width);
+      const listBox = await handle.boundingBox();
+      expect(listBox).toBeTruthy();
+      if (!listBox) {
+        return;
+      }
+      await page.mouse.move(listBox.x + listBox.width / 2, listBox.y + 40);
+      await page.mouse.down();
+      await page.mouse.move(listBox.x + 60, listBox.y + 40, { steps: 8 });
+      await page.mouse.up();
+      const detailAfterListDrag = await detail.evaluate((node) => node.getBoundingClientRect().width);
+      expect(Math.abs(detailAfterListDrag - detailBefore)).toBeLessThan(3);
+      await page.getByText("Team").click();
+      await expect(page.locator("[data-layer-host]")).toHaveAttribute("data-stack-depth", "1");
+      await expect(page.locator("[data-layer-host]")).toHaveAttribute("data-desktop-columns", "2");
+      await expect(page.locator("[data-profile-panel]")).toHaveCount(0);
+      await expect(page.locator("[data-conversation-thread]")).toHaveCount(1);
+      await expect(
+        page.locator("[data-conversation-thread]").getByRole("button", { name: "Open profile" }),
+      ).toHaveText("Team");
     });
   });
 });

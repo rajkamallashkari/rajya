@@ -76,3 +76,7 @@ export const DEMO_CONVERSATIONS: DemoConversation[] = [
 export function conversationById(id: string): DemoConversation | undefined {
   return DEMO_CONVERSATIONS.find((item) => item.id === id);
 }
+
+export function latestDemoConversation(): DemoConversation {
+  return ADA_DEMO;
+}
