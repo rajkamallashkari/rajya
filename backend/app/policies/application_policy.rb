@@ -18,6 +18,10 @@ class ApplicationPolicy
   def edit? = update?
   def destroy? = false
 
+  def human?
+    account&.human? && account.user.present?
+  end
+
   class Scope
     attr_reader :account, :scope
 

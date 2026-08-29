@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { bufferToBase64url } from "@/features/auth/lib/webauthn";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { LOCK_STORAGE } from "@/features/auth/model/lock-thresholds";
+import { testSession } from "@/test/access-session";
 import * as apiClient from "@/shared/lib/api/client";
 import {
   computeInitialLockedIds,
@@ -17,13 +18,7 @@ function bytes(text: string): ArrayBuffer {
 }
 
 function session(accountId = 1) {
-  setAccessSession({
-    accountId,
-    hasPasskey: true,
-    hasPassword: true,
-    token: "tok",
-    username: "ada",
-  });
+  setAccessSession(testSession({ accountId }));
 }
 
 function fakeCredential(): PublicKeyCredential {

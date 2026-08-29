@@ -25,4 +25,13 @@ RSpec.describe SessionResource do
 
     expect(json.fetch("user").fetch("onboarded")).to be(true)
   end
+
+  it "includes phone verification state" do
+    user = create(:user, phone: "1555", phone_verified_at: Time.current)
+    json = described_class.new(Auth::Session.issue(user)).to_h
+
+    expect(json.fetch("user").fetch("phone")).to eq("1555")
+    expect(json.fetch("user").fetch("phone_verified")).to be(true)
+    expect(json.fetch("account")).to have_key("bio")
+  end
 end

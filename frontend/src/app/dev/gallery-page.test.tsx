@@ -95,6 +95,7 @@ describe("gallery route", () => {
   it("is registered on the app router", () => {
     expect(createRouter()).toBeTruthy();
     expect(appRoutes.some((route) => route.path === "/dev/gallery")).toBe(true);
+    expect(appRoutes.some((route) => route.path === "/dev/accounts")).toBe(true);
   });
 
   it("renders the gallery at /dev/gallery", () => {
@@ -105,5 +106,15 @@ describe("gallery route", () => {
       </AppProviders>,
     );
     expect(screen.getByRole("heading", { name: en.gallery.title })).toBeInTheDocument();
+  });
+
+  it("renders accounts at /dev/accounts", () => {
+    const router = createMemoryRouter(appRoutes, { initialEntries: ["/dev/accounts"] });
+    render(
+      <AppProviders>
+        <RouterProvider router={router} />
+      </AppProviders>,
+    );
+    expect(screen.getByRole("heading", { name: en.auth.accounts.title })).toBeInTheDocument();
   });
 });

@@ -1,3 +1,3 @@
 class AccountResource < ApplicationResource
-  attributes :id, :username, :display_name, :kind
+  attributes :id, :username, :display_name, :kind, :bio
 end

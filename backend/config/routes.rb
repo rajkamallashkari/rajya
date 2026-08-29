@@ -24,6 +24,11 @@ Rails.application.routes.draw do
     post "passkeys/authenticate", to: "passkeys#authenticate"
   end
 
+  namespace :webhooks do
+    get :whatsapp, to: "whatsapp#verify"
+    post :whatsapp, to: "whatsapp#create"
+  end
+
   namespace :api do
     namespace :v1 do
       resources :passkeys, only: %i[index update destroy] do
@@ -40,6 +45,21 @@ Rails.application.routes.draw do
       delete "users/me/google", to: "credentials#destroy_google"
       patch "users/me/password", to: "credentials#update_password"
       post "users/me/verify_password", to: "credentials#verify_password"
+      get "users/me", to: "users#show"
+      patch "users/me", to: "users#update"
+      delete "users/me", to: "users#destroy"
+      post "users/me/complete_onboarding", to: "users#complete_onboarding"
+      post "users/me/email/change", to: "email_changes#create"
+      post "users/me/email/verify", to: "email_changes#verify"
+      post "users/me/phone/verification", to: "phone_verifications#create"
+      get "users/me/phone/verification", to: "phone_verifications#show"
+      get "me", to: "users#show"
+      get "accounts/username", to: "usernames#show"
+      resources :accounts, only: %i[show]
+      resources :blocks, only: %i[index create destroy]
+      namespace :admin do
+        post "users/:user_id/verify_phone", to: "phone_verifications#create"
+      end
     end
   end
 end

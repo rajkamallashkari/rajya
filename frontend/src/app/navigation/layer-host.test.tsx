@@ -4,7 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 import { LayerHost } from "./layer-host";
 import { AppProviders } from "@/app/providers";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
-import { LAYER_DEFAULT_COLUMN_WIDTH_PX, LAYER_MIN_WIDTH_PX } from "@/shared/lib/navigation/constants";
+import {
+  LAYER_DEFAULT_COLUMN_WIDTH_PX,
+  LAYER_MIN_WIDTH_PX,
+} from "@/shared/lib/navigation/constants";
 import { Button } from "@/shared/ui/button";
 
 const conversation = {
@@ -107,10 +110,7 @@ describe("LayerHost", () => {
     vi.spyOn(handle, "hasPointerCapture").mockImplementation((id) => id === 9);
     fireEvent.pointerDown(handle, { pointerId: 9, clientX: 200 });
     fireEvent.pointerMove(handle, { pointerId: 9, clientX: 240 });
-    expect(list).toHaveAttribute(
-      "data-column-width",
-      String(LAYER_DEFAULT_COLUMN_WIDTH_PX + 40),
-    );
+    expect(list).toHaveAttribute("data-column-width", String(LAYER_DEFAULT_COLUMN_WIDTH_PX + 40));
     expect(document.querySelector("[data-layer='conversation']")).not.toHaveStyle({
       flex: "0 0 400px",
     });
@@ -150,7 +150,10 @@ describe("LayerHost", () => {
         <LayerHost base={<p>{"list"}</p>} renderLayer={(layer) => <p>{layer.title}</p>} />
       </AppProviders>,
     );
-    expect(document.querySelector("[data-layer-host]")).toHaveAttribute("data-desktop-columns", "1");
+    expect(document.querySelector("[data-layer-host]")).toHaveAttribute(
+      "data-desktop-columns",
+      "1",
+    );
     act(() => {
       useLayerStore.getState().openConversation(conversation);
       useLayerStore.getState().pushLayer(profile);
@@ -161,7 +164,10 @@ describe("LayerHost", () => {
         title: "Member",
       });
     });
-    expect(document.querySelector("[data-layer-host]")).toHaveAttribute("data-desktop-columns", "3");
+    expect(document.querySelector("[data-layer-host]")).toHaveAttribute(
+      "data-desktop-columns",
+      "3",
+    );
     expect(document.querySelectorAll("[data-layer='conversation']")).toHaveLength(1);
     expect(document.querySelectorAll("[data-layer='profile']")).toHaveLength(2);
     expect(document.querySelector("[data-layer-column='detail']")).toBeInTheDocument();
@@ -183,7 +189,10 @@ describe("LayerHost", () => {
     });
     expect(document.querySelectorAll("[data-layer='conversation']")).toHaveLength(1);
     expect(document.querySelector("[data-layer-column='detail']")).toBeNull();
-    expect(document.querySelector("[data-layer-host]")).toHaveAttribute("data-desktop-columns", "2");
+    expect(document.querySelector("[data-layer-host]")).toHaveAttribute(
+      "data-desktop-columns",
+      "2",
+    );
   });
 
   it("fits default column widths when the host cannot keep both defaults", () => {

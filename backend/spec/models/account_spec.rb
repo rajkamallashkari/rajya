@@ -15,6 +15,35 @@ RSpec.describe Account do
     expect(build(:account)).not_to be_deactivated
   end
 
+  it "rejects a username that is too short or has invalid characters" do
+    expect(build(:account, username: "ab")).not_to be_valid
+    expect(build(:account, username: "ada!")).not_to be_valid
+  end
+
+  it "skips the format check when username is blank" do
+    account = build(:account, username: "")
+    expect(account).not_to be_valid
+    expect(account.errors[:username]).not_to include(a_string_matching(/letters/))
+  end
+
+  describe "#blocked_with?" do
+    it "is true when either account has blocked the other" do
+      a = create(:account)
+      b = create(:account)
+      create(:block, blocker_account: a, blocked_account: b)
+
+      expect(a.blocked_with?(b)).to be(true)
+      expect(b.blocked_with?(a)).to be(true)
+    end
+
+    it "is false for missing or self" do
+      account = create(:account)
+
+      expect(account.blocked_with?(nil)).to be(false)
+      expect(account.blocked_with?(account)).to be(false)
+    end
+  end
+
   describe "#last_active_at_visible_to" do
     let(:owner) { create(:user) }
     let(:viewer) { create(:user) }

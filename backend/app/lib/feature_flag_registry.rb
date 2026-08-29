@@ -21,6 +21,7 @@ module FeatureFlagRegistry
     notification_preferences
     passkey_auth
     passwordless_auth
+    phone_auth
     unified_identity
     voice_notes
   ].freeze

@@ -4,7 +4,11 @@ import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 import { ConversationList } from "./conversation-list";
 import { AppProviders } from "@/app/providers";
-import { ADA_DEMO, conversationById, latestDemoConversation } from "@/features/conversations/model/demo";
+import {
+  ADA_DEMO,
+  conversationById,
+  latestDemoConversation,
+} from "@/features/conversations/model/demo";
 import { en } from "@/shared/lib/i18n/catalog";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
 

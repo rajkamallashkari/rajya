@@ -107,7 +107,9 @@ test.describe("layer navigation", () => {
       await page.mouse.down();
       await page.mouse.move(listBox.x + 60, listBox.y + 40, { steps: 8 });
       await page.mouse.up();
-      const detailAfterListDrag = await detail.evaluate((node) => node.getBoundingClientRect().width);
+      const detailAfterListDrag = await detail.evaluate(
+        (node) => node.getBoundingClientRect().width,
+      );
       expect(Math.abs(detailAfterListDrag - detailBefore)).toBeLessThan(3);
       await page.getByText("Team").click();
       await expect(page.locator("[data-layer-host]")).toHaveAttribute("data-stack-depth", "1");

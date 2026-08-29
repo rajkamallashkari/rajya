@@ -7,6 +7,13 @@ class AuthMailer < ApplicationMailer
     mail(to: user.email, subject: Catalog.t("mailers.auth.otp.subject", otp: otp))
   end
 
+  def email_change(user:, new_email:, otp:)
+    assign_common(user, :email_change, minutes_for(:otp_expiry), otp: otp)
+    @otp = otp
+    mail(to: new_email, subject: Catalog.t("mailers.auth.email_change.subject", otp: otp),
+         template_name: "email_otp")
+  end
+
   def magic_link(user:, token:)
     assign_common(user, :magic_link, minutes_for(:magic_link_ttl))
     @url = "#{frontend_origin}/auth/magic?token=#{CGI.escape(token)}"

@@ -50,6 +50,9 @@ en:
         title: "can't be blank for non-direct conversations"
       conversation_membership:
         seen_position: "must be greater than or equal to last_read_position"
+      account:
+        username_invalid: "must be %{min}–%{max} letters, numbers, underscores, or dots"
+        username_taken: "has already been taken"
       block:
         self: "can't be the same as the blocking account"
       user:
@@ -57,10 +60,13 @@ en:
         current_password: "is incorrect"
         email_blank: "can't be blank"
         email_taken: "has already been taken"
+        email_unchanged: "is already this address"
         last_credential: "can't remove your last sign-in method"
         name_blank: "can't be blank"
         password_confirmation: "doesn't match password"
         password_too_short: "is too short (minimum is %{count} characters)"
+        phone_blank: "can't be blank"
+        phone_taken: "has already been taken"
       passkey:
         nickname_blank: "can't be blank"
       bot:
@@ -84,6 +90,11 @@ en:
         headline: "Your sign-in code"
         body: "Hi %{name}, use the code below to sign in. It expires in %{minutes} minutes."
         footer: "If you didn't request this code, you can safely ignore this email. Never share this code with anyone."
+      email_change:
+        subject: "%{otp} – confirm your new Rajya email"
+        headline: "Confirm your new email"
+        body: "Hi %{name}, use the code below to confirm this email address. It expires in %{minutes} minutes."
+        footer: "If you didn't request this change, you can safely ignore this email. Never share this code with anyone."
       password_reset:
         subject: "Reset your Rajya password"
         headline: "Reset your password"
@@ -96,3 +107,6 @@ en:
 
   passkeys:
     default_nickname: "Passkey"
+
+  whatsapp:
+    verified: "✅ Verified"

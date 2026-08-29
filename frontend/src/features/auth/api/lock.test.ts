@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setAccessSession } from "@/features/auth/model/access-session";
+import { testSession } from "@/test/access-session";
 import * as apiClient from "@/shared/lib/api/client";
 import { assertLock, fetchLockOptions, verifyPasswordLock } from "./lock";
 
@@ -19,13 +20,7 @@ describe("lock api", () => {
   });
 
   it("fetches lock options with a bearer token", async () => {
-    setAccessSession({
-      accountId: 1,
-      hasPasskey: true,
-      hasPassword: true,
-      token: "tok",
-      username: "ada",
-    });
+    setAccessSession(testSession());
     post.mockResolvedValue({ data: { challenge: "ch", allowCredentials: [] } });
     await expect(fetchLockOptions()).resolves.toEqual({ challenge: "ch", allowCredentials: [] });
     expect(post).toHaveBeenCalledWith("/api/v1/passkeys/lock_options", {

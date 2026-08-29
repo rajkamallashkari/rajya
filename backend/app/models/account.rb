@@ -28,9 +28,18 @@ class Account < ApplicationRecord
   has_many :requested_bots, class_name: "BotRequest", foreign_key: :requester_account_id,
                              inverse_of: :requester_account, dependent: :destroy
 
+  has_one_attached :avatar
+
   validates :kind, presence: true, inclusion: { in: KINDS }
   validates :username, presence: true, uniqueness: { case_sensitive: false }
   validates :display_name, presence: true
+  validate :username_format
+
+  def blocked_with?(other)
+    return false if other.blank? || other.id == id
+
+    Block.between(id, other.id).exists?
+  end
 
   def human?
     kind == "human"
@@ -71,5 +80,16 @@ class Account < ApplicationRecord
 
   def privacy_flag(key)
     preference ? preference.privacy(key) : Preference.privacy_default(key)
+  end
+
+  private
+
+  def username_format
+    return if username.blank?
+    return if Auth::Usernames.valid_format?(username)
+
+    min = Settings.fetch(:username_min_length)
+    max = Settings.fetch(:username_max_length)
+    errors.add(:username, Catalog.t("errors.models.account.username_invalid", min: min, max: max))
   end
 end

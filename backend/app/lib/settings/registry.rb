@@ -266,6 +266,26 @@ module Settings
         type: :integer, category: :auth, default: 300, min: 30, max: 3_600,
         description: "WebAuthn challenge lifetime in seconds."
       },
+      phone_verification_ttl: {
+        type: :integer, category: :auth, default: 600, min: 30, max: 3_600,
+        description: "WhatsApp click-to-verify code lifetime in seconds (TARGET §4.8, ~10 min)."
+      },
+      whatsapp_app_secret: {
+        type: :string, category: :auth, default: "",
+        description: "Meta app secret for X-Hub-Signature-256 on the WhatsApp webhook."
+      },
+      whatsapp_business_number: {
+        type: :string, category: :auth, default: "",
+        description: "WhatsApp Business phone number digits for wa.me deep links (NR-9 / D-6)."
+      },
+      whatsapp_cloud_token: {
+        type: :string, category: :auth, default: "",
+        description: "WhatsApp Cloud API token for the unbilled verified reply; blank skips the reply."
+      },
+      whatsapp_webhook_verify_token: {
+        type: :string, category: :auth, default: "",
+        description: "Token Meta sends as hub.verify_token when subscribing the webhook."
+      },
       rate_limit_login_attempts: {
         type: :integer, category: :auth, default: 10, min: 1, max: 100,
         description: "Login attempts allowed per period per IP/account (F-2)."

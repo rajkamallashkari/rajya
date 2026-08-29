@@ -6,15 +6,25 @@ import { handlerMap, handlers } from "./handlers";
 const server = setupServer(...handlers);
 
 const expectedPaths = [
+  "/api/v1/accounts/username",
+  "/api/v1/accounts/{id}",
+  "/api/v1/admin/users/{user_id}/verify_phone",
+  "/api/v1/blocks",
+  "/api/v1/blocks/{id}",
   "/api/v1/passkeys",
   "/api/v1/passkeys/assert_lock",
   "/api/v1/passkeys/lock_options",
   "/api/v1/passkeys/register",
   "/api/v1/passkeys/registration_options",
   "/api/v1/passkeys/{id}",
+  "/api/v1/users/me",
+  "/api/v1/users/me/complete_onboarding",
   "/api/v1/users/me/email",
+  "/api/v1/users/me/email/change",
+  "/api/v1/users/me/email/verify",
   "/api/v1/users/me/google",
   "/api/v1/users/me/password",
+  "/api/v1/users/me/phone/verification",
   "/api/v1/users/me/verify_password",
   "/auth/forgot_password",
   "/auth/google",
@@ -29,6 +39,7 @@ const expectedPaths = [
   "/auth/reset_password",
   "/health",
   "/up",
+  "/webhooks/whatsapp",
 ];
 
 describe("MSW handlers", () => {
@@ -125,5 +136,48 @@ describe("MSW handlers", () => {
     expect(emailRemoved.data?.ok).toBe(true);
     const googleRemoved = await client.DELETE("/api/v1/users/me/google");
     expect(googleRemoved.data?.ok).toBe(true);
+    const me = await client.GET("/api/v1/users/me");
+    expect(me.data?.user.phone_verified).toBe(false);
+    const patched = await client.PATCH("/api/v1/users/me", { body: { display_name: "Ada" } });
+    expect(patched.data?.account.username).toBe("ada");
+    const deactivated = await client.DELETE("/api/v1/users/me");
+    expect(deactivated.data?.ok).toBe(true);
+    const onboarded = await client.POST("/api/v1/users/me/complete_onboarding");
+    expect(onboarded.data?.user.onboarded).toBe(false);
+    const emailChange = await client.POST("/api/v1/users/me/email/change", {
+      body: { email: "new@example.com" },
+    });
+    expect(emailChange.data?.accepted).toBe(true);
+    const emailVerify = await client.POST("/api/v1/users/me/email/verify", {
+      body: { code: "000000" },
+    });
+    expect(emailVerify.data?.account.id).toBe(1);
+    const phoneIssue = await client.POST("/api/v1/users/me/phone/verification");
+    expect(phoneIssue.data?.status).toBe("none");
+    const phoneStatus = await client.GET("/api/v1/users/me/phone/verification");
+    expect(phoneStatus.data?.phone_changed).toBe(false);
+    const username = await client.GET("/api/v1/accounts/username", {
+      params: { query: { username: "ada" } },
+    });
+    expect(username.data?.available).toBe(true);
+    const profile = await client.GET("/api/v1/accounts/{id}", { params: { path: { id: 1 } } });
+    expect(profile.data?.id).toBe(1);
+    const blocks = await client.GET("/api/v1/blocks");
+    expect(blocks.data?.blocks).toEqual([]);
+    const blocked = await client.POST("/api/v1/blocks", { body: { account_id: 2 } });
+    expect(blocked.data?.account.id).toBe(1);
+    const unblocked = await client.DELETE("/api/v1/blocks/{id}", { params: { path: { id: 2 } } });
+    expect(unblocked.data?.ok).toBe(true);
+    const adminPhone = await client.POST("/api/v1/admin/users/{user_id}/verify_phone", {
+      params: { path: { user_id: 1 } },
+      body: { phone: "1555" },
+    });
+    expect(adminPhone.data?.user.phone_verified).toBe(false);
+    const webhook = await fetch("http://rajya.test/webhooks/whatsapp?hub.mode=subscribe");
+    expect(webhook.status).toBe(200);
+    const inbound = await client.POST("/webhooks/whatsapp", {
+      body: { object: "whatsapp_business_account" },
+    });
+    expect(inbound.data?.ok).toBe(true);
   });
 });

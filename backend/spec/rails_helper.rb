@@ -76,9 +76,11 @@ RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
   require Rails.root.join("spec/support/auth_helpers")
   require Rails.root.join("spec/support/webauthn_helpers")
+  require Rails.root.join("spec/support/whatsapp_helpers")
   config.include AuthHelpers, type: :request
   config.include AuthHelpers, type: :channel
   config.include WebauthnHelpers
+  config.include WhatsappHelpers
 
   config.before { Rails.cache.clear }
 end

@@ -50,8 +50,34 @@ const session = {
     onboarded: false,
     has_password: true,
     has_passkey: false,
+    phone_verified: false,
   },
 } satisfies SessionBody;
+
+type MeBody = NonNullable<
+  paths["/api/v1/users/me"]["get"]["responses"][200]["content"]
+>["application/json"];
+type PhoneBody = NonNullable<
+  paths["/api/v1/users/me/phone/verification"]["get"]["responses"][200]["content"]
+>["application/json"];
+type BlockListBody = NonNullable<
+  paths["/api/v1/blocks"]["get"]["responses"][200]["content"]
+>["application/json"];
+
+const me = {
+  account: session.account,
+  user: session.user,
+} satisfies MeBody;
+const phoneVerification = {
+  status: "none",
+  phone_changed: false,
+  code: null,
+  wa_url: null,
+  confirmed_phone: null,
+  expires_at: null,
+} satisfies PhoneBody;
+const blockList = { blocks: [] } satisfies BlockListBody;
+const meResponse = () => HttpResponse.json(me);
 
 const accepted = { accepted: true } satisfies AcceptedBody;
 const ok = { ok: true } satisfies OkBody;
@@ -115,6 +141,47 @@ export const handlerMap = {
   "/api/v1/users/me/verify_password": http.post("*/api/v1/users/me/verify_password", okResponse),
   "/api/v1/users/me/email": http.delete("*/api/v1/users/me/email", okResponse),
   "/api/v1/users/me/google": http.delete("*/api/v1/users/me/google", okResponse),
+  "/api/v1/users/me": http.all("*/api/v1/users/me", ({ request }) => {
+    if (request.method === "DELETE") {
+      return HttpResponse.json(ok);
+    }
+    return meResponse();
+  }),
+  "/api/v1/users/me/complete_onboarding": http.post(
+    "*/api/v1/users/me/complete_onboarding",
+    meResponse,
+  ),
+  "/api/v1/users/me/email/change": http.post("*/api/v1/users/me/email/change", acceptedResponse),
+  "/api/v1/users/me/email/verify": http.post("*/api/v1/users/me/email/verify", meResponse),
+  "/api/v1/users/me/phone/verification": http.all("*/api/v1/users/me/phone/verification", () =>
+    HttpResponse.json(phoneVerification),
+  ),
+  "/api/v1/accounts/username": http.get("*/api/v1/accounts/username", () =>
+    HttpResponse.json({ available: true }),
+  ),
+  "/api/v1/accounts/{id}": http.get("*/api/v1/accounts/:id", () =>
+    HttpResponse.json(session.account),
+  ),
+  "/api/v1/blocks": http.all("*/api/v1/blocks", ({ request }) => {
+    if (request.method === "POST") {
+      return HttpResponse.json({ account: session.account }, { status: 201 });
+    }
+    return HttpResponse.json(blockList);
+  }),
+  "/api/v1/blocks/{id}": http.delete("*/api/v1/blocks/:id", okResponse),
+  "/api/v1/admin/users/{user_id}/verify_phone": http.post(
+    "*/api/v1/admin/users/:user_id/verify_phone",
+    meResponse,
+  ),
+  "/webhooks/whatsapp": http.all("*/webhooks/whatsapp", ({ request }) => {
+    if (request.method === "GET") {
+      return new HttpResponse("challenge-token", {
+        status: 200,
+        headers: { "content-type": "text/plain" },
+      });
+    }
+    return HttpResponse.json(ok);
+  }),
 } satisfies HandlerMap;
 
 export const handlers: HttpHandler[] = Object.values(handlerMap);

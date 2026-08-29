@@ -6,8 +6,10 @@ describe("access-session", () => {
     expect(getAccessSession()).toBeNull();
     const session = {
       accountId: 7,
+      displayName: "Ada",
       hasPasskey: true,
       hasPassword: false,
+      onboarded: false,
       token: "tok",
       username: "ada",
     };

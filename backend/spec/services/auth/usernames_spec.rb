@@ -33,4 +33,17 @@ RSpec.describe Auth::Usernames do
 
     expect(described_class.from_email("ada@example.com")).to match(/\Auser_[0-9a-f]{6}\z/)
   end
+
+  it "accepts handles that match the length and character rules" do
+    expect(described_class.valid_format?("ada_1")).to be(true)
+    expect(described_class.valid_format?("ab")).to be(false)
+    expect(described_class.valid_format?("ada!")).to be(false)
+  end
+
+  it "treats the current account's handle as available" do
+    account = create(:account, username: "ada")
+
+    expect(described_class.available?("ada", except_id: account.id)).to be(true)
+    expect(described_class.available?("ada")).to be(false)
+  end
 end

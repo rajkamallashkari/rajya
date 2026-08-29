@@ -18,10 +18,11 @@ RSpec.describe RateLimits do
   end
 
   describe ".safelisted?" do
-    it "allows operational and OpenAPI routes" do
+    it "allows operational, OpenAPI, and WhatsApp webhook routes" do
       expect(described_class.safelisted?(attack_request(path: "/up", http_method: "GET"))).to be(true)
       expect(described_class.safelisted?(attack_request(path: "/health", http_method: "GET"))).to be(true)
       expect(described_class.safelisted?(attack_request(path: "/api-docs/v1/swagger.yaml", http_method: "GET"))).to be(true)
+      expect(described_class.safelisted?(attack_request(path: "/webhooks/whatsapp", http_method: "POST"))).to be(true)
     end
 
     it "does not safelist application routes" do

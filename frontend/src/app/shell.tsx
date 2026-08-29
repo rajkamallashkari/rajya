@@ -2,12 +2,14 @@ import { useEffect, useRef } from "react";
 import { ImpersonationBanner } from "@/app/banners/impersonation-banner";
 import { OfflineBanner } from "@/app/banners/offline-banner";
 import { AppLockOverlay } from "@/features/auth/components/app-lock-overlay";
+import { OnboardingWizard } from "@/features/auth/components/onboarding-wizard";
 import { ListErrorBoundary } from "@/app/error-boundaries/error-boundary";
 import { LayerHost } from "@/app/navigation/layer-host";
 import { ConversationList } from "@/features/conversations/components/conversation-list";
 import { ConversationThread } from "@/features/conversations/components/conversation-thread";
 import { ProfilePanel } from "@/features/conversations/components/profile-panel";
 import { latestDemoConversation } from "@/features/conversations/model/demo";
+import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import { useShellStore } from "@/features/settings/store/shell-store";
 import { useMobileViewport } from "@/shared/hooks/use-mobile-viewport";
 import { useShortcuts } from "@/shared/hooks/use-shortcuts";
@@ -23,6 +25,15 @@ export function AppShell() {
     state.layers.some((layer) => layer.kind === "conversation"),
   );
   const mobile = useMobileViewport();
+  const hydrateAccounts = useAccountsStore((state) => state.hydrate);
+  const needsOnboarding = useAccountsStore((state) => {
+    const active = state.accounts.find((account) => account.id === state.activeAccountId);
+    return active !== undefined && !active.onboarded;
+  });
+
+  useEffect(() => {
+    hydrateAccounts();
+  }, [hydrateAccounts]);
 
   useEffect(() => {
     if (mobile || hasConversation) {
@@ -53,6 +64,7 @@ export function AppShell() {
       ) : null}
       <OfflineBanner />
       <AppLockOverlay />
+      {needsOnboarding ? <OnboardingWizard /> : null}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <ListErrorBoundary>
           <LayerHost

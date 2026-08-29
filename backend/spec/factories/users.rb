@@ -10,5 +10,9 @@ FactoryBot.define do
     trait :google do
       sequence(:google_subject) { |n| "google-sub-#{n}" }
     end
+
+    trait :admin do
+      is_admin { true }
+    end
   end
 end

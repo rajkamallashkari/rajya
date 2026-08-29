@@ -4,6 +4,7 @@
 module Auth
   class Usernames
     SANITIZE = /[^a-zA-Z0-9_.]/
+    FORMAT = /\A[a-zA-Z0-9_.]+\z/
     FALLBACK = "user"
     SUFFIX_CAP = 99
 
@@ -17,6 +18,23 @@ module Auth
         base = "#{base}_1" if base.length < min
         base = base.first(max)
         unique(base, max)
+      end
+
+      def valid_format?(username)
+        min = Settings.fetch(:username_min_length)
+        max = Settings.fetch(:username_max_length)
+        value = username.to_s
+        value.match?(FORMAT) && value.length >= min && value.length <= max
+      end
+
+      def available?(username, except_id: nil)
+        valid_format?(username) && !taken?(username, except_id: except_id)
+      end
+
+      def taken?(candidate, except_id: nil)
+        scope = Account.where("LOWER(username) = ?", candidate.to_s.downcase)
+        scope = scope.where.not(id: except_id) if except_id
+        scope.exists?
       end
 
       private
@@ -34,10 +52,6 @@ module Auth
           suffix_n += 1
           return "#{FALLBACK}_#{SecureRandom.hex(3)}" if suffix_n > SUFFIX_CAP
         end
-      end
-
-      def taken?(candidate)
-        Account.where("LOWER(username) = ?", candidate.downcase).exists?
       end
     end
   end

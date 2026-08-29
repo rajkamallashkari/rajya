@@ -13,6 +13,7 @@ import {
 } from "@/features/messages";
 import type { PollView } from "@/features/messages/model/poll";
 import { AppearancePanel, SessionListItem, WallpaperPicker } from "@/features/settings";
+import { AccountProfile, OnboardingWizard, PhoneVerifyPanel } from "@/features/auth";
 import { Button } from "@/shared/ui";
 
 export function galleryFeatureAction(): void {}
@@ -281,6 +282,24 @@ export function GalleryFeatureSections({
             userAgent: null,
           }}
         />
+      </Section>
+
+      <Section sectionKey="onboarding">
+        <OnboardingWizard />
+      </Section>
+
+      <Section sectionKey="phone_verify">
+        <PhoneVerifyPanel />
+      </Section>
+
+      <Section sectionKey="account_switcher">
+        <p className="text-[length:var(--text-sm)] text-[var(--text-secondary)]">
+          {t("auth.accounts.title")}
+        </p>
+      </Section>
+
+      <Section sectionKey="blocked_profile">
+        <AccountProfile accountId={0} />
       </Section>
     </>
   );

@@ -25,4 +25,12 @@ RSpec.describe AuthMailer do
 
     expect(mail.body.encoded).to include("/auth/reset-password?token=tok")
   end
+
+  it "sends an email-change OTP to the new address" do
+    mail = described_class.email_change(user: user, new_email: "new@example.com", otp: "654321")
+
+    expect(mail.to).to eq([ "new@example.com" ])
+    expect(mail.subject).to include("654321")
+    expect(mail.body.encoded).to include("654321")
+  end
 end

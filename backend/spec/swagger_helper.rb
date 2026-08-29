@@ -70,18 +70,62 @@ RSpec.configure do |config|
                 id: { type: :integer },
                 username: { type: :string },
                 display_name: { type: :string },
-                kind: { type: :string }
+                kind: { type: :string },
+                bio: { type: :string, nullable: true }
               }
             },
             SessionUser: {
               type: :object,
-              required: %w[id onboarded has_password has_passkey],
+              required: %w[id onboarded has_password has_passkey phone_verified],
               properties: {
                 id: { type: :integer },
                 email: { type: :string, nullable: true },
+                phone: { type: :string, nullable: true },
                 onboarded: { type: :boolean },
                 has_password: { type: :boolean },
-                has_passkey: { type: :boolean }
+                has_passkey: { type: :boolean },
+                phone_verified: { type: :boolean }
+              }
+            },
+            Me: {
+              type: :object,
+              required: %w[account user],
+              properties: {
+                account: { "$ref" => "#/components/schemas/Account" },
+                user: { "$ref" => "#/components/schemas/SessionUser" }
+              }
+            },
+            UsernameAvailability: {
+              type: :object,
+              required: %w[available],
+              properties: {
+                available: { type: :boolean }
+              }
+            },
+            PhoneVerification: {
+              type: :object,
+              required: %w[status phone_changed],
+              properties: {
+                code: { type: :string, nullable: true },
+                wa_url: { type: :string, nullable: true },
+                expires_at: { type: :string, format: :"date-time", nullable: true },
+                status: { type: :string },
+                confirmed_phone: { type: :string, nullable: true },
+                phone_changed: { type: :boolean }
+              }
+            },
+            Block: {
+              type: :object,
+              required: %w[account],
+              properties: {
+                account: { "$ref" => "#/components/schemas/Account" }
+              }
+            },
+            BlockList: {
+              type: :object,
+              required: %w[blocks],
+              properties: {
+                blocks: { type: :array, items: { "$ref" => "#/components/schemas/Block" } }
               }
             },
             Session: {

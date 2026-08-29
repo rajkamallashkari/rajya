@@ -37,10 +37,7 @@ export function conversationLayer(conversationId: string, title: string): LayerE
   };
 }
 
-export function layersForOpenConversation(
-  layers: LayerEntry[],
-  next: LayerEntry,
-): LayerEntry[] {
+export function layersForOpenConversation(layers: LayerEntry[], next: LayerEntry): LayerEntry[] {
   const current = layers.find((layer) => layer.kind === "conversation");
   if (current?.conversationId === next.conversationId) {
     const index = layers.findIndex((layer) => layer.kind === "conversation");

@@ -52,6 +52,9 @@ export function ConversationList({
         <Button asChild size="sm" variant="ghost">
           <Link to="/dev/gallery">{t("app.gallery")}</Link>
         </Button>
+        <Button asChild size="sm" variant="ghost">
+          <Link to="/dev/accounts">{t("app.accounts")}</Link>
+        </Button>
       </header>
       <div className="px-[var(--space-list-x)] pb-[var(--space-list-y)]">
         <Input

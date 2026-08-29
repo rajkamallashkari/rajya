@@ -16,6 +16,6 @@ RSpec.describe FeatureFlagRegistry do
 
   it "defaults production-live flags on and the rest off" do
     expect(described_class.default_for(:passwordless_auth)).to be(true)
-    expect(described_class.default_for(:phone_auth)).to be(false)
+    expect(described_class.default_for(:phone_auth)).to be(true)
   end
 end

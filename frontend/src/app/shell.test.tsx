@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 import { AppProviders } from "@/app/providers";
 import { AppShell } from "@/app/shell";
+import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import { useShellStore } from "@/features/settings/store/shell-store";
 import { ADA_DEMO } from "@/features/conversations/model/demo";
 import { en } from "@/shared/lib/i18n/catalog";
@@ -35,6 +36,10 @@ describe("AppShell", () => {
       "href",
       "/dev/gallery",
     );
+    expect(screen.getByRole("link", { name: en.app.accounts })).toHaveAttribute(
+      "href",
+      "/dev/accounts",
+    );
     expect(screen.getByRole("alert")).toHaveTextContent("Ada");
     expect(screen.queryByRole("dialog")).toBeNull();
     await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
@@ -59,6 +64,20 @@ describe("AppShell", () => {
     );
     expect(screen.getByLabelText(en.search.label)).toHaveFocus();
     window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
+  });
+
+  it("shows onboarding when the active account is not onboarded", () => {
+    useAccountsStore.getState().upsertAccount({
+      displayName: "Ada",
+      hasPasskey: false,
+      hasPassword: true,
+      id: 1,
+      onboarded: false,
+      token: "tok",
+      username: "ada",
+    });
+    renderShell();
+    expect(screen.getByRole("dialog", { name: en.auth.onboarding.aria })).toBeInTheDocument();
   });
 
   it("lets mobile close the conversation back to the list", async () => {

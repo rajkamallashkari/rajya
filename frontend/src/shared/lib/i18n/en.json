@@ -5,7 +5,8 @@
   "app": {
     "tagline": "Chat",
     "loading": "Loading",
-    "gallery": "Gallery"
+    "gallery": "Gallery",
+    "accounts": "Accounts"
   },
   "auth": {
     "lock": {
@@ -25,6 +26,55 @@
       "unlocking": "Unlocking",
       "use_passkey": "Use biometrics instead",
       "use_password": "Use password instead"
+    },
+    "onboarding": {
+      "aria": "Finish setting up your account",
+      "title": "Set up your profile",
+      "display_name": "Display name",
+      "username": "Username",
+      "bio": "Bio",
+      "continue": "Continue",
+      "username_taken": "That username is taken.",
+      "profile_failed": "Could not save your profile.",
+      "password_title": "Add a password",
+      "password": "Password",
+      "password_confirm": "Confirm password",
+      "password_mismatch": "Passwords do not match.",
+      "password_failed": "Could not save the password.",
+      "skip": "Skip for now",
+      "save_password": "Save password",
+      "passkey_title": "Add a passkey",
+      "passkey_body": "Use Face ID, Touch ID, or your security key to sign in faster.",
+      "add_passkey": "Add passkey",
+      "passkey_nickname": "Passkey",
+      "passkey_failed": "Could not add a passkey.",
+      "finish": "Finish"
+    },
+    "phone": {
+      "title": "Verify your phone",
+      "verify": "Verify via WhatsApp",
+      "waiting": "Waiting for your message…",
+      "admin": "Ask an admin to verify this for you",
+      "confirmed": "Phone verified",
+      "changed": "Verified {{phone}}",
+      "failed": "Could not start verification."
+    },
+    "accounts": {
+      "title": "Accounts on this device",
+      "seed_a": "Use account A",
+      "seed_b": "Use account B",
+      "queue": "Queue outbox",
+      "outbox_empty": "Outbox is empty",
+      "outbox_item": "{{body}}",
+      "active": "Active",
+      "switch": "Switch to {{name}}"
+    },
+    "profile": {
+      "missing": "This profile is not available",
+      "missing_description": "The account may be blocked or no longer exist.",
+      "block": "Block",
+      "unblock": "Unblock",
+      "blocked": "Blocked"
     }
   },
   "errors": {
@@ -146,7 +196,11 @@
       "wallpaper_picker": "Wallpaper",
       "qr_sheet": "QR code",
       "report_sheet": "Report",
-      "session_list_item": "Sessions"
+      "session_list_item": "Sessions",
+      "onboarding": "Onboarding",
+      "phone_verify": "Phone verification",
+      "account_switcher": "Account switcher",
+      "blocked_profile": "Blocked profile"
     },
     "button": {
       "primary": "Primary",

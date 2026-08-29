@@ -1,42 +1,31 @@
 import type { SerializedAssertion } from "@/features/auth/lib/webauthn";
-import { getAccessSession } from "@/features/auth/model/access-session";
-import { createApiClient } from "@/shared/lib/api/client";
-
-function client() {
-  return createApiClient(window.location.origin);
-}
-
-function bearer(): Record<string, string> {
-  const token = getAccessSession()?.token;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+import { apiClient, bearerHeaders, unwrap } from "@/features/auth/api/http";
 
 export async function fetchLockOptions() {
-  const { data, error } = await client().POST("/api/v1/passkeys/lock_options", {
-    headers: bearer(),
-  });
-  if (error || data === undefined) {
-    throw error ?? new Error("lock_options_failed");
-  }
-  return data;
+  return unwrap(
+    await apiClient().POST("/api/v1/passkeys/lock_options", {
+      headers: bearerHeaders(),
+    }),
+    "lock_options_failed",
+  );
 }
 
 export async function assertLock(credential: SerializedAssertion): Promise<void> {
-  const { error } = await client().POST("/api/v1/passkeys/assert_lock", {
-    headers: bearer(),
-    body: { credential },
-  });
-  if (error) {
-    throw error;
-  }
+  unwrap(
+    await apiClient().POST("/api/v1/passkeys/assert_lock", {
+      headers: bearerHeaders(),
+      body: { credential },
+    }),
+    "assert_lock_failed",
+  );
 }
 
 export async function verifyPasswordLock(password: string): Promise<void> {
-  const { error } = await client().POST("/api/v1/users/me/verify_password", {
-    headers: bearer(),
-    body: { password },
-  });
-  if (error) {
-    throw error;
-  }
+  unwrap(
+    await apiClient().POST("/api/v1/users/me/verify_password", {
+      headers: bearerHeaders(),
+      body: { password },
+    }),
+    "verify_password_failed",
+  );
 }

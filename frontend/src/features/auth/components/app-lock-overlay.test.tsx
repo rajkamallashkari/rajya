@@ -2,12 +2,14 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppLockOverlay } from "@/features/auth";
+import type { AccessSession } from "@/features/auth/model/access-session";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { useLockStore } from "@/features/auth/store/lock-store";
 import { en } from "@/shared/lib/i18n/catalog";
+import { testSession } from "@/test/access-session";
 
-function lockWith(session: Parameters<typeof setAccessSession>[0]) {
-  setAccessSession(session);
+function lockWith(overrides: Partial<AccessSession> = {}) {
+  setAccessSession(testSession(overrides));
   useLockStore.setState({ locked: true, unlocking: false, unlockErrorKey: null });
 }
 

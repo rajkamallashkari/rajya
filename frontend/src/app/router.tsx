@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { GalleryPage } from "@/app/dev/gallery-page";
+import { AccountsDevPage } from "@/app/dev/accounts-page";
 import { RouteErrorBoundary } from "@/app/error-boundaries/error-boundary";
 import { AppShell } from "@/app/shell";
 
@@ -20,9 +21,18 @@ function GalleryRoute() {
   );
 }
 
+function AccountsRoute() {
+  return (
+    <RouteErrorBoundary>
+      <AccountsDevPage />
+    </RouteErrorBoundary>
+  );
+}
+
 export const appRoutes = [
   { path: "/", element: <ShellRoute /> },
   { path: "/dev/gallery", element: <GalleryRoute /> },
+  { path: "/dev/accounts", element: <AccountsRoute /> },
 ];
 
 export function createRouter() {

@@ -146,6 +146,10 @@ export const GALLERY_SECTION_KEYS = [
   "qr_sheet",
   "report_sheet",
   "session_list_item",
+  "onboarding",
+  "phone_verify",
+  "account_switcher",
+  "blocked_profile",
 ] as const;
 
 const THEME_CHOICES = ["light", "dark", "system"] as const;

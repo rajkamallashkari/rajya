@@ -64,6 +64,35 @@ export interface SerializedAttestation {
   [key: string]: unknown;
 }
 
+export const WEBAUTHN_ES256_ALG = -7;
+
+export function toCreationPublicKey(
+  options: { challenge: string } & Record<string, unknown>,
+): PublicKeyCredentialCreationOptions {
+  const user = options.user as { id?: string; name?: string; displayName?: string } | undefined;
+  const rp = options.rp as PublicKeyCredentialRpEntity | undefined;
+  if (!user?.id || !user.name || !user.displayName || !rp) {
+    throw new Error("registration_options_incomplete");
+  }
+  const exclude = (options.excludeCredentials as { type?: string; id: string }[] | undefined) ?? [];
+  return {
+    challenge: base64urlToBuffer(options.challenge),
+    rp,
+    user: {
+      id: base64urlToBuffer(user.id),
+      name: user.name,
+      displayName: user.displayName,
+    },
+    pubKeyCredParams: (options.pubKeyCredParams as PublicKeyCredentialParameters[] | undefined) ?? [
+      { type: "public-key", alg: WEBAUTHN_ES256_ALG },
+    ],
+    excludeCredentials: exclude.map((entry) => ({
+      type: (entry.type ?? "public-key") as PublicKeyCredentialType,
+      id: base64urlToBuffer(entry.id),
+    })),
+  };
+}
+
 export function serializeAttestationCredential(
   credential: PublicKeyCredential,
 ): SerializedAttestation {

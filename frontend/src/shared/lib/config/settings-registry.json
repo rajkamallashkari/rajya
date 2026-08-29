@@ -570,6 +570,51 @@
     "max": 3600,
     "allow_nil": false
   },
+  "phone_verification_ttl": {
+    "type": "integer",
+    "category": "auth",
+    "default": 600,
+    "description": "WhatsApp click-to-verify code lifetime in seconds (TARGET §4.8, ~10 min).",
+    "min": 30,
+    "max": 3600,
+    "allow_nil": false
+  },
+  "whatsapp_app_secret": {
+    "type": "string",
+    "category": "auth",
+    "default": "",
+    "description": "Meta app secret for X-Hub-Signature-256 on the WhatsApp webhook.",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "whatsapp_business_number": {
+    "type": "string",
+    "category": "auth",
+    "default": "",
+    "description": "WhatsApp Business phone number digits for wa.me deep links (NR-9 / D-6).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "whatsapp_cloud_token": {
+    "type": "string",
+    "category": "auth",
+    "default": "",
+    "description": "WhatsApp Cloud API token for the unbilled verified reply; blank skips the reply.",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "whatsapp_webhook_verify_token": {
+    "type": "string",
+    "category": "auth",
+    "default": "",
+    "description": "Token Meta sends as hub.verify_token when subscribing the webhook.",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
   "rate_limit_login_attempts": {
     "type": "integer",
     "category": "auth",

@@ -19,4 +19,13 @@ RSpec.describe Block do
     expect(block).not_to be_valid
     expect(block.errors[:blocked_account_id]).not_to include("can't be the same as the blocking account")
   end
+
+  it "finds a block in either direction" do
+    a = create(:account)
+    b = create(:account)
+    create(:block, blocker_account: a, blocked_account: b)
+
+    expect(described_class.between(a.id, b.id)).to exist
+    expect(described_class.between(b.id, a.id)).to exist
+  end
 end

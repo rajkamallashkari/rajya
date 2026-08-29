@@ -4,6 +4,7 @@ import {
   bufferToBase64url,
   serializeAssertionCredential,
   serializeAttestationCredential,
+  toCreationPublicKey,
 } from "./webauthn";
 
 function bytes(text: string): ArrayBuffer {
@@ -69,5 +70,28 @@ describe("webauthn helpers", () => {
         clientDataJSON: bufferToBase64url(bytes("cd")),
       },
     });
+  });
+
+  it("builds WebAuthn creation options and rejects incomplete payloads", () => {
+    expect(() => toCreationPublicKey({ challenge: bufferToBase64url(bytes("ch")) })).toThrow(
+      "registration_options_incomplete",
+    );
+    const created = toCreationPublicKey({
+      challenge: bufferToBase64url(bytes("ch")),
+      rp: { name: "Rajya", id: "rajya.test" },
+      user: { id: bufferToBase64url(bytes("uid")), name: "ada", displayName: "Ada" },
+      excludeCredentials: [{ id: bufferToBase64url(bytes("ex")) }],
+    });
+    expect(created.rp.id).toBe("rajya.test");
+    expect(created.pubKeyCredParams[0]?.alg).toBe(-7);
+    expect(created.excludeCredentials).toHaveLength(1);
+    const withParams = toCreationPublicKey({
+      challenge: bufferToBase64url(bytes("ch")),
+      rp: { name: "Rajya", id: "rajya.test" },
+      user: { id: bufferToBase64url(bytes("uid")), name: "ada", displayName: "Ada" },
+      pubKeyCredParams: [{ type: "public-key", alg: -8 }],
+      excludeCredentials: [{ type: "public-key", id: bufferToBase64url(bytes("ex")) }],
+    });
+    expect(withParams.pubKeyCredParams[0]?.alg).toBe(-8);
   });
 });

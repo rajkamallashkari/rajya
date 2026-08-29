@@ -1,7 +1,9 @@
 export interface AccessSession {
   accountId: number;
+  displayName: string;
   hasPasskey: boolean;
   hasPassword: boolean;
+  onboarded: boolean;
   token: string;
   username: string;
 }

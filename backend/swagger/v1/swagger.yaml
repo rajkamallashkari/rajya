@@ -6,6 +6,107 @@ info:
   description: Rajya HTTP API. Generated from rswag-annotated request specs (TARGET
     §4.5).
 paths:
+  "/api/v1/accounts/username":
+    get:
+      summary: Check whether a username is available
+      tags:
+      - Accounts
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: username
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: availability
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/UsernameAvailability"
+  "/api/v1/accounts/{id}":
+    get:
+      summary: Show a public profile
+      tags:
+      - Accounts
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: visible
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Account"
+        '404':
+          description: blocked (NR-1 invisibility)
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  "/api/v1/blocks":
+    get:
+      summary: List accounts the current account has blocked
+      tags:
+      - Blocks
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: list
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BlockList"
+    post:
+      summary: Block an account
+      tags:
+      - Blocks
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: blocked
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Block"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                account_id:
+                  type: integer
+  "/api/v1/blocks/{id}":
+    delete:
+      summary: Unblock an account
+      tags:
+      - Blocks
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: unblocked
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
   "/api/v1/users/me/password":
     patch:
       summary: Set or change the current user's password
@@ -103,6 +204,174 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Ok"
+  "/api/v1/users/me/phone/verification":
+    post:
+      summary: Start WhatsApp click-to-verify (NR-9)
+      tags:
+      - Phone
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: code issued
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/PhoneVerification"
+    get:
+      summary: Phone verification status
+      tags:
+      - Phone
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: status
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/PhoneVerification"
+  "/api/v1/admin/users/{user_id}/verify_phone":
+    post:
+      summary: Manually verify a phone number
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: verified
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Me"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+  "/api/v1/users/me":
+    get:
+      summary: Show the current user and account
+      tags:
+      - Users
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: current profile
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Me"
+    patch:
+      summary: 'Update the current profile (F-7: no phone)'
+      tags:
+      - Users
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Me"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+                username:
+                  type: string
+                bio:
+                  type: string
+    delete:
+      summary: Deactivate the current account (S-3)
+      tags:
+      - Users
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: deactivated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+  "/api/v1/users/me/complete_onboarding":
+    post:
+      summary: Stamp onboarded_at
+      tags:
+      - Users
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: onboarded
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Me"
+  "/api/v1/users/me/email/change":
+    post:
+      summary: Request a verified email change
+      tags:
+      - Users
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: accepted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AuthAccepted"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+  "/api/v1/users/me/email/verify":
+    post:
+      summary: Confirm a verified email change
+      tags:
+      - Users
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: changed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Me"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
   "/auth/google":
     post:
       summary: Sign in with a Google Identity Services auth code
@@ -585,6 +854,45 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Health"
+  "/webhooks/whatsapp":
+    get:
+      summary: Meta hub challenge
+      tags:
+      - Webhooks
+      parameters:
+      - name: hub.mode
+        in: query
+        schema:
+          type: string
+      - name: hub.verify_token
+        in: query
+        schema:
+          type: string
+      - name: hub.challenge
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: subscribed
+    post:
+      summary: Inbound WhatsApp message
+      tags:
+      - Webhooks
+      parameters: []
+      responses:
+        '200':
+          description: accepted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
 servers:
 - url: http://localhost:3000
   description: Local development
@@ -661,6 +969,9 @@ components:
           type: string
         kind:
           type: string
+        bio:
+          type: string
+          nullable: true
     SessionUser:
       type: object
       required:
@@ -668,10 +979,14 @@ components:
       - onboarded
       - has_password
       - has_passkey
+      - phone_verified
       properties:
         id:
           type: integer
         email:
+          type: string
+          nullable: true
+        phone:
           type: string
           nullable: true
         onboarded:
@@ -680,6 +995,64 @@ components:
           type: boolean
         has_passkey:
           type: boolean
+        phone_verified:
+          type: boolean
+    Me:
+      type: object
+      required:
+      - account
+      - user
+      properties:
+        account:
+          "$ref": "#/components/schemas/Account"
+        user:
+          "$ref": "#/components/schemas/SessionUser"
+    UsernameAvailability:
+      type: object
+      required:
+      - available
+      properties:
+        available:
+          type: boolean
+    PhoneVerification:
+      type: object
+      required:
+      - status
+      - phone_changed
+      properties:
+        code:
+          type: string
+          nullable: true
+        wa_url:
+          type: string
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+        confirmed_phone:
+          type: string
+          nullable: true
+        phone_changed:
+          type: boolean
+    Block:
+      type: object
+      required:
+      - account
+      properties:
+        account:
+          "$ref": "#/components/schemas/Account"
+    BlockList:
+      type: object
+      required:
+      - blocks
+      properties:
+        blocks:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Block"
     Session:
       type: object
       required:

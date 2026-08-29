@@ -39,9 +39,9 @@ describe("column-layout", () => {
       startX: 200,
     };
     expect(widthAfterResize({ ...shared, clientX: 240, edge: "list" })).toBe(400);
-    expect(
-      widthAfterResize({ ...shared, clientX: 240, detailOpen: false, edge: "list" }),
-    ).toBe(400);
+    expect(widthAfterResize({ ...shared, clientX: 240, detailOpen: false, edge: "list" })).toBe(
+      400,
+    );
     expect(widthAfterResize({ ...shared, clientX: 160, edge: "list" })).toBe(320);
     expect(widthAfterResize({ ...shared, clientX: 160, edge: "detail" })).toBe(400);
     expect(widthAfterResize({ ...shared, clientX: 240, edge: "detail" })).toBe(320);
