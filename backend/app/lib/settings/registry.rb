@@ -238,6 +238,22 @@ module Settings
         type: :integer, category: :auth, default: 1_800, min: 60, max: 86_400,
         description: "Magic-link lifetime in seconds."
       },
+      password_min_length: {
+        type: :integer, category: :auth, default: 8, min: 8, max: 128,
+        description: "Minimum characters required when setting a password."
+      },
+      password_reset_ttl: {
+        type: :integer, category: :auth, default: 3_600, min: 60, max: 86_400,
+        description: "Password-reset token lifetime in seconds."
+      },
+      username_min_length: {
+        type: :integer, category: :auth, default: 3, min: 2, max: 30,
+        description: "Minimum username length when deriving a handle from email."
+      },
+      username_max_length: {
+        type: :integer, category: :auth, default: 30, min: 3, max: 64,
+        description: "Maximum username length when deriving a handle from email."
+      },
       session_lifetime: {
         type: :integer, category: :auth, default: 2_592_000, min: 300, max: 31_536_000,
         description: "Session/JWT lifetime in seconds."

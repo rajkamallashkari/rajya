@@ -507,6 +507,42 @@
     "max": 86400,
     "allow_nil": false
   },
+  "password_min_length": {
+    "type": "integer",
+    "category": "auth",
+    "default": 8,
+    "description": "Minimum characters required when setting a password.",
+    "min": 8,
+    "max": 128,
+    "allow_nil": false
+  },
+  "password_reset_ttl": {
+    "type": "integer",
+    "category": "auth",
+    "default": 3600,
+    "description": "Password-reset token lifetime in seconds.",
+    "min": 60,
+    "max": 86400,
+    "allow_nil": false
+  },
+  "username_min_length": {
+    "type": "integer",
+    "category": "auth",
+    "default": 3,
+    "description": "Minimum username length when deriving a handle from email.",
+    "min": 2,
+    "max": 30,
+    "allow_nil": false
+  },
+  "username_max_length": {
+    "type": "integer",
+    "category": "auth",
+    "default": 30,
+    "description": "Maximum username length when deriving a handle from email.",
+    "min": 3,
+    "max": 64,
+    "allow_nil": false
+  },
   "session_lifetime": {
     "type": "integer",
     "category": "auth",

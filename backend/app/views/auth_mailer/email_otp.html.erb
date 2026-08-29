@@ -1,0 +1,9 @@
+<p><%= @headline %></p>
+<p><%= @body %></p>
+<% if @otp.present? %>
+  <p><%= @otp %></p>
+<% end %>
+<% if @url.present? %>
+  <p><a href="<%= @url %>"><%= @url %></a></p>
+<% end %>
+<p><%= @footer %></p>

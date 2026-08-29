@@ -7,8 +7,13 @@ module RateLimits
 
   AUTH_LOGIN = "/auth/login"
   AUTH_REGISTER = "/auth/register"
+  AUTH_GOOGLE = "/auth/google"
   AUTH_OTP_REQUEST = "/auth/otp/request"
   AUTH_OTP_VERIFY = "/auth/otp/verify"
+  AUTH_MAGIC_REQUEST = "/auth/magic_link/request"
+  AUTH_MAGIC_VERIFY = "/auth/magic_link/verify"
+  AUTH_FORGOT = "/auth/forgot_password"
+  AUTH_RESET = "/auth/reset_password"
   API_MESSAGES = "/api/v1/messages"
   API_PREFIX = "/api/"
   BEARER = "Bearer"
@@ -28,7 +33,7 @@ module RateLimits
   end
 
   def login_ip(req)
-    req.ip if post_path?(req, AUTH_LOGIN)
+    req.ip if post_one_of?(req, AUTH_LOGIN, AUTH_GOOGLE)
   end
 
   def login_account(req)
@@ -42,13 +47,13 @@ module RateLimits
   end
 
   def otp_issuance_destination(req)
-    return unless post_path?(req, AUTH_OTP_REQUEST)
+    return unless post_one_of?(req, AUTH_OTP_REQUEST, AUTH_MAGIC_REQUEST, AUTH_FORGOT)
 
     (param(req, "email") || param(req, "destination"))&.downcase
   end
 
   def otp_verification_ip(req)
-    req.ip if post_path?(req, AUTH_OTP_VERIFY)
+    req.ip if post_one_of?(req, AUTH_OTP_VERIFY, AUTH_MAGIC_VERIFY, AUTH_RESET)
   end
 
   def messages(req)
@@ -104,6 +109,10 @@ module RateLimits
 
   def post_path?(req, path)
     req.post? && req.path == path
+  end
+
+  def post_one_of?(req, *paths)
+    req.post? && paths.include?(req.path)
   end
 
   def safelists!

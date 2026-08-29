@@ -24,6 +24,13 @@ RSpec.describe User do
     expect { user.revoke_all_credentials! }.to change { user.reload.credentials_epoch }.by(1)
   end
 
+  it "authenticates a password through has_secure_password" do
+    user = create(:user, :with_password)
+
+    expect(user.authenticate("password12")).to eq(user)
+    expect(user.authenticate("wrongpass")).to be(false)
+  end
+
   it "always writes last_active_at even when the privacy flag is off (BR-43)" do
     user = create(:user)
     create(:preference, account: user.account, data: { "privacy" => { "last_active" => false } })

@@ -58,9 +58,21 @@ RSpec.describe RateLimits do
       expect(described_class.login_account(req)).to be_nil
     end
 
-    it "keys registration and OTP verification by IP" do
-      expect(described_class.registration_ip(attack_request(path: "/auth/register"))).to be_present
-      expect(described_class.otp_verification_ip(attack_request(path: "/auth/otp/verify"))).to be_present
+    it "keys Google GIS by the login IP throttle" do
+      expect(described_class.login_ip(attack_request(path: "/auth/google"))).to be_present
+    end
+
+    it "keys magic-link and forgot-password issuance by email" do
+      magic = attack_request(path: "/auth/magic_link/request", params: { "email" => "A@x.com" })
+      forgot = attack_request(path: "/auth/forgot_password", params: { "email" => "B@x.com" })
+
+      expect(described_class.otp_issuance_destination(magic)).to eq("a@x.com")
+      expect(described_class.otp_issuance_destination(forgot)).to eq("b@x.com")
+    end
+
+    it "keys magic-link and reset verification by IP" do
+      expect(described_class.otp_verification_ip(attack_request(path: "/auth/magic_link/verify"))).to be_present
+      expect(described_class.otp_verification_ip(attack_request(path: "/auth/reset_password"))).to be_present
     end
 
     it "keys OTP issuance by email or destination" do

@@ -54,6 +54,11 @@ en:
         self: "can't be the same as the blocking account"
       user:
         account_kind: "must be a human account"
+        email_blank: "can't be blank"
+        email_taken: "has already been taken"
+        name_blank: "can't be blank"
+        password_confirmation: "doesn't match password"
+        password_too_short: "is too short (minimum is %{count} characters)"
       bot:
         account_kind: "must be a bot account"
       app_setting:
@@ -62,6 +67,24 @@ en:
         wrong_type: "does not match the registered type"
       theme_override:
         contrast: "would drop contrast below WCAG AA against its paired token"
+
+  mailers:
+    auth:
+      magic_link:
+        subject: "Sign in to Rajya"
+        headline: "Sign in to Rajya"
+        body: "Hi %{name}, open the link below to sign in. It expires in %{minutes} minutes."
+        footer: "If you didn't request this, you can safely ignore this email. This link can only be used once."
+      otp:
+        subject: "%{otp} – your Rajya code"
+        headline: "Your sign-in code"
+        body: "Hi %{name}, use the code below to sign in. It expires in %{minutes} minutes."
+        footer: "If you didn't request this code, you can safely ignore this email. Never share this code with anyone."
+      password_reset:
+        subject: "Reset your Rajya password"
+        headline: "Reset your password"
+        body: "Hi %{name}, open the link below to set a new password. It expires in %{minutes} minutes and can only be used once."
+        footer: "If you didn't request a password reset, you can safely ignore this email. Your password will not be changed."
 
   health:
     redis_unexpected: "Redis did not answer PONG."

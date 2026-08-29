@@ -1,5 +1,5 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: -> { default_from_address }
+  default from: -> { ApplicationMailer.default_from_address }
   layout "mailer"
 
   def self.default_from_address

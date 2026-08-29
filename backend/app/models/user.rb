@@ -1,6 +1,8 @@
 # The human who authenticated (CONVENTIONS.md §2.4) — admin, credentials, and
 # impersonation audit key off this, never `Account` directly.
 class User < ApplicationRecord
+  has_secure_password validations: false
+
   belongs_to :account, inverse_of: :user
 
   has_many :verification_codes, dependent: :destroy

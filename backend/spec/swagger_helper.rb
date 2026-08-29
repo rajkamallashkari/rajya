@@ -55,6 +55,41 @@ RSpec.configure do |config|
                 }
               }
             }
+          },
+          Account: {
+            type: :object,
+            required: %w[id username display_name kind],
+            properties: {
+              id: { type: :integer },
+              username: { type: :string },
+              display_name: { type: :string },
+              kind: { type: :string }
+            }
+          },
+          SessionUser: {
+            type: :object,
+            required: %w[id onboarded],
+            properties: {
+              id: { type: :integer },
+              email: { type: :string, nullable: true },
+              onboarded: { type: :boolean }
+            }
+          },
+          Session: {
+            type: :object,
+            required: %w[token account user],
+            properties: {
+              token: { type: :string },
+              account: { "$ref" => "#/components/schemas/Account" },
+              user: { "$ref" => "#/components/schemas/SessionUser" }
+            }
+          },
+          AuthAccepted: {
+            type: :object,
+            required: %w[accepted],
+            properties: {
+              accepted: { type: :boolean }
+            }
           }
         }
       }

@@ -6,6 +6,249 @@ info:
   description: Rajya HTTP API. Generated from rswag-annotated request specs (TARGET
     §4.5).
 paths:
+  "/auth/google":
+    post:
+      summary: Sign in with a Google Identity Services auth code
+      tags:
+      - Auth
+      description: GIS popup posts the auth code. JWT is returned in the body, never
+        a redirect query string (F-25).
+      parameters: []
+      responses:
+        '200':
+          description: signed in
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Session"
+        '502':
+          description: Google rejected the code
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+  "/auth/magic_link/request":
+    post:
+      summary: Request a magic sign-in link
+      tags:
+      - Auth
+      parameters: []
+      responses:
+        '200':
+          description: accepted whether or not the account exists
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AuthAccepted"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+  "/auth/magic_link/verify":
+    post:
+      summary: Consume a magic sign-in token
+      tags:
+      - Auth
+      description: POST body, not a query string — the JWT never travels in a URL
+        (F-25 class).
+      parameters: []
+      responses:
+        '200':
+          description: signed in
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Session"
+        '422':
+          description: token invalid
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+  "/auth/otp/request":
+    post:
+      summary: Request an email OTP
+      tags:
+      - Auth
+      parameters: []
+      responses:
+        '200':
+          description: accepted for existing and missing accounts (F-24)
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AuthAccepted"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+  "/auth/otp/verify":
+    post:
+      summary: Verify an email OTP
+      tags:
+      - Auth
+      parameters: []
+      responses:
+        '200':
+          description: signed in
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Session"
+        '422':
+          description: code invalid
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                code:
+                  type: string
+  "/auth/register":
+    post:
+      summary: Register with email and password
+      tags:
+      - Auth
+      parameters: []
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Session"
+        '409':
+          description: email taken
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                name:
+                  type: string
+                password:
+                  type: string
+                password_confirmation:
+                  type: string
+  "/auth/login":
+    post:
+      summary: Sign in with email and password
+      tags:
+      - Auth
+      parameters: []
+      responses:
+        '200':
+          description: signed in
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Session"
+        '401':
+          description: invalid credentials
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+  "/auth/forgot_password":
+    post:
+      summary: Request a password reset email
+      tags:
+      - Auth
+      parameters: []
+      responses:
+        '200':
+          description: accepted whether or not the account exists
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AuthAccepted"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+  "/auth/reset_password":
+    post:
+      summary: Consume a password reset token
+      tags:
+      - Auth
+      parameters: []
+      responses:
+        '200':
+          description: password updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Session"
+        '422':
+          description: token invalid
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+                password_confirmation:
+                  type: string
   "/up":
     get:
       summary: Liveness
@@ -89,3 +332,52 @@ components:
               "$ref": "#/components/schemas/HealthCheck"
             r2:
               "$ref": "#/components/schemas/HealthCheck"
+    Account:
+      type: object
+      required:
+      - id
+      - username
+      - display_name
+      - kind
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        display_name:
+          type: string
+        kind:
+          type: string
+    SessionUser:
+      type: object
+      required:
+      - id
+      - onboarded
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          nullable: true
+        onboarded:
+          type: boolean
+    Session:
+      type: object
+      required:
+      - token
+      - account
+      - user
+      properties:
+        token:
+          type: string
+        account:
+          "$ref": "#/components/schemas/Account"
+        user:
+          "$ref": "#/components/schemas/SessionUser"
+    AuthAccepted:
+      type: object
+      required:
+      - accepted
+      properties:
+        accepted:
+          type: boolean
