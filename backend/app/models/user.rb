@@ -5,6 +5,7 @@ class User < ApplicationRecord
 
   belongs_to :account, inverse_of: :user
 
+  has_many :sessions, dependent: :destroy
   has_many :verification_codes, dependent: :destroy
   has_many :passkeys, dependent: :destroy
   has_many :phone_verification_requests, dependent: :destroy
@@ -27,7 +28,10 @@ class User < ApplicationRecord
   validate :account_must_be_human
 
   def revoke_all_credentials!
-    increment!(:credentials_epoch)
+    transaction do
+      increment!(:credentials_epoch)
+      Session.revoke_all_for!(self)
+    end
   end
 
   # BR-43: always persist last-active. Privacy flags gate exposure only.

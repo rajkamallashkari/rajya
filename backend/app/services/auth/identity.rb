@@ -1,10 +1,11 @@
 # Resolves a JWT to the human who authenticated (`user`) and the participant
 # they act as (`account`). Fail closed: missing claims, a stale epoch, a
-# deactivated account, or an account_id that does not match the user's side
-# table all return nil — the controller/connection then rejects (F-6).
+# revoked or unknown `jti`, a deactivated account, or an account_id that does
+# not match the user's side table all return nil — the controller/connection
+# then rejects (F-6, NR-44).
 module Auth
   class Identity
-    Context = Struct.new(:user, :account, keyword_init: true)
+    Context = Struct.new(:user, :account, :session, keyword_init: true)
 
     BEARER = "Bearer"
 
@@ -36,7 +37,13 @@ module Auth
         return if account.deactivated?
         return unless payload["account_id"].to_i == account.id
 
-        Context.new(user: user, account: account)
+        jti = payload["jti"]
+        return if RevokedJtis.blocked?(jti)
+
+        session = user.sessions.find_by(jti: jti)
+        return if session.nil? || !session.usable?
+
+        Context.new(user: user, account: account, session: session)
       rescue Token::DecodeError
         nil
       end

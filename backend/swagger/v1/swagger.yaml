@@ -107,6 +107,67 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Ok"
+  "/api/v1/contact_nicknames":
+    get:
+      summary: List the current account's contact nicknames
+      tags:
+      - Contact nicknames
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: list
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ContactNicknameList"
+  "/api/v1/contact_nicknames/{account_id}":
+    put:
+      summary: Set a private nickname for a contact
+      tags:
+      - Contact nicknames
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: account_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: saved
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ContactNickname"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname:
+                  type: string
+    delete:
+      summary: Remove a private nickname
+      tags:
+      - Contact nicknames
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: account_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: removed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
   "/api/v1/users/me/password":
     patch:
       summary: Set or change the current user's password
@@ -259,6 +320,54 @@ paths:
               properties:
                 phone:
                   type: string
+  "/api/v1/sessions":
+    get:
+      summary: List active devices for the current user
+      tags:
+      - Sessions
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: list
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DeviceSessionList"
+  "/api/v1/sessions/others":
+    delete:
+      summary: Sign out every other device
+      tags:
+      - Sessions
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: revoked
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+  "/api/v1/sessions/{id}":
+    delete:
+      summary: Sign out one device
+      tags:
+      - Sessions
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: revoked
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
   "/api/v1/users/me":
     get:
       summary: Show the current user and account
@@ -1053,6 +1162,64 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/Block"
+    ContactNickname:
+      type: object
+      required:
+      - nickname
+      - account
+      properties:
+        nickname:
+          type: string
+        account:
+          "$ref": "#/components/schemas/Account"
+    ContactNicknameList:
+      type: object
+      required:
+      - nicknames
+      properties:
+        nicknames:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ContactNickname"
+    DeviceSession:
+      type: object
+      required:
+      - id
+      - last_seen_at
+      - expires_at
+      - current
+      - revoked
+      properties:
+        id:
+          type: integer
+        device_label:
+          type: string
+          nullable: true
+        user_agent:
+          type: string
+          nullable: true
+        ip:
+          type: string
+          nullable: true
+        last_seen_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        current:
+          type: boolean
+        revoked:
+          type: boolean
+    DeviceSessionList:
+      type: object
+      required:
+      - sessions
+      properties:
+        sessions:
+          type: array
+          items:
+            "$ref": "#/components/schemas/DeviceSession"
     Session:
       type: object
       required:

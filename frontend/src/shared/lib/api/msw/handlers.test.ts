@@ -11,12 +11,17 @@ const expectedPaths = [
   "/api/v1/admin/users/{user_id}/verify_phone",
   "/api/v1/blocks",
   "/api/v1/blocks/{id}",
+  "/api/v1/contact_nicknames",
+  "/api/v1/contact_nicknames/{account_id}",
   "/api/v1/passkeys",
   "/api/v1/passkeys/assert_lock",
   "/api/v1/passkeys/lock_options",
   "/api/v1/passkeys/register",
   "/api/v1/passkeys/registration_options",
   "/api/v1/passkeys/{id}",
+  "/api/v1/sessions",
+  "/api/v1/sessions/others",
+  "/api/v1/sessions/{id}",
   "/api/v1/users/me",
   "/api/v1/users/me/complete_onboarding",
   "/api/v1/users/me/email",
@@ -168,6 +173,23 @@ describe("MSW handlers", () => {
     expect(blocked.data?.account.id).toBe(1);
     const unblocked = await client.DELETE("/api/v1/blocks/{id}", { params: { path: { id: 2 } } });
     expect(unblocked.data?.ok).toBe(true);
+    const sessions = await client.GET("/api/v1/sessions");
+    expect(sessions.data?.sessions[0]?.current).toBe(true);
+    const revokedOther = await client.DELETE("/api/v1/sessions/others");
+    expect(revokedOther.data?.ok).toBe(true);
+    const revokedOne = await client.DELETE("/api/v1/sessions/{id}", { params: { path: { id: 1 } } });
+    expect(revokedOne.data?.ok).toBe(true);
+    const nicknames = await client.GET("/api/v1/contact_nicknames");
+    expect(nicknames.data?.nicknames[0]?.nickname).toBe("Ada");
+    const nicknamed = await client.PUT("/api/v1/contact_nicknames/{account_id}", {
+      params: { path: { account_id: 2 } },
+      body: { nickname: "Ada" },
+    });
+    expect(nicknamed.data?.nickname).toBe("Ada");
+    const unnamed = await client.DELETE("/api/v1/contact_nicknames/{account_id}", {
+      params: { path: { account_id: 2 } },
+    });
+    expect(unnamed.data?.ok).toBe(true);
     const adminPhone = await client.POST("/api/v1/admin/users/{user_id}/verify_phone", {
       params: { path: { user_id: 1 } },
       body: { phone: "1555" },

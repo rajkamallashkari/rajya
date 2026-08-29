@@ -118,6 +118,27 @@ RSpec.describe "ApplicationController", type: :request do
     expect(response).to have_http_status(:unauthorized)
   end
 
+  it "returns 401 when the session jti is revoked (NR-44)" do
+    first = Auth::Session.issue(user)
+    second = Auth::Session.issue(user)
+    ::Session.find_by!(jti: Auth::Token.decode(first.token).fetch("jti")).revoke!
+
+    get "/__probes/identity", headers: { "Authorization" => "Bearer #{first.token}" }
+    expect(response).to have_http_status(:unauthorized)
+
+    get "/__probes/identity", headers: { "Authorization" => "Bearer #{second.token}" }
+    expect(response).to have_http_status(:ok)
+  end
+
+  it "returns 401 when the revoked-jti cache cannot be read" do
+    token = bearer_token_for(user)
+    allow(Auth::RevokedJtis).to receive(:read_set).and_raise(Redis::BaseError, "down")
+
+    get "/__probes/identity", headers: { "Authorization" => "Bearer #{token}" }
+
+    expect(response).to have_http_status(:unauthorized)
+  end
+
   it "requires policy_scope on index and renders once satisfied" do
     get "/__probes", headers: headers
 

@@ -101,7 +101,7 @@ RSpec.describe RateLimits do
 
     it "keys authenticated API throttles by account id" do
       user = create(:user)
-      auth = "Bearer #{Auth::Token.encode(user)}"
+      auth = "Bearer #{Auth::Token.encode(user, jti: SecureRandom.uuid)}"
       api = attack_request(path: "/api/v1/messages", auth: auth)
       general = attack_request(path: "/api/v1/me", http_method: "GET", auth: auth)
 

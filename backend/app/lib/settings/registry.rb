@@ -254,6 +254,14 @@ module Settings
         type: :integer, category: :auth, default: 30, min: 3, max: 64,
         description: "Maximum username length when deriving a handle from email."
       },
+      nickname_max_length: {
+        type: :integer, category: :auth, default: 64, min: 1, max: 128,
+        description: "Maximum characters in a per-contact nickname (NR-41)."
+      },
+      session_last_seen_granularity: {
+        type: :integer, category: :auth, default: 60, min: 1, max: 3_600,
+        description: "Minimum seconds between session last-seen writes (NR-44)."
+      },
       session_lifetime: {
         type: :integer, category: :auth, default: 2_592_000, min: 300, max: 31_536_000,
         description: "Session/JWT lifetime in seconds."

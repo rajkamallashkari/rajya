@@ -9,6 +9,7 @@ class ApplicationController < ActionController::API
   # A missing `authorize` (or `policy_scope` on an index) call fails the test
   # suite, not production (F-1 fix). Real controllers land in later sessions;
   # this stays armed from the first one.
+  before_action :capture_client_context
   before_action :authenticate!, unless: :skip_authentication?
   after_action :verify_authorized, unless: :skip_authorization?
   after_action :verify_policy_scoped, if: :index_action?
@@ -34,11 +35,22 @@ class ApplicationController < ActionController::API
     @current_user
   end
 
+  def current_session
+    @current_session
+  end
+
+  def capture_client_context
+    Auth::RequestContext.ip = request.remote_ip
+    Auth::RequestContext.user_agent = request.user_agent
+  end
+
   def authenticate!
     context = Auth::Identity.from_http(request)
     if context
       @current_user = context.user
       @current_account = context.account
+      @current_session = context.session
+      context.session.touch_last_seen!
       return
     end
 

@@ -559,6 +559,40 @@ ALTER SEQUENCE public.calls_id_seq OWNED BY public.calls.id;
 
 
 --
+-- Name: contact_nicknames; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.contact_nicknames (
+    id bigint NOT NULL,
+    owner_account_id bigint NOT NULL,
+    target_account_id bigint NOT NULL,
+    nickname text NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT ck_contact_nicknames_not_self CHECK ((owner_account_id <> target_account_id))
+);
+
+
+--
+-- Name: contact_nicknames_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.contact_nicknames_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: contact_nicknames_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.contact_nicknames_id_seq OWNED BY public.contact_nicknames.id;
+
+
+--
 -- Name: conversation_folder_entries; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1313,6 +1347,43 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: sessions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sessions (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    jti uuid NOT NULL,
+    device_label text,
+    user_agent text,
+    ip inet,
+    last_seen_at timestamp(6) without time zone NOT NULL,
+    expires_at timestamp(6) without time zone NOT NULL,
+    revoked_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: sessions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.sessions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: sessions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.sessions_id_seq OWNED BY public.sessions.id;
+
+
+--
 -- Name: storage_buckets; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1641,6 +1712,13 @@ ALTER TABLE ONLY public.calls ALTER COLUMN id SET DEFAULT nextval('public.calls_
 
 
 --
+-- Name: contact_nicknames id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.contact_nicknames ALTER COLUMN id SET DEFAULT nextval('public.contact_nicknames_id_seq'::regclass);
+
+
+--
 -- Name: conversation_folder_entries id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1778,6 +1856,13 @@ ALTER TABLE ONLY public.saved_messages ALTER COLUMN id SET DEFAULT nextval('publ
 --
 
 ALTER TABLE ONLY public.scheduled_messages ALTER COLUMN id SET DEFAULT nextval('public.scheduled_messages_id_seq'::regclass);
+
+
+--
+-- Name: sessions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sessions ALTER COLUMN id SET DEFAULT nextval('public.sessions_id_seq'::regclass);
 
 
 --
@@ -1940,6 +2025,14 @@ ALTER TABLE ONLY public.call_participants
 
 ALTER TABLE ONLY public.calls
     ADD CONSTRAINT calls_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: contact_nicknames contact_nicknames_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.contact_nicknames
+    ADD CONSTRAINT contact_nicknames_pkey PRIMARY KEY (id);
 
 
 --
@@ -2127,6 +2220,14 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
+-- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: storage_buckets storage_buckets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2208,6 +2309,13 @@ CREATE INDEX idx_audit_events_impersonated_account ON public.audit_events USING 
 --
 
 CREATE UNIQUE INDEX idx_blocks_unique ON public.blocks USING btree (blocker_account_id, blocked_account_id);
+
+
+--
+-- Name: idx_contact_nicknames_owner_target; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_contact_nicknames_owner_target ON public.contact_nicknames USING btree (owner_account_id, target_account_id);
 
 
 --
@@ -2680,6 +2788,20 @@ CREATE INDEX index_scheduled_messages_on_sender_account_id ON public.scheduled_m
 
 
 --
+-- Name: index_sessions_on_jti; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_sessions_on_jti ON public.sessions USING btree (jti);
+
+
+--
+-- Name: index_sessions_on_user_id_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_sessions_on_user_id_active ON public.sessions USING btree (user_id) WHERE (revoked_at IS NULL);
+
+
+--
 -- Name: index_storage_buckets_on_service_name; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3006,6 +3128,14 @@ ALTER TABLE ONLY public.reactions
 
 
 --
+-- Name: sessions fk_rails_758836b4f0; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT fk_rails_758836b4f0 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: bot_requests fk_rails_7aa28fe07c; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3118,6 +3248,14 @@ ALTER TABLE ONLY public.bots
 
 
 --
+-- Name: contact_nicknames fk_rails_a777958b87; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.contact_nicknames
+    ADD CONSTRAINT fk_rails_a777958b87 FOREIGN KEY (target_account_id) REFERENCES public.accounts(id) ON DELETE CASCADE;
+
+
+--
 -- Name: calls fk_rails_a7815d2447; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3187,6 +3325,14 @@ ALTER TABLE ONLY public.bot_memories
 
 ALTER TABLE ONLY public.active_storage_attachments
     ADD CONSTRAINT fk_rails_c3b3935057 FOREIGN KEY (blob_id) REFERENCES public.active_storage_blobs(id);
+
+
+--
+-- Name: contact_nicknames fk_rails_c478085334; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.contact_nicknames
+    ADD CONSTRAINT fk_rails_c478085334 FOREIGN KEY (owner_account_id) REFERENCES public.accounts(id) ON DELETE CASCADE;
 
 
 --
@@ -3284,6 +3430,7 @@ ALTER TABLE ONLY public.message_link_previews
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260830040900'),
 ('20260826143000'),
 ('20260812025731'),
 ('20260812025517');

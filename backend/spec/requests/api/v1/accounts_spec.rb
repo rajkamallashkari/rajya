@@ -39,10 +39,25 @@ RSpec.describe "Account profile", type: :request do
         let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
         let(:id) { target.id }
 
+        before { create(:contact_nickname, owner_account: user.account, target_account: target, nickname: "Secret") }
+
         run_test! do |response|
-          expect(JSON.parse(response.body).fetch("id")).to eq(target.id)
+          body = JSON.parse(response.body)
+          expect(body.fetch("id")).to eq(target.id)
+          expect(body).not_to have_key("nickname")
         end
       end
+    end
+  end
+end
+
+RSpec.describe "Account profile blocked", type: :request do
+  path "/api/v1/accounts/{id}" do
+    get "Show a public profile" do
+      tags "Accounts"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
 
       response "404", "blocked (NR-1 invisibility)" do
         schema "$ref" => "#/components/schemas/Error"

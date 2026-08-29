@@ -4,11 +4,13 @@ RSpec.describe Auth::Identity do
   let(:user) { create(:user) }
 
   describe ".resolve" do
-    it "returns the user and their account for a current token" do
-      context = described_class.resolve(Auth::Token.encode(user))
+    it "returns the user, account and session for a current token" do
+      issued = Auth::Session.issue(user)
+      context = described_class.resolve(issued.token)
 
       expect(context.user).to eq(user)
       expect(context.account).to eq(user.account)
+      expect(context.session.jti).to eq(Auth::Token.decode(issued.token).fetch("jti"))
     end
 
     it "returns nil for a missing token" do
@@ -20,8 +22,24 @@ RSpec.describe Auth::Identity do
     end
 
     it "returns nil when credentials_epoch no longer matches (F-6)" do
-      token = Auth::Token.encode(user)
+      token = Auth::Session.issue(user).token
       user.revoke_all_credentials!
+
+      expect(described_class.resolve(token)).to be_nil
+    end
+
+    it "returns nil when the session jti has been revoked while other sessions keep working (NR-44)" do
+      first = Auth::Session.issue(user)
+      second = Auth::Session.issue(user)
+      ::Session.find_by!(jti: Auth::Token.decode(first.token).fetch("jti")).revoke!
+
+      expect(described_class.resolve(first.token)).to be_nil
+      expect(described_class.resolve(second.token).user).to eq(user)
+    end
+
+    it "returns nil when the revoked-jti cache cannot be read (fail closed)" do
+      token = Auth::Session.issue(user).token
+      allow(Auth::RevokedJtis).to receive(:read_set).and_raise(Redis::BaseError, "down")
 
       expect(described_class.resolve(token)).to be_nil
     end
@@ -29,23 +47,49 @@ RSpec.describe Auth::Identity do
     it "returns nil when the account has been deactivated" do
       user.account.update!(deactivated_at: Time.current)
 
-      expect(described_class.resolve(Auth::Token.encode(user.reload))).to be_nil
+      expect(described_class.resolve(Auth::Session.issue(user.reload).token)).to be_nil
+    end
+
+    it "returns nil when the matching session has expired" do
+      issued = Auth::Session.issue(user)
+      jti = Auth::Token.decode(issued.token).fetch("jti")
+      ::Session.find_by!(jti: jti).update!(expires_at: 1.minute.ago)
+
+      expect(described_class.resolve(issued.token)).to be_nil
     end
 
     it "returns nil when the user no longer exists" do
-      token = signed("sub" => 0, "account_id" => user.account_id, "credentials_epoch" => 0)
+      token = signed("sub" => 0, "account_id" => user.account_id, "credentials_epoch" => 0, "jti" => SecureRandom.uuid)
 
       expect(described_class.resolve(token)).to be_nil
     end
 
     it "returns nil when credentials_epoch is missing from the payload" do
-      token = signed("sub" => user.id, "account_id" => user.account_id)
+      token = signed("sub" => user.id, "account_id" => user.account_id, "jti" => SecureRandom.uuid)
+
+      expect(described_class.resolve(token)).to be_nil
+    end
+
+    it "returns nil when jti is missing from the payload" do
+      token = signed("sub" => user.id, "account_id" => user.account_id, "credentials_epoch" => user.credentials_epoch)
+
+      expect(described_class.resolve(token)).to be_nil
+    end
+
+    it "returns nil when the jti has no matching session row" do
+      token = signed(
+        "sub" => user.id,
+        "account_id" => user.account_id,
+        "credentials_epoch" => user.credentials_epoch,
+        "jti" => SecureRandom.uuid
+      )
 
       expect(described_class.resolve(token)).to be_nil
     end
 
     it "returns nil when account_id does not match the user's account" do
-      token = signed("sub" => user.id, "account_id" => 0, "credentials_epoch" => user.credentials_epoch)
+      token = signed("sub" => user.id, "account_id" => 0, "credentials_epoch" => user.credentials_epoch,
+                     "jti" => SecureRandom.uuid)
 
       expect(described_class.resolve(token)).to be_nil
     end
@@ -57,7 +101,10 @@ RSpec.describe Auth::Identity do
 
   describe ".from_http" do
     it "resolves a Bearer token from the Authorization header" do
-      request = instance_double(ActionDispatch::Request, headers: { "Authorization" => "Bearer #{Auth::Token.encode(user)}" })
+      request = instance_double(
+        ActionDispatch::Request,
+        headers: { "Authorization" => "Bearer #{Auth::Session.issue(user).token}" }
+      )
 
       expect(described_class.from_http(request).user).to eq(user)
     end
@@ -83,7 +130,7 @@ RSpec.describe Auth::Identity do
 
   describe ".from_cable" do
     it "resolves the token query parameter" do
-      request = instance_double(ActionDispatch::Request, params: { token: Auth::Token.encode(user) })
+      request = instance_double(ActionDispatch::Request, params: { token: Auth::Session.issue(user).token })
 
       expect(described_class.from_cable(request).user).to eq(user)
     end

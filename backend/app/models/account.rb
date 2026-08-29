@@ -20,6 +20,10 @@ class Account < ApplicationRecord
                                dependent: :destroy
   has_many :blocks_received, class_name: "Block", foreign_key: :blocked_account_id, inverse_of: :blocked_account,
                               dependent: :destroy
+  has_many :owned_nicknames, class_name: "ContactNickname", foreign_key: :owner_account_id,
+                              inverse_of: :owner_account, dependent: :destroy
+  has_many :received_nicknames, class_name: "ContactNickname", foreign_key: :target_account_id,
+                                 inverse_of: :target_account, dependent: :destroy
   has_many :conversation_folders, dependent: :destroy
   has_many :call_participants, dependent: :destroy
   has_many :created_group_invites, class_name: "GroupInvite", foreign_key: :created_by_account_id,

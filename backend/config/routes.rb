@@ -57,6 +57,10 @@ Rails.application.routes.draw do
       get "accounts/username", to: "usernames#show"
       resources :accounts, only: %i[show]
       resources :blocks, only: %i[index create destroy]
+      resources :sessions, only: %i[index destroy] do
+        collection { delete :others }
+      end
+      resources :contact_nicknames, only: %i[index update destroy], param: :account_id
       namespace :admin do
         post "users/:user_id/verify_phone", to: "phone_verifications#create"
       end

@@ -1,6 +1,6 @@
 module AuthHelpers
   def bearer_token_for(user)
-    Auth::Token.encode(user)
+    Auth::Session.issue(user).token
   end
 
   def auth_headers_for(user)

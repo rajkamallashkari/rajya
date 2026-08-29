@@ -11,6 +11,7 @@ RSpec.describe Settings::Registry do
     expect(described_class.keys).to include(
       :message_edit_window, :pins_per_conversation, :attachments_per_message,
       :otp_length, :rate_limit_login_attempts, :email_from_name,
+      :nickname_max_length, :session_last_seen_granularity,
       :search_min_query_length, :search_debounce
     )
   end

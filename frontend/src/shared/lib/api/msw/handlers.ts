@@ -63,6 +63,15 @@ type PhoneBody = NonNullable<
 type BlockListBody = NonNullable<
   paths["/api/v1/blocks"]["get"]["responses"][200]["content"]
 >["application/json"];
+type DeviceSessionListBody = NonNullable<
+  paths["/api/v1/sessions"]["get"]["responses"][200]["content"]
+>["application/json"];
+type ContactNicknameListBody = NonNullable<
+  paths["/api/v1/contact_nicknames"]["get"]["responses"][200]["content"]
+>["application/json"];
+type ContactNicknameBody = NonNullable<
+  paths["/api/v1/contact_nicknames/{account_id}"]["put"]["responses"][200]["content"]
+>["application/json"];
 
 const me = {
   account: session.account,
@@ -77,6 +86,25 @@ const phoneVerification = {
   expires_at: null,
 } satisfies PhoneBody;
 const blockList = { blocks: [] } satisfies BlockListBody;
+const deviceSessionList = {
+  sessions: [
+    {
+      id: 1,
+      device_label: "Phone",
+      user_agent: "RajyaSpec/1.0",
+      ip: "127.0.0.1",
+      last_seen_at: "2026-01-01T00:00:00Z",
+      expires_at: "2026-02-01T00:00:00Z",
+      current: true,
+      revoked: false,
+    },
+  ],
+} satisfies DeviceSessionListBody;
+const contactNickname = {
+  nickname: "Ada",
+  account: session.account,
+} satisfies ContactNicknameBody;
+const contactNicknameList = { nicknames: [contactNickname] } satisfies ContactNicknameListBody;
 const meResponse = () => HttpResponse.json(me);
 
 const accepted = { accepted: true } satisfies AcceptedBody;
@@ -169,6 +197,21 @@ export const handlerMap = {
     return HttpResponse.json(blockList);
   }),
   "/api/v1/blocks/{id}": http.delete("*/api/v1/blocks/:id", okResponse),
+  "/api/v1/sessions": http.get("*/api/v1/sessions", () => HttpResponse.json(deviceSessionList)),
+  "/api/v1/sessions/others": http.delete("*/api/v1/sessions/others", okResponse),
+  "/api/v1/sessions/{id}": http.delete("*/api/v1/sessions/:id", okResponse),
+  "/api/v1/contact_nicknames": http.get("*/api/v1/contact_nicknames", () =>
+    HttpResponse.json(contactNicknameList),
+  ),
+  "/api/v1/contact_nicknames/{account_id}": http.all(
+    "*/api/v1/contact_nicknames/:account_id",
+    ({ request }) => {
+      if (request.method === "PUT") {
+        return HttpResponse.json(contactNickname);
+      }
+      return HttpResponse.json(ok);
+    },
+  ),
   "/api/v1/admin/users/{user_id}/verify_phone": http.post(
     "*/api/v1/admin/users/:user_id/verify_phone",
     meResponse,

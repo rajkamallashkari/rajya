@@ -65,6 +65,7 @@ RSpec.describe "Password login", type: :request do
 
         run_test! do |response|
           expect(JSON.parse(response.body).fetch("user").fetch("email")).to eq(user.email)
+          expect(::Session.where(user: user)).to exist
         end
       end
 

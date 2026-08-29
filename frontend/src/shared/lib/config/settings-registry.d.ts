@@ -61,6 +61,8 @@ export type SettingKey =
   | "password_reset_ttl"
   | "username_min_length"
   | "username_max_length"
+  | "nickname_max_length"
+  | "session_last_seen_granularity"
   | "session_lifetime"
   | "app_lock_threshold"
   | "webauthn_challenge_ttl"

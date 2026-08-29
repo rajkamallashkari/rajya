@@ -55,6 +55,10 @@ en:
         username_taken: "has already been taken"
       block:
         self: "can't be the same as the blocking account"
+      contact_nickname:
+        blank: "can't be blank"
+        self: "can't be yourself"
+        too_long: "is too long (maximum is %{count} characters)"
       user:
         account_kind: "must be a human account"
         current_password: "is incorrect"

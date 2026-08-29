@@ -100,6 +100,51 @@ RSpec.describe "Session 2.4 authorization 403s", type: :request do
     expect(response).to have_http_status(:forbidden)
   end
 
+  it "returns 403 on session index when the policy denies (F-1)" do
+    user = create(:user)
+    stub_deny(SessionPolicy, :index?)
+    get "/api/v1/sessions", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on session destroy when the policy denies (F-1)" do
+    user = create(:user)
+    session = create(:session, user: user)
+    stub_deny(SessionPolicy, :destroy?)
+    delete "/api/v1/sessions/#{session.id}", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on session revoke-others when the policy denies (F-1)" do
+    user = create(:user)
+    stub_deny(SessionPolicy, :others?)
+    delete "/api/v1/sessions/others", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on nickname index when the policy denies (F-1)" do
+    user = create(:user)
+    stub_deny(ContactNicknamePolicy, :index?)
+    get "/api/v1/contact_nicknames", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on nickname upsert when the policy denies (F-1)" do
+    user = create(:user)
+    stub_deny(ContactNicknamePolicy, :update?)
+    put "/api/v1/contact_nicknames/#{create(:account).id}", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on nickname destroy when the policy denies (F-1)" do
+    user = create(:user)
+    target = create(:account)
+    create(:contact_nickname, owner_account: user.account, target_account: target)
+    stub_deny(ContactNicknamePolicy, :destroy?)
+    delete "/api/v1/contact_nicknames/#{target.id}", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
   it "returns 403 on admin phone verify when the policy denies (F-1)" do
     admin = create(:user, :admin)
     stub_deny(Admin::UserPolicy, :verify_phone?)

@@ -128,6 +128,42 @@ RSpec.configure do |config|
                 blocks: { type: :array, items: { "$ref" => "#/components/schemas/Block" } }
               }
             },
+            ContactNickname: {
+              type: :object,
+              required: %w[nickname account],
+              properties: {
+                nickname: { type: :string },
+                account: { "$ref" => "#/components/schemas/Account" }
+              }
+            },
+            ContactNicknameList: {
+              type: :object,
+              required: %w[nicknames],
+              properties: {
+                nicknames: { type: :array, items: { "$ref" => "#/components/schemas/ContactNickname" } }
+              }
+            },
+            DeviceSession: {
+              type: :object,
+              required: %w[id last_seen_at expires_at current revoked],
+              properties: {
+                id: { type: :integer },
+                device_label: { type: :string, nullable: true },
+                user_agent: { type: :string, nullable: true },
+                ip: { type: :string, nullable: true },
+                last_seen_at: { type: :string, format: :"date-time" },
+                expires_at: { type: :string, format: :"date-time" },
+                current: { type: :boolean },
+                revoked: { type: :boolean }
+              }
+            },
+            DeviceSessionList: {
+              type: :object,
+              required: %w[sessions],
+              properties: {
+                sessions: { type: :array, items: { "$ref" => "#/components/schemas/DeviceSession" } }
+              }
+            },
             Session: {
               type: :object,
               required: %w[token account user],

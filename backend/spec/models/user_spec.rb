@@ -21,7 +21,9 @@ RSpec.describe User do
 
   it "bumps credentials_epoch so every outstanding JWT is rejected" do
     user = create(:user)
+    session = create(:session, user: user)
     expect { user.revoke_all_credentials! }.to change { user.reload.credentials_epoch }.by(1)
+    expect(session.reload).to be_revoked
   end
 
   it "authenticates a password through has_secure_password" do
