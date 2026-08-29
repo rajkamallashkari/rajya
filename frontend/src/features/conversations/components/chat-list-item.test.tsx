@@ -67,11 +67,7 @@ describe("ChatListItem", () => {
     expect(onPin).toHaveBeenCalled();
 
     rerender(
-      <ChatListItem
-        lastActivity={{ kind: "typing", text: "" }}
-        name="Ada"
-        timestampLabel="now"
-      />,
+      <ChatListItem lastActivity={{ kind: "typing", text: "" }} name="Ada" timestampLabel="now" />,
     );
     expect(screen.getByText(en.conversations.typing)).toBeInTheDocument();
 

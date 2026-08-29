@@ -80,6 +80,10 @@ describe("GalleryPage", () => {
     await user.click(screen.getByRole("button", { name: en.composer.dismiss_edit }));
     await user.click(screen.getByRole("button", { name: en.composer.pause_voice }));
     await user.click(screen.getByRole("button", { name: en.composer.preview_voice }));
+    await user.click(screen.getByRole("button", { name: en.layers.push_demo }));
+    await user.click(screen.getByRole("button", { name: en.shell.open_profile }));
+    await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
+    await user.click(screen.getByRole("button", { name: en.lists.error_retry }));
   });
 });
 

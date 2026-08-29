@@ -9,8 +9,8 @@ import {
 } from "react";
 import {
   applyTheme,
-  defaultThemeInput,
   FALLBACK_RESOLVED_THEME,
+  readThemeCache,
   resolveTheme,
   type ApplyThemeInput,
   type ResolvedTheme,
@@ -23,7 +23,6 @@ export interface ThemeControls {
 }
 
 const ThemeContext = createContext<ThemeControls | null>(null);
-const DEFAULT_INPUT = defaultThemeInput();
 
 export function useResolvedTheme(): ResolvedTheme {
   return useContext(ThemeContext)?.resolved ?? FALLBACK_RESOLVED_THEME;
@@ -39,18 +38,22 @@ export function useThemeControls(): ThemeControls {
 
 export function ThemeProvider({
   children,
-  input: inputProp = DEFAULT_INPUT,
+  input: inputProp,
 }: {
   children: ReactNode;
   input?: ApplyThemeInput;
 }) {
-  const [input, setInputState] = useState<ApplyThemeInput>(inputProp);
+  const [input, setInputState] = useState<ApplyThemeInput>(
+    () => inputProp ?? readThemeCache(window.localStorage),
+  );
   const [resolved, setResolved] = useState<ResolvedTheme>(() =>
-    resolveTheme(inputProp.theme, window.matchMedia.bind(window)),
+    resolveTheme(input.theme, window.matchMedia.bind(window)),
   );
 
   useEffect(() => {
-    setInputState(inputProp);
+    if (inputProp) {
+      setInputState(inputProp);
+    }
   }, [inputProp]);
 
   const setInput = useCallback((patch: Partial<ApplyThemeInput>): void => {

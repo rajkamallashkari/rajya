@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ThemeProvider, useResolvedTheme, useThemeControls } from "./theme-provider";
-import { ACCENT_BOOT_HEX, defaultThemeInput } from "@/shared/lib/theme";
+import { ACCENT_BOOT_HEX, defaultThemeInput, THEME_CACHE_KEY } from "@/shared/lib/theme";
 import { Button } from "@/shared/ui/button";
 
 function Probe() {
@@ -38,6 +38,23 @@ function MissingControls() {
 }
 
 describe("ThemeProvider", () => {
+  it("hydrates from the theme cache so a boot preference is not overwritten", () => {
+    window.localStorage.setItem(
+      THEME_CACHE_KEY,
+      JSON.stringify({
+        ...defaultThemeInput(),
+        theme: "light",
+      }),
+    );
+    render(
+      <ThemeProvider>
+        <Probe />
+      </ThemeProvider>,
+    );
+    expect(screen.getByText("light")).toBeInTheDocument();
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
+  });
+
   it("applies a light theme without a system listener", () => {
     render(
       <ThemeProvider input={{ ...defaultThemeInput(), theme: "light" }}>

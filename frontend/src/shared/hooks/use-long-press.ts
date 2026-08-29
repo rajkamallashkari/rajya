@@ -76,14 +76,11 @@ export function useLongPress(
     clear();
   }, [clear]);
 
-  const onContextMenu = useCallback(
-    (event: React.MouseEvent) => {
-      if (firedRef.current) {
-        event.preventDefault();
-      }
-    },
-    [],
-  );
+  const onContextMenu = useCallback((event: React.MouseEvent) => {
+    if (firedRef.current) {
+      event.preventDefault();
+    }
+  }, []);
 
   return {
     onContextMenu,

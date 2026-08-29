@@ -49,7 +49,8 @@ outside the repo under `legacy/` (or `../legacy/`).
 - Definition of done: every applicable DoD row for **this slice**, with tests
 green before you declare done.
 - When finished: short summary of what shipped, what was deferred, commands to
-verify — then stop for review.
+  verify, and a **proposed commit message** — then stop for review. Do not
+  create the commit unless the user asks.
 
 ---
 
@@ -97,7 +98,12 @@ Session 3.2. Agent mode. Execute only that §5 brief. Stop when done.
 3. Execute only that one session. Stop when done.
 4. Update `PROGRESS.md`: advance "Last completed" / "Next session", fill in the
    new "Next session brief" block from the §5 table, add a row to "Completed".
-5. Report: what shipped, what was deferred, commands to verify.
+5. Report: what shipped, what was deferred, commands to verify, and a proposed
+   commit message. Do not create the commit unless the user asks.
+
+The commit message is 1–2 sentences, focused on **why**, prefixed with the
+session id (e.g. `Session 1.4: …`). Match the repository's existing message
+style when there is one.
 
 ---
 

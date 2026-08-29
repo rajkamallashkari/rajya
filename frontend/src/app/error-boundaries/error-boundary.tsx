@@ -35,11 +35,17 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
     const titleKey = `errors.${this.props.level}.title`;
     const retryKey = `errors.${this.props.level}.retry`;
+    const compact = this.props.level === "list";
 
     return (
       <div
         role="alert"
-        className="flex min-h-[100dvh] flex-col items-center justify-center gap-[var(--control-gap)] bg-[var(--surface-app)] p-[var(--inset-page)] text-[var(--text-primary)]"
+        data-error-level={this.props.level}
+        className={
+          compact
+            ? "flex flex-col items-center justify-center gap-[var(--control-gap)] px-[var(--space-list-x)] py-[var(--space-8)] text-[var(--text-primary)]"
+            : "flex min-h-[100dvh] flex-col items-center justify-center gap-[var(--control-gap)] bg-[var(--surface-app)] p-[var(--inset-page)] text-[var(--text-primary)]"
+        }
       >
         <p>{i18n.t(titleKey)}</p>
         <Button type="button" onClick={this.handleRetry}>

@@ -3,6 +3,8 @@ import { cleanup } from "@testing-library/react";
 import { afterEach, beforeAll } from "vitest";
 import { initI18n } from "@/shared/lib/i18n";
 import { en } from "@/shared/lib/i18n/catalog";
+import { _testReset as resetLayerStack } from "@/shared/lib/navigation/layer-stack";
+import { resetLayerStore } from "@/shared/lib/navigation/layer-store";
 import { FakeAudio } from "@/test/fake-audio";
 
 class MemoryStorage implements Storage {
@@ -41,6 +43,9 @@ afterEach(() => {
   cleanup();
   FakeAudio.reset();
   window.history.replaceState({}, "", "/");
+  window.localStorage.clear();
+  resetLayerStore();
+  resetLayerStack();
 });
 
 beforeAll(async () => {

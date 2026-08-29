@@ -41,7 +41,12 @@ describe("usePressHold", () => {
     fireEvent.pointerUp(target);
     expect(onClick).not.toHaveBeenCalled();
 
-    fireEvent.pointerDown(target, { button: PRIMARY_POINTER_BUTTON, clientX: 0, clientY: 0, pointerType: "mouse" });
+    fireEvent.pointerDown(target, {
+      button: PRIMARY_POINTER_BUTTON,
+      clientX: 0,
+      clientY: 0,
+      pointerType: "mouse",
+    });
     fireEvent.pointerUp(target);
     expect(onClick).toHaveBeenCalledTimes(1);
 

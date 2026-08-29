@@ -227,4 +227,14 @@ describe("Composer", () => {
     vi.useRealTimers();
     expect(LONG_PRESS_MS).toBeGreaterThan(0);
   });
+
+  it("requests an edit of the last message from an empty field", () => {
+    const onEditLast = vi.fn();
+    const { rerender } = render(<Composer onEditLast={onEditLast} onSend={vi.fn()} value="" />);
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "ArrowUp" });
+    expect(onEditLast).toHaveBeenCalled();
+    rerender(<Composer onEditLast={onEditLast} onSend={vi.fn()} value="keep" />);
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "ArrowUp" });
+    expect(onEditLast).toHaveBeenCalledTimes(1);
+  });
 });

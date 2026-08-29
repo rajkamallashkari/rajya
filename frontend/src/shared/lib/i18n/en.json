@@ -21,6 +21,36 @@
       "retry": "Try again"
     }
   },
+  "search": {
+    "label": "Search conversations",
+    "placeholder": "Search"
+  },
+  "shell": {
+    "back": "Back",
+    "chats": "Chats",
+    "open_profile": "Open profile",
+    "profile_subtitle": "Shared media and info"
+  },
+  "lists": {
+    "empty_action": "New chat",
+    "empty_description": "Start a new chat to see it here.",
+    "empty_title": "No conversations yet",
+    "error_description": "Check your connection, then try again.",
+    "error_retry": "Try again",
+    "error_title": "Could not load this list",
+    "loading": "Loading conversations"
+  },
+  "offline": {
+    "banner": "You're offline. Messages will send when you're back."
+  },
+  "impersonation": {
+    "banner": "Viewing as {{name}}",
+    "exit": "Exit"
+  },
+  "layers": {
+    "resize": "Resize panel",
+    "push_demo": "Open conversation layer"
+  },
   "ui": {
     "close": "Close",
     "avatar_unnamed": "Avatar",
@@ -80,7 +110,11 @@
       "typing_bubble": "Typing bubble",
       "composer": "Composer",
       "chat_list_item": "Chat list item",
-      "message_context_menu": "Message menu"
+      "message_context_menu": "Message menu",
+      "list_states": "List states",
+      "offline_banner": "Offline banner",
+      "impersonation_banner": "Impersonation banner",
+      "layer_host": "Layer stack"
     },
     "button": {
       "primary": "Primary",

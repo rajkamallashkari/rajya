@@ -45,6 +45,7 @@ describe("error boundaries", () => {
       </ListErrorBoundary>,
     );
     expect(screen.getByText("Could not load this list")).toBeInTheDocument();
+    expect(screen.getAllByRole("alert")[1]).toHaveAttribute("data-error-level", "list");
     spy.mockRestore();
   });
 });

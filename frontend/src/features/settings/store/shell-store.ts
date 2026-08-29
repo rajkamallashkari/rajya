@@ -1,11 +1,11 @@
 import { create } from "zustand";
 
 export interface ShellState {
-  mobileNavOpen: boolean;
-  setMobileNavOpen: (open: boolean) => void;
+  impersonatingName: string | null;
+  setImpersonatingName: (name: string | null) => void;
 }
 
 export const useShellStore = create<ShellState>((set) => ({
-  mobileNavOpen: false,
-  setMobileNavOpen: (open) => set({ mobileNavOpen: open }),
+  impersonatingName: null,
+  setImpersonatingName: (impersonatingName) => set({ impersonatingName }),
 }));

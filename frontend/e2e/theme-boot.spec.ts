@@ -14,7 +14,7 @@ test("applies the cached dark theme before paint", async ({ page }) => {
     localStorage.setItem("rajya:theme-cache", JSON.stringify(payload));
   }, cache);
 
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.goto("/", { waitUntil: "load" });
   const isDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
   expect(isDark).toBe(true);
 });
@@ -24,7 +24,7 @@ test("applies a cached light theme without a dark class", async ({ page }) => {
     localStorage.setItem("rajya:theme-cache", JSON.stringify({ ...payload, theme: "light" }));
   }, cache);
 
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.goto("/", { waitUntil: "load" });
   const isDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
   expect(isDark).toBe(false);
 });

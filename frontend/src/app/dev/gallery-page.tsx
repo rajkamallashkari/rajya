@@ -2,8 +2,12 @@ import { Star } from "lucide-react";
 import { type CSSProperties, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useThemeControls } from "@/app/theme-provider";
+import { ImpersonationBanner } from "@/app/banners/impersonation-banner";
+import { OfflineBanner } from "@/app/banners/offline-banner";
+import { LayerHost } from "@/app/navigation/layer-host";
 import { Composer, type VoiceRecorderResult } from "@/features/composer";
-import { ChatListItem } from "@/features/conversations";
+import { ChatListItem, ConversationThread, ProfilePanel } from "@/features/conversations";
+import { ADA_DEMO } from "@/features/conversations/model/demo";
 import {
   DateDivider,
   MessageBubble,
@@ -55,6 +59,7 @@ import {
   EmptyState,
   IconButton,
   Input,
+  ListView,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -80,6 +85,7 @@ import {
   showToast,
   SimpleTooltip,
 } from "@/shared/ui";
+import { useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { ICON_CLASS, PROGRESS_MAX, SCROLL_DEMO_ROWS } from "@/shared/ui/metrics";
 
 export function galleryAction(): void {}
@@ -123,6 +129,10 @@ export const GALLERY_SECTION_KEYS = [
   "composer",
   "chat_list_item",
   "message_context_menu",
+  "list_states",
+  "offline_banner",
+  "impersonation_banner",
+  "layer_host",
 ] as const;
 
 const THEME_CHOICES = ["light", "dark", "system"] as const;
@@ -603,6 +613,30 @@ export function GalleryPage() {
       <Section sectionKey="message_context_menu">
         <GalleryMessageMenu />
       </Section>
+
+      <Section sectionKey="list_states">
+        <div className="flex flex-col gap-[var(--space-4)]">
+          <ListView status="loading">{null}</ListView>
+          <ListView action={<Button>{t("lists.empty_action")}</Button>} status="empty">
+            {null}
+          </ListView>
+          <ListView onRetry={galleryAction} status="error">
+            {null}
+          </ListView>
+        </div>
+      </Section>
+
+      <Section sectionKey="offline_banner">
+        <OfflineBanner force />
+      </Section>
+
+      <Section sectionKey="impersonation_banner">
+        <ImpersonationBanner name={t("gallery.avatar.name")} onExit={galleryAction} />
+      </Section>
+
+      <Section sectionKey="layer_host">
+        <GalleryLayerDemo />
+      </Section>
     </main>
   );
 }
@@ -647,7 +681,10 @@ function GalleryComposer() {
       <Composer
         attachments={files}
         onAttach={() =>
-          setFiles((current) => [...current, { id: `g${current.length + 1}`, name: t("gallery.composer.attachment") }])
+          setFiles((current) => [
+            ...current,
+            { id: `g${current.length + 1}`, name: t("gallery.composer.attachment") },
+          ])
         }
         onChange={setText}
         onClearSchedule={() => setScheduled("")}
@@ -714,6 +751,40 @@ function GalleryMessageMenu() {
           y={menu.clientY}
         />
       ) : null}
+    </div>
+  );
+}
+
+function GalleryLayerDemo() {
+  const { t } = useTranslation();
+  const pushLayer = useLayerStore((state) => state.pushLayer);
+  const demo = ADA_DEMO;
+  return (
+    <div className="h-[calc(var(--space-16)*8)] overflow-hidden rounded-[var(--radius-md)] border border-[var(--border-subtle)]">
+      <LayerHost
+        base={
+          <Button
+            onClick={() =>
+              pushLayer({
+                conversationId: demo.id,
+                id: `conversation:${demo.id}`,
+                kind: "conversation",
+                title: demo.name,
+              })
+            }
+            type="button"
+          >
+            {t("layers.push_demo")}
+          </Button>
+        }
+        renderLayer={(layer) =>
+          layer.kind === "conversation" ? (
+            <ConversationThread conversationId={layer.conversationId} />
+          ) : (
+            <ProfilePanel conversationId={layer.conversationId} />
+          )
+        }
+      />
     </div>
   );
 }

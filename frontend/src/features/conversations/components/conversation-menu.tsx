@@ -103,7 +103,10 @@ export function SwipeActions({
         </IconAction>
       </div>
       <div className="absolute inset-y-0 right-0 flex w-[calc(var(--swipe-action-width)*2)] items-center justify-end bg-[var(--status-warning-subtle)]">
-        <IconAction label={muted ? t("conversations.unmute") : t("conversations.mute")} onClick={onMute}>
+        <IconAction
+          label={muted ? t("conversations.unmute") : t("conversations.mute")}
+          onClick={onMute}
+        >
           <BellOff className={ICON_CLASS} />
         </IconAction>
         <IconAction label={t("conversations.archive")} onClick={onArchive}>

@@ -1,5 +1,12 @@
 import { Calendar, Mic, Paperclip, Send, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   ComposerAttachmentChips,
@@ -14,6 +21,7 @@ import {
 } from "@/features/composer/hooks/use-voice-recorder";
 import { selectVoicePeaks } from "@/features/composer/model/waveform";
 import { usePressHold } from "@/shared/hooks/use-press-hold";
+import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { cn } from "@/shared/lib/cn";
 import { Button, DismissLayer, IconButton, Textarea } from "@/shared/ui";
 import { ICON_CLASS, MENU_CONTENT_CLASS, MENU_ITEM_CLASS } from "@/shared/ui/metrics";
@@ -40,6 +48,7 @@ export function Composer({
   onChange,
   onDismissEdit,
   onDismissReply,
+  onEditLast,
   onRemoveAttachment,
   onRewrite,
   onSchedule,
@@ -61,6 +70,7 @@ export function Composer({
   onClearSchedule?: () => void;
   onDismissEdit?: () => void;
   onDismissReply?: () => void;
+  onEditLast?: () => void;
   onOpenSchedule?: () => void;
   onRemoveAttachment?: (id: string) => void;
   onRewrite?: () => void;
@@ -145,7 +155,8 @@ export function Composer({
       return;
     }
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === SHORTCUTS.popLayer) {
+        event.stopImmediatePropagation();
         setSendMenuOpen(false);
       }
     };
@@ -163,20 +174,27 @@ export function Composer({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.key === SHORTCUTS.send && !event.shiftKey) {
       event.preventDefault();
       emitSend(false);
     }
-    if (event.key === "Escape") {
+    if (event.key === SHORTCUTS.editLast && !text.trim()) {
+      event.preventDefault();
+      onEditLast?.();
+    }
+    if (event.key === SHORTCUTS.popLayer) {
       if (sendMenuOpen) {
+        event.stopPropagation();
         setSendMenuOpen(false);
         return;
       }
       if (editing) {
+        event.stopPropagation();
         onDismissEdit?.();
         return;
       }
       if (replyTo) {
+        event.stopPropagation();
         onDismissReply?.();
       }
     }

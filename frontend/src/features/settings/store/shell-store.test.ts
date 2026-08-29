@@ -2,11 +2,10 @@ import { describe, expect, it } from "vitest";
 import { useShellStore } from "./shell-store";
 
 describe("useShellStore", () => {
-  it("toggles mobile nav", () => {
-    useShellStore.setState({ mobileNavOpen: false });
-    useShellStore.getState().setMobileNavOpen(true);
-    expect(useShellStore.getState().mobileNavOpen).toBe(true);
-    useShellStore.getState().setMobileNavOpen(false);
-    expect(useShellStore.getState().mobileNavOpen).toBe(false);
+  it("sets and clears impersonation", () => {
+    useShellStore.getState().setImpersonatingName("Ada");
+    expect(useShellStore.getState().impersonatingName).toBe("Ada");
+    useShellStore.getState().setImpersonatingName(null);
+    expect(useShellStore.getState().impersonatingName).toBeNull();
   });
 });

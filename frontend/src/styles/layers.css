@@ -1,0 +1,51 @@
+.layer-host {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.layer-host-mobile {
+  position: relative;
+  overflow: hidden;
+}
+
+.layer-host-desktop {
+  display: flex;
+  flex-direction: row;
+}
+
+.layer-base,
+.layer-frame {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.layer-host-desktop .layer-base,
+.layer-host-desktop .layer-frame {
+  flex: 1 1 0;
+}
+
+.layer-frame-mobile {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-layer);
+  transform: translateX(var(--layer-drag, 0px));
+  animation: rajya-drawer-right var(--motion-base) var(--ease-spring);
+  background: var(--surface-chat);
+}
+
+.layer-resize {
+  flex: 0 0 var(--space-1);
+  cursor: col-resize;
+  border: 0;
+  padding: 0;
+  background: var(--border-subtle);
+  min-height: var(--touch-target-min);
+  min-width: var(--space-1);
+}
+
+.layer-resize:hover,
+.layer-resize:focus-visible {
+  background: var(--accent);
+}

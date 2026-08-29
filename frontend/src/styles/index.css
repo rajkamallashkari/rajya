@@ -4,6 +4,7 @@
 @import "./motion.css";
 @import "./messages.css";
 @import "./composer.css";
+@import "./layers.css";
 
 @theme inline {
   --color-surface-app: var(--surface-app);

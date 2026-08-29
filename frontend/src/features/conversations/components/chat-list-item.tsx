@@ -7,7 +7,11 @@ import {
 } from "@/features/conversations/components/conversation-menu";
 import { useChatListGestures } from "@/features/conversations/hooks/use-chat-list-gestures";
 import type { ConversationKind } from "@/features/conversations/model/constants";
-import { lastActivityPrefix, lastActivityTone, type LastActivity } from "@/features/conversations/model/preview";
+import {
+  lastActivityPrefix,
+  lastActivityTone,
+  type LastActivity,
+} from "@/features/conversations/model/preview";
 import { formatUnread } from "@/features/conversations/model/unread";
 import { cn } from "@/shared/lib/cn";
 import { Avatar, Badge } from "@/shared/ui";
@@ -108,7 +112,12 @@ export function ChatListItem({
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-[var(--space-2)]">
-            <span className={cn("flex min-w-0 items-center gap-[var(--space-1)] truncate", WEIGHT_EMPHASIS)}>
+            <span
+              className={cn(
+                "flex min-w-0 items-center gap-[var(--space-1)] truncate",
+                WEIGHT_EMPHASIS,
+              )}
+            >
               {pinned ? (
                 <Pin
                   aria-label={t("conversations.pinned")}
@@ -132,7 +141,9 @@ export function ChatListItem({
               data-activity={lastActivity.kind}
             >
               {prefix ? (
-                <span className={cn("text-[var(--text-primary)]", WEIGHT_EMPHASIS)}>{`${prefix}: `}</span>
+                <span
+                  className={cn("text-[var(--text-primary)]", WEIGHT_EMPHASIS)}
+                >{`${prefix}: `}</span>
               ) : null}
               {previewText}
             </p>
