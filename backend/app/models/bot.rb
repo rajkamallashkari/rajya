@@ -7,6 +7,15 @@ class Bot < ApplicationRecord
   has_many :requests_targeting_self, class_name: "BotRequest", foreign_key: :target_bot_id, inverse_of: :target_bot,
                                       dependent: :destroy
 
-  validates :account_id, presence: true, uniqueness: true
+  validates :account_id, uniqueness: { allow_nil: true }
   validates :persona_prompt, presence: true
+  validate :account_must_be_bot
+
+  private
+
+  def account_must_be_bot
+    return if account.blank? || account.bot?
+
+    errors.add(:account, Catalog.t("errors.models.bot.account_kind"))
+  end
 end

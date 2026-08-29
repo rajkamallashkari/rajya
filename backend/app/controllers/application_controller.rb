@@ -9,6 +9,7 @@ class ApplicationController < ActionController::API
   # A missing `authorize` (or `policy_scope` on an index) call fails the test
   # suite, not production (F-1 fix). Real controllers land in later sessions;
   # this stays armed from the first one.
+  before_action :authenticate!, unless: :skip_authentication?
   after_action :verify_authorized, unless: :skip_authorization?
   after_action :verify_policy_scoped, if: :index_action?
 
@@ -25,15 +26,25 @@ class ApplicationController < ActionController::API
     current_account
   end
 
-  # Wired by the authentication flow (Phase 2). Every later session that adds
-  # a real endpoint replaces this with a lookup from the session / credentials
-  # epoch, not a new ad hoc method.
   def current_account
-    nil
+    @current_account
   end
 
   def current_user
-    nil
+    @current_user
+  end
+
+  def authenticate!
+    context = Auth::Identity.from_http(request)
+    if context
+      @current_user = context.user
+      @current_account = context.account
+      return
+    end
+
+    skip_authorization
+    skip_policy_scope
+    render_error(:unauthenticated)
   end
 
   def index_action?
@@ -41,6 +52,10 @@ class ApplicationController < ActionController::API
   end
 
   def skip_authorization?
+    false
+  end
+
+  def skip_authentication?
     false
   end
 

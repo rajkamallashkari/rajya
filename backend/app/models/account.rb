@@ -29,6 +29,47 @@ class Account < ApplicationRecord
                              inverse_of: :requester_account, dependent: :destroy
 
   validates :kind, presence: true, inclusion: { in: KINDS }
-  validates :username, presence: true, uniqueness: true
+  validates :username, presence: true, uniqueness: { case_sensitive: false }
   validates :display_name, presence: true
+
+  def human?
+    kind == "human"
+  end
+
+  def bot?
+    kind == "bot"
+  end
+
+  def deactivated?
+    deactivated_at.present?
+  end
+
+  # Last-active is symmetric (BR-42): both parties must opt in. The timestamp
+  # itself is always written (BR-43); this method only gates exposure.
+  def last_active_at_visible_to(viewer)
+    return unless human? && viewer.human?
+    return unless last_active_enabled? && viewer.last_active_enabled?
+
+    user&.last_active_at
+  end
+
+  def last_active_enabled?
+    privacy_flag("last_active")
+  end
+
+  def discoverable_by_username?
+    privacy_flag("discoverable_by_username")
+  end
+
+  def discoverable_by_email?
+    privacy_flag("discoverable_by_email")
+  end
+
+  def discoverable_by_phone?
+    privacy_flag("discoverable_by_phone")
+  end
+
+  def privacy_flag(key)
+    preference ? preference.privacy(key) : Preference.privacy_default(key)
+  end
 end

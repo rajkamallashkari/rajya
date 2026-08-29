@@ -7,5 +7,9 @@ FactoryBot.define do
     trait :bot_kind do
       kind { "bot" }
     end
+
+    trait :deactivated do
+      deactivated_at { Time.current }
+    end
   end
 end

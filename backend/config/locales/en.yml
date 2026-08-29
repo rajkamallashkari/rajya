@@ -52,6 +52,10 @@ en:
         seen_position: "must be greater than or equal to last_read_position"
       block:
         self: "can't be the same as the blocking account"
+      user:
+        account_kind: "must be a human account"
+      bot:
+        account_kind: "must be a bot account"
       app_setting:
         below_min: "is below the registered minimum"
         above_max: "is above the registered maximum"

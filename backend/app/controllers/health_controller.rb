@@ -12,4 +12,8 @@ class HealthController < ApplicationController
   def skip_authorization?
     true
   end
+
+  def skip_authentication?
+    true
+  end
 end

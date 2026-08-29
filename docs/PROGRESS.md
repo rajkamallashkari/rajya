@@ -10,26 +10,26 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 1.5 |
-| **Next session** | 2.1 |
+| **Last completed** | 2.1 |
+| **Next session** | 2.2 |
 | **Phase** | P2 — Identity & auth |
-| **Sessions remaining in phase** | 5 (2.1–2.5) |
+| **Sessions remaining in phase** | 4 (2.2–2.5) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 2.1 — `accounts`/`users`/`bots`, JWT, epoch on HTTP and Cable, Rack::Attack**
+**Session 2.2 — Google GIS, password, OTP, magic link; enumeration and `SecureRandom` fixes**
 
-Deliverable: `accounts`/`users`/`bots`, JWT, epoch on HTTP and Cable, Rack::Attack
+Deliverable: Google GIS, password, OTP, magic link; enumeration and `SecureRandom` fixes
 
-Docs: `SCHEMA §1, §2; GAP §1; TARGET §4.7; AUDIT §2.4 (BR-42…47)`
+Docs: `SCHEMA §2; GAP §1; AUDIT §1.1, §5 (F-2, F-8, F-23, F-24, F-25)`
 
 Legacy to read:
-- `legacy/cognify/app/services/jwt_service.rb`
-- `legacy/cognify/app/services/auth_service.rb`
-- `legacy/cognify/app/controllers/api/v1/base_controller.rb`
-- `legacy/cognify/app/channels/application_cable/`
+- `legacy/cognify/app/controllers/api/v1/sessions_controller.rb`
+- `legacy/cognify/app/controllers/api/v1/otp_auth_controller.rb`
+- `legacy/cognify/app/controllers/api/v1/password_auth_controller.rb`
+- `legacy/cognify/app/controllers/sessions_controller.rb` (the legacy redirect **not** being ported)
 
 ---
 
@@ -46,6 +46,7 @@ Legacy to read:
 | 1.3 | Composer, voice UI, long-press, context menu, ChatListItem | **DS-13** three-element row (mic · textarea · send). Send long-press/right-click: attach, schedule, rewrite, silent send. Mic takes over the row for voice. Preview: waveform above the clock, played bars highlighted, `elapsed / total` while playing or after seek. Chips + schedule bar above. Swipe/pin/unread list, lifted bubble + message menu. Presentation only. |
 | 1.4 | `useLayer` navigation, error boundaries, list states, MSW, shortcuts | History-backed layer stack (mobile overlay + desktop panels). Scroll kept per layer; buried layers stay mounted and `inert`. List empty/loading/error, impersonation/offline banners, typed MSW `/health`+`/up`. NR-46: Escape, `/`, ArrowUp, Enter. Composer chrome unchanged (**DS-13**). |
 | 1.5 | Fourteen new-feature components and DS-8 personalisation | Polls, reaction details, selection toolbar, unified picker (emoji/sticker/GIF/saved-reply tabs), location/contact/transcript, slash menu, wallpaper, QR, report, session list — on mocks. Appearance is token overrides, never component variants. Composer chrome unchanged (**DS-13**). Presentation only. |
+| 2.1 | `accounts`/`users`/`bots`, JWT, epoch on HTTP and Cable, Rack::Attack | `current_user` vs `current_account` from JWT. `credentials_epoch` rejects stale tokens on HTTP **and** Cable (F-6). Rack::Attack covers `/auth/*` plus messages/general API; limits from `app_settings` (F-2). Last-active symmetry (BR-42/43) and discoverability flags (BR-45…47) live on Account via preferences. |
 
 ---
 

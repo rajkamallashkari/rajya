@@ -10,6 +10,13 @@ gem "puma", ">= 5.0"
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
 
+# JWT Bearer tokens (TARGET §1 auth transport). Epoch is checked in Auth::Identity,
+# not only at decode time, so Cable and HTTP share one revocation path (F-6).
+gem "jwt"
+
+# Auth and API throttles; limits are read from app_settings (TARGET §4.7 / F-2).
+gem "rack-attack"
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 

@@ -30,7 +30,11 @@ class ApplicationControllerProbesController < ApplicationController
 
   def identity
     authorize :probe, :show?, policy_class: ApplicationControllerProbePolicy
-    render json: { pundit_user: pundit_user, current_account: current_account, current_user: current_user }
+    render json: {
+      pundit_user_id: pundit_user&.id,
+      current_account_id: current_account&.id,
+      current_user_id: current_user&.id
+    }
   end
 
   def index
@@ -64,6 +68,9 @@ class ApplicationControllerProbesController < ApplicationController
 end
 
 RSpec.describe "ApplicationController", type: :request do
+  let(:user) { create(:user) }
+  let(:headers) { auth_headers_for(user) }
+
   around do |example|
     Rails.application.routes.draw do
       get "/__probes/guarded", to: "application_controller_probes#guarded"
@@ -82,52 +89,72 @@ RSpec.describe "ApplicationController", type: :request do
   end
 
   it "fails a missing authorize call instead of letting it through silently" do
-    expect { get "/__probes/guarded" }.to raise_error(Pundit::AuthorizationNotPerformedError)
+    expect { get "/__probes/guarded", headers: headers }.to raise_error(Pundit::AuthorizationNotPerformedError)
   end
 
-  it "exposes pundit_user as current_account, and current_user/current_account as nil until Phase 2 wires auth" do
+  it "returns 401 without a Bearer token" do
     get "/__probes/identity"
 
-    expect(response.parsed_body).to eq("pundit_user" => nil, "current_account" => nil, "current_user" => nil)
+    expect(response).to have_http_status(:unauthorized)
+    expect(response.parsed_body.dig("error", "code")).to eq("unauthenticated")
+  end
+
+  it "exposes pundit_user as current_account from the JWT" do
+    get "/__probes/identity", headers: headers
+
+    expect(response.parsed_body).to eq(
+      "pundit_user_id" => user.account_id,
+      "current_account_id" => user.account_id,
+      "current_user_id" => user.id
+    )
+  end
+
+  it "returns 401 when credentials_epoch no longer matches (F-6)" do
+    token = bearer_token_for(user)
+    user.revoke_all_credentials!
+
+    get "/__probes/identity", headers: { "Authorization" => "Bearer #{token}" }
+
+    expect(response).to have_http_status(:unauthorized)
   end
 
   it "requires policy_scope on index and renders once satisfied" do
-    get "/__probes"
+    get "/__probes", headers: headers
 
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body).to eq([])
   end
 
   it "renders 403 for Pundit::NotAuthorizedError" do
-    get "/__probes/forbidden"
+    get "/__probes/forbidden", headers: headers
 
     expect(response).to have_http_status(:forbidden)
     expect(response.parsed_body["error"]["code"]).to eq("forbidden")
   end
 
   it "renders 404 for ActiveRecord::RecordNotFound" do
-    get "/__probes/not_found"
+    get "/__probes/not_found", headers: headers
 
     expect(response).to have_http_status(:not_found)
     expect(response.parsed_body["error"]["code"]).to eq("not_found")
   end
 
   it "renders 422 for an unregistered error code raised via Errors::UnknownErrorCode" do
-    get "/__probes/unknown_error"
+    get "/__probes/unknown_error", headers: headers
 
     expect(response).to have_http_status(:unprocessable_content)
     expect(response.parsed_body["error"]["code"]).to eq("validation_failed")
   end
 
   it "renders the serializer on a successful Result" do
-    get "/__probes/success"
+    get "/__probes/success", headers: headers
 
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body).to eq("id" => 1)
   end
 
   it "renders the error taxonomy on a failed Result" do
-    get "/__probes/failure"
+    get "/__probes/failure", headers: headers
 
     expect(response).to have_http_status(:unprocessable_content)
     expect(response.parsed_body["error"]).to eq(
