@@ -90,6 +90,42 @@ describe("ThemeProvider", () => {
     expect(screen.getByText("light-compact")).toBeInTheDocument();
   });
 
+  it("merges appearance patches into token overrides", async () => {
+    const user = userEvent.setup();
+    function AppearanceProbe() {
+      const { input, setInput } = useThemeControls();
+      return (
+        <div>
+          <span>{input.appearance?.bubbleCornerStyle ?? "none"}</span>
+          <Button
+            onClick={() =>
+              setInput({
+                appearance: {
+                  alwaysShowTimestamps: true,
+                  bubbleCornerStyle: "square",
+                  emojiSkinTone: 1,
+                  mediaAutoplay: "never",
+                  reduceTransparency: true,
+                  wallpaper: { blur: 0.2, dim: 0.1, preset: "dusk" },
+                },
+              })
+            }
+          >
+            {"appear"}
+          </Button>
+        </div>
+      );
+    }
+    render(
+      <ThemeProvider input={{ ...defaultThemeInput(), theme: "light" }}>
+        <AppearanceProbe />
+      </ThemeProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: "appear" }));
+    expect(screen.getByText("square")).toBeInTheDocument();
+    expect(document.documentElement.dataset.corners).toBe("square");
+  });
+
   it("re-applies when the system preference changes", () => {
     const listeners = new Set<(event: Event) => void>();
     const media = {

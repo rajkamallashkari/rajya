@@ -1,3 +1,4 @@
+import { DEFAULT_APPEARANCE, parseAppearance, type AppearancePersonalisation } from "./appearance";
 import {
   ACCENT_BOOT_HEX,
   DEFAULT_DENSITY,
@@ -15,21 +16,26 @@ import {
 import { DEFAULT_SLIDERS, type TypographySliders } from "./typography-config";
 
 export interface ThemeCache {
-  theme: ThemePreference;
   accentHex: string;
-  userSetsAccent: boolean;
-  sliders: TypographySliders;
-  density: Density;
   adminOverrides: SemanticOverrides;
+  appearance: AppearancePersonalisation;
+  density: Density;
+  sliders: TypographySliders;
+  theme: ThemePreference;
+  userSetsAccent: boolean;
 }
 
 export const DEFAULT_THEME_CACHE: ThemeCache = {
-  theme: DEFAULT_THEME,
   accentHex: ACCENT_BOOT_HEX,
-  userSetsAccent: false,
-  sliders: DEFAULT_SLIDERS,
-  density: DEFAULT_DENSITY,
   adminOverrides: {},
+  appearance: {
+    ...DEFAULT_APPEARANCE,
+    wallpaper: { ...DEFAULT_APPEARANCE.wallpaper },
+  },
+  density: DEFAULT_DENSITY,
+  sliders: DEFAULT_SLIDERS,
+  theme: DEFAULT_THEME,
+  userSetsAccent: false,
 };
 
 function isThemePreference(value: unknown): value is ThemePreference {
@@ -76,21 +82,22 @@ export function parseThemeCache(raw: string | null): ThemeCache {
         ? (record.sliders as Record<string, unknown>)
         : {};
     return {
-      theme: isThemePreference(record.theme) ? record.theme : DEFAULT_THEME,
       accentHex: typeof record.accentHex === "string" ? record.accentHex : ACCENT_BOOT_HEX,
-      userSetsAccent: record.userSetsAccent === true,
+      adminOverrides: parseAdminOverrides(record.adminOverrides),
+      appearance: parseAppearance(record.appearance),
+      density: isDensity(record.density) ? record.density : DEFAULT_DENSITY,
       sliders: {
-        size: isSlider(slidersRaw.size) ? slidersRaw.size : DEFAULT_SLIDERS.size,
-        weight: isSlider(slidersRaw.weight) ? slidersRaw.weight : DEFAULT_SLIDERS.weight,
-        lineHeight: isSlider(slidersRaw.lineHeight)
-          ? slidersRaw.lineHeight
-          : DEFAULT_SLIDERS.lineHeight,
         letterSpacing: isSlider(slidersRaw.letterSpacing)
           ? slidersRaw.letterSpacing
           : DEFAULT_SLIDERS.letterSpacing,
+        lineHeight: isSlider(slidersRaw.lineHeight)
+          ? slidersRaw.lineHeight
+          : DEFAULT_SLIDERS.lineHeight,
+        size: isSlider(slidersRaw.size) ? slidersRaw.size : DEFAULT_SLIDERS.size,
+        weight: isSlider(slidersRaw.weight) ? slidersRaw.weight : DEFAULT_SLIDERS.weight,
       },
-      density: isDensity(record.density) ? record.density : DEFAULT_DENSITY,
-      adminOverrides: parseAdminOverrides(record.adminOverrides),
+      theme: isThemePreference(record.theme) ? record.theme : DEFAULT_THEME,
+      userSetsAccent: record.userSetsAccent === true,
     };
   } catch {
     return { ...DEFAULT_THEME_CACHE, sliders: { ...DEFAULT_SLIDERS } };

@@ -54,13 +54,27 @@ describe("Composer", () => {
       />,
     );
     expect(screen.getByLabelText(en.composer.mic)).toBeInTheDocument();
-    expect(screen.getByLabelText(en.composer.send)).toHaveAttribute("data-composer-primary", "send");
-    expect(document.querySelector("[data-composer-row]")).toHaveAttribute("data-composer-row", "compose");
-    await user.click(screen.getByRole("button", { name: en.composer.scheduled.replace("{{when}}", "Tomorrow 09:00") }));
+    expect(screen.getByLabelText(en.composer.send)).toHaveAttribute(
+      "data-composer-primary",
+      "send",
+    );
+    expect(document.querySelector("[data-composer-row]")).toHaveAttribute(
+      "data-composer-row",
+      "compose",
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: en.composer.scheduled.replace("{{when}}", "Tomorrow 09:00"),
+      }),
+    );
     expect(onOpenSchedule).toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: en.composer.clear_schedule }));
     expect(onClearSchedule).toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: en.composer.remove_attachment.replace("{{name}}", "clip.png") }));
+    await user.click(
+      screen.getByRole("button", {
+        name: en.composer.remove_attachment.replace("{{name}}", "clip.png"),
+      }),
+    );
     expect(onRemoveAttachment).toHaveBeenCalledWith("a1");
     const chips = document.querySelector("[data-composer-attachments]");
     expect(chips).toHaveClass("overflow-x-auto");
@@ -87,7 +101,9 @@ describe("Composer", () => {
     );
     fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
     fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.queryByRole("menuitem", { name: en.composer.send_silent })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: en.composer.send_silent }),
+    ).not.toBeInTheDocument();
     fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
     fireEvent.keyDown(window, { key: "Tab" });
     fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" });
@@ -161,7 +177,11 @@ describe("Composer", () => {
       />,
     );
     await user.click(screen.getByRole("button", { name: en.composer.clear_schedule }));
-    await user.click(screen.getByRole("button", { name: en.composer.remove_attachment.replace("{{name}}", "doc.pdf") }));
+    await user.click(
+      screen.getByRole("button", {
+        name: en.composer.remove_attachment.replace("{{name}}", "doc.pdf"),
+      }),
+    );
     fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
     await user.click(screen.getByRole("menuitem", { name: en.composer.attach_files }));
   });
@@ -170,14 +190,19 @@ describe("Composer", () => {
     vi.useFakeTimers();
     const onVoiceSend = vi.fn();
     const idle = voice();
-    const { rerender } = render(<Composer onSend={vi.fn()} onVoiceSend={onVoiceSend} voice={idle} />);
+    const { rerender } = render(
+      <Composer onSend={vi.fn()} onVoiceSend={onVoiceSend} voice={idle} />,
+    );
     await fireEvent.click(screen.getByLabelText(en.composer.mic));
     expect(idle.start).toHaveBeenCalled();
 
     const blob = new Blob(["a"]);
     const recording = voice({ state: "recording" });
     rerender(<Composer onSend={vi.fn()} onVoiceSend={onVoiceSend} voice={recording} />);
-    expect(document.querySelector("[data-composer-row]")).toHaveAttribute("data-composer-row", "voice");
+    expect(document.querySelector("[data-composer-row]")).toHaveAttribute(
+      "data-composer-row",
+      "voice",
+    );
     fireEvent.submit(document.querySelector("form") as HTMLFormElement);
     expect(recording.stop).toHaveBeenCalled();
     rerender(

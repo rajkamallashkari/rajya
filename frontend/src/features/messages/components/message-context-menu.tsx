@@ -1,4 +1,16 @@
-import { Copy, Forward, Info, Pencil, Pin, PinOff, Reply, RotateCcw, Star, StarOff, Trash2 } from "lucide-react";
+import {
+  Copy,
+  Forward,
+  Info,
+  Pencil,
+  Pin,
+  PinOff,
+  Reply,
+  RotateCcw,
+  Star,
+  StarOff,
+  Trash2,
+} from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_QUICK_REACTIONS } from "@/features/messages/model/menu";
@@ -55,11 +67,31 @@ export function MessageContextMenu({
   }, [x, y]);
 
   const items: { danger?: boolean; key: string; label: string; onClick?: () => void }[] = [
-    { key: "retry", label: t("messages.menu.retry"), onClick: actions.isFailed ? actions.onRetry : undefined },
-    { key: "reply", label: t("messages.menu.reply"), onClick: persisted ? actions.onReply : undefined },
-    { key: "edit", label: t("messages.menu.edit"), onClick: actions.canEdit ? actions.onEdit : undefined },
-    { key: "forward", label: t("messages.menu.forward"), onClick: persisted ? actions.onForward : undefined },
-    { key: "copy", label: t("messages.menu.copy"), onClick: actions.hasText ? actions.onCopy : undefined },
+    {
+      key: "retry",
+      label: t("messages.menu.retry"),
+      onClick: actions.isFailed ? actions.onRetry : undefined,
+    },
+    {
+      key: "reply",
+      label: t("messages.menu.reply"),
+      onClick: persisted ? actions.onReply : undefined,
+    },
+    {
+      key: "edit",
+      label: t("messages.menu.edit"),
+      onClick: actions.canEdit ? actions.onEdit : undefined,
+    },
+    {
+      key: "forward",
+      label: t("messages.menu.forward"),
+      onClick: persisted ? actions.onForward : undefined,
+    },
+    {
+      key: "copy",
+      label: t("messages.menu.copy"),
+      onClick: actions.hasText ? actions.onCopy : undefined,
+    },
     {
       key: "pin",
       label: actions.isPinned ? t("messages.menu.unpin") : t("messages.menu.pin"),
@@ -70,7 +102,11 @@ export function MessageContextMenu({
       label: actions.isSaved ? t("messages.menu.unsave") : t("messages.menu.save"),
       onClick: persisted ? actions.onSave : undefined,
     },
-    { key: "info", label: t("messages.menu.info"), onClick: actions.isMine && persisted ? actions.onInfo : undefined },
+    {
+      key: "info",
+      label: t("messages.menu.info"),
+      onClick: actions.isMine && persisted ? actions.onInfo : undefined,
+    },
     {
       key: "unsend",
       danger: true,
@@ -111,7 +147,11 @@ export function MessageContextMenu({
           .filter((item) => item.onClick)
           .map((item) => (
             <Button
-              className={cn(MENU_ITEM_CLASS, "w-full justify-start", item.danger && MENU_ITEM_DANGER_CLASS)}
+              className={cn(
+                MENU_ITEM_CLASS,
+                "w-full justify-start",
+                item.danger && MENU_ITEM_DANGER_CLASS,
+              )}
               key={item.key}
               onClick={() => {
                 item.onClick?.();
@@ -129,15 +169,7 @@ export function MessageContextMenu({
   );
 }
 
-function MenuIcon({
-  name,
-  pinned,
-  saved,
-}: {
-  name: string;
-  pinned?: boolean;
-  saved?: boolean;
-}) {
+function MenuIcon({ name, pinned, saved }: { name: string; pinned?: boolean; saved?: boolean }) {
   const className = ICON_CLASS;
   if (name === "retry") {
     return <RotateCcw className={className} />;

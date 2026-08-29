@@ -113,9 +113,7 @@ function PanelResizeHandle(): ReactNode {
     event.currentTarget.dataset.originX = String(event.clientX);
     const panel = event.currentTarget.nextElementSibling;
     const measured = panel instanceof HTMLElement ? panel.getBoundingClientRect().width : 0;
-    event.currentTarget.dataset.originWidth = String(
-      measured > 0 ? measured : LAYER_MIN_WIDTH_PX,
-    );
+    event.currentTarget.dataset.originWidth = String(measured > 0 ? measured : LAYER_MIN_WIDTH_PX);
   }, []);
 
   const onPointerMove = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {

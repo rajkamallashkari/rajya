@@ -72,8 +72,12 @@ describe("VoiceRecorder", () => {
       "data-composer-primary",
       "send",
     );
-    expect(document.querySelector("[data-voice-recorder]")).toHaveClass("h-[var(--control-height)]");
-    expect(document.querySelector("[data-voice-slot='lead']")).toHaveClass("size-[var(--control-height)]");
+    expect(document.querySelector("[data-voice-recorder]")).toHaveClass(
+      "h-[var(--control-height)]",
+    );
+    expect(document.querySelector("[data-voice-slot='lead']")).toHaveClass(
+      "size-[var(--control-height)]",
+    );
     fireEvent.click(document.querySelector("[data-waveform]") as HTMLElement);
     fireEvent.click(screen.getByRole("button", { name: en.composer.pause_voice }));
     expect(recording.pause).toHaveBeenCalled();
@@ -94,7 +98,9 @@ describe("VoiceRecorder", () => {
     });
     rerender(<VoiceRecorder recorder={pausedPreview} />);
     expect(screen.getByText("1:05")).toBeInTheDocument();
-    expect(document.querySelector("[data-voice-slot='lead']")).toHaveClass("size-[var(--control-height)]");
+    expect(document.querySelector("[data-voice-slot='lead']")).toHaveClass(
+      "size-[var(--control-height)]",
+    );
     fireEvent.click(screen.getByRole("button", { name: en.composer.preview_voice }));
     act(() => {
       FakeAudio.broadcast("loadedmetadata", (audio) => {
@@ -105,7 +111,10 @@ describe("VoiceRecorder", () => {
       });
     });
     expect(screen.getByText("0:05 / 1:05")).toBeInTheDocument();
-    expect(document.querySelector("[data-voice-preview]")).toHaveAttribute("data-voice-preview", "playing");
+    expect(document.querySelector("[data-voice-preview]")).toHaveAttribute(
+      "data-voice-preview",
+      "playing",
+    );
     const wave = document.querySelector("[data-waveform]") as HTMLElement;
     vi.spyOn(wave, "getBoundingClientRect").mockReturnValue({
       height: 28,

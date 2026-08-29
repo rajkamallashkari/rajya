@@ -99,7 +99,9 @@ export const defaultVoiceMedia: VoiceRecorderMedia = {
   audioContextFor: () => new AudioContext() as unknown as AudioContextLike,
   getUserMedia: (constraints) => navigator.mediaDevices.getUserMedia(constraints),
   mediaRecorderFor: (stream, mimeType) =>
-    (mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)) as unknown as MediaRecorderLike,
+    (mimeType
+      ? new MediaRecorder(stream, { mimeType })
+      : new MediaRecorder(stream)) as unknown as MediaRecorderLike,
   now: () => Date.now(),
 };
 

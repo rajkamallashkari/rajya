@@ -72,6 +72,31 @@ export function sufficientContrast(foreground: string, background: string): bool
   return ratio !== null && ratio >= AA_RATIO;
 }
 
+export function mixTowardBlack(hex: string, amount: number): string | null {
+  const channels = srgbChannels(hex);
+  if (channels === null) {
+    return null;
+  }
+  const t = amount < 0 ? 0 : amount > 1 ? 1 : amount;
+  const keep = 1 - t;
+  const red = Math.round(channels[0] * keep * CHANNEL_MAX);
+  const green = Math.round(channels[1] * keep * CHANNEL_MAX);
+  const blue = Math.round(channels[2] * keep * CHANNEL_MAX);
+  return `${HEX_PREFIX}${toHexPair(red)}${toHexPair(green)}${toHexPair(blue)}`;
+}
+
+function toHexPair(value: number): string {
+  return value.toString(16).padStart(HEX_PAIR, "0");
+}
+
+export function wallpaperReadable(textHex: string, surfaceHex: string, dim: number): boolean {
+  const mixed = mixTowardBlack(surfaceHex, dim);
+  if (mixed === null) {
+    return false;
+  }
+  return sufficientContrast(textHex, mixed);
+}
+
 export function accentContrast(hex: string, white: string, nearBlack: string): string {
   const whiteRatio = contrastRatio(hex, white);
   const blackRatio = contrastRatio(hex, nearBlack);

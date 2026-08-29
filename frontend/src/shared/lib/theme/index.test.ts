@@ -8,6 +8,8 @@ import {
   SEMANTIC_DEFAULTS,
   SEMANTIC_TOKENS,
   THEME_CACHE_KEY,
+  DEFAULT_APPEARANCE,
+  WALLPAPER_PRESET_IDS,
 } from "./index";
 import { DEFAULT_SLIDERS, TYPOGRAPHY } from "./index";
 
@@ -23,5 +25,7 @@ describe("theme barrel", () => {
     expect(DENSITY_VARS.compact["--control-pad-x"]).toBe("var(--space-3)");
     expect(DEFAULT_SLIDERS.size).toBe(0);
     expect(TYPOGRAPHY.sliderMin).toBe(-5);
+    expect(DEFAULT_APPEARANCE.wallpaper.preset).toBe("none");
+    expect(WALLPAPER_PRESET_IDS).toContain("dusk");
   });
 });

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { accentContrast, contrastRatio, relativeLuminance, sufficientContrast } from "./contrast";
+import {
+  accentContrast,
+  contrastRatio,
+  mixTowardBlack,
+  relativeLuminance,
+  sufficientContrast,
+  wallpaperReadable,
+} from "./contrast";
 import { ACCENT_CONTRAST_NEAR_BLACK, ACCENT_CONTRAST_WHITE } from "./constants";
 
 describe("contrast", () => {
@@ -34,5 +41,15 @@ describe("contrast", () => {
       ACCENT_CONTRAST_NEAR_BLACK,
     );
     expect(accentContrast("#4F46E5", ACCENT_CONTRAST_WHITE, "bad")).toBe(ACCENT_CONTRAST_WHITE);
+  });
+
+  it("mixes toward black and checks wallpaper contrast", () => {
+    expect(mixTowardBlack("nope", 0.5)).toBeNull();
+    expect(mixTowardBlack("#FFFFFF", -1)).toBe("#ffffff");
+    expect(mixTowardBlack("#FFFFFF", 2)).toBe("#000000");
+    expect(mixTowardBlack("#FFFFFF", 0)).toBe("#ffffff");
+    expect(wallpaperReadable("#FFFFFF", "#000000", 0)).toBe(true);
+    expect(wallpaperReadable("#111111", "#FFFFFF", 1)).toBe(false);
+    expect(wallpaperReadable("#FFFFFF", "nope", 0)).toBe(false);
   });
 });

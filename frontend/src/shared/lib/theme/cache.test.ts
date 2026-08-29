@@ -27,6 +27,14 @@ describe("theme cache", () => {
         sliders: { size: 2, weight: 1, lineHeight: -1, letterSpacing: 3 },
         density: "compact",
         adminOverrides: { "--surface-app": "#000000", "--not-a-token": "#fff" },
+        appearance: {
+          alwaysShowTimestamps: true,
+          bubbleCornerStyle: "square",
+          emojiSkinTone: 1,
+          mediaAutoplay: "always",
+          reduceTransparency: true,
+          wallpaper: { blur: 0.2, dim: 0.1, preset: "dusk" },
+        },
       }),
     );
     expect(parsed.theme).toBe("dark");
@@ -35,6 +43,7 @@ describe("theme cache", () => {
     expect(parsed.sliders).toEqual({ size: 2, weight: 1, lineHeight: -1, letterSpacing: 3 });
     expect(parsed.density).toBe("compact");
     expect(parsed.adminOverrides).toEqual({ "--surface-app": "#000000" });
+    expect(parsed.appearance.bubbleCornerStyle).toBe("square");
   });
 
   it("falls back field-by-field for bad shapes", () => {

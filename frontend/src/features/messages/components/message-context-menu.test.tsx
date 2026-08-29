@@ -27,11 +27,20 @@ describe("MessageContextMenu", () => {
     const { rerender } = render(
       <MessageContextMenu actions={actions} onClose={onClose} x={20} y={20} />,
     );
-    await user.click(screen.getByRole("button", { name: en.messages.menu.react.replace("{{emoji}}", "👍") }));
+    await user.click(
+      screen.getByRole("button", { name: en.messages.menu.react.replace("{{emoji}}", "👍") }),
+    );
     expect(actions.onReact).toHaveBeenCalledWith("👍");
     expect(onClose).toHaveBeenCalled();
 
-    rerender(<MessageContextMenu actions={{ ...actions, isPinned: true, isSaved: true }} onClose={onClose} x={20} y={20} />);
+    rerender(
+      <MessageContextMenu
+        actions={{ ...actions, isPinned: true, isSaved: true }}
+        onClose={onClose}
+        x={20}
+        y={20}
+      />,
+    );
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.reply }));
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.edit }));
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.forward }));

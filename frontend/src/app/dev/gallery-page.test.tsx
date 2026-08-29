@@ -81,7 +81,11 @@ describe("GalleryPage", () => {
     await user.click(screen.getByRole("button", { name: en.composer.pause_voice }));
     await user.click(screen.getByRole("button", { name: en.composer.preview_voice }));
     await user.click(screen.getByRole("button", { name: en.layers.push_demo }));
-    await user.click(screen.getByRole("button", { name: en.shell.open_profile }));
+    const profile = screen.getAllByRole("button", { name: en.shell.open_profile })[0];
+    if (!profile) {
+      throw new Error("missing profile");
+    }
+    await user.click(profile);
     await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
     await user.click(screen.getByRole("button", { name: en.lists.error_retry }));
   });

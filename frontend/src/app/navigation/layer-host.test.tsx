@@ -49,7 +49,10 @@ describe("LayerHost", () => {
     await waitFor(() => {
       expect(document.querySelector("[data-layer='profile']")).not.toBeNull();
     });
-    expect(document.querySelector("[data-layer-host]")).toHaveAttribute("data-presentation", "mobile");
+    expect(document.querySelector("[data-layer-host]")).toHaveAttribute(
+      "data-presentation",
+      "mobile",
+    );
     expect(document.querySelector("[data-layer='base']")).toHaveAttribute("inert");
     expect(document.querySelector("[data-layer='conversation']")).toHaveAttribute("inert");
     expect(document.querySelector("[data-layer='profile']")).not.toHaveAttribute("inert");

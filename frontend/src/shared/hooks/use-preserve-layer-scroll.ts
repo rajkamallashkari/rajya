@@ -25,10 +25,7 @@ function writeSnapshot(root: HTMLElement, dest: Map<string, number>): void {
   root.setAttribute("data-layer-scroll-snapshot", String(dest.get("base") ?? ""));
 }
 
-export function usePreserveLayerScroll(
-  ref: RefObject<HTMLElement | null>,
-  active: boolean,
-): void {
+export function usePreserveLayerScroll(ref: RefObject<HTMLElement | null>, active: boolean): void {
   const positions = useRef(new Map<string, number>());
   const locked = useRef(false);
 

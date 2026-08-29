@@ -63,7 +63,8 @@
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius-xl: 20px;
-  --radius-bubble: 18px;
+  --radius-bubble-round: 18px;
+  --radius-bubble: var(--radius-bubble-round);
   --radius-full: 9999px;
 
   --elevation-0: none;
@@ -149,7 +150,15 @@
   --bubble-avatar-size: var(--space-8);
   --bubble-max-width: 80%;
   --code-block-max-height: calc(var(--space-16) * 6);
-  --overlay-scrim-mix: 40%;
+  --overlay-scrim-mix-default: 40%;
+  --overlay-scrim-mix-reduced: 72%;
+  --overlay-scrim-mix: var(--overlay-scrim-mix-default);
+  --wallpaper-image: none;
+  --wallpaper-dim: 0%;
+  --wallpaper-blur: 0px;
+  --timestamp-visibility: last;
+  --media-autoplay: wifi_only;
+  --emoji-skin-tone: 0;
   --status-tint-mix: 16%;
   --scrollbar-accent-mix: 30%;
   --tap-highlight-mix: 16%;
@@ -242,6 +251,27 @@
   --app-font-family: inherit;
   --space-list-y: var(--space-3);
   --space-list-x: var(--space-4);
+}
+
+.chat-wallpaper {
+  background-color: var(--surface-chat);
+  background-image: var(--wallpaper-image);
+  background-size: cover;
+  isolation: isolate;
+  position: relative;
+}
+
+.chat-wallpaper::before {
+  background: color-mix(
+    in srgb,
+    var(--surface-chat) calc(100% - var(--wallpaper-dim)),
+    var(--tg-950)
+  );
+  backdrop-filter: blur(var(--wallpaper-blur));
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
 }
 
 html.dark {

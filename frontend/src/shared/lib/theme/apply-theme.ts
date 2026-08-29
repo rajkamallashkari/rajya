@@ -1,3 +1,9 @@
+import {
+  appearanceCustomProperties,
+  appearanceDataset,
+  resolveAppearance,
+  type AppearancePersonalisation,
+} from "./appearance";
 import { accentContrast } from "./contrast";
 import {
   ACCENT_CONTRAST_NEAR_BLACK,
@@ -22,12 +28,13 @@ import { deriveTypography } from "./derive-typography";
 import { DEFAULT_SLIDERS, type TypographySliders } from "./typography-config";
 
 export interface ApplyThemeInput {
-  theme: ThemePreference;
   accentHex: string;
-  userSetsAccent: boolean;
-  sliders: TypographySliders;
-  density: Density;
   adminOverrides: SemanticOverrides;
+  appearance?: AppearancePersonalisation;
+  density: Density;
+  sliders: TypographySliders;
+  theme: ThemePreference;
+  userSetsAccent: boolean;
 }
 
 const DARK_CLASS = "dark";
@@ -109,16 +116,29 @@ export function applyTheme(
     setVar(style, name, value);
   }
 
+  const appearance = resolveAppearance(input.appearance);
+  for (const [name, value] of Object.entries(appearanceCustomProperties(appearance))) {
+    setVar(style, name, value);
+  }
+  const data = appearanceDataset(appearance);
+  rootEl.dataset.autoplay = data.autoplay;
+  rootEl.dataset.corners = data.corners;
+  rootEl.dataset.skinTone = data.skinTone;
+  rootEl.dataset.timestamps = data.timestamps;
+  rootEl.dataset.transparency = data.transparency;
+  rootEl.dataset.wallpaper = data.wallpaper;
+
   updateThemeColorMeta(doc, palette["--surface-app"]);
 
   if (storage) {
     const cache: ThemeCache = {
-      theme: input.theme,
       accentHex: input.accentHex,
-      userSetsAccent: input.userSetsAccent,
-      sliders: input.sliders,
-      density: input.density,
       adminOverrides: input.adminOverrides,
+      appearance,
+      density: input.density,
+      sliders: input.sliders,
+      theme: input.theme,
+      userSetsAccent: input.userSetsAccent,
     };
     writeThemeCache(storage, cache);
   }

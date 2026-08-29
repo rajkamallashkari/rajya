@@ -10,29 +10,26 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 1.4 |
-| **Next session** | 1.5 |
-| **Phase** | P1 — Design system & chat shell |
-| **Sessions remaining in phase** | 1 (1.5) |
+| **Last completed** | 1.5 |
+| **Next session** | 2.1 |
+| **Phase** | P2 — Identity & auth |
+| **Sessions remaining in phase** | 5 (2.1–2.5) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 1.5 — The fourteen new-feature components and the personalisation surface**
+**Session 2.1 — `accounts`/`users`/`bots`, JWT, epoch on HTTP and Cable, Rack::Attack**
 
-Deliverable: **The fourteen new-feature components** and the personalisation
-surface: `PollCard`, `ReactionDetailsSheet`, `SelectionToolbar`, the unified
-picker sheet (emoji/sticker/GIF/saved-reply tabs), `LocationCard`, `ContactCard`,
-`TranscriptBlock`, `SlashCommandMenu`, `WallpaperPicker`, `QrSheet`, `ReportSheet`,
-`SessionListItem`
+Deliverable: `accounts`/`users`/`bots`, JWT, epoch on HTTP and Cable, Rack::Attack
 
-Docs: `DESIGN_SYSTEM §4 (additions), §5.2, §8.1, §8.2, DS-8/DS-9/DS-10/DS-12/DS-13; SCHEMA §12 for the shapes they render`
+Docs: `SCHEMA §1, §2; GAP §1; TARGET §4.7; AUDIT §2.4 (BR-42…47)`
 
 Legacy to read:
-- `legacy/botverse/src/components/chat/EmojiPickerSheet.tsx`
-- `legacy/botverse/src/components/chat/MessageInfoBottomSheet.tsx`
-- `legacy/botverse/src/components/chat/ForwardModal.tsx` — the sheet patterns the new components must reuse rather than reinvent; emoji stays in the picker, not as composer chrome
+- `legacy/cognify/app/services/jwt_service.rb`
+- `legacy/cognify/app/services/auth_service.rb`
+- `legacy/cognify/app/controllers/api/v1/base_controller.rb`
+- `legacy/cognify/app/channels/application_cable/`
 
 ---
 
@@ -48,6 +45,7 @@ Legacy to read:
 | 1.2 | Message thread surface: bubble, group, content, ticks, system, dividers | Symmetric DS-6 formatting (sent = received, human = bot); spoilers; jumbo emoji; NR-2 ticks; TypingBubble. |
 | 1.3 | Composer, voice UI, long-press, context menu, ChatListItem | **DS-13** three-element row (mic · textarea · send). Send long-press/right-click: attach, schedule, rewrite, silent send. Mic takes over the row for voice. Preview: waveform above the clock, played bars highlighted, `elapsed / total` while playing or after seek. Chips + schedule bar above. Swipe/pin/unread list, lifted bubble + message menu. Presentation only. |
 | 1.4 | `useLayer` navigation, error boundaries, list states, MSW, shortcuts | History-backed layer stack (mobile overlay + desktop panels). Scroll kept per layer; buried layers stay mounted and `inert`. List empty/loading/error, impersonation/offline banners, typed MSW `/health`+`/up`. NR-46: Escape, `/`, ArrowUp, Enter. Composer chrome unchanged (**DS-13**). |
+| 1.5 | Fourteen new-feature components and DS-8 personalisation | Polls, reaction details, selection toolbar, unified picker (emoji/sticker/GIF/saved-reply tabs), location/contact/transcript, slash menu, wallpaper, QR, report, session list — on mocks. Appearance is token overrides, never component variants. Composer chrome unchanged (**DS-13**). Presentation only. |
 
 ---
 

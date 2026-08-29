@@ -70,7 +70,8 @@ export function MessageBubble({
 }) {
   const [hovered, setHovered] = useState(false);
   const jumbo = getJumboInfo(body) !== null;
-  const showTime = Boolean(createdAt) && (hovered || showsTimestampByDefault(role));
+  const alwaysTime = document.documentElement.dataset.timestamps === "always";
+  const showTime = Boolean(createdAt) && (alwaysTime || hovered || showsTimestampByDefault(role));
   const queued = status === "queued";
   const fill =
     side === "sent" ? "bg-[var(--bubble-sent-fill)]" : "bg-[var(--bubble-received-fill)]";

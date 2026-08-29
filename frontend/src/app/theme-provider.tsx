@@ -11,6 +11,7 @@ import {
   applyTheme,
   FALLBACK_RESOLVED_THEME,
   readThemeCache,
+  resolveAppearance,
   resolveTheme,
   type ApplyThemeInput,
   type ResolvedTheme,
@@ -57,12 +58,22 @@ export function ThemeProvider({
   }, [inputProp]);
 
   const setInput = useCallback((patch: Partial<ApplyThemeInput>): void => {
-    setInputState((prev) => ({
-      ...prev,
-      ...patch,
-      sliders: { ...prev.sliders, ...patch.sliders },
-      adminOverrides: patch.adminOverrides ?? prev.adminOverrides,
-    }));
+    setInputState((prev) => {
+      const previous = resolveAppearance(prev.appearance);
+      return {
+        ...prev,
+        ...patch,
+        adminOverrides: patch.adminOverrides ?? prev.adminOverrides,
+        appearance: patch.appearance
+          ? {
+              ...previous,
+              ...patch.appearance,
+              wallpaper: { ...previous.wallpaper, ...patch.appearance.wallpaper },
+            }
+          : prev.appearance,
+        sliders: { ...prev.sliders, ...patch.sliders },
+      };
+    });
   }, []);
 
   const applied = useMemo(() => input, [input]);

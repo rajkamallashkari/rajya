@@ -5,9 +5,42 @@ export {
   mergeSemanticPalette,
 } from "./apply-theme";
 export type { ApplyThemeInput } from "./apply-theme";
+export {
+  appearanceCustomProperties,
+  appearanceDataset,
+  AUTOPLAY_POLICIES,
+  clampSkinTone,
+  clampUnit,
+  CORNER_STYLES,
+  DEFAULT_APPEARANCE,
+  PALETTE_CONTRAST_PAIRS,
+  parseAppearance,
+  palettePassesContrast,
+  resolveAppearance,
+  SKIN_TONE_MAX,
+  SKIN_TONE_MIN,
+  sliderUnit,
+  firstValue,
+  WALLPAPER_IMAGES,
+  WALLPAPER_PRESET_IDS,
+} from "./appearance";
+export type {
+  AppearancePersonalisation,
+  BubbleCornerStyle,
+  MediaAutoplay,
+  WallpaperPreference,
+  WallpaperPresetId,
+} from "./appearance";
 export { deriveTypography } from "./derive-typography";
 export { parseThemeCache, readThemeCache, resolveTheme, writeThemeCache } from "./cache";
-export { accentContrast, contrastRatio, relativeLuminance, sufficientContrast } from "./contrast";
+export {
+  accentContrast,
+  contrastRatio,
+  mixTowardBlack,
+  relativeLuminance,
+  sufficientContrast,
+  wallpaperReadable,
+} from "./contrast";
 export {
   ACCENT_BOOT_HEX,
   ACCENT_CONTRAST_NEAR_BLACK,

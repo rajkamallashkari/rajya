@@ -87,6 +87,7 @@ import {
 } from "@/shared/ui";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { ICON_CLASS, PROGRESS_MAX, SCROLL_DEMO_ROWS } from "@/shared/ui/metrics";
+import { GalleryFeatureSections } from "@/app/dev/gallery-features";
 
 export function galleryAction(): void {}
 
@@ -133,6 +134,18 @@ export const GALLERY_SECTION_KEYS = [
   "offline_banner",
   "impersonation_banner",
   "layer_host",
+  "poll_card",
+  "reaction_details",
+  "selection_toolbar",
+  "picker_sheet",
+  "location_card",
+  "contact_card",
+  "transcript_block",
+  "slash_commands",
+  "wallpaper_picker",
+  "qr_sheet",
+  "report_sheet",
+  "session_list_item",
 ] as const;
 
 const THEME_CHOICES = ["light", "dark", "system"] as const;
@@ -637,6 +650,8 @@ export function GalleryPage() {
       <Section sectionKey="layer_host">
         <GalleryLayerDemo />
       </Section>
+
+      <GalleryFeatureSections Section={Section} />
     </main>
   );
 }

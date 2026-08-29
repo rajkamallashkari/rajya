@@ -114,7 +114,19 @@
       "list_states": "List states",
       "offline_banner": "Offline banner",
       "impersonation_banner": "Impersonation banner",
-      "layer_host": "Layer stack"
+      "layer_host": "Layer stack",
+      "poll_card": "Poll card",
+      "reaction_details": "Reaction details",
+      "selection_toolbar": "Selection toolbar",
+      "picker_sheet": "Picker sheet",
+      "location_card": "Location card",
+      "contact_card": "Contact card",
+      "transcript_block": "Transcript",
+      "slash_commands": "Slash commands",
+      "wallpaper_picker": "Wallpaper",
+      "qr_sheet": "QR code",
+      "report_sheet": "Report",
+      "session_list_item": "Sessions"
     },
     "button": {
       "primary": "Primary",
@@ -211,6 +223,18 @@
     },
     "progress": {
       "label": "Upload"
+    },
+    "features": {
+      "gif": "Party",
+      "open_picker": "Open picker",
+      "open_qr": "Open QR",
+      "open_reactions": "Open reactions",
+      "open_report": "Open report",
+      "open_results": "Open poll results",
+      "reason_spam": "Spam",
+      "reply_body": "On my way",
+      "reply_shortcut": "/omw",
+      "sticker": "wave"
     },
     "messages": {
       "formatted": "**Bold**, *italic*, ~~strike~~, and `code`.\n\n||hidden||\n\n- list item\n\n1. numbered\n\n> quoted\n\n[Rajya](https://rajya.pages.dev) @ada\n\n```javascript\nconst ok = 1;\n```\n\n# heading\n\n| a | b |\n\n<b>html</b>",
@@ -317,5 +341,122 @@
       "icon_changed": "Group icon updated",
       "chat_created": "Group created by {{name}}"
     }
+  },
+  "polls": {
+    "anonymous": "Anonymous poll",
+    "closed": "Poll closed",
+    "closes": "Closes {{when}}",
+    "multiple": "Select one or more",
+    "no_voters": "No votes yet",
+    "results": "View results",
+    "results_title": "Poll results",
+    "vote_many": "{{count}} votes",
+    "vote_one": "{{count}} vote",
+    "voter_many": "{{count}} voters",
+    "voter_one": "{{count}} voter",
+    "voters_hidden": "Voters are hidden"
+  },
+  "reactions": {
+    "count": "{{emoji}} {{count}}",
+    "empty": "No reactions yet",
+    "title": "Reactions"
+  },
+  "selection": {
+    "clear": "Clear selection",
+    "copy": "Copy",
+    "delete": "Delete",
+    "forward": "Forward",
+    "save": "Save",
+    "select_all": "Select all",
+    "selected": "{{count}} selected"
+  },
+  "picker": {
+    "emoji": "Emoji",
+    "empty_gifs": "No GIFs match that search",
+    "empty_replies": "No saved replies yet",
+    "empty_stickers": "No stickers in this pack",
+    "gif_attribution": "Via Tenor",
+    "gifs": "GIFs",
+    "recent": "Recently used",
+    "replies": "Replies",
+    "search_gifs": "Search GIFs",
+    "search_replies": "Search replies",
+    "stickers": "Stickers",
+    "title": "Stickers and emoji"
+  },
+  "location": {
+    "accuracy": "Accurate to {{meters}} m",
+    "attribution": "© OpenStreetMap",
+    "map": "Map",
+    "open": "Open location"
+  },
+  "contact": {
+    "email": "{{value}}",
+    "message": "Message",
+    "open_profile": "Open profile",
+    "phone": "{{value}}"
+  },
+  "transcript": {
+    "failed": "Couldn't transcribe this voice note",
+    "pending": "Transcribing voice note",
+    "ready": "Transcript",
+    "ready_language": "Transcript · {{language}}"
+  },
+  "slash": {
+    "empty": "No commands match",
+    "hint": "{{hint}}"
+  },
+  "wallpaper": {
+    "blur": "Blur",
+    "contrast_fail": "This dim would make text unreadable",
+    "dim": "Dim",
+    "presets": {
+      "dusk": "Dusk",
+      "grove": "Grove",
+      "mist": "Mist",
+      "none": "None"
+    },
+    "title": "Chat wallpaper"
+  },
+  "appearance": {
+    "autoplay": "Media autoplay",
+    "autoplay_policy": {
+      "always": "Always",
+      "never": "Never",
+      "wifi_only": "Wi-Fi only"
+    },
+    "corner": {
+      "rounded": "Rounded",
+      "square": "Square"
+    },
+    "corners": "Bubble corners",
+    "reduce_transparency": "Reduce transparency",
+    "skin_tone": "Emoji skin tone",
+    "timestamps": "Always show timestamps"
+  },
+  "qr": {
+    "copy": "Copy link",
+    "title": "QR code"
+  },
+  "report": {
+    "details": "Details",
+    "details_placeholder": "Add context (optional)",
+    "no_reasons": "No report reasons configured",
+    "reason": "Reason",
+    "subject": {
+      "account": "This account",
+      "bot": "This bot",
+      "conversation": "This conversation",
+      "message": "This message"
+    },
+    "submit": "Submit report",
+    "title": "Report"
+  },
+  "sessions": {
+    "current": "This device",
+    "ip": "{{ip}}",
+    "last_seen": "Last seen {{when}}",
+    "revoke": "Sign out",
+    "unknown_device": "Unknown device"
   }
 }

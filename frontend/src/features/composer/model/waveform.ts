@@ -11,10 +11,7 @@ import {
   type VoiceRecorderState,
 } from "@/features/composer/model/constants";
 
-export function downsamplePeaks(
-  raw: number[],
-  targetCount: number = WAVEFORM_BAR_COUNT,
-): number[] {
+export function downsamplePeaks(raw: number[], targetCount: number = WAVEFORM_BAR_COUNT): number[] {
   if (raw.length === 0) {
     return [];
   }
@@ -111,7 +108,9 @@ export function cssVar(element: Element, name: string, fallback: string): string
 }
 
 export function waveformBarWidthPx(element: Element): number {
-  const parsed = Number.parseFloat(cssVar(element, "--waveform-bar-width", String(WAVEFORM_FALLBACK_BAR_WIDTH)));
+  const parsed = Number.parseFloat(
+    cssVar(element, "--waveform-bar-width", String(WAVEFORM_FALLBACK_BAR_WIDTH)),
+  );
   if (Number.isFinite(parsed) && parsed > 0) {
     return parsed;
   }

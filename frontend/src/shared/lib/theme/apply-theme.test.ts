@@ -5,8 +5,13 @@ import {
   defaultThemeInput,
   mergeSemanticPalette,
 } from "./apply-theme";
-import { ACCENT_BOOT_HEX, ACCENT_CONTRAST_NEAR_BLACK, ACCENT_CONTRAST_WHITE } from "./constants";
-import { THEME_CACHE_KEY } from "./constants";
+import { DEFAULT_APPEARANCE } from "./appearance";
+import {
+  ACCENT_BOOT_HEX,
+  ACCENT_CONTRAST_NEAR_BLACK,
+  ACCENT_CONTRAST_WHITE,
+  THEME_CACHE_KEY,
+} from "./constants";
 
 function mockMatch(dark: boolean, light = !dark) {
   return (query: string): MediaQueryList =>
@@ -59,6 +64,31 @@ describe("applyTheme", () => {
     );
     expect(meta.getAttribute("content")).toBe("#0E1621");
     expect(window.localStorage.getItem(THEME_CACHE_KEY)).toContain("compact");
+  });
+
+  it("writes personalisation tokens onto the document", () => {
+    applyTheme(
+      {
+        ...defaultThemeInput(),
+        appearance: {
+          ...DEFAULT_APPEARANCE,
+          alwaysShowTimestamps: true,
+          bubbleCornerStyle: "square",
+          emojiSkinTone: 3,
+          mediaAutoplay: "never",
+          reduceTransparency: true,
+          wallpaper: { blur: 0.4, dim: 0.1, preset: "mist" },
+        },
+        theme: "light",
+      },
+      document,
+    );
+    expect(document.documentElement.dataset.corners).toBe("square");
+    expect(document.documentElement.dataset.timestamps).toBe("always");
+    expect(document.documentElement.dataset.transparency).toBe("reduced");
+    expect(document.documentElement.style.getPropertyValue("--wallpaper-image")).toContain(
+      "linear-gradient",
+    );
   });
 
   it("keeps admin accent unless the user set one", () => {

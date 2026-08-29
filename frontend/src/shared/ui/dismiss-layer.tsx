@@ -17,7 +17,9 @@ export function DismissLayer({
       aria-label={label}
       className={cn(
         "fixed inset-0 z-[var(--z-sheet)] cursor-default border-0 p-0",
-        scrim ? cn(OVERLAY_SCRIM, "hover:bg-[var(--overlay-scrim)]") : "bg-transparent hover:bg-transparent",
+        scrim
+          ? cn(OVERLAY_SCRIM, "hover:bg-[var(--overlay-scrim)]")
+          : "bg-transparent hover:bg-transparent",
         className,
       )}
       data-dismiss-layer={scrim ? "scrim" : "clear"}
