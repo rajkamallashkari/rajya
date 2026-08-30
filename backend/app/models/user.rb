@@ -18,6 +18,8 @@ class User < ApplicationRecord
                                        inverse_of: :updated_by_user, dependent: :nullify
   has_many :admin_audit_events, class_name: "AuditEvent", foreign_key: :admin_user_id, inverse_of: :admin_user,
                                  dependent: :nullify
+  has_many :reviewed_reports, class_name: "Report", foreign_key: :reviewed_by_user_id,
+                               inverse_of: :reviewed_by_user, dependent: :nullify
 
   validates :account_id, uniqueness: { allow_nil: true }
   validates :credentials_epoch, presence: true, numericality: { greater_than_or_equal_to: 0 }

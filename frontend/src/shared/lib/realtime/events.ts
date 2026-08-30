@@ -11,6 +11,14 @@ export interface RealtimePayloads {
   poll_voted: { conversation_id: number; message_id: number };
   presence: { account_id: number; online: boolean };
   receipts_updated: { conversation_id: number; account_id: number; kind: string; position: number };
+  report_created: {
+    report_id: number;
+    subject_type: string;
+    subject_id: number;
+    reason: string;
+    status: string;
+    auto_flagged: boolean;
+  };
   sidebar_update: { conversation_id: number };
   join_request: { conversation_id: number; join_request_id?: number; status: string };
   typing: {
@@ -34,6 +42,7 @@ export const REALTIME_EVENT_TYPES = [
   "poll_voted",
   "presence",
   "receipts_updated",
+  "report_created",
   "sidebar_update",
   "join_request",
   "typing",
@@ -80,6 +89,14 @@ function optionalNumber(data: Record<string, unknown>, key: string): number | un
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
+function requireBoolean(data: Record<string, unknown>, key: string): boolean {
+  const value = data[key];
+  if (typeof value !== "boolean") {
+    throw new Error(`invalid realtime event: ${key}`);
+  }
+  return value;
+}
+
 function parseMessageEvent<Type extends ListedType>(
   type: Type,
   data: Record<string, unknown>,
@@ -122,6 +139,15 @@ const PARSERS: { [Type in ListedType]: (data: Record<string, unknown>) => Realti
     account_id: requireNumber(data, "account_id"),
     kind: optionalString(data, "kind") ?? "",
     position: requireNumber(data, "position"),
+  }),
+  report_created: (data) => ({
+    type: "report_created",
+    report_id: requireNumber(data, "report_id"),
+    subject_type: optionalString(data, "subject_type") ?? "",
+    subject_id: requireNumber(data, "subject_id"),
+    reason: optionalString(data, "reason") ?? "",
+    status: optionalString(data, "status") ?? "",
+    auto_flagged: requireBoolean(data, "auto_flagged"),
   }),
   sidebar_update: (data) => ({
     type: "sidebar_update",

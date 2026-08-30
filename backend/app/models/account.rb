@@ -31,6 +31,7 @@ class Account < ApplicationRecord
   has_many :created_group_invites, class_name: "GroupInvite", foreign_key: :created_by_account_id,
                                     inverse_of: :created_by_account, dependent: :destroy
   has_many :join_requests, dependent: :destroy
+  has_many :reports, foreign_key: :reporter_account_id, inverse_of: :reporter_account, dependent: :destroy
   has_many :requested_bots, class_name: "BotRequest", foreign_key: :requester_account_id,
                              inverse_of: :requester_account, dependent: :destroy
 

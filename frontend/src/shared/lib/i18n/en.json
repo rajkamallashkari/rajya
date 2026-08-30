@@ -74,7 +74,8 @@
       "missing_description": "The account may be blocked or no longer exist.",
       "block": "Block",
       "unblock": "Unblock",
-      "blocked": "Blocked"
+      "blocked": "Blocked",
+      "report": "Report"
     }
   },
   "errors": {
@@ -494,8 +495,9 @@
       "save": "Save",
       "unsave": "Unsave",
       "info": "Info",
-      "unsend": "Unsend",
-      "react": "React with {{emoji}}",
+    "unsend": "Unsend",
+    "report": "Report",
+    "react": "React with {{emoji}}",
       "select": "Select",
       "reactions": "Reactions",
       "remind": "Remind me"
@@ -629,6 +631,7 @@
     "title": "QR code"
   },
   "report": {
+    "action": "Report",
     "details": "Details",
     "details_placeholder": "Add context (optional)",
     "no_reasons": "No report reasons configured",

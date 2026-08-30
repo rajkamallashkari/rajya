@@ -35,6 +35,8 @@ import {
   useReactMessage,
   useReactionDetails,
   useReorderFolders,
+  useReportReasons,
+  useCreateReport,
   useSaveMessage,
   useSavedReplies,
   useSendMessage,
@@ -767,5 +769,35 @@ describe("useUpdateConversation", () => {
       expect(findConversation(2)?.slow_mode_seconds).toBe(10);
       expect(findConversation(2)?.restrict_forwarding).toBe(true);
     });
+  });
+});
+
+describe("reports", () => {
+  it("loads reasons and files a report", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    function ReportHarness() {
+      const reasons = useReportReasons();
+      const create = useCreateReport();
+      return (
+        <div>
+          <p data-reasons={reasons.data?.reasons.length ?? 0}>{reasons.data?.reasons[0]?.id}</p>
+          <Button
+            onClick={() =>
+              create.mutate({ reason: "spam", subject_id: 9, subject_type: "account" })
+            }
+            type="button"
+          >
+            file-report
+          </Button>
+        </div>
+      );
+    }
+    render(
+      <AppProviders>
+        <ReportHarness />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("spam")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "file-report" }));
   });
 });

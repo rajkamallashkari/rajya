@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../client";
-import { handlerMap, handlers } from "./handlers";
+import { handlerMap, handlers, resetFiledReports } from "./handlers";
 import { MESSAGE_STAMP, messagingStore, resetMessagingStore } from "./messaging-store";
 
 const expectedPaths = [
@@ -59,6 +59,8 @@ const expectedPaths = [
   "/api/v1/polls/{id}",
   "/api/v1/polls/{id}/close",
   "/api/v1/polls/{id}/vote",
+  "/api/v1/reports",
+  "/api/v1/reports/reasons",
   "/api/v1/saved_messages",
   "/api/v1/saved_messages/{id}",
   "/api/v1/saved_replies",
@@ -95,7 +97,10 @@ const expectedPaths = [
 ];
 
 describe("MSW handlers", () => {
-  afterEach(() => resetMessagingStore());
+  afterEach(() => {
+    resetMessagingStore();
+    resetFiledReports();
+  });
 
   it("serves every generated path with typed bodies", async () => {
     expect(Object.keys(handlerMap).sort()).toEqual(expectedPaths.sort());
@@ -218,6 +223,16 @@ describe("MSW handlers", () => {
     expect(blocked.data?.account.id).toBe(1);
     const unblocked = await client.DELETE("/api/v1/blocks/{id}", { params: { path: { id: 2 } } });
     expect(unblocked.data?.ok).toBe(true);
+    const reportReasons = await client.GET("/api/v1/reports/reasons");
+    expect(reportReasons.data?.reasons[0]?.id).toBe("spam");
+    const filed = await client.POST("/api/v1/reports", {
+      body: { subject_type: "account", subject_id: 2, reason: "spam" },
+    });
+    expect(filed.response.status).toBe(201);
+    const duplicate = await client.POST("/api/v1/reports", {
+      body: { subject_type: "account", subject_id: 2, reason: "spam" },
+    });
+    expect(duplicate.response.status).toBe(409);
     const sessions = await client.GET("/api/v1/sessions");
     expect(sessions.data?.sessions[0]?.current).toBe(true);
     const revokedOther = await client.DELETE("/api/v1/sessions/others");

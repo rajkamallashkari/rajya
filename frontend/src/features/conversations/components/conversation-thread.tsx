@@ -27,6 +27,7 @@ import {
 } from "@/features/conversations/api/queries";
 import { MessageInfoSheet } from "@/features/conversations/components/message-info-sheet";
 import { ReminderSheet } from "@/features/conversations/components/reminder-sheet";
+import { ReportHost } from "@/features/conversations/components/report-host";
 import { useConversationChannel } from "@/features/conversations/hooks/use-conversation-channel";
 import { useTypingIndicators } from "@/features/conversations/hooks/use-typing-indicators";
 import { conversationById, type DemoMessage } from "@/features/conversations/model/demo";
@@ -199,6 +200,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
     x: number;
     y: number;
   } | null>(null);
+  const [reportId, setReportId] = useState<number | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const stuck = useRef(false);
   const viewerId = getAccessSession()?.accountId ?? 0;
@@ -382,6 +384,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
             onReact: (id, emoji) => react.mutate({ emoji, id }),
             onReactions: setReactionsId,
             onRemind: setRemindId,
+            onReport: setReportId,
             onSave: (id) => save.mutate(id),
             onSelect: (id) =>
               setSelectedIds((current) => (current.includes(id) ? current : [...current, id])),
@@ -408,6 +411,16 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           }
         }}
         open={remindId != null}
+      />
+      <ReportHost
+        onOpenChange={(open) => {
+          if (!open) {
+            setReportId(null);
+          }
+        }}
+        open={reportId != null}
+        subjectId={reportId ?? 0}
+        subjectType="message"
       />
       <MessageInfoSheet
         info={info.data}
@@ -608,6 +621,7 @@ export function buildMessageMenuActions({
   onReact,
   onReactions,
   onRemind,
+  onReport,
   onSave,
   onSelect,
   onUnsend,
@@ -624,6 +638,7 @@ export function buildMessageMenuActions({
   onReact: (id: number, emoji: string) => void;
   onReactions: (id: number) => void;
   onRemind: (id: number) => void;
+  onReport?: (id: number) => void;
   onSave: (id: number) => void;
   onSelect: (id: number) => void;
   onUnsend: (id: number) => void;
@@ -637,6 +652,7 @@ export function buildMessageMenuActions({
   }
   const isMine = message.sender?.id === viewerId;
   const canCopy = Boolean(message.body) && !restrictForwarding;
+  const canReport = Boolean(onReport) && !isMine && !message.deleted && message.kind !== "system";
   return {
     canEdit: isMine && !message.deleted && Boolean(message.body),
     hasText: canCopy,
@@ -650,6 +666,7 @@ export function buildMessageMenuActions({
     onReact: (emoji) => onReact(message.id, emoji),
     onReactions: () => onReactions(message.id),
     onRemind: () => onRemind(message.id),
+    onReport: canReport ? () => onReport?.(message.id) : undefined,
     onSave: () => onSave(message.id),
     onSelect: () => onSelect(message.id),
     onUnsend: () => onUnsend(message.id),

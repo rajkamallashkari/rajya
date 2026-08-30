@@ -1,6 +1,7 @@
 import {
   Clock,
   Copy,
+  Flag,
   Forward,
   Info,
   List,
@@ -42,6 +43,7 @@ export interface MessageMenuActions {
   onPin?: () => void;
   onReact?: (emoji: string) => void;
   onReply?: () => void;
+  onReport?: () => void;
   onRetry?: () => void;
   onSave?: () => void;
   onSelect?: () => void;
@@ -127,6 +129,11 @@ export function MessageContextMenu({
       key: "remind",
       label: t("messages.menu.remind"),
       onClick: persisted ? actions.onRemind : undefined,
+    },
+    {
+      key: "report",
+      label: t("messages.menu.report"),
+      onClick: persisted ? actions.onReport : undefined,
     },
     {
       key: "unsend",
@@ -224,6 +231,9 @@ function MenuIcon({ name, pinned, saved }: { name: string; pinned?: boolean; sav
   }
   if (name === "remind") {
     return <Clock className={className} />;
+  }
+  if (name === "report") {
+    return <Flag className={className} />;
   }
   return <Trash2 className={className} />;
 }

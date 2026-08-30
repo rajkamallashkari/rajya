@@ -344,6 +344,12 @@ describe("conversation layers", () => {
       </AppProviders>,
     );
     expect(await screen.findByText(en.invites.manage)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.report.action }));
+    expect(await screen.findByRole("button", { name: en.report.submit })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.ui.close }));
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: en.report.submit })).toBeNull();
+    });
     rerender(
       <AppProviders>
         <ProfilePanel conversationId="1" />
@@ -358,6 +364,25 @@ describe("conversation layers", () => {
     await user.click(screen.getByRole("button", { name: en.ui.close }));
     await waitFor(() => {
       expect(document.querySelector("[data-qr-grid]")).toBeNull();
+    });
+  });
+
+  it("opens a report sheet from a peer message", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("Are you free later?")).toBeInTheDocument();
+    const bubble = screen.getByText("Are you free later?").closest("[data-message-bubble]");
+    fireEvent.contextMenu(bubble as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.report }));
+    expect(await screen.findByRole("button", { name: en.report.submit })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.ui.close }));
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: en.report.submit })).toBeNull();
     });
   });
 
@@ -518,6 +543,64 @@ describe("conversation layers", () => {
     });
     expect(restricted.onCopy).toBeUndefined();
     expect(restricted.hasText).toBe(false);
+    const reported = buildMessageMenuActions({
+      message: {
+        id: 3,
+        conversation_id: 1,
+        position: 3,
+        revision: 1,
+        kind: "text",
+        body: "Hi",
+        deleted: false,
+        silent: false,
+        created_at: "2026-01-01T12:00:00.000Z",
+        sender: { id: 2, username: "grace", display_name: "Grace", kind: "human" },
+      },
+      onCopy: () => undefined,
+      onEdit: () => undefined,
+      onInfo: () => undefined,
+      onPin: () => undefined,
+      onReact: () => undefined,
+      onReactions: () => undefined,
+      onRemind: () => undefined,
+      onReport: () => undefined,
+      onSave: () => undefined,
+      onSelect: () => undefined,
+      onUnsend: () => undefined,
+      pinned: [],
+      saved: [],
+      viewerId: 1,
+    });
+    expect(reported.onReport).toBeDefined();
+    const system = buildMessageMenuActions({
+      message: {
+        id: 4,
+        conversation_id: 1,
+        position: 4,
+        revision: 1,
+        kind: "system",
+        body: "joined",
+        deleted: false,
+        silent: false,
+        created_at: "2026-01-01T12:00:00.000Z",
+        sender: { id: 2, username: "grace", display_name: "Grace", kind: "human" },
+      },
+      onCopy: () => undefined,
+      onEdit: () => undefined,
+      onInfo: () => undefined,
+      onPin: () => undefined,
+      onReact: () => undefined,
+      onReactions: () => undefined,
+      onRemind: () => undefined,
+      onReport: () => undefined,
+      onSave: () => undefined,
+      onSelect: () => undefined,
+      onUnsend: () => undefined,
+      pinned: [],
+      saved: [],
+      viewerId: 1,
+    });
+    expect(system.onReport).toBeUndefined();
     expect(nextInfoId(true, 4)).toBe(4);
     expect(nextInfoId(false, 4)).toBeNull();
     const numeric = vi.fn();

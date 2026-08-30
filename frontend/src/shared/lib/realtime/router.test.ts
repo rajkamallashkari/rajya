@@ -89,6 +89,18 @@ describe("routeRealtimeEvent", () => {
     await routeRealtimeEvent({ type: "message_reminder", id: 4 }, deps);
     await routeRealtimeEvent(
       {
+        type: "report_created",
+        report_id: 1,
+        subject_type: "account",
+        subject_id: 2,
+        reason: "spam",
+        status: "pending",
+        auto_flagged: false,
+      },
+      deps,
+    );
+    await routeRealtimeEvent(
+      {
         type: "typing",
         conversation_id: 1,
         account_id: 9,

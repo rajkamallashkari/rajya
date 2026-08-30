@@ -70,6 +70,8 @@ export async function routeRealtimeEvent(
     case "presence":
       deps.cache.setQueryData(realtimeKeys.presence(event.account_id), event.online);
       return;
+    case "report_created":
+      return;
     case "receipts_updated": {
       const viewerId = getAccessSession()?.accountId;
       if (viewerId == null || event.account_id === viewerId) {

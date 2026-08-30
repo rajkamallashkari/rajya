@@ -85,6 +85,25 @@ describe("realtime events", () => {
     });
     expect(
       parseRealtimeEvent({
+        type: "report_created",
+        report_id: 3,
+        subject_type: "account",
+        subject_id: 8,
+        reason: "spam",
+        status: "pending",
+        auto_flagged: true,
+      }),
+    ).toEqual({
+      type: "report_created",
+      report_id: 3,
+      subject_type: "account",
+      subject_id: 8,
+      reason: "spam",
+      status: "pending",
+      auto_flagged: true,
+    });
+    expect(
+      parseRealtimeEvent({
         type: "typing",
         conversation_id: 1,
         account_id: 2,
@@ -126,6 +145,14 @@ describe("realtime events", () => {
     ).toThrow("conversation_id");
     expect(() => parseRealtimeEvent({ type: "presence", account_id: 1 })).toThrow("online");
     expect(() => parseRealtimeEvent({ type: "message_reminder", id: "x" })).toThrow("id");
+    expect(() =>
+      parseRealtimeEvent({
+        type: "report_created",
+        report_id: 1,
+        subject_id: 2,
+        auto_flagged: "yes",
+      }),
+    ).toThrow("auto_flagged");
     expect(parseRealtimeEvent({ type: "phone_verified", account_id: "x", phone: 1 })).toEqual({
       type: "phone_verified",
     });

@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAccessSession } from "@/features/auth/model/access-session";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
-import { conversationKeys, folderKeys, messageKeys, savedReplyKeys } from "@/features/conversations/api/keys";
+import { conversationKeys, folderKeys, messageKeys, reportKeys, savedReplyKeys } from "@/features/conversations/api/keys";
 import {
   addConversationToFolder,
   archiveConversation,
@@ -12,6 +12,7 @@ import {
   closePoll,
   createFolder,
   createMessageReminder,
+  createReport,
   destroyFolder,
   editMessage,
   getConversation,
@@ -22,6 +23,7 @@ import {
   listFolders,
   listMessages,
   listReactions,
+  listReportReasons,
   listSavedReplies,
   markConversationRead,
   markConversationUnread,
@@ -834,5 +836,18 @@ export function useFolderMembership() {
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: folderKeys.list() });
     },
+  });
+}
+
+export function useReportReasons() {
+  return useQuery({
+    queryFn: listReportReasons,
+    queryKey: reportKeys.reasons(),
+  });
+}
+
+export function useCreateReport() {
+  return useMutation({
+    mutationFn: createReport,
   });
 }

@@ -2761,6 +2761,97 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit a report */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        subject_type: "message" | "account" | "conversation" | "bot";
+                        subject_id: number;
+                        reason: string;
+                        details?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description filed */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Report"];
+                    };
+                };
+                /** @description duplicate open report */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/reasons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List selectable report reasons */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReportReasonList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/saved_replies": {
         parameters: {
             query?: never;
@@ -4746,6 +4837,25 @@ export interface components {
         };
         JoinRequestList: {
             join_requests: components["schemas"]["JoinRequestItem"][];
+        };
+        Report: {
+            id: number;
+            /** @enum {string} */
+            subject_type: "message" | "account" | "conversation" | "bot";
+            subject_id: number;
+            reason: string;
+            details?: string | null;
+            /** @enum {string} */
+            status: "pending" | "reviewing" | "actioned" | "dismissed";
+            /** Format: date-time */
+            created_at: string;
+        };
+        ReportReason: {
+            id: string;
+            label: string;
+        };
+        ReportReasonList: {
+            reasons: components["schemas"]["ReportReason"][];
         };
         WebauthnCredential: {
             [key: string]: unknown;

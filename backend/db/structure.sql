@@ -1489,6 +1489,47 @@ ALTER SEQUENCE public.receipt_marks_id_seq OWNED BY public.receipt_marks.id;
 
 
 --
+-- Name: reports; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.reports (
+    id bigint NOT NULL,
+    reporter_account_id bigint NOT NULL,
+    subject_type character varying NOT NULL,
+    subject_id bigint NOT NULL,
+    reason character varying NOT NULL,
+    details text,
+    status character varying DEFAULT 'pending'::character varying NOT NULL,
+    reviewed_by_user_id bigint,
+    reviewed_at timestamp(6) without time zone,
+    resolution_note text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT ck_reports_status CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'reviewing'::character varying, 'actioned'::character varying, 'dismissed'::character varying])::text[]))),
+    CONSTRAINT ck_reports_subject_type CHECK (((subject_type)::text = ANY ((ARRAY['message'::character varying, 'account'::character varying, 'conversation'::character varying, 'bot'::character varying])::text[])))
+);
+
+
+--
+-- Name: reports_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.reports_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.reports_id_seq OWNED BY public.reports.id;
+
+
+--
 -- Name: saved_messages; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2580,6 +2621,13 @@ ALTER TABLE ONLY public.receipt_marks ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: reports id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reports ALTER COLUMN id SET DEFAULT nextval('public.reports_id_seq'::regclass);
+
+
+--
 -- Name: saved_messages id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3077,6 +3125,14 @@ ALTER TABLE ONLY public.receipt_marks
 
 
 --
+-- Name: reports reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT reports_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: saved_messages saved_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3491,6 +3547,20 @@ CREATE UNIQUE INDEX idx_reactions_unique ON public.reactions USING btree (messag
 --
 
 CREATE UNIQUE INDEX idx_receipt_marks_unique ON public.receipt_marks USING btree (membership_id, kind, "position");
+
+
+--
+-- Name: idx_reports_open_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_reports_open_unique ON public.reports USING btree (reporter_account_id, subject_type, subject_id) WHERE ((status)::text = 'pending'::text);
+
+
+--
+-- Name: idx_reports_status_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_reports_status_created ON public.reports USING btree (status, created_at);
 
 
 --
@@ -4300,6 +4370,14 @@ ALTER TABLE ONLY public.audit_events
 
 
 --
+-- Name: reports fk_rails_2b49dbebe5; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT fk_rails_2b49dbebe5 FOREIGN KEY (reviewed_by_user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: conversation_folder_entries fk_rails_2c58611139; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4812,6 +4890,14 @@ ALTER TABLE ONLY public.calls
 
 
 --
+-- Name: reports fk_rails_dc81cbf026; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT fk_rails_dc81cbf026 FOREIGN KEY (reporter_account_id) REFERENCES public.accounts(id) ON DELETE CASCADE;
+
+
+--
 -- Name: storage_quotas fk_rails_df3ac85a1f; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4874,6 +4960,7 @@ ALTER TABLE ONLY public.message_link_previews
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260830203400'),
 ('20260830193700'),
 ('20260830100000'),
 ('20260830085500'),

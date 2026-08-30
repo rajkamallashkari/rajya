@@ -16,6 +16,10 @@ export const inviteKeys = {
   joinRequests: (conversationId: number) => ["join-requests", conversationId] as const,
 };
 
+export const reportKeys = {
+  reasons: () => ["report-reasons"] as const,
+};
+
 export const savedReplyKeys = {
   all: ["saved-replies"] as const,
   list: () => [...savedReplyKeys.all, "list"] as const,

@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 6.4 |
-| **Next session** | 6.5 |
-| **Phase** | P6 — Groups, invites, organization & blocking |
-| **Sessions remaining in phase** | 1 (6.5) |
+| **Last completed** | 6.5 |
+| **Next session** | 7.1 |
+| **Phase** | P7 — Media |
+| **Sessions remaining in phase** | 4 (7.1–7.4) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 6.5 — Reporting (NR-39)**
+**Session 7.1 — Upload, buckets, quotas, processing pipeline, MIME sniffing, authorization**
 
-Deliverable: **Reporting (NR-39)** submission side: report sheet, dedupe, the `reports` queue and its notifications to admins
+Deliverable: Upload, buckets, quotas, processing pipeline, MIME sniffing, authorization
 
-Docs: SCHEMA §12.11, S-21
+Docs: SCHEMA §6; GAP §3; AUDIT §2.5 (BR-87…97), §5 (F-5, F-16, F-17, F-18)
 
-Legacy to read: None — new feature
+Legacy to read: `cognify/app/services/bucket_router.rb`, `app/models/storage_bucket.rb`, `storage_ledger.rb`, `app/jobs/process_attachment_job.rb`, `orphaned_blob_cleanup_job.rb`, `bucket_health_job.rb`, `app/controllers/api/v1/direct_uploads_controller.rb`, `media_controller.rb`
 
 ---
 
@@ -62,6 +62,7 @@ Legacy to read: None — new feature
 | 6.2 | Invites with atomic redemption, public preview, join requests, QR codes (NR-38) | Atomic `UPDATE … SET uses_count = uses_count + 1 WHERE …` (F-14). Public `GET /api/v1/invites/:token` returns title, avatar, member count (BR-59). Join requests reset to pending on re-request (BR-60). Client `/invite/:token` landing, invite manager + QR (NR-38), `join_request` realtime. Playwright create-group → QR → join → approve waits for the P6 flow. |
 | 6.3 | Folders, archive (NR-14), mute, blocking enforcement | Custom folders persist (All/Unread/Archived are client tabs). Archive is per-account `archived_at`, auto-unarchives on new activity, orthogonal to mute. Mute durations 1h/8h/24h/until-on. Blocking: reverse new-DM 404, groups still work. Playwright create-group → archive → block waits for the P6 flow. |
 | 6.4 | Granular permission overrides (NR-34), `@everyone`/`@admins` (NR-35), slow mode (NR-36), forwarding restrictions (NR-37) | Overrides may only narrow the §3.1 matrix (S-17); generated KEYS × ACTORS spec. Mentions rate-limited behind `mention_everyone`. Slow mode uses persisted `last_message_at` (S-18); admins/owners exempt. Copy/forward hidden when restricted; export waits for P7. Playwright restrict-permissions waits for the P6 flow. |
+| 6.5 | Reporting (NR-39) submission: report sheet, pending-subject dedupe, admin mail and `report_created` | Second pending report by the same reporter on the same subject is `conflict`; a new one is accepted after resolve. Reasons come from `app_settings` (S-21). Wired from message and profile menus. Playwright P6 flow (including report) waits; the admin queue waits for P12.6. |
 
 ---
 

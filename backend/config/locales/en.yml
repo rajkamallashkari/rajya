@@ -81,6 +81,10 @@ en:
         username_taken: "has already been taken"
       block:
         self: "can't be the same as the blocking account"
+      report:
+        reason: "must be a configured report reason"
+        details_too_long: "is too long (maximum is %{count} characters)"
+        self: "can't be yourself"
       contact_nickname:
         blank: "can't be blank"
         self: "can't be yourself"
@@ -109,6 +113,13 @@ en:
         contrast: "would drop contrast below WCAG AA against its paired token"
 
   mailers:
+    moderation:
+      report:
+        subject: "New Rajya report (#%{id})"
+        subject_flagged: "Flagged Rajya report (#%{id})"
+        headline: "A report is waiting in the queue"
+        body: "Hi %{name}, a %{subject_type} was reported as %{reason}."
+        footer: "Open the admin moderation queue to review it."
     auth:
       magic_link:
         subject: "Sign in to Rajya"
@@ -134,6 +145,14 @@ en:
   health:
     redis_unexpected: "Redis did not answer PONG."
     solid_queue_stale: "No Solid Queue process has heartbeated recently."
+
+  report:
+    reasons:
+      spam: Spam
+      harassment: Harassment
+      hate_speech: Hate speech
+      illegal: Illegal activity
+      other: Other
 
   conversations:
     fallback_title: "Group %{token}"

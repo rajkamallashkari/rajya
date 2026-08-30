@@ -145,6 +145,21 @@ RSpec.describe "Session 2.4 authorization 403s", type: :request do
     expect(response).to have_http_status(:forbidden)
   end
 
+  it "returns 403 on report create when the policy denies (F-1)" do
+    user = create(:user)
+    stub_deny(ReportPolicy, :create?)
+    post "/api/v1/reports", headers: auth_headers_for(user),
+         params: { subject_type: "account", subject_id: create(:account).id, reason: "spam" }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on report reasons when the policy denies (F-1)" do
+    user = create(:user)
+    stub_deny(ReportPolicy, :reasons?)
+    get "/api/v1/reports/reasons", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
   it "returns 403 on admin phone verify when the policy denies (F-1)" do
     admin = create(:user, :admin)
     stub_deny(Admin::UserPolicy, :verify_phone?)

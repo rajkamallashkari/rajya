@@ -591,6 +591,34 @@ RSpec.configure do |config|
                 join_requests: { type: :array, items: { "$ref" => "#/components/schemas/JoinRequestItem" } }
               }
             },
+            Report: {
+              type: :object,
+              required: %w[id subject_type subject_id reason status created_at],
+              properties: {
+                id: { type: :integer },
+                subject_type: { type: :string, enum: %w[message account conversation bot] },
+                subject_id: { type: :integer },
+                reason: { type: :string },
+                details: { type: :string, nullable: true },
+                status: { type: :string, enum: %w[pending reviewing actioned dismissed] },
+                created_at: { type: :string, format: :"date-time" }
+              }
+            },
+            ReportReason: {
+              type: :object,
+              required: %w[id label],
+              properties: {
+                id: { type: :string },
+                label: { type: :string }
+              }
+            },
+            ReportReasonList: {
+              type: :object,
+              required: %w[reasons],
+              properties: {
+                reasons: { type: :array, items: { "$ref" => "#/components/schemas/ReportReason" } }
+              }
+            },
             WebauthnCredential: {
               type: :object,
               additionalProperties: true

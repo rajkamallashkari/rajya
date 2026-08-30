@@ -19,6 +19,7 @@ module Realtime
     poll_voted
     presence
     receipts_updated
+    report_created
     sidebar_update
     typing
   ].freeze

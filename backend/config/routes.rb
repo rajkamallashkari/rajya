@@ -57,6 +57,9 @@ Rails.application.routes.draw do
       get "accounts/username", to: "usernames#show"
       resources :accounts, only: %i[show]
       resources :blocks, only: %i[index create destroy]
+      resources :reports, only: :create do
+        collection { get :reasons }
+      end
       resources :sessions, only: %i[index destroy] do
         collection { delete :others }
       end

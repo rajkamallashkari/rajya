@@ -506,3 +506,25 @@ export async function rejectJoinRequest(conversationId: number, id: number) {
     "join_reject_failed",
   );
 }
+
+export type Report = components["schemas"]["Report"];
+export type ReportReasonList = components["schemas"]["ReportReasonList"];
+
+export async function listReportReasons() {
+  return unwrap(
+    await apiClient().GET("/api/v1/reports/reasons", { headers: bearerHeaders() }),
+    "report_reasons_failed",
+  );
+}
+
+export async function createReport(body: {
+  details?: string;
+  reason: string;
+  subject_id: number;
+  subject_type: "account" | "bot" | "conversation" | "message";
+}) {
+  return unwrap(
+    await apiClient().POST("/api/v1/reports", { headers: bearerHeaders(), body }),
+    "report_create_failed",
+  );
+}

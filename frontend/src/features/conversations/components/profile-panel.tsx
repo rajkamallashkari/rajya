@@ -5,6 +5,7 @@ import { useConversation } from "@/features/conversations/api/queries";
 import { InviteManager } from "@/features/conversations/components/invite-manager";
 import { GroupPermissions } from "@/features/conversations/components/group-permissions";
 import { QrSheet } from "@/features/conversations/components/qr-sheet";
+import { ReportHost } from "@/features/conversations/components/report-host";
 import { conversationById } from "@/features/conversations/model/demo";
 import { parseConversationId } from "@/features/conversations/model/ids";
 import { canEditInfo, canManageInvites, profileUrl } from "@/features/conversations/model/links";
@@ -36,6 +37,7 @@ function LiveProfile({ conversationId }: { conversationId: number }): ReactNode 
   const { t } = useTranslation();
   const query = useConversation(conversationId);
   const [qrPayload, setQrPayload] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
   if (query.isPending) {
     return (
       <div className="flex h-full min-h-0 flex-col bg-[var(--surface-panel)]" data-profile-panel="">
@@ -47,6 +49,10 @@ function LiveProfile({ conversationId }: { conversationId: number }): ReactNode 
     return null;
   }
   const username = query.data.peer?.username;
+  const reportSubject =
+    query.data.kind === "direct" && query.data.peer
+      ? { subjectId: query.data.peer.id, subjectType: "account" as const }
+      : { subjectId: conversationId, subjectType: "conversation" as const };
   return (
     <ProfileBody
       name={conversationTitle(query.data, t("conversations.untitled"))}
@@ -73,6 +79,14 @@ function LiveProfile({ conversationId }: { conversationId: number }): ReactNode 
           <AccountProfile accountId={query.data.peer.id} />
         </div>
       ) : null}
+      <Button
+        className="mx-[var(--space-list-x)]"
+        onClick={() => setReportOpen(true)}
+        type="button"
+        variant="danger"
+      >
+        {t("report.action")}
+      </Button>
       <QrSheet
         onCopy={qrPayload ? () => void copyText(qrPayload) : undefined}
         onOpenChange={(open) => {
@@ -82,6 +96,12 @@ function LiveProfile({ conversationId }: { conversationId: number }): ReactNode 
         }}
         open={qrPayload != null}
         payload={qrPayload ?? ""}
+      />
+      <ReportHost
+        onOpenChange={setReportOpen}
+        open={reportOpen}
+        subjectId={reportSubject.subjectId}
+        subjectType={reportSubject.subjectType}
       />
     </ProfileBody>
   );

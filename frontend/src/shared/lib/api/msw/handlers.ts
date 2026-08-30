@@ -162,6 +162,12 @@ function jsonError(status: number) {
   return HttpResponse.json(errorBody, { status });
 }
 
+const filedReports = new Set<string>();
+
+export function resetFiledReports() {
+  filedReports.clear();
+}
+
 const scheduled = {
   id: 1,
   conversation_id: 1,
@@ -709,6 +715,36 @@ export const handlerMap = {
   "/api/v1/polls/{id}": http.get("*/api/v1/polls/:id", ({ params }) => {
     const poll = findPoll(Number(params.id));
     return poll ? HttpResponse.json(poll) : jsonError(404);
+  }),
+  "/api/v1/reports/reasons": http.get("*/api/v1/reports/reasons", () =>
+    HttpResponse.json({
+      reasons: [{ id: "spam", label: "Spam" }],
+    }),
+  ),
+  "/api/v1/reports": http.post("*/api/v1/reports", async ({ request }) => {
+    const body = (await request.json()) as {
+      details?: string;
+      reason?: string;
+      subject_id?: number;
+      subject_type?: string;
+    };
+    const key = `${body.subject_type}:${String(body.subject_id)}`;
+    if (filedReports.has(key)) {
+      return jsonError(409);
+    }
+    filedReports.add(key);
+    return HttpResponse.json(
+      {
+        id: filedReports.size,
+        subject_type: body.subject_type,
+        subject_id: body.subject_id,
+        reason: body.reason,
+        details: body.details ?? null,
+        status: "pending",
+        created_at: MESSAGE_STAMP,
+      },
+      { status: 201 },
+    );
   }),
   "/api/v1/conversations/{conversation_id}/invites": http.all(
     "*/api/v1/conversations/:conversation_id/invites",
