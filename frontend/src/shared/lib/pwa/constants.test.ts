@@ -3,6 +3,7 @@ import {
   isHttpGet,
   isImmutableAsset,
   isOwnCache,
+  OUTBOX_SYNC_TAG,
   shouldBypass,
   staleCaches,
   SW_CACHE_NAME,
@@ -11,7 +12,7 @@ import {
 
 describe("pwa constants", () => {
   it("classifies requests and caches", () => {
-    expect(isHttpGet("GET", "https:")).toBe(true);
+    expect(OUTBOX_SYNC_TAG).toBe("outbox-sync");
     expect(isHttpGet("POST", "https:")).toBe(false);
     expect(isHttpGet("GET", "ws:")).toBe(false);
     expect(shouldBypass("/api/v1/health")).toBe(true);

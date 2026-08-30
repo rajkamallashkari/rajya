@@ -201,6 +201,12 @@ export function appendSent(
   silent = false,
 ): Message {
   const rows = store.messages[conversationId] ?? [];
+  if (nonce) {
+    const existing = rows.find((row) => row.client_nonce === nonce);
+    if (existing) {
+      return existing;
+    }
+  }
   const last = rows[rows.length - 1];
   const created = new Date().toISOString();
   const message: Message = {

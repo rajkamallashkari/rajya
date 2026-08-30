@@ -2,6 +2,7 @@ import {
   ACCOUNT_DB_VERSION,
   ACCOUNT_STORES,
   accountDatabaseName,
+  parseAccountDatabaseId,
   type AccountStoreName,
   type StoredRecord,
 } from "./schema";
@@ -16,6 +17,7 @@ function emptyMemory(): MemoryDb {
     outbox: new Map(),
     cache: new Map(),
     drafts: new Map(),
+    keyval: new Map(),
   };
 }
 
@@ -75,19 +77,19 @@ async function withIdbStore<T>(
   return idbRequest(fn(transaction.objectStore(store)));
 }
 
-export async function putRecord(
+export async function putRecord<T extends StoredRecord>(
   accountId: number,
   store: AccountStoreName,
-  record: StoredRecord,
+  record: T,
 ): Promise<void> {
+  memoryDb(accountId)[store].set(record.id, record);
   if (!canUseIndexedDb()) {
-    memoryDb(accountId)[store].set(record.id, record);
     return;
   }
   try {
     await withIdbStore(accountId, store, "readwrite", (objectStore) => objectStore.put(record));
   } catch {
-    memoryDb(accountId)[store].set(record.id, record);
+    return;
   }
 }
 
@@ -95,15 +97,17 @@ export async function getAllRecords<T extends StoredRecord>(
   accountId: number,
   store: AccountStoreName,
 ): Promise<T[]> {
+  const fromMemory = [...memoryDb(accountId)[store].values()] as T[];
   if (!canUseIndexedDb()) {
-    return [...memoryDb(accountId)[store].values()] as T[];
+    return fromMemory;
   }
   try {
-    return (await withIdbStore(accountId, store, "readonly", (objectStore) =>
+    const fromIdb = (await withIdbStore(accountId, store, "readonly", (objectStore) =>
       objectStore.getAll(),
     )) as T[];
+    return fromIdb.length > 0 ? fromIdb : fromMemory;
   } catch {
-    return [...memoryDb(accountId)[store].values()] as T[];
+    return fromMemory;
   }
 }
 
@@ -112,15 +116,17 @@ export async function getRecord<T extends StoredRecord>(
   store: AccountStoreName,
   id: string,
 ): Promise<T | undefined> {
+  const fromMemory = memoryDb(accountId)[store].get(id) as T | undefined;
   if (!canUseIndexedDb()) {
-    return memoryDb(accountId)[store].get(id) as T | undefined;
+    return fromMemory;
   }
   try {
-    return (await withIdbStore(accountId, store, "readonly", (objectStore) =>
+    const fromIdb = (await withIdbStore(accountId, store, "readonly", (objectStore) =>
       objectStore.get(id),
     )) as T | undefined;
+    return fromIdb ?? fromMemory;
   } catch {
-    return memoryDb(accountId)[store].get(id) as T | undefined;
+    return fromMemory;
   }
 }
 
@@ -129,14 +135,38 @@ export async function deleteRecord(
   store: AccountStoreName,
   id: string,
 ): Promise<void> {
+  memoryDb(accountId)[store].delete(id);
   if (!canUseIndexedDb()) {
-    memoryDb(accountId)[store].delete(id);
     return;
   }
   try {
     await withIdbStore(accountId, store, "readwrite", (objectStore) => objectStore.delete(id));
   } catch {
-    memoryDb(accountId)[store].delete(id);
+    return;
+  }
+}
+
+export function rememberedAccountIds(): number[] {
+  const names = new Set([...memory.keys(), ...idbConnections.keys()]);
+  return [...names]
+    .map((name) => parseAccountDatabaseId(name))
+    .filter((id): id is number => id != null);
+}
+
+export async function listAccountDatabaseIds(): Promise<number[]> {
+  const fromMemory = rememberedAccountIds();
+  if (!canUseIndexedDb() || typeof indexedDB.databases !== "function") {
+    return fromMemory;
+  }
+  try {
+    const listed = await indexedDB.databases();
+    const fromIdb = listed.flatMap((entry) => {
+      const id = parseAccountDatabaseId(entry.name);
+      return id == null ? [] : [id];
+    });
+    return [...new Set([...fromMemory, ...fromIdb])];
+  } catch {
+    return fromMemory;
   }
 }
 

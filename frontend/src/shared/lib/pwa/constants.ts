@@ -1,3 +1,4 @@
+export const OUTBOX_SYNC_TAG = "outbox-sync";
 export const SW_CACHE_PREFIX = "rajya-";
 export const SW_CACHE_NAME = `${SW_CACHE_PREFIX}v1`;
 export const APP_SHELL_URLS = ["/", "/manifest.json", "/favicon.ico"] as const;

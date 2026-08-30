@@ -3,11 +3,13 @@ import {
   deleteRecord,
   getAllRecords,
   getRecord,
+  listAccountDatabaseIds,
   putRecord,
+  rememberedAccountIds,
   resetAccountDatabases,
 } from "./account-db";
 import { listOutbox, queueOutbox, removeOutbox } from "./outbox";
-import { ACCOUNT_STORES, accountDatabaseName } from "./schema";
+import { ACCOUNT_STORES, accountDatabaseName, parseAccountDatabaseId } from "./schema";
 
 type StoreMap = Map<string, Record<string, unknown>>;
 const fakeDbs = new Map<string, Map<string, StoreMap>>();
@@ -128,18 +130,32 @@ describe("account database", () => {
   it("uses memory when IndexedDB is missing", async () => {
     Object.defineProperty(globalThis, "indexedDB", { configurable: true, value: undefined });
     expect(accountDatabaseName(7)).toBe("rajya:7");
+    expect(parseAccountDatabaseId("rajya:7")).toBe(7);
+    expect(parseAccountDatabaseId("rajya:meta")).toBeNull();
+    expect(parseAccountDatabaseId("other")).toBeNull();
+    expect(parseAccountDatabaseId(undefined)).toBeNull();
     expect(ACCOUNT_STORES).toContain("outbox");
+    expect(ACCOUNT_STORES).toContain("keyval");
     await putRecord(1, "cache", { id: "c1", value: "v" });
     expect(await getRecord(1, "cache", "c1")).toEqual({ id: "c1", value: "v" });
     expect(await getAllRecords(1, "cache")).toHaveLength(1);
-    await queueOutbox(1, { id: "o1", body: "hi", createdAt: "t" });
-    expect(await listOutbox(1)).toEqual([{ id: "o1", body: "hi", createdAt: "t" }]);
+    await queueOutbox(1, { id: "o1", body: "hi", createdAt: "t", conversationId: 1, attempts: 0, status: "queued" });
+    expect(await listOutbox(1)).toEqual([
+      expect.objectContaining({ id: "o1", body: "hi", createdAt: "t", conversationId: 1, status: "queued" }),
+    ]);
     await removeOutbox(1, "o1");
     expect(await listOutbox(1)).toEqual([]);
     await deleteRecord(1, "cache", "c1");
     expect(await getRecord(1, "cache", "c1")).toBeUndefined();
     await putRecord(2, "drafts", { id: "d1" });
     expect(await getAllRecords(1, "drafts")).toEqual([]);
+  });
+
+  it("reads memory when IndexedDB has not caught up", async () => {
+    await putRecord(1, "keyval", { id: "auth", token: "tok" });
+    installFakeIndexedDb();
+    expect(await getRecord(1, "keyval", "auth")).toEqual({ id: "auth", token: "tok" });
+    expect(await getAllRecords(1, "keyval")).toEqual([{ id: "auth", token: "tok" }]);
   });
 
   it("persists through a fake IndexedDB and falls back when open fails", async () => {
@@ -193,5 +209,32 @@ describe("account database", () => {
       body: "er",
       createdAt: "t",
     });
+  });
+
+  it("lists remembered account ids and IndexedDB names", async () => {
+    await putRecord(8, "drafts", { id: "d" });
+    expect(rememberedAccountIds()).toContain(8);
+    expect(await listAccountDatabaseIds()).toContain(8);
+
+    installFakeIndexedDb();
+    Object.defineProperty(indexedDB, "databases", {
+      configurable: true,
+      value: async () => [{ name: "rajya:11" }, { name: "rajya:meta" }, { name: undefined }],
+    });
+    expect(await listAccountDatabaseIds()).toEqual(expect.arrayContaining([8, 11]));
+
+    Object.defineProperty(indexedDB, "databases", {
+      configurable: true,
+      value: async () => {
+        throw new Error("nope");
+      },
+    });
+    expect(await listAccountDatabaseIds()).toEqual(rememberedAccountIds());
+
+    Object.defineProperty(indexedDB, "databases", {
+      configurable: true,
+      value: undefined,
+    });
+    expect(await listAccountDatabaseIds()).toEqual(rememberedAccountIds());
   });
 });

@@ -4,6 +4,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { AppProviders } from "@/app/providers";
 import { setAccessSession } from "@/features/auth/model/access-session";
+import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import {
   emptyIdList,
   newerPageParam,
@@ -12,6 +13,7 @@ import {
   useBulkSave,
   useBulkUnsend,
   useClosePoll,
+  useConversations,
   useCreateReminder,
   useEditMessage,
   useJumpToMessage,
@@ -130,6 +132,38 @@ describe("message queries", () => {
     expect(await emptyIdList()).toEqual([]);
   });
 
+  it("hydrates conversation list and message pages from IndexedDB for the active account", async () => {
+    useAccountsStore.getState().upsertAccount(
+      {
+        displayName: "Ada",
+        hasPasskey: true,
+        hasPassword: true,
+        id: 1,
+        onboarded: true,
+        token: "tok",
+        username: "ada",
+      },
+      true,
+    );
+
+    function HydrateHarness() {
+      const list = useConversations();
+      const page = useMessagePage(1);
+      return (
+        <p data-hydrated={String(page.messages.length)}>{list.data?.conversations.length ?? 0}</p>
+      );
+    }
+
+    render(
+      <AppProviders>
+        <HydrateHarness />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(document.querySelector("[data-hydrated]")?.textContent).not.toBe("0");
+    });
+  });
+
   it("rolls send, react, pin, and save back when the mutation fails", async () => {
     const user = userEvent.setup();
     setAccessSession(testSession());
@@ -194,7 +228,7 @@ describe("message queries", () => {
     });
     await user.click(screen.getByRole("button", { name: en.composer.send }));
     await waitFor(() => {
-      expect(screen.queryByText(/nope/)).toBeNull();
+      expect(screen.getByText(/nope/)).toBeInTheDocument();
     });
     await user.click(screen.getByRole("button", { name: en.messages.menu.edit }));
     await user.click(screen.getByRole("button", { name: en.messages.menu.unsend }));
@@ -282,7 +316,7 @@ describe("message queries", () => {
     });
     await user.click(screen.getByRole("button", { name: "empty-send" }));
     await waitFor(() => {
-      expect(screen.getByText("0")).toBeInTheDocument();
+      expect(screen.getByText("1")).toBeInTheDocument();
     });
   });
 
@@ -316,6 +350,29 @@ describe("message queries", () => {
     await user.click(screen.getByRole("button", { name: en.composer.send }));
     await user.click(screen.getByRole("button", { name: en.messages.menu.pin }));
     await user.click(screen.getByRole("button", { name: en.messages.menu.save }));
+    await waitFor(() => {
+      expect(screen.queryByText(/nope/)).toBeNull();
+    });
+  });
+
+  it("rolls a rejected send back through the outbox", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    server.use(
+      http.post("*/api/v1/messages", () =>
+        HttpResponse.json(
+          { error: { code: "validation_failed", message: "fail", details: {} } },
+          { status: 422 },
+        ),
+      ),
+    );
+    render(
+      <AppProviders>
+        <Harness />
+      </AppProviders>,
+    );
+    expect(await screen.findByText(/See you at the gate/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.composer.send }));
     await waitFor(() => {
       expect(screen.queryByText(/nope/)).toBeNull();
     });

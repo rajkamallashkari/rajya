@@ -8,6 +8,8 @@ import { resetLockStore } from "@/features/auth/store/lock-store";
 import { initI18n } from "@/shared/lib/i18n";
 import { en } from "@/shared/lib/i18n/catalog";
 import { resetAccountDatabases } from "@/shared/lib/db";
+import { resetOutboxLocks } from "@/shared/lib/outbox/lock";
+import { resetOutboxProcessor } from "@/shared/lib/outbox/processor";
 import { resetCatchUpScheduler } from "@/shared/lib/realtime/catch-up";
 import { installTestCable } from "@/test/fake-cable";
 import { resetMessagingStore } from "@/shared/lib/api/msw/messaging-store";
@@ -31,6 +33,8 @@ afterEach(() => {
   resetLockStore();
   resetAccountsStore();
   resetAccountDatabases();
+  resetOutboxLocks();
+  resetOutboxProcessor();
   resetLayerStore();
   resetLayerStack();
   resetCatchUpScheduler();

@@ -2,6 +2,7 @@ import {
   APP_SHELL_URLS,
   isHttpGet,
   isImmutableAsset,
+  OUTBOX_SYNC_TAG,
   shouldBypass,
   staleCaches,
   SW_CACHE_NAME,
@@ -26,6 +27,11 @@ export interface FetchEventLike {
 
 export interface ExtendableEventLike {
   waitUntil: (promise: Promise<unknown>) => void;
+}
+
+export interface SyncEventLike extends ExtendableEventLike {
+  lastChance?: boolean;
+  tag: string;
 }
 
 export async function precacheShell(cacheStorage: CachesLike): Promise<void> {
@@ -107,4 +113,15 @@ export function handleActivate(
   claim: () => Promise<void>,
 ): void {
   event.waitUntil(dropStaleCaches(cacheStorage).then(() => claim()));
+}
+
+export function handleOutboxSync(
+  event: SyncEventLike,
+  drain: (lastChance: boolean) => Promise<unknown>,
+): boolean {
+  if (event.tag !== OUTBOX_SYNC_TAG) {
+    return false;
+  }
+  event.waitUntil(drain(Boolean(event.lastChance)));
+  return true;
 }

@@ -1,7 +1,9 @@
 import { create } from "zustand";
-import { setAccessSession, type AccessSession } from "@/features/auth/model/access-session";
+import { getAccessSession, setAccessSession, type AccessSession } from "@/features/auth/model/access-session";
 import { ACCOUNTS_STORAGE_KEY, isJwtExpired } from "@/features/auth/model/account-token";
 import { useLockStore } from "@/features/auth/store/lock-store";
+import { rememberedAccountIds } from "@/shared/lib/db/account-db";
+import { clearAuthCache, setAuthCache } from "@/shared/lib/db/auth-cache";
 
 export interface StoredAccount {
   displayName: string;
@@ -36,8 +38,20 @@ function toSession(account: StoredAccount): AccessSession {
 }
 
 function applyActive(account: StoredAccount | undefined): void {
+  const previousId = getAccessSession()?.accountId;
   setAccessSession(account ? toSession(account) : null);
   useLockStore.getState().syncWithActiveAccount();
+  if (account) {
+    void setAuthCache(account.id, {
+      accountId: account.id,
+      apiUrl: window.location.origin,
+      token: account.token,
+    });
+    return;
+  }
+  if (previousId != null) {
+    void clearAuthCache(previousId);
+  }
 }
 
 function persist(accounts: StoredAccount[], activeAccountId: number | null): void {
@@ -132,10 +146,14 @@ export const useAccountsStore = create<AccountsState>((set, get) => ({
     const accounts = get().accounts.filter((account) => account.id !== accountId);
     const activeAccountId =
       get().activeAccountId === accountId ? (accounts[0]?.id ?? null) : get().activeAccountId;
+    void clearAuthCache(accountId);
     set(commit(accounts, activeAccountId));
   },
 
   removeAll: () => {
+    for (const accountId of rememberedAccountIds()) {
+      void clearAuthCache(accountId);
+    }
     set(commit([], null));
   },
 }));

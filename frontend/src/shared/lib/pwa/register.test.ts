@@ -41,7 +41,8 @@ describe("service worker registration", () => {
       request: new Request("https://app.test/"),
       respondWith,
     } as unknown as Event);
-    expect(listeners.size).toBe(3);
+    listeners.get("sync")?.({ tag: "outbox-sync", waitUntil } as unknown as Event);
+    expect(listeners.size).toBe(4);
     expect(waitUntil).toHaveBeenCalled();
   });
 });

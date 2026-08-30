@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { flattenMessages, upsertMessages, type MessagePages } from "@/features/conversations/api/cache";
 import { listMessages, type Message, type MessagePage } from "@/features/conversations/api/http";
 import { conversationKeys, messageKeys } from "@/features/conversations/api/keys";
+import { persistMessagePages } from "@/features/conversations/api/persist";
 import { RECONNECT_DELAY_MS } from "@/shared/lib/cable/timing";
 
 export type CatchUpFetcher = (conversationId: number, afterRevision: number) => Promise<MessagePage>;
@@ -40,7 +41,9 @@ export async function catchUpConversation(
   if (page.messages.length === 0) {
     return;
   }
-  client.setQueryData(key, upsertMessages(current, page.messages));
+  const next = upsertMessages(current, page.messages);
+  client.setQueryData(key, next);
+  persistMessagePages(conversationId, next);
 }
 
 export async function catchUpCachedConversations(

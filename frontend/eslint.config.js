@@ -15,6 +15,7 @@ export default defineConfig(
     "test-results/**",
     "node_modules/**",
     "eslint-plugin-rajya/fixtures/**",
+    "public/mockServiceWorker.js",
     "src/shared/lib/api/schema.d.ts",
     "src/shared/lib/config/settings-registry.d.ts",
   ]),

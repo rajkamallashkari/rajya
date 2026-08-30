@@ -5,12 +5,13 @@ import {
   handleActivate,
   handleFetch,
   handleInstall,
+  handleOutboxSync,
   networkFirst,
   precacheShell,
   type CacheLike,
   type CachesLike,
 } from "./handlers";
-import { SW_CACHE_NAME, SW_CACHE_PREFIX } from "./constants";
+import { OUTBOX_SYNC_TAG, SW_CACHE_NAME, SW_CACHE_PREFIX } from "./constants";
 
 function createCaches(initial?: Record<string, Response>): {
   caches: CachesLike;
@@ -142,5 +143,11 @@ describe("pwa handlers", () => {
     handleInstall({ waitUntil }, caches, async () => undefined);
     handleActivate({ waitUntil }, caches, async () => undefined);
     expect(waitUntil).toHaveBeenCalledTimes(2);
+    const drain = vi.fn(async () => undefined);
+    expect(handleOutboxSync({ tag: "other", waitUntil }, drain)).toBe(false);
+    expect(
+      handleOutboxSync({ tag: OUTBOX_SYNC_TAG, lastChance: true, waitUntil }, drain),
+    ).toBe(true);
+    expect(drain).toHaveBeenCalledWith(true);
   });
 });

@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { conversationKeys, messageKeys } from "@/features/conversations/api/keys";
 import { getMessage, type Message } from "@/features/conversations/api/http";
 import { upsertMessages, type MessagePages } from "@/features/conversations/api/cache";
+import { persistRealtimeMessage } from "@/features/conversations/api/persist";
 import { parseRealtimeEvent, type RealtimeEvent } from "@/shared/lib/realtime/events";
 import { realtimeKeys } from "@/shared/lib/realtime/keys";
 
@@ -82,4 +83,5 @@ async function mergeFetchedMessage(
     deps.cache.setQueryData(key, upsertMessages(current, [message]));
   }
   deps.cache.setQueryData(messageKeys.permalink(messageId), message);
+  persistRealtimeMessage(conversationId, message);
 }

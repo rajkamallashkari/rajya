@@ -2,9 +2,11 @@ import {
   handleActivate,
   handleFetch,
   handleInstall,
+  handleOutboxSync,
   type CachesLike,
   type ExtendableEventLike,
   type FetchEventLike,
+  type SyncEventLike,
 } from "./handlers";
 
 export interface ServiceWorkerScope {
@@ -17,6 +19,7 @@ export function registerServiceWorkerListeners(
   scope: ServiceWorkerScope,
   cacheStorage: CachesLike,
   fetchImpl: typeof fetch,
+  drain: (lastChance: boolean) => Promise<unknown> = async () => undefined,
 ): void {
   scope.addEventListener("install", (event) => {
     handleInstall(event as unknown as ExtendableEventLike, cacheStorage, () => scope.skipWaiting());
@@ -28,5 +31,8 @@ export function registerServiceWorkerListeners(
   });
   scope.addEventListener("fetch", (event) => {
     handleFetch(event as unknown as FetchEventLike, cacheStorage, fetchImpl);
+  });
+  scope.addEventListener("sync", (event) => {
+    handleOutboxSync(event as unknown as SyncEventLike, drain);
   });
 }

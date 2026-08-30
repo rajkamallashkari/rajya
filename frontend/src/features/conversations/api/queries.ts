@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAccessSession } from "@/features/auth/model/access-session";
+import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import { conversationKeys, messageKeys, savedReplyKeys } from "@/features/conversations/api/keys";
 import {
   bulkForwardMessages,
@@ -37,6 +39,14 @@ import {
   restorePages,
   type MessagePages,
 } from "@/features/conversations/api/cache";
+import {
+  hydrateConversationList,
+  hydrateMessageQuery,
+  persistConversationList,
+  persistFetchedPage,
+} from "@/features/conversations/api/persist";
+import { enqueueAndFlush } from "@/shared/lib/outbox/processor";
+import { sendOutboxMessage } from "@/shared/lib/outbox/send";
 
 type MessagePageParam = { after?: number; before?: number };
 
@@ -55,8 +65,20 @@ export function newerPageParam(firstPage: MessagePage): MessagePageParam | undef
 }
 
 export function useConversations() {
+  const queryClient = useQueryClient();
+  const accountId = useAccountsStore((state) => state.activeAccountId);
+  useEffect(() => {
+    if (accountId == null) {
+      return;
+    }
+    void hydrateConversationList(queryClient, accountId);
+  }, [accountId, queryClient]);
   return useQuery({
-    queryFn: listConversations,
+    queryFn: async () => {
+      const data = await listConversations();
+      persistConversationList(data);
+      return data;
+    },
     queryKey: conversationKeys.list(),
   });
 }
@@ -74,6 +96,14 @@ export function useConversation(id: number) {
 }
 
 export function useMessagePage(conversationId: number) {
+  const queryClient = useQueryClient();
+  const accountId = useAccountsStore((state) => state.activeAccountId);
+  useEffect(() => {
+    if (accountId == null) {
+      return;
+    }
+    void hydrateMessageQuery(queryClient, accountId, conversationId);
+  }, [accountId, conversationId, queryClient]);
   const query = useInfiniteQuery<
     MessagePage,
     Error,
@@ -81,7 +111,11 @@ export function useMessagePage(conversationId: number) {
     ReturnType<typeof messageKeys.page>,
     MessagePageParam
   >({
-    queryFn: ({ pageParam }) => listMessages(conversationId, pageParam),
+    queryFn: async ({ pageParam }) => {
+      const page = await listMessages(conversationId, pageParam);
+      persistFetchedPage(conversationId, page, pageParam);
+      return page;
+    },
     queryKey: messageKeys.page(conversationId),
     initialPageParam: {},
     getNextPageParam: olderPageParam,
@@ -232,8 +266,39 @@ export function useSendMessage(conversationId: number) {
   const queryClient = useQueryClient();
   const key = messageKeys.page(conversationId);
   return useMutation({
-    mutationFn: (input: { body: string; client_nonce: string; silent?: boolean }) =>
-      sendMessage({ conversation_id: conversationId, ...input }),
+    mutationFn: async (input: { body: string; client_nonce: string; silent?: boolean }) => {
+      const session = getAccessSession();
+      if (session == null) {
+        return sendMessage({ conversation_id: conversationId, ...input });
+      }
+      const result = await enqueueAndFlush(
+        session.accountId,
+        {
+          body: input.body,
+          conversationId,
+          createdAt: new Date().toISOString(),
+          id: input.client_nonce,
+          silent: input.silent,
+        },
+        {
+          send: (entry) =>
+            sendOutboxMessage({
+              body: entry.body,
+              clientNonce: entry.id,
+              conversationId: entry.conversationId,
+              origin: window.location.origin,
+              replyToMessageId: entry.replyToMessageId,
+              silent: entry.silent,
+              token: session.token,
+            }),
+        },
+      );
+      const failed = result.failed[input.client_nonce];
+      if (failed === "auth" || failed === "rejected") {
+        throw new Error(failed);
+      }
+      return result.sent[input.client_nonce] ?? null;
+    },
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<MessagePages>(key);
@@ -247,7 +312,10 @@ export function useSendMessage(conversationId: number) {
     onError: (_error, _input, context) => {
       rollbackPages(queryClient, key, context?.previous);
     },
-    onSettled: () => {
+    onSuccess: (message) => {
+      if (!message) {
+        return;
+      }
       void queryClient.invalidateQueries({ queryKey: key });
       void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
     },

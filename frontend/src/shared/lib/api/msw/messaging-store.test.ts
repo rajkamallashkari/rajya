@@ -29,6 +29,9 @@ describe("messaging store", () => {
     expect(pageFor(9)?.messages).toEqual([]);
     const sent = appendSent(1, "hi");
     expect(sent.client_nonce).toBeNull();
+    expect(appendSent(1, "hi", sent.client_nonce ?? "nonce-dup")).toBeDefined();
+    const first = appendSent(1, "once", "nonce-dup");
+    expect(appendSent(1, "twice", "nonce-dup").id).toBe(first.id);
     const orphan = appendSent(99, "orphan");
     expect(orphan.position).toBe(1);
     expect(infoFor(sent.id)?.delivered).toHaveLength(1);

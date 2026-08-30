@@ -51,9 +51,12 @@ export function AccountsDevPage() {
       return;
     }
     await queueOutbox(activeAccountId, {
-      id: crypto.randomUUID(),
+      attempts: 0,
       body: t("auth.accounts.queue"),
+      conversationId: 1,
       createdAt: new Date().toISOString(),
+      id: crypto.randomUUID(),
+      status: "queued",
     });
     setOutbox(await listOutbox(activeAccountId));
   };
