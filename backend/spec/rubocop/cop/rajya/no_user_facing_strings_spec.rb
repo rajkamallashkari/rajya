@@ -40,6 +40,18 @@ RSpec.describe RuboCop::Cop::Rajya::NoUserFacingStrings, :config do
     RUBY
   end
 
+  it "allows SQL statements" do
+    expect_no_offenses(<<~RUBY)
+      execute("UPDATE conversations SET next_revision = next_revision + 1 WHERE id = 1")
+    RUBY
+  end
+
+  it "allows interpolated SQL statements" do
+    expect_no_offenses(<<~'RUBY')
+      execute("UPDATE conversations SET next_revision = next_revision + 1 WHERE id = #{id} RETURNING next_revision")
+    RUBY
+  end
+
   it "allows a raise with interpolation and ignores a dstr with no sentence" do
     expect_no_offenses(<<~RUBY)
       raise "must be present \#{name}"

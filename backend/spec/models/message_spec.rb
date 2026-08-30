@@ -37,4 +37,13 @@ RSpec.describe Message do
 
     expect(message).to be_valid
   end
+
+  it "exposes deleted? and edited?" do
+    message = create(:message)
+    expect(message).not_to be_deleted
+    expect(message).not_to be_edited
+    message.update!(deleted_at: Time.current, edited_at: Time.current)
+    expect(message).to be_deleted
+    expect(message).to be_edited
+  end
 end

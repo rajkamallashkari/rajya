@@ -42,6 +42,10 @@ module Settings
         type: :integer, category: :messaging, default: 4_096, min: 1, max: 65_536,
         description: "Maximum body length in characters."
       },
+      reaction_emoji_max_length: {
+        type: :integer, category: :messaging, default: 16, min: 1, max: 64,
+        description: "Maximum characters in a reaction emoji string (BR-25)."
+      },
       pinned_conversations_cap: {
         type: :integer, category: :messaging, default: 10, min: 1, max: 100,
         description: "Maximum conversations a member may pin (NR-21)."

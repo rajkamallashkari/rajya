@@ -80,11 +80,22 @@ RSpec.configure do |config|
   require Rails.root.join("spec/support/whatsapp_helpers")
   require Rails.root.join("spec/support/conversation_helpers")
   require Rails.root.join("spec/support/conversation_permission_matrix")
+  require Rails.root.join("spec/support/message_helpers")
   config.include AuthHelpers, type: :request
   config.include AuthHelpers, type: :channel
   config.include WebauthnHelpers
   config.include WhatsappHelpers
   config.include ConversationHelpers
+  config.include MessageHelpers
 
   config.before { Rails.cache.clear }
+
+  config.around(:each, :concurrent) do |example|
+    previous = config.use_transactional_fixtures
+    config.use_transactional_fixtures = false
+    example.run
+    tables = ActiveRecord::Base.connection.tables - %w[schema_migrations ar_internal_metadata]
+    ActiveRecord::Base.connection.truncate_tables(*tables)
+    config.use_transactional_fixtures = previous
+  end
 end

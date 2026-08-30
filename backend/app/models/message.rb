@@ -17,11 +17,21 @@ class Message < ApplicationRecord
   has_many :link_previews, through: :message_link_previews
   has_many :bot_memories, foreign_key: :source_message_id, inverse_of: :source_message, dependent: :nullify
 
+  scope :visible, -> { where(deleted_at: nil) }
+
   validates :kind, presence: true, inclusion: { in: KINDS }
   validates :position, :revision, presence: true
   validates :forward_count, :attachment_count, numericality: { greater_than_or_equal_to: 0 }
   validate :system_event_present_iff_system_kind
   validate :sender_required_unless_system
+
+  def deleted?
+    deleted_at.present?
+  end
+
+  def edited?
+    edited_at.present?
+  end
 
   private
 

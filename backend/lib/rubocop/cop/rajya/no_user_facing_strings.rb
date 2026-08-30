@@ -19,7 +19,8 @@ module RuboCop
         end
 
         def on_dstr(node)
-          return if node.each_descendant(:str).none? { |child| sentence_like?(child.value) }
+          combined = node.each_descendant(:str).map(&:value).join
+          return unless sentence_like?(combined)
           return if allowed?(node)
 
           add_offense(node)
@@ -27,7 +28,11 @@ module RuboCop
 
         private
 
+        SQL_PREFIX = /\A\s*(ALTER|CREATE|DELETE|DROP|INSERT|SELECT|UPDATE|WITH)\b/i
+
         def sentence_like?(value)
+          return false if value.match?(SQL_PREFIX)
+
           value.match?(/[A-Za-z].*\s+\S/)
         end
 

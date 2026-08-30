@@ -10,23 +10,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 3.1 |
-| **Next session** | 3.2 |
+| **Last completed** | 3.2 |
+| **Next session** | 3.3 |
 | **Phase** | P3 — Conversations & messaging core |
-| **Sessions remaining in phase** | 5 (3.2–3.6) |
+| **Sessions remaining in phase** | 4 (3.3–3.6) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 3.2 — Position/revision allocators, idempotent send, edit, unsend, forward, react, pin, save, schedule**
+**Session 3.3 — Cursor pagination, message queries, TanStack Query layer replacing mocks**
 
-Deliverable: Position/revision allocators, idempotent send, edit, unsend, forward, react, pin, save, schedule
+Deliverable: Cursor pagination, message queries, TanStack Query layer replacing mocks
 
-Docs: `SCHEMA §4, §5 (columns only); GAP §2; AUDIT §2.1 in full (BR-1…30), §5 (F-3, F-4)`
+Docs: `TARGET §4.4, §5.4; DESIGN_SYSTEM §5.1; AUDIT §2.1 (BR-107, BR-108)`
 
 Legacy to read:
-- `legacy/cognify/app/controllers/api/v1/messages_controller.rb` (768 lines), `app/services/chat_sequencer.rb`, `app/models/message.rb`, `message_version.rb`, `reaction.rb`, `pinned_message.rb`, `starred_message.rb`, `scheduled_message.rb`
+- `legacy/botverse/src/stores/chatStore.ts` (the store being dissolved into Query), `botverse/src/api/index.ts`, `botverse/src/components/chat/ChatBox.tsx`
 
 ---
 
@@ -49,6 +49,7 @@ Legacy to read:
 | 2.4 | Onboarding, multi-account isolation, NR-9 WhatsApp verification, `blocks` | Onboarding: profile → optional password → optional passkey. One active JWT; IndexedDB/outbox namespaced by `account_id` (D-7). WhatsApp click-to-verify (NR-9 / D-6) with sender number as ground truth and admin fallback; poll until Cable (P4.1). `blocks` 404 for mutual profile invisibility (NR-1); DM/search gates wait for P3/P8. Playwright isolation at `/dev/accounts`. |
 | 2.5 | `sessions` with per-token `jti` (NR-44), device list, nicknames (NR-41) | Each login persists a `sessions` row and embeds `jti`. Individual and bulk revoke; revoked-`jti` cache fails closed. `credentials_epoch` still signs out every device (S-20). Contact nicknames are owner-private and never appear on Account/Me/Session/Block payloads (S-22). Device/nickname settings panels wait for P12.3. |
 | 3.1 | Conversations, memberships, the §3.1 permission matrix in Pundit | Unique `direct_key` closes the DM race (F-13). Sidebar reads denormalized `last_message_id` / `last_activity_at` with a reconcile job (F-4). Pundit enforces SCHEMA §3.1; generated policy spec covers every cell; 403s on conversation HTTP. NR-1 blocks new DMs with 404. Add/remove/leave mutations wait for 6.1; send/edit/pin 403s wait for 3.2. |
+| 3.2 | Position/revision allocators, idempotent send, edit, unsend, forward, react, pin, save, schedule | Sequencer `UPDATE … RETURNING` for send (position+revision) and mutations (revision). `(conversation_id, client_nonce)` unique (F-3). Unsend is a tombstone (BR-1). Forward copies independently (BR-10–14). Reactions/pins/saves and one-shot schedule. 403s on every write. Recurring RRULE waits for 3.5; cursor pagination and TanStack Query wait for 3.3. |
 
 ---
 

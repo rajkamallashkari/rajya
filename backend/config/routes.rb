@@ -60,7 +60,17 @@ Rails.application.routes.draw do
       resources :sessions, only: %i[index destroy] do
         collection { delete :others }
       end
-      resources :conversations, only: %i[index show create update]
+      resources :conversations, only: %i[index show create update] do
+        resources :pins, only: %i[create destroy], param: :message_id
+      end
+      resources :messages, only: %i[create update destroy] do
+        member { post :forward }
+        resources :reactions, only: %i[create destroy], param: :emoji, constraints: { emoji: /.*/ }
+      end
+      resources :saved_messages, only: %i[create destroy]
+      resources :scheduled_messages, only: %i[index create update destroy] do
+        member { post :send_now }
+      end
       resources :contact_nicknames, only: %i[index update destroy], param: :account_id
       namespace :admin do
         post "users/:user_id/verify_phone", to: "phone_verifications#create"

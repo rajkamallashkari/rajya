@@ -12,6 +12,7 @@ export type SettingKey =
   | "client_cache_size"
   | "unsend_window"
   | "max_message_length"
+  | "reaction_emoji_max_length"
   | "pinned_conversations_cap"
   | "multi_select_cap"
   | "min_members"

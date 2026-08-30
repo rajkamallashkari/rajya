@@ -80,6 +80,15 @@
     "max": 65536,
     "allow_nil": false
   },
+  "reaction_emoji_max_length": {
+    "type": "integer",
+    "category": "messaging",
+    "default": 16,
+    "description": "Maximum characters in a reaction emoji string (BR-25).",
+    "min": 1,
+    "max": 64,
+    "allow_nil": false
+  },
   "pinned_conversations_cap": {
     "type": "integer",
     "category": "messaging",

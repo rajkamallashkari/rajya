@@ -229,6 +229,72 @@ RSpec.configure do |config|
                 conversations: { type: :array, items: { "$ref" => "#/components/schemas/Conversation" } }
               }
             },
+            Message: {
+              type: :object,
+              required: %w[id conversation_id position revision kind deleted created_at],
+              properties: {
+                id: { type: :integer },
+                conversation_id: { type: :integer },
+                position: { type: :integer },
+                revision: { type: :integer },
+                kind: { type: :string },
+                body: { type: :string, nullable: true },
+                deleted: { type: :boolean },
+                client_nonce: { type: :string, format: :uuid, nullable: true },
+                forward_count: { type: :integer },
+                attachment_count: { type: :integer },
+                reaction_summary: { type: :object },
+                metadata: { type: :object },
+                sender_snapshot: { type: :object },
+                forwarded_from_account_id: { type: :integer, nullable: true },
+                edited_at: { type: :string, format: :"date-time", nullable: true },
+                created_at: { type: :string, format: :"date-time" },
+                sender: { "$ref" => "#/components/schemas/Account", nullable: true },
+                reply_to: { type: :object, nullable: true },
+                attachments: { type: :array, items: { type: :object } }
+              }
+            },
+            PinnedMessage: {
+              type: :object,
+              required: %w[id conversation_id message_id message],
+              properties: {
+                id: { type: :integer },
+                conversation_id: { type: :integer },
+                message_id: { type: :integer },
+                created_at: { type: :string, format: :"date-time" },
+                message: { "$ref" => "#/components/schemas/Message" }
+              }
+            },
+            SavedMessage: {
+              type: :object,
+              required: %w[id message_id message],
+              properties: {
+                id: { type: :integer },
+                message_id: { type: :integer },
+                created_at: { type: :string, format: :"date-time" },
+                message: { "$ref" => "#/components/schemas/Message" }
+              }
+            },
+            ScheduledMessage: {
+              type: :object,
+              required: %w[id conversation_id body scheduled_at],
+              properties: {
+                id: { type: :integer },
+                conversation_id: { type: :integer },
+                body: { type: :string },
+                scheduled_at: { type: :string, format: :"date-time" },
+                client_nonce: { type: :string, format: :uuid, nullable: true },
+                reply_to_message_id: { type: :integer, nullable: true },
+                created_at: { type: :string, format: :"date-time" }
+              }
+            },
+            ScheduledMessageList: {
+              type: :object,
+              required: %w[scheduled_messages],
+              properties: {
+                scheduled_messages: { type: :array, items: { "$ref" => "#/components/schemas/ScheduledMessage" } }
+              }
+            },
             Passkey: {
               type: :object,
               required: %w[id created_at],

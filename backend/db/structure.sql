@@ -2399,7 +2399,7 @@ CREATE UNIQUE INDEX idx_message_link_previews_unique ON public.message_link_prev
 -- Name: idx_messages_client_nonce_unique; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX idx_messages_client_nonce_unique ON public.messages USING btree (client_nonce) WHERE (client_nonce IS NOT NULL);
+CREATE UNIQUE INDEX idx_messages_client_nonce_unique ON public.messages USING btree (conversation_id, client_nonce) WHERE (client_nonce IS NOT NULL);
 
 
 --
@@ -3430,6 +3430,7 @@ ALTER TABLE ONLY public.message_link_previews
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260830052200'),
 ('20260830040900'),
 ('20260826143000'),
 ('20260812025731'),
