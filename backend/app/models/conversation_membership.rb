@@ -19,6 +19,7 @@ class ConversationMembership < ApplicationRecord
   validates :last_delivered_position, :last_read_position, :last_seen_position, :unread_count,
             numericality: { greater_than_or_equal_to: 0 }
   validate :seen_position_at_least_read_position
+  validate :bots_remain_members
 
   def active?
     status == "active"
@@ -39,5 +40,12 @@ class ConversationMembership < ApplicationRecord
     return if last_seen_position >= last_read_position
 
     errors.add(:last_seen_position, Catalog.t("errors.models.conversation_membership.seen_position"))
+  end
+
+  def bots_remain_members
+    return unless account&.bot?
+    return if role == "member"
+
+    errors.add(:role, Catalog.t("errors.models.conversation_membership.bot_role"))
   end
 end

@@ -63,4 +63,14 @@ RSpec.describe Typing::Announce do
     expect(activities.uniq).to eq(%w[typing recording_audio])
     expect(captured.map { |row| row.fetch(:stream) }).to include(Realtime.account_stream(peer.account.id))
   end
+
+  it "does not rebroadcast the same activity inside the throttle window" do
+    user, _peer, conversation = setup
+    allow(Typing::Store).to receive_messages(read: "typing", claim_broadcast?: false)
+    allow(Typing::Store).to receive(:write)
+    allow(ActionCable.server).to receive(:broadcast)
+    described_class.call(account: user.account, conversation_id: conversation.id, activity: "typing")
+
+    expect(ActionCable.server).not_to have_received(:broadcast)
+  end
 end

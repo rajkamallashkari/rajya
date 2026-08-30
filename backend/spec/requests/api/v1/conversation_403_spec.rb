@@ -67,9 +67,12 @@ RSpec.describe "Session 3.1 conversation authorization 403s", type: :request do
 
       it "returns 403 when #{actor} is denied #{query} (SCHEMA §3.1)" do
         user, conversation = actor_setup(actor)
+        suffix = http[:suffix]
+        path = "/api/v1/conversations/#{conversation.id}"
+        path += suffix.respond_to?(:call) ? suffix.call(conversation) : suffix.to_s
         public_send(
           http.fetch(:method),
-          "/api/v1/conversations/#{conversation.id}",
+          path,
           headers: auth_headers_for(user),
           params: http[:body],
           as: :json
@@ -117,6 +120,62 @@ RSpec.describe "Session 3.1 conversation authorization 403s", type: :request do
     stub_deny(ConversationPolicy, :show?)
     post "/api/v1/conversations/#{conversation.id}/receipts", headers: auth_headers_for(user),
          params: { kind: "viewed", position: 1 }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on leave when the policy denies (F-1)" do
+    user = create(:user)
+    conversation = create_talk(kind: "group", owner: user.account, members: [ create(:account) ])
+    stub_deny(ConversationPolicy, :leave?)
+    post "/api/v1/conversations/#{conversation.id}/leave", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on add members when the policy denies (F-1)" do
+    user = create(:user)
+    conversation = create_talk(kind: "group", owner: user.account, members: [ create(:account) ])
+    stub_deny(ConversationPolicy, :add_members?)
+    post "/api/v1/conversations/#{conversation.id}/members", headers: auth_headers_for(user),
+         params: { account_ids: [ create(:account).id ] }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on remove member when the policy denies (F-1)" do
+    user = create(:user)
+    peer = create(:user)
+    conversation = create_talk(kind: "group", owner: user.account, members: [ peer.account ])
+    stub_deny(ConversationPolicy, :remove_member?)
+    delete "/api/v1/conversations/#{conversation.id}/members/#{peer.account.id}", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on promote when the policy denies (F-1)" do
+    user = create(:user)
+    peer = create(:user)
+    conversation = create_talk(kind: "group", owner: user.account, members: [ peer.account ])
+    stub_deny(ConversationPolicy, :promote_admin?)
+    patch "/api/v1/conversations/#{conversation.id}/members/#{peer.account.id}/promote",
+          headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on demote when the policy denies (F-1)" do
+    user = create(:user)
+    peer = create(:user)
+    conversation = create_talk(kind: "group", owner: user.account, members: [ peer.account ])
+    stub_deny(ConversationPolicy, :demote_admin?)
+    patch "/api/v1/conversations/#{conversation.id}/members/#{peer.account.id}/demote",
+          headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on transfer when the policy denies (F-1)" do
+    user = create(:user)
+    peer = create(:user)
+    conversation = create_talk(kind: "group", owner: user.account, members: [ peer.account ])
+    stub_deny(ConversationPolicy, :transfer_ownership?)
+    patch "/api/v1/conversations/#{conversation.id}/members/#{peer.account.id}/transfer",
+          headers: auth_headers_for(user)
     expect(response).to have_http_status(:forbidden)
   end
 end

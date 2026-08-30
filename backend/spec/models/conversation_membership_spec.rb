@@ -19,6 +19,20 @@ RSpec.describe ConversationMembership do
     expect(membership.errors[:last_seen_position]).not_to include("must be greater than or equal to last_read_position")
   end
 
+  it "rejects admin or owner roles on a bot (SCHEMA §3.1)" do
+    membership = build(:conversation_membership, :admin, account: create(:bot).account)
+
+    expect(membership).not_to be_valid
+    expect(membership.errors[:role]).to include("bots cannot be admin or owner")
+  end
+
+  it "allows a bot as a member and skips the check without an account" do
+    expect(build(:conversation_membership, account: create(:bot).account)).to be_valid
+    orphan = build(:conversation_membership, :admin, account: nil)
+    orphan.validate
+    expect(orphan.errors[:role]).not_to include("bots cannot be admin or owner")
+  end
+
   it "exposes role helpers" do
     owner = build(:conversation_membership, :owner)
     member = build(:conversation_membership)

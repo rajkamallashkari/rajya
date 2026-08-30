@@ -26,8 +26,7 @@ module Conversations
           payload: { title: conversation.title, name: account.display_name }
         )
       end
-      return unless conversation.description_previously_changed?
-      return if conversation.description == previous_description
+      return unless conversation.description_previously_changed? && conversation.description != previous_description
 
       SystemEvents::Write.call(
         conversation: conversation, event: "description_changed", actor: account,

@@ -168,6 +168,156 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Ok"
+  "/api/v1/conversations/{conversation_id}/members":
+    post:
+      summary: Add members to a group or channel
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: added
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                account_ids:
+                  type: array
+                  items:
+                    type: integer
+  "/api/v1/conversations/{conversation_id}/members/{account_id}":
+    delete:
+      summary: Remove a member from a group or channel
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: account_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: removed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+  "/api/v1/conversations/{conversation_id}/members/{account_id}/promote":
+    patch:
+      summary: Promote a member to admin
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: account_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: promoted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+  "/api/v1/conversations/{conversation_id}/members/{account_id}/demote":
+    patch:
+      summary: Demote an admin to member
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: account_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: demoted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+  "/api/v1/conversations/{conversation_id}/members/{account_id}/transfer":
+    patch:
+      summary: Transfer group ownership
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: account_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: transferred
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+  "/api/v1/conversations/{id}/leave":
+    post:
+      summary: Leave a group or channel
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: left
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
   "/api/v1/conversations/{conversation_id}/messages":
     get:
       summary: List messages in a conversation

@@ -55,6 +55,7 @@ en:
         direct_key: "must be present only for direct conversations"
         title: "can't be blank for non-direct conversations"
       conversation_membership:
+        bot_role: "bots cannot be admin or owner"
         seen_position: "must be greater than or equal to last_read_position"
       message_reminder:
         not_future: "must be in the future"
@@ -130,6 +131,11 @@ en:
 
   conversations:
     fallback_title: "Group %{token}"
+
+  roles:
+    admin: admin
+    member: member
+    owner: owner
 
   system_events:
     member_added: "%{name} was added"

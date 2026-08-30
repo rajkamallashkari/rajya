@@ -12,10 +12,16 @@ const expectedPaths = [
   "/api/v1/contact_nicknames",
   "/api/v1/contact_nicknames/{account_id}",
   "/api/v1/conversations",
+  "/api/v1/conversations/{conversation_id}/members",
+  "/api/v1/conversations/{conversation_id}/members/{account_id}",
+  "/api/v1/conversations/{conversation_id}/members/{account_id}/demote",
+  "/api/v1/conversations/{conversation_id}/members/{account_id}/promote",
+  "/api/v1/conversations/{conversation_id}/members/{account_id}/transfer",
   "/api/v1/conversations/{conversation_id}/messages",
   "/api/v1/conversations/{conversation_id}/pins",
   "/api/v1/conversations/{conversation_id}/pins/{message_id}",
   "/api/v1/conversations/{id}",
+  "/api/v1/conversations/{id}/leave",
   "/api/v1/conversations/{id}/pin",
   "/api/v1/conversations/{id}/receipts",
   "/api/v1/conversations/{id}/unread",
@@ -263,6 +269,62 @@ describe("MSW handlers", () => {
       body: { description: "notes" },
     });
     expect(patched.data?.id).toBe(1);
+    const addedMembers = await client.POST("/api/v1/conversations/{conversation_id}/members", {
+      params: { path: { conversation_id: 1 } },
+      body: { account_ids: [2] },
+    });
+    expect(addedMembers.data?.id).toBe(1);
+    const promoted = await client.PATCH(
+      "/api/v1/conversations/{conversation_id}/members/{account_id}/promote",
+      { params: { path: { conversation_id: 1, account_id: 2 } } },
+    );
+    expect(promoted.data?.id).toBe(1);
+    const demoted = await client.PATCH(
+      "/api/v1/conversations/{conversation_id}/members/{account_id}/demote",
+      { params: { path: { conversation_id: 1, account_id: 2 } } },
+    );
+    expect(demoted.data?.id).toBe(1);
+    const transferred = await client.PATCH(
+      "/api/v1/conversations/{conversation_id}/members/{account_id}/transfer",
+      { params: { path: { conversation_id: 1, account_id: 2 } } },
+    );
+    expect(transferred.data?.id).toBe(1);
+    const removedMember = await client.DELETE(
+      "/api/v1/conversations/{conversation_id}/members/{account_id}",
+      { params: { path: { conversation_id: 1, account_id: 2 } } },
+    );
+    expect(removedMember.data?.id).toBe(1);
+    const left = await client.POST("/api/v1/conversations/{id}/leave", { params: { path: { id: 1 } } });
+    expect(left.data?.ok).toBe(true);
+    const missingMembers = await client.POST("/api/v1/conversations/{conversation_id}/members", {
+      params: { path: { conversation_id: 999 } },
+      body: { account_ids: [2] },
+    });
+    expect(missingMembers.response.status).toBe(404);
+    const missingPromote = await client.PATCH(
+      "/api/v1/conversations/{conversation_id}/members/{account_id}/promote",
+      { params: { path: { conversation_id: 999, account_id: 2 } } },
+    );
+    expect(missingPromote.response.status).toBe(404);
+    const missingDemote = await client.PATCH(
+      "/api/v1/conversations/{conversation_id}/members/{account_id}/demote",
+      { params: { path: { conversation_id: 999, account_id: 2 } } },
+    );
+    expect(missingDemote.response.status).toBe(404);
+    const missingTransfer = await client.PATCH(
+      "/api/v1/conversations/{conversation_id}/members/{account_id}/transfer",
+      { params: { path: { conversation_id: 999, account_id: 2 } } },
+    );
+    expect(missingTransfer.response.status).toBe(404);
+    const missingRemove = await client.DELETE(
+      "/api/v1/conversations/{conversation_id}/members/{account_id}",
+      { params: { path: { conversation_id: 999, account_id: 2 } } },
+    );
+    expect(missingRemove.response.status).toBe(404);
+    const missingLeave = await client.POST("/api/v1/conversations/{id}/leave", {
+      params: { path: { id: 999 } },
+    });
+    expect(missingLeave.response.status).toBe(404);
     const page = await client.GET("/api/v1/conversations/{conversation_id}/messages", {
       params: { path: { conversation_id: 1 } },
     });

@@ -64,6 +64,28 @@ module ConversationPermissionMatrix
   # rubocop:enable Layout/HashAlignment
 
   HTTP_403 = {
-    update?: { method: :patch, body: { title: "Renamed" } }
+    update?: { method: :patch, body: { title: "Renamed" } },
+    add_members?: { method: :post, suffix: "/members", body: { account_ids: [] } },
+    remove_member?: {
+      method: :delete,
+      suffix: ->(conversation) { "/members/#{member_account_id(conversation)}" }
+    },
+    promote_admin?: {
+      method: :patch,
+      suffix: ->(conversation) { "/members/#{member_account_id(conversation)}/promote" }
+    },
+    demote_admin?: {
+      method: :patch,
+      suffix: ->(conversation) { "/members/#{member_account_id(conversation)}/demote" }
+    },
+    transfer_ownership?: {
+      method: :patch,
+      suffix: ->(conversation) { "/members/#{member_account_id(conversation)}/transfer" }
+    },
+    leave?: { method: :post, suffix: "/leave" }
   }.freeze
+
+  def self.member_account_id(conversation)
+    conversation.conversation_memberships.find_by(role: "member")&.account_id || 0
+  end
 end

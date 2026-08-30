@@ -339,6 +339,63 @@ export const handlerMap = {
       return HttpResponse.json(conversation);
     },
   ),
+  "/api/v1/conversations/{id}/leave": http.post("*/api/v1/conversations/:id/leave", ({ params }) => {
+    const conversation = findConversation(Number(params.id));
+    if (!conversation) {
+      return jsonError(404);
+    }
+    return okResponse();
+  }),
+  "/api/v1/conversations/{conversation_id}/members": http.post(
+    "*/api/v1/conversations/:conversation_id/members",
+    ({ params }) => {
+      const conversation = findConversation(Number(params.conversation_id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      return HttpResponse.json(conversation);
+    },
+  ),
+  "/api/v1/conversations/{conversation_id}/members/{account_id}": http.delete(
+    "*/api/v1/conversations/:conversation_id/members/:account_id",
+    ({ params }) => {
+      const conversation = findConversation(Number(params.conversation_id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      return HttpResponse.json(conversation);
+    },
+  ),
+  "/api/v1/conversations/{conversation_id}/members/{account_id}/promote": http.patch(
+    "*/api/v1/conversations/:conversation_id/members/:account_id/promote",
+    ({ params }) => {
+      const conversation = findConversation(Number(params.conversation_id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      return HttpResponse.json(conversation);
+    },
+  ),
+  "/api/v1/conversations/{conversation_id}/members/{account_id}/demote": http.patch(
+    "*/api/v1/conversations/:conversation_id/members/:account_id/demote",
+    ({ params }) => {
+      const conversation = findConversation(Number(params.conversation_id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      return HttpResponse.json(conversation);
+    },
+  ),
+  "/api/v1/conversations/{conversation_id}/members/{account_id}/transfer": http.patch(
+    "*/api/v1/conversations/:conversation_id/members/:account_id/transfer",
+    ({ params }) => {
+      const conversation = findConversation(Number(params.conversation_id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      return HttpResponse.json(conversation);
+    },
+  ),
   "/api/v1/conversations/{conversation_id}/messages": http.get(
     "*/api/v1/conversations/:conversation_id/messages",
     ({ params, request }) => {

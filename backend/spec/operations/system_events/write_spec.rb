@@ -28,4 +28,12 @@ RSpec.describe SystemEvents::Write do
     expect(described_class.call(conversation: conversation, event: "nope").error_code).to eq(:validation_failed)
     expect(described_class.call(conversation: nil, event: "member_left").error_code).to eq(:not_found)
   end
+
+  it "writes without an actor account id" do
+    owner = create(:user).account
+    conversation = group_for(owner)
+    message = described_class.call(conversation: conversation, event: "member_left", payload: { name: "Ada" }).value
+
+    expect(message.metadata).not_to have_key("actor_account_id")
+  end
 end

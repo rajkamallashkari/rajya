@@ -67,6 +67,14 @@ Rails.application.routes.draw do
           post :unread, to: "conversation_unreads#create"
           delete :unread, to: "conversation_unreads#destroy"
           post :receipts, to: "conversation_receipts#create"
+          post :leave, to: "conversation_leaves#create"
+        end
+        resources :members, only: %i[create destroy], controller: "conversation_members", param: :account_id do
+          member do
+            patch :promote
+            patch :demote
+            patch :transfer
+          end
         end
         resources :pins, only: %i[create destroy], param: :message_id
         resources :messages, only: :index, controller: "conversation_messages"

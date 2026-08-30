@@ -10,23 +10,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 5.2 |
-| **Next session** | 6.1 |
+| **Last completed** | 6.1 |
+| **Next session** | 6.2 |
 | **Phase** | P6 — Groups, invites, organization & blocking |
-| **Sessions remaining in phase** | 5 (6.1–6.5) |
+| **Sessions remaining in phase** | 4 (6.2–6.5) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 6.1 — Roles, add/remove, leave guards, the §3.2 lifecycle**
+**Session 6.2 — Invites with atomic redemption, public preview, join requests, QR codes (NR-38)**
 
-Deliverable: **Roles, add/remove, leave guards, the §3.2 lifecycle**
+Deliverable: **Invites with atomic redemption, public preview, join requests, QR codes (NR-38)**
 
-Docs: SCHEMA §3.1, §3.2; GAP §2; AUDIT §2.3 (BR-48…56)
+Docs: SCHEMA §3; AUDIT §2.3 (BR-57…60), §5 (F-14)
 
 Legacy to read:
-- `cognify/app/services/chat_membership.rb`, `app/controllers/api/v1/group_members_controller.rb`
+- `cognify/app/models/group_invite.rb`, `join_request.rb`, `app/controllers/api/v1/group_invites_controller.rb`, `join_requests_controller.rb`, `botverse/src/pages/InvitePage.tsx`
 
 ---
 
@@ -59,6 +59,7 @@ Legacy to read:
 | 4.3 | IndexedDB per account, outbox single-flight, Background Sync | Per-account IndexedDB (`rajya:{accountId}`) holds outbox, a 200-message cache (BR-107), and SW auth. Outbox is `queued → sending → failed` under a Web Lock so tab drain and Background Sync cannot double-send (F-3). Playwright: offline send three, reconnect once in order; dual drain one row. Real SW dual-drain waits for a non-MSW Playwright project. |
 | 5.1 | Watermarks, `receipt_marks`, tick computation incl. bots, unread counts | Two-watermark split (BR-36): `last_seen` always, `last_read` only with receipts on; `from_position` holes so enabling receipts never discloses prior private views. Exact info times from covering `receipt_marks` (D-5). Server ticks `sent`/`delivered`/`read`; groups MIN over active humans; bots excluded from the group set and consume their own watermarks (S-9). Delivery via live socket, fetch/catch-up ack, or push acceptance including muted (Q-5; real Web Push is P10.2). `POST /receipts`, `receipts_updated`, unread reconcile job. Tick UI, typing, and nineteen system-event writers wait for 5.2. |
 | 5.2 | Typing and granular activity, system-event writers, tick UI | Ephemeral typing (NR-3) plus activity kinds (NR-40) on one cache key — TTL/throttle from Settings, no DB row, no cleanup job. `SystemEvents::Write` covers the 18 SCHEMA §4 events (`disappearing_timer_changed` was cut with NR-16); pin/create-group/update emit theirs with catalog copy. Thread ticks follow `receipts_updated` (own receipts skipped). Playwright two-context: accent ticks, typing bubble, system line. Leave-group write waits for 6.1; live Cable (non-MSW) Playwright waits for a later project. |
+| 6.1 | Roles, add/remove, leave guards, the §3.2 lifecycle | Soft `left`/`removed` rows; rejoin flips the unique membership and keeps watermarks (BR-50). Last admin/owner cannot leave while others remain, with no auto-transfer (BR-51). Last member leave retains the conversation (changes BR-52). Remove cannot drop below `min_members` (BR-53). Owner-only promote/demote/transfer; bots stay members. System events for add/remove/leave/role. Invites wait for 6.2; folders/archive/mute UI wait for 6.3. |
 
 ---
 
