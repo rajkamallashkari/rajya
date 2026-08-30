@@ -1,9 +1,12 @@
 import { http, HttpResponse, type HttpHandler } from "msw";
+import { MS_PER_SECOND } from "@/features/conversations/model/constants";
 import type { paths } from "@/shared/lib/api/schema";
+import { publishMswRealtime } from "@/shared/lib/realtime/msw-bridge";
 import {
   appendSent,
   findConversation,
   findMessage,
+  folderRecords,
   inviteRecords,
   infoFor,
   MESSAGE_STAMP,
@@ -18,7 +21,6 @@ import {
   findPoll,
   VIEWER,
 } from "./messaging-store";
-import { publishMswRealtime } from "@/shared/lib/realtime/msw-bridge";
 
 type HealthBody = NonNullable<
   paths["/health"]["get"]["responses"][200]["content"]
@@ -328,7 +330,11 @@ export const handlerMap = {
       const first = messagingStore().conversations[0];
       return HttpResponse.json(first, { status: 201 });
     }
-    return HttpResponse.json({ conversations: messagingStore().conversations });
+    const archived = new URL(request.url).searchParams.get("archived") === "true";
+    const conversations = messagingStore().conversations.filter((row) =>
+      archived ? Boolean(row.archived_at) : !row.archived_at,
+    );
+    return HttpResponse.json({ conversations });
   }),
   "/api/v1/conversations/{id}": http.all("*/api/v1/conversations/:id", ({ params }) => {
     const conversation = findConversation(Number(params.id));
@@ -385,6 +391,37 @@ export const handlerMap = {
     }
     return okResponse();
   }),
+  "/api/v1/conversations/{id}/archive": http.all(
+    "*/api/v1/conversations/:id/archive",
+    ({ params, request }) => {
+      const conversation = findConversation(Number(params.id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      conversation.archived_at = request.method === "DELETE" ? null : MESSAGE_STAMP;
+      return HttpResponse.json(conversation);
+    },
+  ),
+  "/api/v1/conversations/{id}/mute": http.all(
+    "*/api/v1/conversations/:id/mute",
+    async ({ params, request }) => {
+      const conversation = findConversation(Number(params.id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      if (request.method === "DELETE") {
+        conversation.muted_until = null;
+        return HttpResponse.json(conversation);
+      }
+      const body = (await request.json()) as { duration?: number };
+      const duration = body.duration ?? 0;
+      conversation.muted_until =
+        duration > 0
+          ? new Date(Date.now() + duration * MS_PER_SECOND).toISOString()
+          : null;
+      return HttpResponse.json(conversation);
+    },
+  ),
   "/api/v1/conversations/{conversation_id}/members": http.post(
     "*/api/v1/conversations/:conversation_id/members",
     ({ params }) => {
@@ -714,6 +751,86 @@ export const handlerMap = {
       const records = inviteRecords();
       records.requests = records.requests.filter((request) => request.id !== Number(params.id));
       return HttpResponse.json(ok);
+    },
+  ),
+  "/api/v1/conversation_folders": http.all("*/api/v1/conversation_folders", async ({ request }) => {
+    const records = folderRecords();
+    if (request.method === "POST") {
+      const body = (await request.json()) as { name?: string; position?: number };
+      const created = {
+        id: records.nextId,
+        name: body.name ?? "Folder",
+        position: body.position ?? records.folders.length,
+        conversation_ids: [] as number[],
+      };
+      records.nextId += 1;
+      records.folders.push(created);
+      return HttpResponse.json(created, { status: 201 });
+    }
+    return HttpResponse.json({ folders: records.folders });
+  }),
+  "/api/v1/conversation_folders/reorder": http.patch(
+    "*/api/v1/conversation_folders/reorder",
+    async ({ request }) => {
+      const records = folderRecords();
+      const body = (await request.json()) as { ids?: number[] };
+      const ids = body.ids ?? [];
+      const byId = new Map(records.folders.map((folder) => [folder.id, folder]));
+      records.folders = ids
+        .map((id, position) => {
+          const folder = byId.get(id);
+          return folder ? { ...folder, position } : null;
+        })
+        .filter((folder): folder is (typeof records.folders)[number] => folder != null);
+      return HttpResponse.json({ folders: records.folders });
+    },
+  ),
+  "/api/v1/conversation_folders/{id}": http.all(
+    "*/api/v1/conversation_folders/:id",
+    async ({ params, request }) => {
+      const records = folderRecords();
+      const id = Number(params.id);
+      const folder = records.folders.find((row) => row.id === id);
+      if (!folder) {
+        return jsonError(404);
+      }
+      if (request.method === "DELETE") {
+        records.folders = records.folders.filter((row) => row.id !== id);
+        return okResponse();
+      }
+      const body = (await request.json()) as { name?: string; position?: number };
+      folder.name = body.name ?? folder.name;
+      folder.position = body.position ?? folder.position;
+      return HttpResponse.json(folder);
+    },
+  ),
+  "/api/v1/conversation_folders/{conversation_folder_id}/conversations": http.post(
+    "*/api/v1/conversation_folders/:conversation_folder_id/conversations",
+    async ({ params, request }) => {
+      const records = folderRecords();
+      const folder = records.folders.find((row) => row.id === Number(params.conversation_folder_id));
+      if (!folder) {
+        return jsonError(404);
+      }
+      const body = (await request.json()) as { conversation_id?: number };
+      const conversationId = body.conversation_id ?? 0;
+      if (conversationId && !folder.conversation_ids.includes(conversationId)) {
+        folder.conversation_ids = [...folder.conversation_ids, conversationId];
+      }
+      return HttpResponse.json(folder);
+    },
+  ),
+  "/api/v1/conversation_folders/{conversation_folder_id}/conversations/{conversation_id}": http.delete(
+    "*/api/v1/conversation_folders/:conversation_folder_id/conversations/:conversation_id",
+    ({ params }) => {
+      const records = folderRecords();
+      const folder = records.folders.find((row) => row.id === Number(params.conversation_folder_id));
+      if (!folder) {
+        return jsonError(404);
+      }
+      const conversationId = Number(params.conversation_id);
+      folder.conversation_ids = folder.conversation_ids.filter((id) => id !== conversationId);
+      return HttpResponse.json(folder);
     },
   ),
 } satisfies HandlerMap;

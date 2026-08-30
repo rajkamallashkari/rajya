@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { conversationTitle, isGroupConversation, isMuted } from "./title";
+import {
+  conversationTitle,
+  isArchived,
+  isGroupConversation,
+  isMuted,
+  isUnread,
+} from "@/features/conversations/model/title";
 import type { components } from "@/shared/lib/api/schema";
 
 const base: components["schemas"]["Conversation"] = {
@@ -27,5 +33,10 @@ describe("conversation title", () => {
     expect(isMuted(base)).toBe(false);
     expect(isMuted({ ...base, muted_until: "2099-01-01T00:00:00.000Z" })).toBe(true);
     expect(isMuted({ ...base, muted_until: "2000-01-01T00:00:00.000Z" })).toBe(false);
+    expect(isArchived(base)).toBe(false);
+    expect(isArchived({ ...base, archived_at: "2026-01-01T00:00:00.000Z" })).toBe(true);
+    expect(isUnread(base)).toBe(false);
+    expect(isUnread({ ...base, unread_count: 1 })).toBe(true);
+    expect(isUnread({ ...base, manually_unread_at: "2026-01-01T00:00:00.000Z" })).toBe(true);
   });
 });

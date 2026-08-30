@@ -9,6 +9,7 @@ class ConversationMembership < ApplicationRecord
   has_many :receipt_marks, foreign_key: :membership_id, inverse_of: :membership, dependent: :destroy
 
   scope :active, -> { where(status: "active") }
+  scope :archived, -> { where.not(archived_at: nil) }
   scope :unarchived, -> { where(archived_at: nil) }
   scope :admins_or_owners, -> { where(role: %w[admin owner]) }
 

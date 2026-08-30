@@ -22,3 +22,11 @@ export function isMuted(conversation: Conversation, now: Date = new Date()): boo
   }
   return new Date(conversation.muted_until) > now;
 }
+
+export function isArchived(conversation: Conversation): boolean {
+  return Boolean(conversation.archived_at);
+}
+
+export function isUnread(conversation: Conversation): boolean {
+  return conversation.unread_count > 0 || Boolean(conversation.manually_unread_at);
+}

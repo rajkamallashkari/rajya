@@ -27,6 +27,10 @@ class ConversationResource < ApplicationResource
     object.membership&.muted_until
   end
 
+  attribute :archived_at do
+    object.membership&.archived_at
+  end
+
   attribute :role do
     object.membership&.role
   end

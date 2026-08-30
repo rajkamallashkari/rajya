@@ -6,9 +6,12 @@ export type Message = components["schemas"]["Message"];
 export type MessagePage = components["schemas"]["MessagePage"];
 export type MessageInfo = components["schemas"]["MessageInfo"];
 
-export async function listConversations() {
+export async function listConversations(archived = false) {
   return unwrap(
-    await apiClient().GET("/api/v1/conversations", { headers: bearerHeaders() }),
+    await apiClient().GET("/api/v1/conversations", {
+      headers: bearerHeaders(),
+      params: { query: archived ? { archived: true } : {} },
+    }),
     "conversations_failed",
   );
 }
@@ -235,6 +238,121 @@ export async function markConversationRead(id: number) {
       params: { path: { id } },
     }),
     "mark_read_failed",
+  );
+}
+
+export async function archiveConversation(id: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/conversations/{id}/archive", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "archive_failed",
+  );
+}
+
+export async function unarchiveConversation(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/conversations/{id}/archive", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "unarchive_failed",
+  );
+}
+
+export async function muteConversation(id: number, duration: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/conversations/{id}/mute", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+      body: { duration },
+    }),
+    "mute_failed",
+  );
+}
+
+export async function unmuteConversation(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/conversations/{id}/mute", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "unmute_failed",
+  );
+}
+
+export type ConversationFolder = components["schemas"]["ConversationFolder"];
+
+export async function listFolders() {
+  return unwrap(
+    await apiClient().GET("/api/v1/conversation_folders", { headers: bearerHeaders() }),
+    "folders_failed",
+  );
+}
+
+export async function createFolder(name: string) {
+  return unwrap(
+    await apiClient().POST("/api/v1/conversation_folders", {
+      headers: bearerHeaders(),
+      body: { name },
+    }),
+    "folder_create_failed",
+  );
+}
+
+export async function updateFolder(id: number, body: { name?: string; position?: number }) {
+  return unwrap(
+    await apiClient().PATCH("/api/v1/conversation_folders/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+      body,
+    }),
+    "folder_update_failed",
+  );
+}
+
+export async function destroyFolder(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/conversation_folders/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "folder_destroy_failed",
+  );
+}
+
+export async function reorderFolders(ids: number[]) {
+  return unwrap(
+    await apiClient().PATCH("/api/v1/conversation_folders/reorder", {
+      headers: bearerHeaders(),
+      body: { ids },
+    }),
+    "folder_reorder_failed",
+  );
+}
+
+export async function addConversationToFolder(folderId: number, conversationId: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/conversation_folders/{conversation_folder_id}/conversations", {
+      headers: bearerHeaders(),
+      params: { path: { conversation_folder_id: folderId } },
+      body: { conversation_id: conversationId },
+    }),
+    "folder_add_failed",
+  );
+}
+
+export async function removeConversationFromFolder(folderId: number, conversationId: number) {
+  return unwrap(
+    await apiClient().DELETE(
+      "/api/v1/conversation_folders/{conversation_folder_id}/conversations/{conversation_id}",
+      {
+        headers: bearerHeaders(),
+        params: { path: { conversation_folder_id: folderId, conversation_id: conversationId } },
+      },
+    ),
+    "folder_remove_failed",
   );
 }
 

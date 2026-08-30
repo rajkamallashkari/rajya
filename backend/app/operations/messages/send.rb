@@ -36,6 +36,7 @@ module Messages
 
       Receipts::OnSend.call(conversation: @conversation, sender: @sender, position: message.position)
       touch_sidebar!(message)
+      unarchive_on_activity!
       publish!(message)
       success(message)
     end
@@ -154,6 +155,12 @@ module Messages
 
     def touch_sidebar!(message)
       @conversation.update_columns(last_message_id: message.id, last_activity_at: message.created_at)
+    end
+
+    def unarchive_on_activity!
+      ConversationMembership.active.where(conversation_id: @conversation.id)
+                            .where.not(archived_at: nil)
+                            .update_all(archived_at: nil, updated_at: Time.current)
     end
 
     def publish!(message)

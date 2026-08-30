@@ -51,6 +51,7 @@ RSpec.describe ConversationMembership do
                                                 archived_at: Time.current)
 
     expect(described_class.active).to contain_exactly(owner, archived)
+    expect(described_class.archived).to contain_exactly(archived)
     expect(described_class.unarchived).to contain_exactly(owner, left)
     expect(described_class.admins_or_owners).to contain_exactly(owner)
   end

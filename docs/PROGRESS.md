@@ -10,23 +10,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 6.2 |
-| **Next session** | 6.3 |
+| **Last completed** | 6.3 |
+| **Next session** | 6.4 |
 | **Phase** | P6 — Groups, invites, organization & blocking |
-| **Sessions remaining in phase** | 3 (6.3–6.5) |
+| **Sessions remaining in phase** | 2 (6.4–6.5) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 6.3 — Folders, archive (NR-14), mute, blocking enforcement**
+**Session 6.4 — Granular permission overrides, mentions, slow mode, forwarding restrictions**
 
-Deliverable: **Folders, archive (NR-14), mute, blocking enforcement**
+Deliverable: **Granular permission overrides (NR-34)** with the narrowing-only resolver and the generated escalation spec, `@everyone`/`@admins` (NR-35), slow mode (NR-36), forwarding restrictions (NR-37)
 
-Docs: SCHEMA §3; DESIGN_SYSTEM §5.3; GAP §2, §6
+Docs: SCHEMA §12.8, §3.1, S-17, S-18; GAP §2
 
 Legacy to read:
-- `cognify/app/models/chat_folder.rb`, `chat_folder_entry.rb`, `botverse/src/stores/folderStore.ts`
+- `cognify/app/services/mention_dispatcher.rb` for mention parsing; otherwise new
 
 ---
 
@@ -61,6 +61,7 @@ Legacy to read:
 | 5.2 | Typing and granular activity, system-event writers, tick UI | Ephemeral typing (NR-3) plus activity kinds (NR-40) on one cache key — TTL/throttle from Settings, no DB row, no cleanup job. `SystemEvents::Write` covers the 18 SCHEMA §4 events (`disappearing_timer_changed` was cut with NR-16); pin/create-group/update emit theirs with catalog copy. Thread ticks follow `receipts_updated` (own receipts skipped). Playwright two-context: accent ticks, typing bubble, system line. Leave-group write waits for 6.1; live Cable (non-MSW) Playwright waits for a later project. |
 | 6.1 | Roles, add/remove, leave guards, the §3.2 lifecycle | Soft `left`/`removed` rows; rejoin flips the unique membership and keeps watermarks (BR-50). Last admin/owner cannot leave while others remain, with no auto-transfer (BR-51). Last member leave retains the conversation (changes BR-52). Remove cannot drop below `min_members` (BR-53). Owner-only promote/demote/transfer; bots stay members. System events for add/remove/leave/role. Invites wait for 6.2; folders/archive/mute UI wait for 6.3. |
 | 6.2 | Invites with atomic redemption, public preview, join requests, QR codes (NR-38) | Atomic `UPDATE … SET uses_count = uses_count + 1 WHERE …` (F-14). Public `GET /api/v1/invites/:token` returns title, avatar, member count (BR-59). Join requests reset to pending on re-request (BR-60). Client `/invite/:token` landing, invite manager + QR (NR-38), `join_request` realtime. Playwright create-group → QR → join → approve waits for the P6 flow. |
+| 6.3 | Folders, archive (NR-14), mute, blocking enforcement | Custom folders persist (All/Unread/Archived are client tabs). Archive is per-account `archived_at`, auto-unarchives on new activity, orthogonal to mute. Mute durations 1h/8h/24h/until-on. Blocking: reverse new-DM 404, groups still work. Playwright create-group → archive → block waits for the P6 flow. |
 
 ---
 

@@ -1,35 +1,45 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useQueryClient } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { AppProviders } from "@/app/providers";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
+import { conversationKeys } from "./keys";
 import {
   emptyIdList,
   newerPageParam,
   olderPageParam,
+  useArchiveConversation,
   useBulkForward,
   useBulkSave,
   useBulkUnsend,
   useClosePoll,
   useConversations,
+  useCreateFolder,
   useCreateReminder,
+  useDestroyFolder,
   useEditMessage,
+  useFolderMembership,
+  useFolders,
   useJumpToMessage,
   useMarkConversationUnread,
   useMessageInfo,
   useMessagePage,
   useMessagePermalink,
+  useMuteConversation,
   usePinConversation,
   usePinMessage,
   usePollResults,
   useReactMessage,
   useReactionDetails,
+  useReorderFolders,
   useSaveMessage,
   useSavedReplies,
   useSendMessage,
   useUnsendMessage,
+  useUpdateFolder,
   useVotePoll,
 } from "./queries";
 import type { MessagePage } from "./http";
@@ -509,5 +519,216 @@ describe("message queries", () => {
     await user.click(screen.getByRole("button", { name: "unread-chat" }));
     await user.click(screen.getByRole("button", { name: "read-chat" }));
     await user.click(screen.getByRole("button", { name: "remind" }));
+  });
+
+  it("rolls archive, mute, and folder mutations back when they fail", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    server.use(
+      http.delete("*/api/v1/conversations/:id/archive", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+      http.post("*/api/v1/conversations/:id/mute", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+      http.delete("*/api/v1/conversations/:id/mute", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+      http.patch("*/api/v1/conversation_folders/reorder", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+    );
+
+    function EarlyHarness() {
+      const archive = useArchiveConversation();
+      const mute = useMuteConversation();
+      const reorder = useReorderFolders();
+      return (
+        <div>
+          <Button onClick={() => archive.mutate({ archived: true, id: 1 })} type="button">
+            early-archive
+          </Button>
+          <Button onClick={() => mute.mutate({ duration: 3600, id: 1 })} type="button">
+            early-mute
+          </Button>
+          <Button onClick={() => reorder.mutate([1])} type="button">
+            early-reorder
+          </Button>
+        </div>
+      );
+    }
+
+    function OrgHarness() {
+      const inbox = useConversations();
+      const archived = useConversations(true);
+      const folders = useFolders();
+      const archive = useArchiveConversation();
+      const mute = useMuteConversation();
+      const create = useCreateFolder();
+      const update = useUpdateFolder();
+      const destroy = useDestroyFolder();
+      const reorder = useReorderFolders();
+      const membership = useFolderMembership();
+      return (
+        <div>
+          <p data-inbox={inbox.data?.conversations.length ?? 0}>{inbox.data?.conversations.length ?? 0}</p>
+          <p data-archived={archived.data?.conversations.length ?? 0}>
+            {archived.data?.conversations.length ?? 0}
+          </p>
+          <p data-folders={folders.data?.folders.length ?? 0}>{folders.data?.folders.length ?? 0}</p>
+          <Button onClick={() => archive.mutate({ archived: true, id: 1 })} type="button">
+            archive-chat
+          </Button>
+          <Button onClick={() => archive.mutate({ archived: false, id: 1 })} type="button">
+            unarchive-chat
+          </Button>
+          <Button onClick={() => archive.mutate({ archived: true, id: 99 })} type="button">
+            archive-missing
+          </Button>
+          <Button onClick={() => mute.mutate({ duration: 3600, id: 1 })} type="button">
+            mute-chat
+          </Button>
+          <Button onClick={() => mute.mutate({ duration: 0, id: 1 })} type="button">
+            unmute-chat
+          </Button>
+          <Button onClick={() => create.mutate("Home")} type="button">
+            create-folder
+          </Button>
+          <Button onClick={() => update.mutate({ id: 1, name: "Office" })} type="button">
+            rename-folder
+          </Button>
+          <Button onClick={() => destroy.mutate(1)} type="button">
+            destroy-folder
+          </Button>
+          <Button onClick={() => reorder.mutate([1])} type="button">
+            reorder-folders
+          </Button>
+          <Button onClick={() => reorder.mutate([99])} type="button">
+            reorder-missing
+          </Button>
+          <Button
+            onClick={() => membership.mutate({ add: true, conversationId: 1, folderId: 1 })}
+            type="button"
+          >
+            add-folder
+          </Button>
+          <Button
+            onClick={() => membership.mutate({ add: false, conversationId: 2, folderId: 1 })}
+            type="button"
+          >
+            remove-folder
+          </Button>
+        </div>
+      );
+    }
+
+    const early = render(
+      <AppProviders>
+        <EarlyHarness />
+      </AppProviders>,
+    );
+    await user.click(screen.getByRole("button", { name: "early-archive" }));
+    await user.click(screen.getByRole("button", { name: "early-mute" }));
+    await user.click(screen.getByRole("button", { name: "early-reorder" }));
+    early.unmount();
+    render(
+      <AppProviders>
+        <OrgHarness />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(document.querySelector("[data-inbox]")?.getAttribute("data-inbox")).not.toBe("0");
+    });
+    await user.click(screen.getByRole("button", { name: "archive-chat" }));
+    await user.click(screen.getByRole("button", { name: "unarchive-chat" }));
+    await user.click(screen.getByRole("button", { name: "archive-missing" }));
+    await user.click(screen.getByRole("button", { name: "mute-chat" }));
+    await user.click(screen.getByRole("button", { name: "unmute-chat" }));
+    await user.click(screen.getByRole("button", { name: "create-folder" }));
+    await user.click(screen.getByRole("button", { name: "rename-folder" }));
+    await user.click(screen.getByRole("button", { name: "reorder-folders" }));
+    await user.click(screen.getByRole("button", { name: "reorder-missing" }));
+    await user.click(screen.getByRole("button", { name: "destroy-folder" }));
+    await user.click(screen.getByRole("button", { name: "add-folder" }));
+    await user.click(screen.getByRole("button", { name: "remove-folder" }));
+  });
+
+  it("archives into an empty archived cache and unarchives without an inbox cache", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+
+    function InboxOnly() {
+      const inbox = useConversations();
+      const archive = useArchiveConversation();
+      return (
+        <div>
+          <p data-inbox-only={inbox.data?.conversations.length ?? 0}>
+            {inbox.data?.conversations.length ?? 0}
+          </p>
+          <Button onClick={() => archive.mutate({ archived: true, id: 1 })} type="button">
+            archive-inbox
+          </Button>
+        </div>
+      );
+    }
+
+    function SeededUnarchive() {
+      const queryClient = useQueryClient();
+      const archive = useArchiveConversation();
+      return (
+        <Button
+          onClick={() => {
+            queryClient.setQueryData(conversationKeys.archived(), {
+              conversations: [
+                {
+                  archived_at: "2026-01-01T12:00:00.000Z",
+                  id: 1,
+                  kind: "direct",
+                  last_activity_at: "2026-01-01T12:00:00.000Z",
+                  members: [],
+                  unread_count: 0,
+                },
+              ],
+            });
+            queryClient.removeQueries({ exact: true, queryKey: conversationKeys.list() });
+            archive.mutate({ archived: false, id: 1 });
+          }}
+          type="button"
+        >
+          unarchive-seeded
+        </Button>
+      );
+    }
+
+    const inboxOnly = render(
+      <AppProviders>
+        <InboxOnly />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(document.querySelector("[data-inbox-only]")?.getAttribute("data-inbox-only")).not.toBe(
+        "0",
+      );
+    });
+    await user.click(screen.getByRole("button", { name: "archive-inbox" }));
+    inboxOnly.unmount();
+    render(
+      <AppProviders>
+        <SeededUnarchive />
+      </AppProviders>,
+    );
+    await user.click(screen.getByRole("button", { name: "unarchive-seeded" }));
   });
 });

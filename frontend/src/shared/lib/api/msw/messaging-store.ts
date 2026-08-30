@@ -8,6 +8,7 @@ import {
 
 type Account = components["schemas"]["Account"];
 type Conversation = components["schemas"]["Conversation"];
+type ConversationFolder = components["schemas"]["ConversationFolder"];
 type GroupInvite = components["schemas"]["GroupInvite"];
 type JoinRequestItem = components["schemas"]["JoinRequestItem"];
 type Message = components["schemas"]["Message"];
@@ -51,6 +52,7 @@ export function buildConversations(): Conversation[] {
       last_activity_at: MESSAGE_STAMP,
       unread_count: demo.unreadCount,
       muted_until: null,
+      archived_at: null,
       role: group ? "owner" : "member",
       peer: group ? undefined : peerAccount(id + 1, demo.name),
       last_message: preview(last.text, last.kind === "system" ? "system" : "text"),
@@ -107,6 +109,18 @@ export interface InviteStore {
   requests: JoinRequestItem[];
 }
 
+export interface FolderStore {
+  folders: ConversationFolder[];
+  nextId: number;
+}
+
+function createFolderStore(): FolderStore {
+  return {
+    folders: [{ id: 1, name: "Work", position: 0, conversation_ids: [2] }],
+    nextId: 2,
+  };
+}
+
 function createInviteStore(): InviteStore {
   return {
     invites: [
@@ -145,14 +159,20 @@ function createInviteStore(): InviteStore {
 }
 
 let inviteStore = createInviteStore();
+let folderStore = createFolderStore();
 
 export function resetMessagingStore(): void {
   store = createMessagingStore();
   inviteStore = createInviteStore();
+  folderStore = createFolderStore();
 }
 
 export function inviteRecords(): InviteStore {
   return inviteStore;
+}
+
+export function folderRecords(): FolderStore {
+  return folderStore;
 }
 
 export function messagingStore(): MessagingStore {

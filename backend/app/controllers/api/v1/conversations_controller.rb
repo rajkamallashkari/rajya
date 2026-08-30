@@ -4,7 +4,11 @@ module Api
       def index
         authorize Conversation
         render_result(
-          Conversations::Index.call(account: current_account, conversations: policy_scope(Conversation)),
+          Conversations::Index.call(
+            account: current_account,
+            conversations: policy_scope(Conversation),
+            archived: ActiveModel::Type::Boolean.new.cast(params[:archived])
+          ),
           serializer: ConversationListResource
         )
       end

@@ -28,6 +28,7 @@ RSpec.describe Conversations::FindOrCreateDirect do
     expect(described_class.call(creator: alice, account_id: Account.maximum(:id).to_i + 1).error_code)
       .to eq(:not_found)
     expect(described_class.call(creator: alice, account_id: bob.id).error_code).to eq(:not_found)
+    expect(described_class.call(creator: bob, account_id: alice.id).error_code).to eq(:not_found)
   end
 
   it "returns an existing DM even when the accounts later block each other" do

@@ -1,6 +1,6 @@
 # Sidebar read — one indexed query over denormalized last_activity_at / last_message_id
 # (F-4). Pinned memberships sort first (NR-21). Callers pass a policy-scoped relation
-# so left/removed/archived rows stay out.
+# so left/removed rows stay out. Archive filtering is the Index operation's job.
 module Conversations
   class Sidebar < ApplicationQuery
     def initialize(scope:, account:)

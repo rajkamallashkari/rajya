@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { AccountProfile } from "@/features/auth/components/account-profile";
 import { useConversation } from "@/features/conversations/api/queries";
 import { InviteManager } from "@/features/conversations/components/invite-manager";
 import { QrSheet } from "@/features/conversations/components/qr-sheet";
@@ -62,6 +63,11 @@ function LiveProfile({ conversationId }: { conversationId: number }): ReactNode 
         >
           {t("invites.profile_qr")}
         </Button>
+      ) : null}
+      {query.data.kind === "direct" && query.data.peer ? (
+        <div className="px-[var(--space-list-x)]">
+          <AccountProfile accountId={query.data.peer.id} />
+        </div>
       ) : null}
       <QrSheet
         onCopy={qrPayload ? () => void copyText(qrPayload) : undefined}

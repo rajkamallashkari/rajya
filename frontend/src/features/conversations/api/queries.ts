@@ -2,33 +2,45 @@ import { useEffect } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAccessSession } from "@/features/auth/model/access-session";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
-import { conversationKeys, messageKeys, savedReplyKeys } from "@/features/conversations/api/keys";
+import { conversationKeys, folderKeys, messageKeys, savedReplyKeys } from "@/features/conversations/api/keys";
 import {
+  addConversationToFolder,
+  archiveConversation,
   bulkForwardMessages,
   bulkSaveMessages,
   bulkUnsendMessages,
   closePoll,
+  createFolder,
+  createMessageReminder,
+  destroyFolder,
   editMessage,
   getConversation,
   getMessage,
   getMessageInfo,
   getPoll,
   listConversations,
+  listFolders,
   listMessages,
   listReactions,
   listSavedReplies,
   markConversationRead,
   markConversationUnread,
+  muteConversation,
   pinConversation,
   pinMessage,
   reactToMessage,
+  removeConversationFromFolder,
+  reorderFolders,
   saveMessage,
   sendMessage,
+  unarchiveConversation,
+  unmuteConversation,
   unpinConversation,
   unsendMessage,
+  updateFolder,
   votePoll,
-  createMessageReminder,
   type Conversation,
+  type ConversationFolder,
   type Message,
   type MessagePage,
 } from "@/features/conversations/api/http";
@@ -45,6 +57,7 @@ import {
   persistConversationList,
   persistFetchedPage,
 } from "@/features/conversations/api/persist";
+import { MS_PER_SECOND } from "@/features/conversations/model/constants";
 import { enqueueAndFlush } from "@/shared/lib/outbox/processor";
 import { sendOutboxMessage } from "@/shared/lib/outbox/send";
 
@@ -64,22 +77,25 @@ export function newerPageParam(firstPage: MessagePage): MessagePageParam | undef
   return { after: firstPage.meta.newest_position };
 }
 
-export function useConversations() {
+export function useConversations(archived = false) {
   const queryClient = useQueryClient();
   const accountId = useAccountsStore((state) => state.activeAccountId);
+  const key = archived ? conversationKeys.archived() : conversationKeys.list();
   useEffect(() => {
-    if (accountId == null) {
+    if (accountId == null || archived) {
       return;
     }
     void hydrateConversationList(queryClient, accountId);
-  }, [accountId, queryClient]);
+  }, [accountId, archived, queryClient]);
   return useQuery({
     queryFn: async () => {
-      const data = await listConversations();
-      persistConversationList(data);
+      const data = await listConversations(archived);
+      if (!archived) {
+        persistConversationList(data);
+      }
       return data;
     },
-    queryKey: conversationKeys.list(),
+    queryKey: key,
   });
 }
 
@@ -618,5 +634,180 @@ export function useCreateReminder() {
   return useMutation({
     mutationFn: ({ messageId, note, remindAt }: { messageId: number; note?: string; remindAt: string }) =>
       createMessageReminder(messageId, remindAt, note),
+  });
+}
+
+type ConversationList = { conversations: Conversation[] };
+
+function removeFromList(
+  current: ConversationList | undefined,
+  id: number,
+): ConversationList | undefined {
+  if (!current) {
+    return current;
+  }
+  return { conversations: current.conversations.filter((row) => row.id !== id) };
+}
+
+export function useArchiveConversation() {
+  const queryClient = useQueryClient();
+  const listKey = conversationKeys.list();
+  const archivedKey = conversationKeys.archived();
+  return useMutation({
+    mutationFn: ({ archived, id }: { archived: boolean; id: number }) =>
+      archived ? archiveConversation(id) : unarchiveConversation(id),
+    onMutate: async ({ archived, id }) => {
+      await queryClient.cancelQueries({ queryKey: conversationKeys.all });
+      const previousList = queryClient.getQueryData<ConversationList>(listKey);
+      const previousArchived = queryClient.getQueryData<ConversationList>(archivedKey);
+      const stamp = new Date().toISOString();
+      if (archived) {
+        const row = previousList?.conversations.find((item) => item.id === id);
+        queryClient.setQueryData(listKey, removeFromList(previousList, id));
+        if (row) {
+          queryClient.setQueryData(archivedKey, {
+            conversations: [...(previousArchived?.conversations ?? []), { ...row, archived_at: stamp }],
+          });
+        }
+      } else {
+        const row = previousArchived?.conversations.find((item) => item.id === id);
+        queryClient.setQueryData(archivedKey, removeFromList(previousArchived, id));
+        if (row) {
+          queryClient.setQueryData(listKey, {
+            conversations: [{ ...row, archived_at: null }, ...(previousList?.conversations ?? [])],
+          });
+        }
+      }
+      return { previousArchived, previousList };
+    },
+    onError: (_error, _input, context) => {
+      queryClient.setQueryData(listKey, context?.previousList);
+      queryClient.setQueryData(archivedKey, context?.previousArchived);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
+    },
+  });
+}
+
+export function useMuteConversation() {
+  const queryClient = useQueryClient();
+  const key = conversationKeys.list();
+  return useMutation({
+    mutationFn: ({ duration, id }: { duration: number; id: number }) =>
+      duration > 0 ? muteConversation(id, duration) : unmuteConversation(id),
+    onMutate: async ({ duration, id }) => {
+      await queryClient.cancelQueries({ queryKey: conversationKeys.list() });
+      const previous = queryClient.getQueryData<ConversationList>(key);
+      const previousArchived = queryClient.getQueryData<ConversationList>(
+        conversationKeys.archived(),
+      );
+      const mutedUntil =
+        duration > 0 ? new Date(Date.now() + duration * MS_PER_SECOND).toISOString() : null;
+      queryClient.setQueryData(key, patchConversationList(previous, id, { muted_until: mutedUntil }));
+      queryClient.setQueryData(
+        conversationKeys.archived(),
+        patchConversationList(previousArchived, id, { muted_until: mutedUntil }),
+      );
+      return { previous, previousArchived };
+    },
+    onError: (_error, _input, context) => {
+      queryClient.setQueryData(key, context?.previous);
+      queryClient.setQueryData(conversationKeys.archived(), context?.previousArchived);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
+    },
+  });
+}
+
+export function useFolders() {
+  return useQuery({
+    queryFn: listFolders,
+    queryKey: folderKeys.list(),
+  });
+}
+
+export function useCreateFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => createFolder(name),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: folderKeys.list() });
+    },
+  });
+}
+
+export function useUpdateFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string }) => updateFolder(id, { name }),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: folderKeys.list() });
+    },
+  });
+}
+
+export function useDestroyFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => destroyFolder(id),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: folderKeys.list() });
+    },
+  });
+}
+
+export function useReorderFolders() {
+  const queryClient = useQueryClient();
+  const key = folderKeys.list();
+  return useMutation({
+    mutationFn: (ids: number[]) => reorderFolders(ids),
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<{ folders: ConversationFolder[] }>(key);
+      if (previous) {
+        const byId = new Map(previous.folders.map((folder) => [folder.id, folder]));
+        queryClient.setQueryData(key, {
+          folders: ids
+            .map((id, position) => {
+              const folder = byId.get(id);
+              if (!folder) {
+                return null;
+              }
+              return { ...folder, position };
+            })
+            .filter((folder): folder is ConversationFolder => folder != null),
+        });
+      }
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      queryClient.setQueryData(key, context?.previous);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+export function useFolderMembership() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      add,
+      conversationId,
+      folderId,
+    }: {
+      add: boolean;
+      conversationId: number;
+      folderId: number;
+    }) =>
+      add
+        ? addConversationToFolder(folderId, conversationId)
+        : removeConversationFromFolder(folderId, conversationId),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: folderKeys.list() });
+    },
   });
 }

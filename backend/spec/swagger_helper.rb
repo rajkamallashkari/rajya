@@ -218,6 +218,7 @@ RSpec.configure do |config|
                 last_activity_at: { type: :string, format: :"date-time" },
                 unread_count: { type: :integer },
                 muted_until: { type: :string, format: :"date-time", nullable: true },
+                archived_at: { type: :string, format: :"date-time", nullable: true },
                 role: { type: :string, nullable: true },
                 pinned_at: { type: :string, format: :"date-time", nullable: true },
                 manually_unread_at: { type: :string, format: :"date-time", nullable: true },
@@ -231,6 +232,25 @@ RSpec.configure do |config|
               required: %w[conversations],
               properties: {
                 conversations: { type: :array, items: { "$ref" => "#/components/schemas/Conversation" } }
+              }
+            },
+            ConversationFolder: {
+              type: :object,
+              required: %w[id name position conversation_ids],
+              properties: {
+                id: { type: :integer },
+                name: { type: :string },
+                position: { type: :integer },
+                conversation_ids: { type: :array, items: { type: :integer } },
+                created_at: { type: :string, format: :"date-time" },
+                updated_at: { type: :string, format: :"date-time" }
+              }
+            },
+            ConversationFolderList: {
+              type: :object,
+              required: %w[folders],
+              properties: {
+                folders: { type: :array, items: { "$ref" => "#/components/schemas/ConversationFolder" } }
               }
             },
             Message: {

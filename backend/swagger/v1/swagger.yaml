@@ -46,7 +46,7 @@ paths:
               schema:
                 "$ref": "#/components/schemas/Account"
         '404':
-          description: blocked (NR-1 invisibility)
+          description: blocked reverse (NR-1 invisibility)
           content:
             application/json:
               schema:
@@ -168,6 +168,171 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Ok"
+  "/api/v1/conversation_folders":
+    get:
+      summary: List conversation folders
+      tags:
+      - Folders
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ConversationFolderList"
+    post:
+      summary: Create a conversation folder
+      tags:
+      - Folders
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ConversationFolder"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                position:
+                  type: integer
+  "/api/v1/conversation_folders/{id}":
+    patch:
+      summary: Update a conversation folder
+      tags:
+      - Folders
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ConversationFolder"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                position:
+                  type: integer
+    delete:
+      summary: Delete a conversation folder
+      tags:
+      - Folders
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: deleted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+  "/api/v1/conversation_folders/reorder":
+    patch:
+      summary: Reorder conversation folders
+      tags:
+      - Folders
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: reordered
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ConversationFolderList"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: integer
+  "/api/v1/conversation_folders/{conversation_folder_id}/conversations":
+    post:
+      summary: Add a conversation to a folder
+      tags:
+      - Folders
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_folder_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: added
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ConversationFolder"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversation_id:
+                  type: integer
+  "/api/v1/conversation_folders/{conversation_folder_id}/conversations/{conversation_id}":
+    delete:
+      summary: Remove a conversation from a folder
+      tags:
+      - Folders
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_folder_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: removed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ConversationFolder"
   "/api/v1/conversations/{conversation_id}/members":
     post:
       summary: Add members to a group or channel
@@ -397,9 +562,15 @@ paths:
       - Conversations
       security:
       - bearerAuth: []
+      parameters:
+      - name: archived
+        in: query
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
-          description: sidebar
+          description: archived tab
           content:
             application/json:
               schema:
@@ -419,7 +590,7 @@ paths:
               schema:
                 "$ref": "#/components/schemas/Conversation"
         '404':
-          description: blocked new DM (NR-1)
+          description: blocked new DM reverse (NR-1)
           content:
             application/json:
               schema:
@@ -561,6 +732,92 @@ paths:
       responses:
         '200':
           description: cleared
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+  "/api/v1/conversations/{id}/archive":
+    post:
+      summary: Archive a conversation for the current account
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: archived
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+    delete:
+      summary: Unarchive a conversation for the current account
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: unarchived
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+  "/api/v1/conversations/{id}/mute":
+    post:
+      summary: Mute a conversation for the current account
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: muted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                duration:
+                  type: integer
+    delete:
+      summary: Unmute a conversation for the current account
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: unmuted
           content:
             application/json:
               schema:
@@ -2716,6 +2973,10 @@ components:
           type: string
           format: date-time
           nullable: true
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
         role:
           type: string
           nullable: true
@@ -2746,6 +3007,39 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/Conversation"
+    ConversationFolder:
+      type: object
+      required:
+      - id
+      - name
+      - position
+      - conversation_ids
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        position:
+          type: integer
+        conversation_ids:
+          type: array
+          items:
+            type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ConversationFolderList:
+      type: object
+      required:
+      - folders
+      properties:
+        folders:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ConversationFolder"
     Message:
       type: object
       required:

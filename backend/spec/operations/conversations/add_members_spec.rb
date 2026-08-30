@@ -60,4 +60,14 @@ RSpec.describe Conversations::AddMembers do
     expect(described_class.call(actor: owner.account, conversation: conversation,
                                 account_ids: [ create(:account).id ]).error_code).to eq(:validation_failed)
   end
+
+  it "still adds a blocked account to a group (NR-1)" do
+    owner, _extra, conversation = crew
+    blocked = create(:account)
+    create(:block, blocker_account: owner.account, blocked_account: blocked)
+    result = described_class.call(actor: owner.account, conversation: conversation, account_ids: [ blocked.id ])
+
+    expect(result).to be_success
+    expect(conversation.conversation_memberships.find_by!(account: blocked)).to be_active
+  end
 end

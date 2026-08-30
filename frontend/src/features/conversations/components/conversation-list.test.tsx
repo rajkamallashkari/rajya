@@ -126,4 +126,58 @@ describe("ConversationList", () => {
     );
     expect(await screen.findByText(en.conversations.activity.recording_audio)).toBeInTheDocument();
   });
+
+  it("filters by folder tabs, archives, and creates a folder", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    render(
+      <AppProviders>
+        <MemoryRouter>
+          <ConversationList />
+        </MemoryRouter>
+      </AppProviders>,
+    );
+    expect(await screen.findByText(ADA_DEMO.name)).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: en.conversations.folders.unread }));
+    expect(screen.getByText(ADA_DEMO.name)).toBeInTheDocument();
+    expect(screen.queryByText("Team")).toBeNull();
+    await user.click(screen.getByRole("tab", { name: "Work" }));
+    expect(await screen.findByText("Team")).toBeInTheDocument();
+    expect(screen.queryByText(ADA_DEMO.name)).toBeNull();
+    await user.click(screen.getByRole("tab", { name: en.conversations.folders.all }));
+    const team = (await screen.findByText("Team")).closest("[data-chat-list-item]") as HTMLElement;
+    fireEvent.contextMenu(team.querySelector("[style]") as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.archive }));
+    await user.click(screen.getByRole("tab", { name: en.conversations.folders.archived }));
+    expect(await screen.findByText("Team")).toBeInTheDocument();
+    const archivedRow = (await screen.findByText("Team")).closest("[data-chat-list-item]") as HTMLElement;
+    fireEvent.contextMenu(archivedRow.querySelector("[style]") as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.unarchive }));
+    await user.click(screen.getByRole("tab", { name: en.conversations.folders.all }));
+    expect(await screen.findByText("Team")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.conversations.folders.create }));
+    await user.type(screen.getByLabelText(en.conversations.folders.name), "Home");
+    await user.click(screen.getByRole("button", { name: en.conversations.folders.save }));
+    expect(await screen.findByRole("tab", { name: "Home" })).toBeInTheDocument();
+    const workTab = screen.getByRole("tab", { name: "Work" });
+    const homeTab = screen.getByRole("tab", { name: "Home" });
+    const data = {
+      getData: () => "1",
+      setData: () => undefined,
+    };
+    fireEvent.dragStart(workTab, { dataTransfer: data });
+    fireEvent.drop(homeTab, { dataTransfer: data });
+    const ada = (await screen.findByText(ADA_DEMO.name)).closest("[data-chat-list-item]") as HTMLElement;
+    fireEvent.contextMenu(ada.querySelector("[style]") as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.mute_1h }));
+    fireEvent.contextMenu(
+      (await screen.findByText(ADA_DEMO.name)).closest("[data-chat-list-item]")!.querySelector("[style]") as HTMLElement,
+    );
+    await user.click(screen.getByRole("menuitem", { name: "Work" }));
+    await user.click(screen.getByRole("tab", { name: "Work" }));
+    await user.click(screen.getByRole("button", { name: en.conversations.folders.delete }));
+    expect(await screen.findByRole("tab", { name: en.conversations.folders.all })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
 });

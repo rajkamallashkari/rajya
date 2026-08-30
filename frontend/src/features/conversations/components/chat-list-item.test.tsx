@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ChatListItem } from "./chat-list-item";
 import { ConversationMenu, SwipeActions } from "./conversation-menu";
 import { SWIPE_COMMIT_PX } from "@/features/conversations/model/constants";
+import { MUTE_UNTIL_ON } from "@/features/conversations/model/settings";
 import { en } from "@/shared/lib/i18n/catalog";
 
 describe("ChatListItem", () => {
@@ -46,8 +47,8 @@ describe("ChatListItem", () => {
     expect(screen.getByText("Ada:")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: en.conversations.unmute }));
-    expect(onMute).toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: en.conversations.archive }));
+    expect(onMute).toHaveBeenCalledWith(0);
+    await user.click(screen.getByRole("button", { name: en.conversations.unarchive }));
     expect(onArchive).toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: en.conversations.mark_read }));
     expect(onMarkRead).toHaveBeenCalled();
@@ -147,6 +148,17 @@ describe("ChatListItem", () => {
     const plain = document.querySelector("[style]") as HTMLElement;
     fireEvent.pointerDown(plain, { clientX: 10, clientY: 10, button: 0 });
     fireEvent.pointerUp(plain);
+
+    rerender(
+      <ChatListItem
+        lastActivity={{ kind: "text", text: "hi" }}
+        name="Ada"
+        onMute={onMute}
+        timestampLabel="now"
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: en.conversations.mute }));
+    expect(onMute).toHaveBeenCalledWith(MUTE_UNTIL_ON);
   });
 });
 
@@ -166,7 +178,7 @@ describe("ConversationMenu", () => {
     );
     await user.click(screen.getByRole("button", { name: en.ui.close }));
     expect(onClose).toHaveBeenCalled();
-    render(
+    const mutedMenu = render(
       <ConversationMenu
         muted
         onArchive={vi.fn()}
@@ -182,6 +194,44 @@ describe("ConversationMenu", () => {
     );
     expect(screen.getByRole("menuitem", { name: en.conversations.unmute })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: en.conversations.mark_read })).toBeInTheDocument();
-    render(<SwipeActions muted onArchive={vi.fn()} onMarkRead={vi.fn()} onMute={vi.fn()} />);
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.unmute }));
+    mutedMenu.unmount();
+    const hidden = render(
+      <ConversationMenu
+        folders={[{ id: 2, name: "Home", position: 0, conversation_ids: [] }]}
+        muted
+        onClose={onClose}
+        pinned={false}
+        unread={false}
+        x={0}
+        y={0}
+      />,
+    );
+    expect(hidden.queryByRole("menuitem", { name: en.conversations.unmute })).toBeNull();
+    expect(hidden.queryByRole("menuitem", { name: "Home" })).toBeNull();
+    hidden.unmount();
+    render(
+      <ConversationMenu
+        archived
+        folderIds={[1]}
+        folders={[{ id: 1, name: "Work", position: 0, conversation_ids: [1] }]}
+        muted={false}
+        onAddToFolder={vi.fn()}
+        onArchive={vi.fn()}
+        onClose={onClose}
+        onMute={vi.fn()}
+        onPin={vi.fn()}
+        pinned={false}
+        unread={false}
+        x={0}
+        y={0}
+      />,
+    );
+    expect(screen.getByRole("menuitem", { name: en.conversations.mute_1h })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: en.conversations.unarchive })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Work" })).toBeInTheDocument();
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.mute_1h }));
+    await user.click(screen.getByRole("menuitem", { name: "Work" }));
+    render(<SwipeActions archived muted onArchive={vi.fn()} onMarkRead={vi.fn()} onMute={vi.fn()} />);
   });
 });

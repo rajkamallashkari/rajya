@@ -107,7 +107,7 @@ RSpec.describe ConversationPolicy do
     expect(described_class.new(user.account, conversation).update?).to be(true)
   end
 
-  it "scopes to the account's active unarchived memberships" do
+  it "scopes to the account's active memberships including archived" do
     user = create(:user)
     visible = create_talk(kind: "group", owner: user.account, members: [ create(:account) ])
     archived = create_talk(kind: "group", owner: user.account, members: [ create(:account) ])
@@ -116,7 +116,8 @@ RSpec.describe ConversationPolicy do
     left.conversation_memberships.find_by!(account: user.account).update!(status: "left")
     create_talk(kind: "group", owner: create(:user).account, members: [ create(:account) ])
 
-    expect(described_class::Scope.new(user.account, Conversation.all).resolve).to contain_exactly(visible)
+    expect(described_class::Scope.new(user.account, Conversation.all).resolve)
+      .to contain_exactly(visible, archived)
     expect(described_class::Scope.new(nil, Conversation.all).resolve).to be_empty
   end
 end

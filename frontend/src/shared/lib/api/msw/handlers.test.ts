@@ -11,6 +11,11 @@ const expectedPaths = [
   "/api/v1/blocks/{id}",
   "/api/v1/contact_nicknames",
   "/api/v1/contact_nicknames/{account_id}",
+  "/api/v1/conversation_folders",
+  "/api/v1/conversation_folders/reorder",
+  "/api/v1/conversation_folders/{conversation_folder_id}/conversations",
+  "/api/v1/conversation_folders/{conversation_folder_id}/conversations/{conversation_id}",
+  "/api/v1/conversation_folders/{id}",
   "/api/v1/conversations",
   "/api/v1/conversations/{conversation_id}/invites",
   "/api/v1/conversations/{conversation_id}/invites/{id}",
@@ -26,7 +31,9 @@ const expectedPaths = [
   "/api/v1/conversations/{conversation_id}/pins",
   "/api/v1/conversations/{conversation_id}/pins/{message_id}",
   "/api/v1/conversations/{id}",
+  "/api/v1/conversations/{id}/archive",
   "/api/v1/conversations/{id}/leave",
+  "/api/v1/conversations/{id}/mute",
   "/api/v1/conversations/{id}/pin",
   "/api/v1/conversations/{id}/receipts",
   "/api/v1/conversations/{id}/unread",
@@ -259,7 +266,7 @@ describe("MSW handlers", () => {
     expect(receipts.data?.id).toBe(1);
     const deliveredReceipts = await client.POST("/api/v1/conversations/{id}/receipts", {
       params: { path: { id: 1 } },
-      body: { kind: "delivered" },
+      body: { kind: "delivered" } as { kind: "delivered"; position: number },
     });
     expect(deliveredReceipts.data?.id).toBe(1);
     const missingReceipts = await client.POST("/api/v1/conversations/{id}/receipts", {
@@ -564,6 +571,139 @@ describe("MSW handlers", () => {
       params: { path: { id: 0 } },
     });
     expect(missingUnreadChat.response.status).toBe(404);
+    const archivedChat = await client.POST("/api/v1/conversations/{id}/archive", {
+      params: { path: { id: 1 } },
+    });
+    expect(archivedChat.data?.archived_at).toBe(MESSAGE_STAMP);
+    const archivedList = await client.GET("/api/v1/conversations", {
+      params: { query: { archived: true } },
+    });
+    expect(archivedList.data?.conversations.some((row) => row.id === 1)).toBe(true);
+    const inboxList = await client.GET("/api/v1/conversations");
+    expect(inboxList.data?.conversations.some((row) => row.id === 1)).toBe(false);
+    const unarchivedChat = await client.DELETE("/api/v1/conversations/{id}/archive", {
+      params: { path: { id: 1 } },
+    });
+    expect(unarchivedChat.data?.archived_at).toBeNull();
+    const mutedChat = await client.POST("/api/v1/conversations/{id}/mute", {
+      params: { path: { id: 1 } },
+      body: { duration: 3600 },
+    });
+    expect(mutedChat.data?.muted_until).toBeTruthy();
+    const unmutedChat = await client.DELETE("/api/v1/conversations/{id}/mute", {
+      params: { path: { id: 1 } },
+    });
+    expect(unmutedChat.data?.muted_until).toBeNull();
+    const zeroMute = await client.POST("/api/v1/conversations/{id}/mute", {
+      params: { path: { id: 1 } },
+      body: { duration: 0 },
+    });
+    expect(zeroMute.data?.muted_until).toBeNull();
+    const omittedMute = await client.POST("/api/v1/conversations/{id}/mute", {
+      params: { path: { id: 1 } },
+      body: {},
+    });
+    expect(omittedMute.data?.muted_until).toBeNull();
+    const missingArchive = await client.POST("/api/v1/conversations/{id}/archive", {
+      params: { path: { id: 0 } },
+    });
+    expect(missingArchive.response.status).toBe(404);
+    const missingMute = await client.POST("/api/v1/conversations/{id}/mute", {
+      params: { path: { id: 0 } },
+      body: { duration: 3600 },
+    });
+    expect(missingMute.response.status).toBe(404);
+    const missingUnmute = await client.DELETE("/api/v1/conversations/{id}/mute", {
+      params: { path: { id: 0 } },
+    });
+    expect(missingUnmute.response.status).toBe(404);
+    const missingUnarchive = await client.DELETE("/api/v1/conversations/{id}/archive", {
+      params: { path: { id: 0 } },
+    });
+    expect(missingUnarchive.response.status).toBe(404);
+    const folders = await client.GET("/api/v1/conversation_folders");
+    expect(folders.data?.folders).toHaveLength(1);
+    const createdFolder = await client.POST("/api/v1/conversation_folders", {
+      body: { name: "Home" },
+    });
+    expect(createdFolder.response.status).toBe(201);
+    const unnamedFolder = await client.POST("/api/v1/conversation_folders", { body: {} });
+    expect(unnamedFolder.data?.name).toBe("Folder");
+    const deletedFolder = await client.DELETE("/api/v1/conversation_folders/{id}", {
+      params: { path: { id: unnamedFolder.data?.id ?? 3 } },
+    });
+    expect(deletedFolder.data?.ok).toBe(true);
+    const patchedFolder = await client.PATCH("/api/v1/conversation_folders/{id}", {
+      params: { path: { id: 1 } },
+      body: { name: "Office" },
+    });
+    expect(patchedFolder.data?.name).toBe("Office");
+    const patchedPosition = await client.PATCH("/api/v1/conversation_folders/{id}", {
+      params: { path: { id: 1 } },
+      body: {},
+    });
+    expect(patchedPosition.data?.name).toBe("Office");
+    const reordered = await client.PATCH("/api/v1/conversation_folders/reorder", {
+      body: { ids: [createdFolder.data?.id ?? 2, 1] },
+    });
+    expect(reordered.data?.folders[0]?.id).toBe(createdFolder.data?.id);
+    const skippedReorder = await client.PATCH("/api/v1/conversation_folders/reorder", {
+      body: { ids: [1, 0] },
+    });
+    expect(skippedReorder.data?.folders.every((folder) => folder.id !== 0)).toBe(true);
+    const addedToFolder = await client.POST(
+      "/api/v1/conversation_folders/{conversation_folder_id}/conversations",
+      {
+        params: { path: { conversation_folder_id: 1 } },
+        body: { conversation_id: 1 },
+      },
+    );
+    expect(addedToFolder.data?.conversation_ids).toContain(1);
+    const addedAgain = await client.POST(
+      "/api/v1/conversation_folders/{conversation_folder_id}/conversations",
+      {
+        params: { path: { conversation_folder_id: 1 } },
+        body: { conversation_id: 1 },
+      },
+    );
+    expect(addedAgain.data?.conversation_ids.filter((id) => id === 1)).toHaveLength(1);
+    const emptyAdd = await client.POST(
+      "/api/v1/conversation_folders/{conversation_folder_id}/conversations",
+      {
+        params: { path: { conversation_folder_id: 1 } },
+        body: {},
+      },
+    );
+    expect(emptyAdd.response.status).toBe(200);
+    const removedFromFolder = await client.DELETE(
+      "/api/v1/conversation_folders/{conversation_folder_id}/conversations/{conversation_id}",
+      {
+        params: { path: { conversation_folder_id: 1, conversation_id: 1 } },
+      },
+    );
+    expect(removedFromFolder.data?.conversation_ids).not.toContain(1);
+    const missingFolder = await client.PATCH("/api/v1/conversation_folders/{id}", {
+      params: { path: { id: 0 } },
+      body: { name: "Gone" },
+    });
+    expect(missingFolder.response.status).toBe(404);
+    const missingFolderAdd = await client.POST(
+      "/api/v1/conversation_folders/{conversation_folder_id}/conversations",
+      {
+        params: { path: { conversation_folder_id: 0 } },
+        body: { conversation_id: 1 },
+      },
+    );
+    expect(missingFolderAdd.response.status).toBe(404);
+    const missingFolderRemove = await client.DELETE(
+      "/api/v1/conversation_folders/{conversation_folder_id}/conversations/{conversation_id}",
+      {
+        params: { path: { conversation_folder_id: 0, conversation_id: 1 } },
+      },
+    );
+    expect(missingFolderRemove.response.status).toBe(404);
+    const emptyReorder = await client.PATCH("/api/v1/conversation_folders/reorder", { body: {} });
+    expect(emptyReorder.data?.folders).toEqual([]);
     const replies = await client.GET("/api/v1/saved_replies");
     expect(replies.data?.saved_replies).toHaveLength(1);
     const createdReply = await client.POST("/api/v1/saved_replies", {

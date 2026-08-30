@@ -1,7 +1,13 @@
 export const conversationKeys = {
   all: ["conversations"] as const,
   list: () => [...conversationKeys.all, "list"] as const,
+  archived: () => [...conversationKeys.list(), "archived"] as const,
   detail: (id: number) => [...conversationKeys.all, "detail", id] as const,
+};
+
+export const folderKeys = {
+  all: ["folders"] as const,
+  list: () => [...folderKeys.all, "list"] as const,
 };
 
 export const inviteKeys = {

@@ -1,12 +1,14 @@
 import { BellOff, Pin } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { ConversationFolder } from "@/features/conversations/api/http";
 import {
   ConversationMenu,
   SwipeActions,
 } from "@/features/conversations/components/conversation-menu";
 import { useChatListGestures } from "@/features/conversations/hooks/use-chat-list-gestures";
 import type { ConversationKind } from "@/features/conversations/model/constants";
+import { MUTE_UNTIL_ON } from "@/features/conversations/model/settings";
 import {
   lastActivityPrefix,
   lastActivityTone,
@@ -21,6 +23,8 @@ import type { Presence } from "@/shared/ui/avatar";
 export interface ChatListItemProps {
   archived?: boolean;
   avatarSrc?: string | null;
+  folderIds?: number[];
+  folders?: ConversationFolder[];
   isGroup?: boolean;
   kind?: ConversationKind;
   lastActivity: LastActivity;
@@ -30,9 +34,10 @@ export interface ChatListItemProps {
   onArchive?: () => void;
   onMarkRead?: () => void;
   onMarkUnread?: () => void;
-  onMute?: () => void;
+  onMute?: (duration: number) => void;
   onOpen?: () => void;
   onPin?: () => void;
+  onToggleFolder?: (folderId: number, add: boolean) => void;
   pinned?: boolean;
   presence?: Presence;
   selected?: boolean;
@@ -43,6 +48,8 @@ export interface ChatListItemProps {
 export function ChatListItem({
   archived = false,
   avatarSrc,
+  folderIds = [],
+  folders = [],
   isGroup = false,
   kind = "direct",
   lastActivity,
@@ -55,6 +62,7 @@ export function ChatListItem({
   onMute,
   onOpen,
   onPin,
+  onToggleFolder,
   pinned = false,
   presence,
   selected = false,
@@ -91,7 +99,13 @@ export function ChatListItem({
       data-selected={selected ? "true" : "false"}
       data-unread={unread ? "true" : "false"}
     >
-      <SwipeActions muted={muted} onArchive={onArchive} onMarkRead={onMarkRead} onMute={onMute} />
+      <SwipeActions
+        archived={archived}
+        muted={muted}
+        onArchive={onArchive}
+        onMarkRead={onMarkRead}
+        onMute={() => onMute?.(muted ? 0 : MUTE_UNTIL_ON)}
+      />
       <div
         className={cn(
           "relative flex min-h-[var(--touch-target-min)] items-center gap-[var(--control-gap)] px-[var(--space-list-x)] py-[var(--space-list-y)]",
@@ -165,7 +179,11 @@ export function ChatListItem({
       </div>
       {menu ? (
         <ConversationMenu
+          archived={archived}
+          folderIds={folderIds}
+          folders={folders}
           muted={muted}
+          onAddToFolder={onToggleFolder}
           onArchive={onArchive}
           onClose={() => setMenu(null)}
           onMarkRead={onMarkRead}

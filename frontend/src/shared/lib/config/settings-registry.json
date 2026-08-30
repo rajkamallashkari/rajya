@@ -116,6 +116,20 @@
     "max": 100,
     "allow_nil": false
   },
+  "mute_durations": {
+    "type": "array",
+    "category": "messaging",
+    "default": [
+      3600,
+      28800,
+      86400,
+      31536000
+    ],
+    "description": "Allowed mute durations in seconds: 1h, 8h, 24h, until-on (1 year).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
   "reminder_note_max_length": {
     "type": "integer",
     "category": "messaging",
@@ -231,6 +245,15 @@
     "description": "Maximum characters in a poll question (NR-15).",
     "min": 1,
     "max": 4096,
+    "allow_nil": false
+  },
+  "folder_name_max_length": {
+    "type": "integer",
+    "category": "groups",
+    "default": 50,
+    "description": "Maximum characters in a conversation folder name.",
+    "min": 1,
+    "max": 200,
     "allow_nil": false
   },
   "min_members": {

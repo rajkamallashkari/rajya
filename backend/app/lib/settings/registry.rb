@@ -58,6 +58,10 @@ module Settings
         type: :integer, category: :messaging, default: 10, min: 1, max: 100,
         description: "Maximum conversations a member may pin (NR-21)."
       },
+      mute_durations: {
+        type: :array, category: :messaging, default: [ 3_600, 28_800, 86_400, 31_536_000 ],
+        description: "Allowed mute durations in seconds: 1h, 8h, 24h, until-on (1 year)."
+      },
       reminder_note_max_length: {
         type: :integer, category: :messaging, default: 280, min: 1, max: 4_096,
         description: "Maximum characters in a message-reminder note (NR-24)."
@@ -112,6 +116,10 @@ module Settings
       },
 
       # --- groups (BR-53) ---
+      folder_name_max_length: {
+        type: :integer, category: :groups, default: 50, min: 1, max: 200,
+        description: "Maximum characters in a conversation folder name."
+      },
       min_members: {
         type: :integer, category: :groups, default: 2, min: 2, max: 10_000,
         description: "Minimum members for a group conversation (BR-53)."

@@ -54,6 +54,8 @@ en:
       conversation:
         direct_key: "must be present only for direct conversations"
         title: "can't be blank for non-direct conversations"
+      conversation_folder:
+        name_too_long: "is too long (maximum is %{count} characters)"
       conversation_membership:
         bot_role: "bots cannot be admin or owner"
         seen_position: "must be greater than or equal to last_read_position"

@@ -123,7 +123,7 @@ class ConversationPolicy < ApplicationPolicy
       return scope.none unless account
 
       scope.where(
-        id: ConversationMembership.active.unarchived.where(account_id: account.id).select(:conversation_id)
+        id: ConversationMembership.active.where(account_id: account.id).select(:conversation_id)
       )
     end
   end

@@ -158,4 +158,15 @@ RSpec.describe Messages::Send do
     expect(message.silent).to be(true)
     expect(membership.last_delivered_position).to eq(message.position)
   end
+
+  it "unarchives every active membership on new activity (NR-14)" do
+    user, conversation = setup
+    peer = conversation.conversation_memberships.where.not(account: user.account).sole.account
+    Conversations::Archive.call(account: user.account, conversation: conversation)
+    Conversations::Archive.call(account: peer, conversation: conversation)
+    send!(conversation, user.account, body: "Back")
+    conversation.conversation_memberships.reload
+
+    expect(conversation.conversation_memberships.map(&:archived_at)).to all(be_nil)
+  end
 end

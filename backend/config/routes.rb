@@ -60,12 +60,21 @@ Rails.application.routes.draw do
       resources :sessions, only: %i[index destroy] do
         collection { delete :others }
       end
+      resources :conversation_folders, only: %i[index create update destroy] do
+        collection { patch :reorder }
+        resources :conversations, only: %i[create destroy], controller: "conversation_folder_conversations",
+                                  param: :conversation_id
+      end
       resources :conversations, only: %i[index show create update] do
         member do
           post :pin, to: "conversation_pins#create"
           delete :pin, to: "conversation_pins#destroy"
           post :unread, to: "conversation_unreads#create"
           delete :unread, to: "conversation_unreads#destroy"
+          post :archive, to: "conversation_archives#create"
+          delete :archive, to: "conversation_archives#destroy"
+          post :mute, to: "conversation_mutes#create"
+          delete :mute, to: "conversation_mutes#destroy"
           post :receipts, to: "conversation_receipts#create"
           post :leave, to: "conversation_leaves#create"
         end

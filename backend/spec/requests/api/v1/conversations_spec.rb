@@ -8,20 +8,54 @@ RSpec.describe "Conversations index", type: :request do
       tags "Conversations"
       produces "application/json"
       security [ { bearerAuth: [] } ]
+      parameter name: :archived, in: :query, type: :boolean, required: false
 
       response "200", "sidebar" do
         schema "$ref" => "#/components/schemas/ConversationList"
         let(:user) { create(:user) }
         let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
 
-        before { create_talk(kind: "group", owner: user.account, members: [ create(:account) ]) }
+        before do
+          create_talk(kind: "group", owner: user.account, members: [ create(:account) ])
+          hidden = create_direct_between(user.account, create(:account))
+          Conversations::Archive.call(account: user.account, conversation: hidden)
+        end
 
         run_test! do |response|
           expect(JSON.parse(response.body).fetch("conversations").size).to eq(1)
         end
       end
     end
+  end
+end
 
+RSpec.describe "Conversations index archived", type: :request do
+  path "/api/v1/conversations" do
+    get "List the current account's conversations" do
+      tags "Conversations"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :archived, in: :query, type: :boolean, required: false
+
+      response "200", "archived tab" do
+        schema "$ref" => "#/components/schemas/ConversationList"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+        let(:archived) { true }
+
+        before { Conversations::Archive.call(account: user.account, conversation: conversation) }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("conversations").sole.fetch("id")).to eq(conversation.id)
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Conversations create direct", type: :request do
+  path "/api/v1/conversations" do
     post "Create a conversation" do
       tags "Conversations"
       consumes "application/json"
@@ -109,6 +143,38 @@ RSpec.describe "Conversations create blocked", type: :request do
         let(:payload) { { kind: "direct", account_id: peer.id } }
 
         before { create(:block, blocker_account: user.account, blocked_account: peer) }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).dig("error", "code")).to eq("not_found")
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Conversations create blocked reverse", type: :request do
+  path "/api/v1/conversations" do
+    post "Create a conversation" do
+      tags "Conversations"
+      consumes "application/json"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :payload, in: :body, schema: {
+        type: :object,
+        properties: {
+          kind: { type: :string },
+          account_id: { type: :integer }
+        }
+      }
+
+      response "404", "blocked new DM reverse (NR-1)" do
+        schema "$ref" => "#/components/schemas/Error"
+        let(:user) { create(:user) }
+        let(:peer) { create(:user) }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+        let(:payload) { { kind: "direct", account_id: peer.account.id } }
+
+        before { create(:block, blocker_account: peer.account, blocked_account: user.account) }
 
         run_test! do |response|
           expect(JSON.parse(response.body).dig("error", "code")).to eq("not_found")
@@ -336,6 +402,106 @@ RSpec.describe "Conversations unread", type: :request do
 
         run_test! do |response|
           expect(JSON.parse(response.body).fetch("manually_unread_at")).to be_nil
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Conversations archive", type: :request do
+  path "/api/v1/conversations/{id}/archive" do
+    post "Archive a conversation for the current account" do
+      tags "Conversations"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+
+      response "200", "archived" do
+        schema "$ref" => "#/components/schemas/Conversation"
+        let(:user) { create(:user) }
+        let(:peer) { create(:account) }
+        let(:conversation) { create_direct_between(user.account, peer) }
+        let(:id) { conversation.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("archived_at")).to be_present
+          expect(conversation.conversation_memberships.find_by!(account: peer).archived_at).to be_nil
+        end
+      end
+    end
+
+    delete "Unarchive a conversation for the current account" do
+      tags "Conversations"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+
+      response "200", "unarchived" do
+        schema "$ref" => "#/components/schemas/Conversation"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:id) { conversation.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        before { Conversations::Archive.call(account: user.account, conversation: conversation) }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("archived_at")).to be_nil
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Conversations mute", type: :request do
+  path "/api/v1/conversations/{id}/mute" do
+    post "Mute a conversation for the current account" do
+      tags "Conversations"
+      consumes "application/json"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+      parameter name: :payload, in: :body, schema: {
+        type: :object,
+        properties: { duration: { type: :integer } }
+      }
+
+      response "200", "muted" do
+        schema "$ref" => "#/components/schemas/Conversation"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:id) { conversation.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+        let(:payload) { { duration: Array(Settings.fetch(:mute_durations)).first } }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("muted_until")).to be_present
+        end
+      end
+    end
+
+    delete "Unmute a conversation for the current account" do
+      tags "Conversations"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+
+      response "200", "unmuted" do
+        schema "$ref" => "#/components/schemas/Conversation"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:id) { conversation.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        before do
+          Conversations::Mute.call(
+            account: user.account, conversation: conversation, duration: Array(Settings.fetch(:mute_durations)).first
+          )
+        end
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("muted_until")).to be_nil
         end
       end
     end

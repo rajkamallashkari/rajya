@@ -60,4 +60,15 @@ RSpec.describe Conversations::CreateGroup do
     expect(described_class.call(creator: creator, kind: "group", account_ids: [ other.id, extra.id ], title: "X",
                                 description: nil).error_code).to eq(:validation_failed)
   end
+
+  it "still creates a group when a member is blocked (NR-1)" do
+    creator = create(:user).account
+    blocked = create(:account)
+    create(:block, blocker_account: creator, blocked_account: blocked)
+    conversation = described_class.call(
+      creator: creator, kind: "group", account_ids: [ blocked.id ], title: "Crew", description: nil
+    ).value.conversation
+
+    expect(conversation.conversation_memberships.map(&:account_id)).to include(blocked.id)
+  end
 end

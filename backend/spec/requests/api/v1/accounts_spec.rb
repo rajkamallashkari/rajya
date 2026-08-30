@@ -75,5 +75,30 @@ RSpec.describe "Account profile blocked", type: :request do
     end
   end
 end
+
+RSpec.describe "Account profile blocked reverse", type: :request do
+  path "/api/v1/accounts/{id}" do
+    get "Show a public profile" do
+      tags "Accounts"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+
+      response "404", "blocked reverse (NR-1 invisibility)" do
+        schema "$ref" => "#/components/schemas/Error"
+        let(:user) { create(:user) }
+        let(:target) { create(:account) }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+        let(:id) { target.id }
+
+        before { create(:block, blocker_account: target, blocked_account: user.account) }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).dig("error", "code")).to eq("not_found")
+        end
+      end
+    end
+  end
+end
 # rubocop:enable RSpec/EmptyExampleGroup, RSpec/MultipleDescribes
 # rubocop:enable RSpec/VariableName

@@ -223,4 +223,96 @@ RSpec.describe "Session 3.1 conversation authorization 403s", type: :request do
     post "/api/v1/invites/#{invite.token}/join", headers: auth_headers_for(user)
     expect(response).to have_http_status(:forbidden)
   end
+
+  it "returns 403 on conversation archive when organize is denied" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    stub_deny(ConversationPolicy, :organize?)
+    post "/api/v1/conversations/#{conversation.id}/archive", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on conversation unarchive when organize is denied" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    stub_deny(ConversationPolicy, :organize?)
+    delete "/api/v1/conversations/#{conversation.id}/archive", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on conversation mute when organize is denied" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    stub_deny(ConversationPolicy, :organize?)
+    post "/api/v1/conversations/#{conversation.id}/mute", headers: auth_headers_for(user),
+         params: { duration: Array(Settings.fetch(:mute_durations)).first }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on conversation unmute when organize is denied" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    stub_deny(ConversationPolicy, :organize?)
+    delete "/api/v1/conversations/#{conversation.id}/mute", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on folder index when the policy denies" do
+    user = create(:user)
+    stub_deny(ConversationFolderPolicy, :index?)
+    get "/api/v1/conversation_folders", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on folder create when the policy denies" do
+    user = create(:user)
+    stub_deny(ConversationFolderPolicy, :create?)
+    post "/api/v1/conversation_folders", headers: auth_headers_for(user), params: { name: "Work" }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on folder update when the policy denies" do
+    user = create(:user)
+    folder = Folders::Create.call(account: user.account, name: "Work").value
+    stub_deny(ConversationFolderPolicy, :update?)
+    patch "/api/v1/conversation_folders/#{folder.id}", headers: auth_headers_for(user),
+          params: { name: "Home" }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on folder destroy when the policy denies" do
+    user = create(:user)
+    folder = Folders::Create.call(account: user.account, name: "Work").value
+    stub_deny(ConversationFolderPolicy, :destroy?)
+    delete "/api/v1/conversation_folders/#{folder.id}", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on folder reorder when the policy denies" do
+    user = create(:user)
+    stub_deny(ConversationFolderPolicy, :reorder?)
+    patch "/api/v1/conversation_folders/reorder", headers: auth_headers_for(user), params: { ids: [] }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on folder add conversation when update is denied" do
+    user = create(:user)
+    folder = Folders::Create.call(account: user.account, name: "Work").value
+    conversation = create_direct_between(user.account, create(:account))
+    stub_deny(ConversationFolderPolicy, :update?)
+    post "/api/v1/conversation_folders/#{folder.id}/conversations", headers: auth_headers_for(user),
+         params: { conversation_id: conversation.id }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on folder remove conversation when update is denied" do
+    user = create(:user)
+    folder = Folders::Create.call(account: user.account, name: "Work").value
+    conversation = create_direct_between(user.account, create(:account))
+    Folders::AddConversation.call(account: user.account, folder: folder, conversation: conversation)
+    stub_deny(ConversationFolderPolicy, :update?)
+    delete "/api/v1/conversation_folders/#{folder.id}/conversations/#{conversation.id}",
+           headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
 end
