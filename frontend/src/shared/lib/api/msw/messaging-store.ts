@@ -156,7 +156,7 @@ function windowAround(rows: Message[], pivot: Message): MessagePage {
 
 export function pageFor(
   conversationId: number,
-  query: { after?: number; around_at?: string; around_id?: number; before?: number } = {},
+  query: { after?: number; after_revision?: number; around_at?: string; around_id?: number; before?: number } = {},
 ): MessagePage | null {
   const rows = [...(store.messages[conversationId] ?? [])].sort((a, b) => a.position - b.position);
   if (query.around_id != null) {
@@ -174,6 +174,13 @@ export function pageFor(
       return emptyPage();
     }
     return windowAround(rows, pivot);
+  }
+  if (query.after_revision != null) {
+    const afterRevision = query.after_revision;
+    return wrapPage(
+      rows.filter((row) => row.revision > afterRevision),
+      rows,
+    );
   }
   if (query.after != null) {
     const after = query.after;
@@ -244,11 +251,17 @@ export function patchMessage(id: number, body: string): Message | null {
     ...message,
     body,
     edited_at: new Date().toISOString(),
+    revision: message.revision + 1,
   }));
 }
 
 export function tombstoneMessage(id: number): Message | null {
-  return replaceMessage(id, (message) => ({ ...message, body: null, deleted: true }));
+  return replaceMessage(id, (message) => ({
+    ...message,
+    body: null,
+    deleted: true,
+    revision: message.revision + 1,
+  }));
 }
 
 export function reactStoredMessage(id: number): Message | null {

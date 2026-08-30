@@ -111,7 +111,9 @@
     "loading": "Loading conversations"
   },
   "offline": {
-    "banner": "You're offline. Messages will send when you're back."
+    "banner": "You're offline. Messages will send when you're back.",
+    "reconnecting": "Reconnecting…",
+    "waiting": "Waiting for network…"
   },
   "impersonation": {
     "banner": "Viewing as {{name}}",

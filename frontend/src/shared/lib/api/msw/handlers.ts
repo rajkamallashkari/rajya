@@ -316,6 +316,7 @@ export const handlerMap = {
       const url = new URL(request.url);
       const aroundId = url.searchParams.get("around_id");
       const aroundAt = url.searchParams.get("around_at");
+      const afterRevision = url.searchParams.get("after_revision");
       const before = url.searchParams.get("before");
       const after = url.searchParams.get("after");
       const page = pageFor(Number(params.conversation_id), {
@@ -323,6 +324,7 @@ export const handlerMap = {
         around_at: aroundAt ?? undefined,
         before: before ? Number(before) : undefined,
         after: after ? Number(after) : undefined,
+        after_revision: afterRevision ? Number(afterRevision) : undefined,
       });
       if (!page) {
         return jsonError(404);

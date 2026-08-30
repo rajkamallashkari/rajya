@@ -202,9 +202,14 @@ paths:
         required: false
         schema:
           type: string
+      - name: after_revision
+        in: query
+        required: false
+        schema:
+          type: integer
       responses:
         '200':
-          description: jump around id
+          description: catch-up after revision
           content:
             application/json:
               schema:
@@ -2402,6 +2407,8 @@ components:
           type: integer
         reaction_summary:
           type: object
+          additionalProperties:
+            type: integer
         metadata:
           type: object
         sender_snapshot:

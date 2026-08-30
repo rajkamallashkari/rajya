@@ -307,6 +307,7 @@ export interface paths {
                     around_id?: number;
                     /** Format: date_time */
                     around_at?: string;
+                    after_revision?: number;
                 };
                 header?: never;
                 path: {
@@ -316,7 +317,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description jump around id */
+                /** @description catch-up after revision */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -3529,7 +3530,9 @@ export interface components {
             client_nonce?: string | null;
             forward_count?: number;
             attachment_count?: number;
-            reaction_summary?: Record<string, never>;
+            reaction_summary?: {
+                [key: string]: number;
+            };
             metadata?: Record<string, never>;
             sender_snapshot?: Record<string, never>;
             forwarded_from_account_id?: number | null;

@@ -1,23 +1,11 @@
-import { useSyncExternalStore, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-
-function subscribeOnline(onStoreChange: () => void): () => void {
-  window.addEventListener("online", onStoreChange);
-  window.addEventListener("offline", onStoreChange);
-  return () => {
-    window.removeEventListener("online", onStoreChange);
-    window.removeEventListener("offline", onStoreChange);
-  };
-}
+import { useConnectionState } from "@/shared/hooks/use-connection-state";
 
 export function OfflineBanner({ force = false }: { force?: boolean } = {}): ReactNode {
   const { t } = useTranslation();
-  const online = useSyncExternalStore(
-    subscribeOnline,
-    () => navigator.onLine,
-    () => true,
-  );
-  if (online && !force) {
+  const { isDisconnected, isOnline, labelKey } = useConnectionState();
+  if (!force && isOnline && !isDisconnected) {
     return null;
   }
   return (
@@ -26,7 +14,7 @@ export function OfflineBanner({ force = false }: { force?: boolean } = {}): Reac
       data-offline-banner=""
       role="status"
     >
-      {t("offline.banner")}
+      {t(force ? "offline.banner" : labelKey)}
     </div>
   );
 }

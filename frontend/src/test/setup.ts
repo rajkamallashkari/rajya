@@ -8,6 +8,8 @@ import { resetLockStore } from "@/features/auth/store/lock-store";
 import { initI18n } from "@/shared/lib/i18n";
 import { en } from "@/shared/lib/i18n/catalog";
 import { resetAccountDatabases } from "@/shared/lib/db";
+import { resetCatchUpScheduler } from "@/shared/lib/realtime/catch-up";
+import { installTestCable } from "@/test/fake-cable";
 import { resetMessagingStore } from "@/shared/lib/api/msw/messaging-store";
 import { _testReset as resetLayerStack } from "@/shared/lib/navigation/layer-stack";
 import { resetLayerStore } from "@/shared/lib/navigation/layer-store";
@@ -15,6 +17,7 @@ import { FakeAudio } from "@/test/fake-audio";
 import { server } from "@/test/msw";
 
 beforeAll(async () => {
+  installTestCable();
   server.listen({ onUnhandledRequest: "bypass" });
   await initI18n({ catalog: en });
 });
@@ -30,6 +33,8 @@ afterEach(() => {
   resetAccountDatabases();
   resetLayerStore();
   resetLayerStack();
+  resetCatchUpScheduler();
+  installTestCable();
   server.resetHandlers();
   resetMessagingStore();
 });

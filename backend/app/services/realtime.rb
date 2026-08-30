@@ -5,6 +5,20 @@
 module Realtime
   CONVERSATION_STREAM = /\Aconversation:(\d+)\z/
   BUFFER_KEY = :rajya_realtime_buffer
+  EVENTS = %w[
+    message_created
+    message_deleted
+    message_edited
+    message_pinned
+    message_reacted
+    message_reminder
+    message_unpinned
+    phone_verified
+    poll_closed
+    poll_voted
+    presence
+    sidebar_update
+  ].freeze
 
   Item = Data.define(:stream, :event, :data, :conversation_id) do
     def conversation_fanout?
@@ -141,7 +155,10 @@ module Realtime
     end
 
     def event_hash(event, data)
-      RealtimeEventResource.new({ type: event, data: data }).to_h
+      type = event.to_s
+      raise ArgumentError, "unknown realtime event: #{type}" unless EVENTS.include?(type)
+
+      RealtimeEventResource.new({ type: type, data: data }).to_h
     end
   end
 end

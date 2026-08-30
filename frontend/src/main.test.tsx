@@ -21,11 +21,13 @@ describe("bootstrap", () => {
     });
     vi.stubGlobal("fetch", async () => ({ ok: false, json: async () => ({}) }));
 
-    await bootstrap(document);
+    const first = await bootstrap(document);
     await waitFor(() => {
       expect(root.childNodes.length > 0).toBe(true);
     });
-    await mount(root, "1");
+    first?.unmount();
+    const reactRoot = await mount(root, "1");
+    reactRoot.unmount();
     vi.unstubAllGlobals();
   });
 });

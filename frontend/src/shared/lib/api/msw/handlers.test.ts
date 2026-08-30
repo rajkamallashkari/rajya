@@ -267,6 +267,10 @@ describe("MSW handlers", () => {
       params: { path: { conversation_id: 1 }, query: { before: 99 } },
     });
     expect(before.data?.messages.length).toBeGreaterThan(0);
+    const afterRevision = await client.GET("/api/v1/conversations/{conversation_id}/messages", {
+      params: { path: { conversation_id: 1 }, query: { after_revision: 0 } },
+    });
+    expect(afterRevision.data?.messages.length).toBeGreaterThan(0);
     const missingAround = await client.GET("/api/v1/conversations/{conversation_id}/messages", {
       params: { path: { conversation_id: 1 }, query: { around_id: 0 } },
     });

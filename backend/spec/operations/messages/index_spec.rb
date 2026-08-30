@@ -55,6 +55,27 @@ RSpec.describe Messages::Index do
     expect(described_class.call(scope: scope, after: "x").error_code).to eq(:validation_failed)
   end
 
+  it "returns mutations newer than after_revision (BR-33)" do
+    scope, message = setup
+    result = described_class.call(scope: scope, after_revision: message.revision - 1)
+
+    expect(result).to be_success
+    expect(result.value.messages).to eq([ message ])
+  end
+
+  it "fails when after_revision is mixed with another cursor or is negative" do
+    scope, _message = setup
+
+    expect(described_class.call(scope: scope, after_revision: 1, after: 1).error_code)
+      .to eq(:validation_failed)
+    expect(described_class.call(scope: scope, after_revision: 1, around_id: 1).error_code)
+      .to eq(:validation_failed)
+    expect(described_class.call(scope: scope, after_revision: -1).error_code)
+      .to eq(:validation_failed)
+    expect(described_class.call(scope: scope, after_revision: "x").error_code)
+      .to eq(:validation_failed)
+  end
+
   it "picks the last message before around_at when none are on or after it" do
     scope, message = setup
     future = (message.created_at + 1.day).iso8601

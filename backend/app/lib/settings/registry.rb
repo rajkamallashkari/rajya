@@ -284,6 +284,14 @@ module Settings
         type: :integer, category: :realtime, default: 800, min: 50, max: 30_000,
         description: "Milliseconds before a client reconnects to Cable (BR-110)."
       },
+      reconnect_poll: {
+        type: :integer, category: :realtime, default: 4_000, min: 500, max: 60_000,
+        description: "Milliseconds between Cable reconnect probes when the PWA wakes (BR-110)."
+      },
+      connection_poll: {
+        type: :integer, category: :realtime, default: 3_000, min: 500, max: 60_000,
+        description: "Milliseconds between Cable connection health polls (BR-110)."
+      },
       receipt_debounce: {
         type: :integer, category: :realtime, default: 400, min: 50, max: 10_000,
         description: "Milliseconds to debounce receipt watermark advances (BR-109)."

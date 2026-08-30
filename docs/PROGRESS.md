@@ -10,23 +10,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 4.1 |
-| **Next session** | 4.2 |
+| **Last completed** | 4.2 |
+| **Next session** | 4.3 |
 | **Phase** | P4 — Realtime & offline sync |
-| **Sessions remaining in phase** | 2 (4.2–4.3) |
+| **Sessions remaining in phase** | 1 (4.3) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 4.2 — Typed event union and router, cache writes, reconnect and catch-up**
+**Session 4.3 — IndexedDB per account, outbox single-flight, Background Sync**
 
-Deliverable: **Typed event union and router, cache writes, reconnect and catch-up**
+Deliverable: **IndexedDB per account, outbox single-flight, Background Sync**
 
-Docs: `TARGET §3, §5.4; AUDIT §2.1 (BR-30, BR-33), §4 realtime notes`
+Docs: `TARGET §5.6; AUDIT §2.7 (BR-110, BR-114), D-7`
 
 Legacy to read:
-- `botverse/src/lib/cable.ts`, `botverse/src/hooks/useChatChannel.ts`, `useUserChannel.ts`, `useConnectionState.ts`
+- `botverse/src/lib/db.ts`, `botverse/src/lib/outboxProcessor.ts` — the "genuinely sophisticated" offline layer to preserve
 
 ---
 
@@ -55,6 +55,7 @@ Legacy to read:
 | 3.5 | Permalinks (NR-19), bulk actions (NR-20), silent send (NR-23), recurring schedules (NR-26), reaction details (NR-27) | Permalinks resolve through membership (`GET /messages/:id` 404s for non-members). Bulk unsend/forward/save is all-or-nothing (BR-1 tombstones). Silent persists on send and still advances delivered. Recurring uses the documented RRULE subset in the account timezone. Reaction details query existing `reactions`. Composer schedule/recurrence picker, conversation-picker for bulk forward, push suppression, and Playwright bulk-forward wait for later (P10.2 / phase DoD / DS-13). |
 | 3.6 | Personal organization: pinned conversations (NR-21), mark-as-unread (NR-22), reminders (NR-24), saved replies (NR-25), P8 filter indexes (NR-43) | Pins and unread live on the viewer's membership only. Reminders upsert per account+message and dispatch on a one-minute job (no Web Push yet). Saved replies expand from the composer slash menu. Sender filter index exists for P8; EXPLAIN waits for P8.2. Wallpaper (NR-42), reminder push (P10.2), saved-reply settings UI (P12.3), and full reminder/saved-reply drawers wait. |
 | 4.1 | Channels, `Realtime.publish`, `after_commit` flush, batched fanout | `ConversationChannel` / `AccountChannel` / `PresenceChannel` / `SignalingChannel` scaffold. `Realtime.publish` flushes after commit so rolled-back writes never broadcast. Conversation fanout is one member query and one broadcast per stream, plus one `Push::FanoutJob` with the recipient list (F-19). Presence counters, BR-44 offline grace, and privacy-gated broadcasts. Adapter parity covers Redis and Solid Cable. Typed client router waits for 4.2; outbox for 4.3; Web Push delivery for 10.2. |
+| 4.2 | Typed event union and router, cache writes, reconnect and catch-up | Exhaustive Cable event union fails the client build on an unhandled backend type. The router writes fetched messages into TanStack Query. Reconnect catch-up uses `after_revision` so send/edit/tombstone/react converge (BR-26, BR-30, BR-33). IndexedDB/outbox/Background Sync wait for 4.3; Playwright offline-send waits for that layer. |
 
 ---
 

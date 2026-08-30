@@ -90,16 +90,20 @@ RSpec.describe Realtime do
   end
 
   it "rejects a target that is not a conversation, account, or stream name" do
-    expect { described_class.publish(1, :noop) }.to raise_error(ArgumentError)
+    expect { described_class.publish(1, :phone_verified) }.to raise_error(ArgumentError)
+  end
+
+  it "rejects an event that is not in the client union" do
+    expect { described_class.publish("account:1", :noop) }.to raise_error(ArgumentError, /noop/)
   end
 
   it "publishes to an Account stream and treats a blank payload as empty data" do
     account = create(:account)
     described_class.publish(account, :phone_verified)
-    described_class.publish("account:1", :noop, nil)
+    described_class.publish("account:1", :phone_verified, nil)
 
     expect(captured.first.fetch(:stream)).to eq(described_class.account_stream(account.id))
-    expect(captured.last.fetch(:payload)).to eq("type" => "noop")
+    expect(captured.last.fetch(:payload)).to eq("type" => "phone_verified")
   end
 
   it "does not broadcast when a messaging operation is rolled back" do
@@ -123,7 +127,7 @@ RSpec.describe Realtime do
 
   it "flushes when the connection has no open transaction" do
     allow(ActiveRecord::Base.connection).to receive(:transaction_open?).and_return(false)
-    described_class.publish("account:1", :noop)
+    described_class.publish("account:1", :phone_verified)
 
     expect(captured.size).to eq(1)
   end

@@ -248,7 +248,7 @@ RSpec.configure do |config|
                 client_nonce: { type: :string, format: :uuid, nullable: true },
                 forward_count: { type: :integer },
                 attachment_count: { type: :integer },
-                reaction_summary: { type: :object },
+                reaction_summary: { type: :object, additionalProperties: { type: :integer } },
                 metadata: { type: :object },
                 sender_snapshot: { type: :object },
                 forwarded_from_account_id: { type: :integer, nullable: true },

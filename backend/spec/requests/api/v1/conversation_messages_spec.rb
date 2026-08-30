@@ -13,6 +13,7 @@ RSpec.describe "Conversation messages index", type: :request do
       parameter name: :after, in: :query, type: :integer, required: false
       parameter name: :around_id, in: :query, type: :integer, required: false
       parameter name: :around_at, in: :query, type: :string, format: :date_time, required: false
+      parameter name: :after_revision, in: :query, type: :integer, required: false
 
       response "200", "page" do
         schema "$ref" => "#/components/schemas/MessagePage"
@@ -43,6 +44,31 @@ RSpec.describe "Conversation messages index", type: :request do
 
         run_test! do |response|
           expect(JSON.parse(response.body).dig("meta", "pivot_id")).to eq(message.id)
+        end
+      end
+
+      response "200", "catch-up after revision" do
+        schema "$ref" => "#/components/schemas/MessagePage"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:kept) { create(:message, conversation: conversation, sender_account: user.account, position: 1, revision: 1) }
+        let(:changed) do
+          kept
+          row = create(:message, conversation: conversation, sender_account: user.account, position: 2, revision: 4)
+          Messages::Unsend.call(message: row, actor: user.account)
+          row.reload
+        end
+        let(:conversation_id) { conversation.id }
+        let(:after_revision) do
+          changed
+          1
+        end
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        run_test! do |response|
+          ids = JSON.parse(response.body).fetch("messages").map { |row| row.fetch("id") }
+          expect(ids).to eq([ changed.id ])
+          expect(JSON.parse(response.body).fetch("messages").sole.fetch("deleted")).to be(true)
         end
       end
 

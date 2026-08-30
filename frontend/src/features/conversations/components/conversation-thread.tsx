@@ -27,6 +27,7 @@ import {
 } from "@/features/conversations/api/queries";
 import { MessageInfoSheet } from "@/features/conversations/components/message-info-sheet";
 import { ReminderSheet } from "@/features/conversations/components/reminder-sheet";
+import { useConversationChannel } from "@/features/conversations/hooks/use-conversation-channel";
 import { conversationById, type DemoMessage } from "@/features/conversations/model/demo";
 import { THREAD_LOAD_OLDER_PX } from "@/features/conversations/model/constants";
 import { formatThreadDate, sameCalendarDay } from "@/features/conversations/model/dates";
@@ -149,6 +150,7 @@ function DemoThread({
 
 function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const { t, i18n } = useTranslation();
+  useConversationChannel(conversationId);
   const conversationQuery = useConversation(conversationId);
   const page = useMessagePage(conversationId);
   const send = useSendMessage(conversationId);

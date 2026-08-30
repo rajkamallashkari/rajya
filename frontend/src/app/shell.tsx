@@ -10,6 +10,7 @@ import { LayerHost } from "@/app/navigation/layer-host";
 import { ConversationList } from "@/features/conversations/components/conversation-list";
 import { ConversationThread } from "@/features/conversations/components/conversation-thread";
 import { ProfilePanel } from "@/features/conversations/components/profile-panel";
+import { useAccountChannel } from "@/features/conversations/hooks/use-account-channel";
 import { getMessage } from "@/features/conversations/api/http";
 import { useConversations } from "@/features/conversations/api/queries";
 import { conversationTitle } from "@/features/conversations/model/title";
@@ -38,6 +39,7 @@ export function AppShell() {
   const conversations = useConversations();
   const params = useParams();
   const navigate = useNavigate();
+  useAccountChannel();
 
   useEffect(() => {
     hydrateAccounts();

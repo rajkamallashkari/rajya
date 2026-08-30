@@ -17,7 +17,8 @@ module Api
           before: params[:before],
           after: params[:after],
           around_id: params[:around_id],
-          around_at: params[:around_at]
+          around_at: params[:around_at],
+          after_revision: params[:after_revision]
         }
       end
     end

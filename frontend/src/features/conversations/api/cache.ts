@@ -55,3 +55,76 @@ export function appendToNewest(data: MessagePages, message: Message): MessagePag
 export function restorePages(previous: MessagePages | undefined): MessagePages | undefined {
   return previous;
 }
+
+function sameRow(existing: Message, incoming: Message): boolean {
+  if (incoming.id > 0 && existing.id === incoming.id) {
+    return true;
+  }
+  return Boolean(incoming.client_nonce) && existing.client_nonce === incoming.client_nonce;
+}
+
+function replaceMatching(data: MessagePages, incoming: Message): MessagePages | undefined {
+  let found = false;
+  const pages = data.pages.map((page) => ({
+    ...page,
+    messages: page.messages.map((row) => {
+      if (!sameRow(row, incoming)) {
+        return row;
+      }
+      found = true;
+      return incoming;
+    }),
+  }));
+  return found ? { ...data, pages } : undefined;
+}
+
+function cachedRange(data: MessagePages): { max: number; min: number } | undefined {
+  const positions = data.pages.flatMap((page) => page.messages.map((row) => row.position));
+  if (positions.length === 0) {
+    return undefined;
+  }
+  return { max: Math.max(...positions), min: Math.min(...positions) };
+}
+
+function insertSorted(data: MessagePages, incoming: Message): MessagePages {
+  let inserted = false;
+  const pages = data.pages.map((page) => {
+    if (page.messages.length === 0) {
+      return page;
+    }
+    const positions = page.messages.map((row) => row.position);
+    const min = Math.min(...positions);
+    const max = Math.max(...positions);
+    if (incoming.position < min || incoming.position > max) {
+      return page;
+    }
+    inserted = true;
+    return {
+      ...page,
+      messages: [...page.messages, incoming].sort((left, right) => left.position - right.position),
+    };
+  });
+  return inserted ? { ...data, pages } : appendToNewest(data, incoming);
+}
+
+function upsertOne(data: MessagePages, incoming: Message): MessagePages {
+  const replaced = replaceMatching(data, incoming);
+  if (replaced) {
+    return replaced;
+  }
+  if (data.pages.length === 0) {
+    return appendToNewest(data, incoming);
+  }
+  const range = cachedRange(data);
+  if (range && incoming.position < range.min) {
+    return data;
+  }
+  if (!range || incoming.position >= range.max) {
+    return appendToNewest(data, incoming);
+  }
+  return insertSorted(data, incoming);
+}
+
+export function upsertMessages(data: MessagePages, updates: Message[]): MessagePages {
+  return updates.reduce(upsertOne, data);
+}

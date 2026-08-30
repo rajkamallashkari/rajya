@@ -1,11 +1,16 @@
 module Messages
   class Index < ApplicationOperation
-    def call(scope:, before: nil, after: nil, around_id: nil, around_at: nil)
+    def call(scope:, before: nil, after: nil, around_id: nil, around_at: nil, after_revision: nil)
       @scope = scope
       @before = parse_cursor(before)
       @after = parse_cursor(after)
-      return failure(:validation_failed) if @before == :invalid || @after == :invalid
+      @after_revision = parse_cursor(after_revision)
+      return failure(:validation_failed) if [ @before, @after, @after_revision ].include?(:invalid)
       return failure(:validation_failed) if @before.present? && @after.present?
+      return failure(:validation_failed) if catch_up_conflict?(around_id, around_at)
+      return failure(:validation_failed) if @after_revision.present? && @after_revision.negative?
+
+      return success(CatchUp.call(scope: @scope, after: @after_revision)) if @after_revision.present?
 
       around_id.present? || around_at.present? ? jump(around_id, around_at) : page
     end
@@ -31,6 +36,12 @@ module Messages
         @scope.where(table[:created_at].lt(time)).order(position: :desc).first
     rescue ArgumentError, TypeError
       :invalid
+    end
+
+    def catch_up_conflict?(around_id, around_at)
+      @after_revision.present? && (
+        @before.present? || @after.present? || around_id.present? || around_at.present?
+      )
     end
 
     def parse_cursor(value)

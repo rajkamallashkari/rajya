@@ -25,7 +25,13 @@ export async function getConversation(id: number) {
 
 export async function listMessages(
   conversationId: number,
-  query?: { after?: number; around_at?: string; around_id?: number; before?: number },
+  query?: {
+    after?: number;
+    after_revision?: number;
+    around_at?: string;
+    around_id?: number;
+    before?: number;
+  },
 ) {
   return unwrap(
     await apiClient().GET("/api/v1/conversations/{conversation_id}/messages", {
