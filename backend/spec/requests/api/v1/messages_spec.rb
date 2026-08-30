@@ -40,7 +40,9 @@ RSpec.describe "Messages create", type: :request do
                 email: { type: :string, nullable: true }
               }
             }
-          }
+          },
+          sticker_id: { type: :integer },
+          gif_id: { type: :string }
         }
       }
 

@@ -1782,6 +1782,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/gifs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search GIFs through the Tenor proxy */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GifList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conversations/{conversation_id}/invites": {
         parameters: {
             query?: never;
@@ -2256,6 +2294,8 @@ export interface paths {
                             phone?: string | null;
                             email?: string | null;
                         }[];
+                        sticker_id?: number;
+                        gif_id?: string;
                     };
                 };
             };
@@ -3517,6 +3557,225 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description revoked */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Ok"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sticker_packs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List sticker and emoji packs */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StickerPackList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create a sticker pack */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        /** @enum {string} */
+                        kind?: "sticker" | "emoji";
+                        slug?: string;
+                        position?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StickerPack"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sticker_packs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a sticker pack */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description deleted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Ok"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Update a sticker pack */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        position?: number;
+                        published?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StickerPack"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/sticker_packs/{sticker_pack_id}/stickers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a sticker to a pack */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sticker_pack_id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        signed_id?: string;
+                        shortcode?: string;
+                        position?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Sticker"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sticker_packs/{sticker_pack_id}/stickers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a sticker from a pack */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    sticker_pack_id: number;
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description deleted */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -5118,6 +5377,40 @@ export interface components {
         };
         SavedReplyList: {
             saved_replies: components["schemas"]["SavedReply"][];
+        };
+        Sticker: {
+            id: number;
+            sticker_pack_id: number;
+            shortcode: string;
+            position: number;
+            url?: string | null;
+        };
+        StickerPack: {
+            id: number;
+            slug: string;
+            name: string;
+            /** @enum {string} */
+            kind: "sticker" | "emoji";
+            position: number;
+            /** Format: date-time */
+            published_at?: string | null;
+            owner_account_id?: number | null;
+            /** Format: date-time */
+            created_at?: string;
+            /** Format: date-time */
+            updated_at?: string;
+            stickers: components["schemas"]["Sticker"][];
+        };
+        StickerPackList: {
+            sticker_packs: components["schemas"]["StickerPack"][];
+        };
+        Gif: {
+            id: string;
+            title: string;
+            preview_url: string;
+        };
+        GifList: {
+            gifs: components["schemas"]["Gif"][];
         };
         Passkey: {
             id: number;

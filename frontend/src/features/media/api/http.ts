@@ -47,3 +47,20 @@ export async function listConversationMedia(
     "gallery_failed",
   );
 }
+
+export async function listStickerPacks() {
+  return unwrap(
+    await apiClient().GET("/api/v1/sticker_packs", { headers: bearerHeaders() }),
+    "sticker_packs_failed",
+  );
+}
+
+export async function searchGifs(q: string) {
+  return unwrap(
+    await apiClient().GET("/api/v1/gifs", {
+      headers: bearerHeaders(),
+      params: { query: { q } },
+    }),
+    "gif_search_failed",
+  );
+}

@@ -611,6 +611,56 @@ RSpec.configure do |config|
                 saved_replies: { type: :array, items: { "$ref" => "#/components/schemas/SavedReply" } }
               }
             },
+            Sticker: {
+              type: :object,
+              required: %w[id sticker_pack_id shortcode position],
+              properties: {
+                id: { type: :integer },
+                sticker_pack_id: { type: :integer },
+                shortcode: { type: :string },
+                position: { type: :integer },
+                url: { type: :string, nullable: true }
+              }
+            },
+            StickerPack: {
+              type: :object,
+              required: %w[id slug name kind position stickers],
+              properties: {
+                id: { type: :integer },
+                slug: { type: :string },
+                name: { type: :string },
+                kind: { type: :string, enum: %w[sticker emoji] },
+                position: { type: :integer },
+                published_at: { type: :string, format: :"date-time", nullable: true },
+                owner_account_id: { type: :integer, nullable: true },
+                created_at: { type: :string, format: :"date-time" },
+                updated_at: { type: :string, format: :"date-time" },
+                stickers: { type: :array, items: { "$ref" => "#/components/schemas/Sticker" } }
+              }
+            },
+            StickerPackList: {
+              type: :object,
+              required: %w[sticker_packs],
+              properties: {
+                sticker_packs: { type: :array, items: { "$ref" => "#/components/schemas/StickerPack" } }
+              }
+            },
+            Gif: {
+              type: :object,
+              required: %w[id title preview_url],
+              properties: {
+                id: { type: :string },
+                title: { type: :string },
+                preview_url: { type: :string }
+              }
+            },
+            GifList: {
+              type: :object,
+              required: %w[gifs],
+              properties: {
+                gifs: { type: :array, items: { "$ref" => "#/components/schemas/Gif" } }
+              }
+            },
             Passkey: {
               type: :object,
               required: %w[id created_at],

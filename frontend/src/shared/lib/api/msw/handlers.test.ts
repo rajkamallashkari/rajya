@@ -42,6 +42,7 @@ const expectedPaths = [
   "/api/v1/conversations/{id}/receipts",
   "/api/v1/conversations/{id}/unread",
   "/api/v1/direct_uploads",
+  "/api/v1/gifs",
   "/api/v1/invites/{token}",
   "/api/v1/invites/{token}/join",
   "/api/v1/messages",
@@ -76,6 +77,10 @@ const expectedPaths = [
   "/api/v1/sessions",
   "/api/v1/sessions/others",
   "/api/v1/sessions/{id}",
+  "/api/v1/sticker_packs",
+  "/api/v1/sticker_packs/{id}",
+  "/api/v1/sticker_packs/{sticker_pack_id}/stickers",
+  "/api/v1/sticker_packs/{sticker_pack_id}/stickers/{id}",
   "/api/v1/users/me",
   "/api/v1/users/me/complete_onboarding",
   "/api/v1/users/me/email",
@@ -746,6 +751,37 @@ describe("MSW handlers", () => {
       params: { path: { id: 1 } },
     });
     expect(deletedReply.data?.ok).toBe(true);
+    const packs = await client.GET("/api/v1/sticker_packs");
+    expect(packs.data?.sticker_packs).toHaveLength(1);
+    const createdPack = await client.POST("/api/v1/sticker_packs", {
+      body: { name: "Waves", kind: "sticker" },
+    });
+    expect(createdPack.response.status).toBe(201);
+    const patchedPack = await client.PATCH("/api/v1/sticker_packs/{id}", {
+      params: { path: { id: 1 } },
+      body: { published: true },
+    });
+    expect(patchedPack.data?.id).toBe(1);
+    const addedSticker = await client.POST("/api/v1/sticker_packs/{sticker_pack_id}/stickers", {
+      params: { path: { sticker_pack_id: 1 } },
+      body: { signed_id: "signed", shortcode: "wave" },
+    });
+    expect(addedSticker.response.status).toBe(201);
+    const removedSticker = await client.DELETE(
+      "/api/v1/sticker_packs/{sticker_pack_id}/stickers/{id}",
+      { params: { path: { sticker_pack_id: 1, id: 1 } } },
+    );
+    expect(removedSticker.data?.ok).toBe(true);
+    const deletedPack = await client.DELETE("/api/v1/sticker_packs/{id}", {
+      params: { path: { id: 1 } },
+    });
+    expect(deletedPack.data?.ok).toBe(true);
+    const gifs = await client.GET("/api/v1/gifs", { params: { query: { q: "party" } } });
+    expect(gifs.data?.gifs).toHaveLength(1);
+    const defaultGifs = await client.GET("/api/v1/gifs");
+    expect(defaultGifs.data?.gifs).toHaveLength(1);
+    const missingGifs = await client.GET("/api/v1/gifs", { params: { query: { q: "fail" } } });
+    expect(missingGifs.response.status).toBe(404);
     const reminders = await client.GET("/api/v1/message_reminders");
     expect(reminders.data?.message_reminders).toHaveLength(1);
     const createdReminder = await client.POST("/api/v1/message_reminders", {

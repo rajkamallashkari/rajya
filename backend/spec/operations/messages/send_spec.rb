@@ -223,4 +223,48 @@ RSpec.describe Messages::Send do
       expect(send!(conversation, owner.account, body: "Admin")).to be_success
     end
   end
+
+  it "sends a published sticker without charging the sender again (S-19)" do
+    user, conversation = setup
+    owner = create(:user)
+    create(:storage_bucket, service_name: "test")
+    sticker = create(:sticker, sticker_pack: create(:sticker_pack, :published, owner_account: owner.account))
+    owner_used = StorageQuota.ensure_for!(owner.account).used_bytes
+    result = send!(conversation, user.account, sticker_id: sticker.id)
+    expect(result).to be_success
+    expect(result.value.attachments.sole.checksum).to eq(sticker.blob.checksum)
+    expect(StorageQuota.find(user.account.id).used_bytes).to eq(0)
+    expect(StorageQuota.find(owner.account.id).used_bytes).to eq(owner_used)
+  end
+
+  it "rejects an unpublished sticker, an emoji pack, and pairing sticker_id with gif_id" do
+    user, conversation = setup
+    hidden = create(:sticker)
+    emoji_pack = create(:sticker_pack, :published, :emoji, owner_account: create(:user).account)
+    emoji = create(:sticker, sticker_pack: emoji_pack)
+
+    expect(send!(conversation, user.account, sticker_id: hidden.id).error_code).to eq(:not_found)
+    expect(send!(conversation, user.account, sticker_id: 0).error_code).to eq(:not_found)
+    expect(send!(conversation, user.account, sticker_id: emoji.id).error_code).to eq(:validation_failed)
+    expect(send!(conversation, user.account, sticker_id: hidden.id, gif_id: "x").error_code).to eq(:validation_failed)
+  end
+
+  it "sends a chosen GIF as an ordinary attachment" do
+    user, conversation = setup
+    create(:storage_bucket, service_name: "test")
+    create(:feature_flag, key: "gif_search", description: FeatureFlagRegistry.description_for(:gif_search), enabled: true)
+    hit = Gifs::Tenor::Result.new(id: "t1", title: "Party", preview_url: "https://x/p.gif", gif_url: "https://x/g.gif")
+    client = instance_double(Gifs::Tenor, fetch: hit, download: "GIF89a")
+    allow(Gifs::Tenor).to receive(:new).and_return(client)
+
+    result = send!(conversation, user.account, gif_id: "t1")
+
+    expect(result).to be_success
+    expect(result.value.attachments.sole.content_type).to eq("image/gif")
+  end
+
+  it "surfaces a GIF import failure on send" do
+    user, conversation = setup
+    expect(send!(conversation, user.account, gif_id: "t1").error_code).to eq(:not_found)
+  end
 end

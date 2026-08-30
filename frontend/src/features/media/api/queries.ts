@@ -3,11 +3,14 @@ import {
   getAttachmentDownload,
   getAttachmentThumbnail,
   listConversationMedia,
+  listStickerPacks,
   retryAttachment,
+  searchGifs,
 } from "@/features/media/api/http";
 import { mediaKeys } from "@/features/media/api/keys";
 import {
   GALLERY_FIRST_PAGE,
+  GIF_SEARCH_MIN_QUERY_LENGTH,
   MEDIA_URL_STALE_BUFFER_MS,
   MEDIA_URL_STALE_MAX_MS,
   type GalleryKind,
@@ -56,5 +59,21 @@ export function useRetryAttachment() {
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: mediaKeys.all });
     },
+  });
+}
+
+export function useStickerPacks() {
+  return useQuery({
+    queryFn: listStickerPacks,
+    queryKey: mediaKeys.stickerPacks(),
+  });
+}
+
+export function useGifSearch(query: string, enabled = true) {
+  const q = query.trim();
+  return useQuery({
+    enabled: enabled && q.length >= GIF_SEARCH_MIN_QUERY_LENGTH,
+    queryFn: () => searchGifs(q),
+    queryKey: mediaKeys.gifs(q),
   });
 }

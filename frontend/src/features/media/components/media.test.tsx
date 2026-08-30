@@ -10,13 +10,14 @@ import { MediaLightbox } from "@/features/media/components/media-lightbox";
 import { albumCellRadius, computeAlbumLayout } from "@/features/media/model/layout";
 import {
   MEDIA_URL_STALE_MAX_MS,
+  GIF_SEARCH_MIN_QUERY_LENGTH,
   aspectStyle,
   clampedAspect,
   extraAlbumCount,
   isImageAttachment,
   isVisualAttachment,
 } from "@/features/media/model/constants";
-import { getAttachmentDownload, listConversationMedia } from "@/features/media/api/http";
+import { getAttachmentDownload, listConversationMedia, listStickerPacks, searchGifs } from "@/features/media/api/http";
 import { mediaKeys } from "@/features/media/api/keys";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { testSession } from "@/test/access-session";
@@ -25,7 +26,7 @@ import { nextLightboxZoom, wrapLightboxIndex } from "@/features/media/model/ligh
 import { paintBlurhash, progressiveStage } from "@/features/media/model/progressive";
 import { isPreviewableName, uploadProgressWidth } from "@/features/media/model/upload";
 import { nextPlaybackRate, playbackRateLabel, seekFraction, voiceProgress } from "@/features/media/model/voice";
-import { mediaUrlStaleTime } from "@/features/media/api/queries";
+import { mediaUrlStaleTime, useGifSearch, useStickerPacks } from "@/features/media/api/queries";
 import { resetVoicePlayer, useVoicePlayerStore } from "@/features/media/store/voice-player";
 import { en } from "@/shared/lib/i18n/catalog";
 
@@ -87,6 +88,9 @@ describe("media models", () => {
     expect(isPreviewableName("a.bin")).toBe(false);
     expect(isPreviewableName("x", "video/mp4")).toBe(true);
     expect(mediaKeys.gallery(1, "images")[1]).toBe("gallery");
+    expect(mediaKeys.gifs("hi")[1]).toBe("gifs");
+    expect(mediaKeys.stickerPacks()[1]).toBe("sticker_packs");
+    expect(GIF_SEARCH_MIN_QUERY_LENGTH).toBeGreaterThan(0);
     expect(mediaUrlStaleTime("not-a-date")).toBe(0);
     expect(mediaUrlStaleTime(new Date(Date.now() + 60_000).toISOString(), Date.now())).toBeGreaterThan(0);
     expect(mediaUrlStaleTime("2099-01-01T00:00:00.000Z", Date.now())).toBe(MEDIA_URL_STALE_MAX_MS);
@@ -335,5 +339,37 @@ describe("media http", () => {
     await expect(listConversationMedia(1, "images", 1)).resolves.toMatchObject({
       meta: { has_more: true },
     });
+    await expect(listStickerPacks()).resolves.toMatchObject({ sticker_packs: [{ id: 1 }] });
+    await expect(searchGifs("party")).resolves.toMatchObject({ gifs: [{ id: "tenor-1" }] });
+    await expect(searchGifs("fail")).rejects.toThrow();
+  });
+});
+
+function PickerQueryHarness() {
+  const packs = useStickerPacks();
+  const gifs = useGifSearch("party");
+  const short = useGifSearch("p");
+  return (
+    <div>
+      <p data-packs={packs.isSuccess ? "yes" : "no"}>{packs.data?.sticker_packs.length ?? 0}</p>
+      <p data-gifs={gifs.isSuccess ? "yes" : "no"}>{gifs.data?.gifs.length ?? 0}</p>
+      <p data-short={short.fetchStatus} />
+    </div>
+  );
+}
+
+describe("sticker and gif queries", () => {
+  it("loads packs and searches GIFs only after the minimum query length", async () => {
+    setAccessSession(testSession());
+    render(
+      <AppProviders>
+        <PickerQueryHarness />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(document.querySelector("[data-packs]")?.textContent).toBe("1");
+      expect(document.querySelector("[data-gifs]")?.textContent).toBe("1");
+    });
+    expect(document.querySelector("[data-short]")?.getAttribute("data-short")).toBe("idle");
   });
 });

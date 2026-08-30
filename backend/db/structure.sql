@@ -2118,6 +2118,75 @@ ALTER SEQUENCE public.solid_queue_semaphores_id_seq OWNED BY public.solid_queue_
 
 
 --
+-- Name: sticker_packs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sticker_packs (
+    id bigint NOT NULL,
+    slug public.citext NOT NULL,
+    name text NOT NULL,
+    kind character varying NOT NULL,
+    owner_account_id bigint,
+    published_at timestamp(6) without time zone,
+    "position" integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT ck_sticker_packs_kind CHECK (((kind)::text = ANY ((ARRAY['sticker'::character varying, 'emoji'::character varying])::text[])))
+);
+
+
+--
+-- Name: sticker_packs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.sticker_packs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: sticker_packs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.sticker_packs_id_seq OWNED BY public.sticker_packs.id;
+
+
+--
+-- Name: stickers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.stickers (
+    id bigint NOT NULL,
+    sticker_pack_id bigint NOT NULL,
+    shortcode public.citext NOT NULL,
+    blob_id bigint NOT NULL,
+    "position" smallint DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: stickers_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.stickers_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: stickers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.stickers_id_seq OWNED BY public.stickers.id;
+
+
+--
 -- Name: storage_buckets; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2747,6 +2816,20 @@ ALTER TABLE ONLY public.solid_queue_semaphores ALTER COLUMN id SET DEFAULT nextv
 
 
 --
+-- Name: sticker_packs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sticker_packs ALTER COLUMN id SET DEFAULT nextval('public.sticker_packs_id_seq'::regclass);
+
+
+--
+-- Name: stickers id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stickers ALTER COLUMN id SET DEFAULT nextval('public.stickers_id_seq'::regclass);
+
+
+--
 -- Name: storage_buckets id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3277,6 +3360,22 @@ ALTER TABLE ONLY public.solid_queue_semaphores
 
 
 --
+-- Name: sticker_packs sticker_packs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sticker_packs
+    ADD CONSTRAINT sticker_packs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: stickers stickers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stickers
+    ADD CONSTRAINT stickers_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: storage_buckets storage_buckets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3575,6 +3674,27 @@ CREATE UNIQUE INDEX idx_saved_messages_unique ON public.saved_messages USING btr
 --
 
 CREATE UNIQUE INDEX idx_saved_replies_shortcut ON public.saved_replies USING btree (account_id, shortcut);
+
+
+--
+-- Name: index_sticker_packs_on_slug; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_sticker_packs_on_slug ON public.sticker_packs USING btree (slug);
+
+
+--
+-- Name: index_stickers_on_blob_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_stickers_on_blob_id ON public.stickers USING btree (blob_id);
+
+
+--
+-- Name: index_stickers_on_sticker_pack_id_and_shortcode; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_stickers_on_sticker_pack_id_and_shortcode ON public.stickers USING btree (sticker_pack_id, shortcode);
 
 
 --
@@ -4906,6 +5026,30 @@ ALTER TABLE ONLY public.storage_quotas
 
 
 --
+-- Name: sticker_packs fk_sticker_packs_owner; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sticker_packs
+    ADD CONSTRAINT fk_sticker_packs_owner FOREIGN KEY (owner_account_id) REFERENCES public.accounts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: stickers fk_stickers_blob; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stickers
+    ADD CONSTRAINT fk_stickers_blob FOREIGN KEY (blob_id) REFERENCES public.active_storage_blobs(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: stickers fk_stickers_pack; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.stickers
+    ADD CONSTRAINT fk_stickers_pack FOREIGN KEY (sticker_pack_id) REFERENCES public.sticker_packs(id) ON DELETE CASCADE;
+
+
+--
 -- Name: preferences fk_rails_e25e938d7c; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4960,6 +5104,7 @@ ALTER TABLE ONLY public.message_link_previews
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260830223100'),
 ('20260830203400'),
 ('20260830193700'),
 ('20260830100000'),

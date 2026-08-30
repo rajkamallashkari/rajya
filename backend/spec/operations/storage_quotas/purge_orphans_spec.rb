@@ -21,4 +21,13 @@ RSpec.describe StorageQuotas::PurgeOrphans do
     described_class.call
     expect(ActiveStorage::Blob.exists?(preview.id)).to be(true)
   end
+
+  it "does not purge blobs referenced by stickers" do
+    blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("s"), filename: "s.png")
+    blob.update_column(:created_at, 2.hours.ago)
+    create(:sticker, blob: blob)
+
+    described_class.call
+    expect(ActiveStorage::Blob.exists?(blob.id)).to be(true)
+  end
 end

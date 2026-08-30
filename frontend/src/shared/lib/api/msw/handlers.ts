@@ -186,6 +186,30 @@ const savedReply = {
   created_at: MESSAGE_STAMP,
   updated_at: MESSAGE_STAMP,
 };
+const stickerItem = {
+  id: 1,
+  position: 0,
+  shortcode: "wave",
+  sticker_pack_id: 1,
+  url: "https://media.test/sticker.png",
+};
+const stickerPack = {
+  created_at: MESSAGE_STAMP,
+  id: 1,
+  kind: "sticker" as const,
+  name: "Waves",
+  owner_account_id: null,
+  position: 0,
+  published_at: MESSAGE_STAMP,
+  slug: "waves",
+  stickers: [stickerItem],
+  updated_at: MESSAGE_STAMP,
+};
+const gifItem = {
+  id: "tenor-1",
+  preview_url: "https://media.test/gif.gif",
+  title: "Party",
+};
 const messageReminder = {
   id: 1,
   message_id: 101,
@@ -323,6 +347,13 @@ export const handlerMap = {
       skip_upload: true,
     }),
   ),
+  "/api/v1/gifs": http.get("*/api/v1/gifs", ({ request }) => {
+    const query = new URL(request.url).searchParams.get("q") ?? "";
+    if (query === "fail") {
+      return jsonError(404);
+    }
+    return HttpResponse.json({ gifs: [gifItem] });
+  }),
   "/api/v1/blocks": http.all("*/api/v1/blocks", ({ request }) => {
     if (request.method === "POST") {
       return HttpResponse.json({ account: session.account }, { status: 201 });
@@ -749,6 +780,26 @@ export const handlerMap = {
     }
     return HttpResponse.json({ saved_replies: [savedReply] });
   }),
+  "/api/v1/sticker_packs": http.all("*/api/v1/sticker_packs", ({ request }) => {
+    if (request.method === "POST") {
+      return HttpResponse.json(stickerPack, { status: 201 });
+    }
+    return HttpResponse.json({ sticker_packs: [stickerPack] });
+  }),
+  "/api/v1/sticker_packs/{id}": http.all("*/api/v1/sticker_packs/:id", ({ request }) => {
+    if (request.method === "PATCH") {
+      return HttpResponse.json(stickerPack);
+    }
+    return HttpResponse.json(ok);
+  }),
+  "/api/v1/sticker_packs/{sticker_pack_id}/stickers": http.post(
+    "*/api/v1/sticker_packs/:sticker_pack_id/stickers",
+    () => HttpResponse.json(stickerItem, { status: 201 }),
+  ),
+  "/api/v1/sticker_packs/{sticker_pack_id}/stickers/{id}": http.delete(
+    "*/api/v1/sticker_packs/:sticker_pack_id/stickers/:id",
+    okResponse,
+  ),
   "/api/v1/message_reminders/{id}": http.all("*/api/v1/message_reminders/:id", ({ request }) => {
     if (request.method === "PATCH") {
       return HttpResponse.json(messageReminder);

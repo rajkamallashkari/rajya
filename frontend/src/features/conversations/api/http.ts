@@ -110,6 +110,7 @@ export async function sendMessage(body: {
   client_nonce?: string;
   contacts?: components["schemas"]["MessageContact"][];
   conversation_id: number;
+  gif_id?: string;
   location?: components["schemas"]["MessageLocation"];
   poll?: {
     allows_multiple?: boolean;
@@ -120,6 +121,7 @@ export async function sendMessage(body: {
   };
   reply_to_message_id?: number;
   silent?: boolean;
+  sticker_id?: number;
 }) {
   return unwrap(
     await apiClient().POST("/api/v1/messages", { headers: bearerHeaders(), body }),

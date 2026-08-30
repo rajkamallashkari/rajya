@@ -199,6 +199,50 @@ module Settings
         type: :integer, category: :media, default: 30, min: 1, max: 100,
         description: "Items per page in the per-conversation media/files/links gallery."
       },
+      gif_search_limit: {
+        type: :integer, category: :media, default: 16, min: 1, max: 50,
+        description: "Maximum Tenor GIF search results returned by the proxy (NR-29)."
+      },
+      gif_search_min_query_length: {
+        type: :integer, category: :media, default: 2, min: 1, max: 10,
+        description: "Minimum characters before a GIF search is executed (NR-29)."
+      },
+      sticker_pack_max_bytes: {
+        type: :integer, category: :media, default: 5_242_880, min: 1,
+        description: "Maximum total blob bytes in one sticker or emoji pack (NR-28)."
+      },
+      sticker_pack_max_items: {
+        type: :integer, category: :media, default: 80, min: 1, max: 500,
+        description: "Maximum stickers or custom emoji in one pack (NR-28)."
+      },
+      sticker_pack_name_max_length: {
+        type: :integer, category: :media, default: 64, min: 1, max: 200,
+        description: "Maximum characters in a sticker pack name (NR-28)."
+      },
+      sticker_pack_slug_max_length: {
+        type: :integer, category: :media, default: 48, min: 1, max: 80,
+        description: "Maximum characters in a sticker pack slug (NR-28)."
+      },
+      sticker_shortcode_max_length: {
+        type: :integer, category: :media, default: 32, min: 1, max: 64,
+        description: "Maximum characters in a sticker or custom-emoji shortcode (NR-28)."
+      },
+      sticker_storage_max_bytes: {
+        type: :integer, category: :media, default: 52_428_800, min: 1,
+        description: "Maximum sticker/emoji bytes per owner, or across all system packs (NR-28, S-19)."
+      },
+      tenor_api_key: {
+        type: :string, category: :media, default: "",
+        description: "Tenor API key for the server-side GIF proxy; blank disables search (NR-29)."
+      },
+      tenor_client_key: {
+        type: :string, category: :media, default: "rajya",
+        description: "Tenor client_key sent with GIF search requests (NR-29)."
+      },
+      tenor_host: {
+        type: :string, category: :media, default: "tenor.googleapis.com",
+        description: "Tenor API host for the GIF proxy (NR-29)."
+      },
       blocked_upload_extensions: {
         type: :array, category: :media,
         default: %w[

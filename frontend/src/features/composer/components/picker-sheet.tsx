@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   applySkinTone,
@@ -18,33 +18,50 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
 export function PickerSheet({
   gifs,
+  gifUnavailable = false,
+  initialTab = "emoji",
+  onGifQueryChange,
   onOpenChange,
   onPickEmoji,
   onPickGif,
   onPickReply,
   onPickSticker,
   open,
+  remoteGifs = false,
   replies,
   stickers,
 }: {
+  gifUnavailable?: boolean;
   gifs: GifView[];
+  initialTab?: PickerTab;
+  onGifQueryChange?: (query: string) => void;
   onOpenChange: (open: boolean) => void;
   onPickEmoji: (emoji: string) => void;
   onPickGif: (gif: GifView) => void;
   onPickReply: (reply: SavedReplyView) => void;
   onPickSticker: (sticker: StickerView) => void;
   open: boolean;
+  remoteGifs?: boolean;
   replies: SavedReplyView[];
   stickers: StickerView[];
 }) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<PickerTab>("emoji");
+  const [tab, setTab] = useState<PickerTab>(initialTab);
   const [recent, setRecent] = useState<string[]>([]);
   const [gifQuery, setGifQuery] = useState("");
   const [replyQuery, setReplyQuery] = useState("");
   const tone = Number.parseInt(document.documentElement.dataset.skinTone ?? "0", 10) || 0;
-  const gifHits = useMemo(() => filterGifs(gifs, gifQuery), [gifs, gifQuery]);
+  const gifHits = useMemo(
+    () => (remoteGifs ? gifs : filterGifs(gifs, gifQuery)),
+    [gifs, gifQuery, remoteGifs],
+  );
   const replyHits = useMemo(() => filterReplies(replies, replyQuery), [replies, replyQuery]);
+
+  useEffect(() => {
+    if (open) {
+      setTab(initialTab);
+    }
+  }, [initialTab, open]);
 
   function pickEmoji(emoji: string): void {
     const next = applySkinTone(emoji, tone);
@@ -87,7 +104,11 @@ export function PickerSheet({
                     type="button"
                     variant="ghost"
                   >
-                    {sticker.shortcode}
+                    {sticker.url ? (
+                      <img alt={sticker.shortcode} className="mx-auto size-[var(--space-8)]" src={sticker.url} />
+                    ) : (
+                      sticker.shortcode
+                    )}
                   </Button>
                 ))}
               </div>
@@ -95,11 +116,16 @@ export function PickerSheet({
           </TabsContent>
           <TabsContent value="gifs">
             <Input
-              onChange={(event) => setGifQuery(event.target.value)}
+              onChange={(event) => {
+                setGifQuery(event.target.value);
+                onGifQueryChange?.(event.target.value);
+              }}
               placeholder={t("picker.search_gifs")}
               value={gifQuery}
             />
-            {gifHits.length === 0 ? (
+            {gifUnavailable ? (
+              <EmptyState title={t("picker.unavailable_gifs")} />
+            ) : gifHits.length === 0 ? (
               <EmptyState title={t("picker.empty_gifs")} />
             ) : (
               <ul className="mt-[var(--space-2)] grid grid-cols-2 gap-[var(--space-2)]">
@@ -111,7 +137,11 @@ export function PickerSheet({
                       type="button"
                       variant="ghost"
                     >
-                      {gif.previewLabel}
+                      {gif.previewUrl ? (
+                        <img alt={gif.title} className="mx-auto max-h-[var(--space-16)]" src={gif.previewUrl} />
+                      ) : (
+                        gif.previewLabel
+                      )}
                     </Button>
                   </li>
                 ))}

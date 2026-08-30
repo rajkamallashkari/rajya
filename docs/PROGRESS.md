@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 7.2 |
-| **Next session** | 7.3 |
+| **Last completed** | 7.3 |
+| **Next session** | 7.4 |
 | **Phase** | P7 — Media |
-| **Sessions remaining in phase** | 2 (7.3–7.4) |
+| **Sessions remaining in phase** | 1 (7.4) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 7.3 — Sticker packs and custom emoji (NR-28) with quota attribution, GIF proxy (NR-29) behind a flag**
+**Session 7.4 — Voice transcription (NR-33) via Groq whisper through the AI registry, low-priority queue, flag-gated (default on) and failing visibly; location and contact rendering (NR-30, NR-31); export jobs (NR-32)**
 
-Deliverable: **Sticker packs and custom emoji (NR-28)** with quota attribution, **GIF proxy (NR-29)** behind a flag
+Deliverable: **Voice transcription (NR-33)** via Groq whisper through the AI registry, low-priority queue, flag-gated (default on) and failing visibly; location and contact rendering (NR-30, NR-31); **export jobs (NR-32)**
 
-Docs: SCHEMA §12.5, §12.16, S-19
+Docs: SCHEMA §12.4, §12.13, §12.16, S-23; TARGET §6.3, §8
 
-Legacy to read: None — new features
+Legacy to read: `cognify/app/jobs/process_attachment_job.rb` — the pipeline transcription hangs off, and the swallowed-rescue mistake not to repeat
 
 ---
 
@@ -65,6 +65,7 @@ Legacy to read: None — new features
 | 6.5 | Reporting (NR-39) submission: report sheet, pending-subject dedupe, admin mail and `report_created` | Second pending report by the same reporter on the same subject is `conflict`; a new one is accepted after resolve. Reasons come from `app_settings` (S-21). Wired from message and profile menus. Playwright P6 flow (including report) waits; the admin queue waits for P12.6. |
 | 7.1 | Upload, buckets, quotas, processing pipeline, MIME sniffing, authorization | Presign + Marcel sniff (BR-89), per-type caps (BR-88), checksum reuse (BR-90), lowest-priority bucket routing (BR-91), membership-checked 5-min URLs (BR-94, F-16). Quota charges on first blob use only; unsend does not decrement (BR-92); reconcile repairs unique owned blobs (F-5). Processing failures set `processing_status=failed` with catalog copy (F-17); `thumbnail_blob_id` is gone (F-18). Lightbox, galleries, and failed-state UI wait for 7.2. |
 | 7.2 | Progressive rendering, album grid, lightbox, galleries, voice playback | Blurhash → thumb → full without layout shift; Telegram mosaic album; lightbox zoom/prev/next; per-chat Media/files/links gallery (`gallery_page_size`); one global voice player with speed and seek; failed attachments retry. Composer still uses chips (DS-13). Stickers/GIFs wait for 7.3. Playwright send-photo/voice/file waits for phase DoD. |
+| 7.3 | Sticker packs and custom emoji (NR-28), GIF proxy (NR-29) | Packs with S-19 quota attribution (system packs charge the global bucket; first sticker add charges, send reuses the blob). GIF search via Tenor behind `gif_search` (default off; flag-off 404). Composer opens the picker from `/sticker` and `/gif` only (DS-13). Admin pack UI waits for 12.6. Playwright send-sticker/GIF waits for phase DoD. |
 
 ---
 

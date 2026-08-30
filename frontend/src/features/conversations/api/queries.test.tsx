@@ -76,6 +76,12 @@ function EmptyHarness() {
       <Button onClick={() => send.mutate({ body: "empty-send", client_nonce: "e" })} type="button">
         empty-send
       </Button>
+      <Button onClick={() => send.mutate({ client_nonce: "sticker", sticker_id: 1 })} type="button">
+        send-sticker
+      </Button>
+      <Button onClick={() => send.mutate({ client_nonce: "blank" })} type="button">
+        send-blank
+      </Button>
     </div>
   );
 }
@@ -329,6 +335,42 @@ describe("message queries", () => {
       expect(screen.getByText("0")).toBeInTheDocument();
     });
     await user.click(screen.getByRole("button", { name: "empty-send" }));
+    await waitFor(() => {
+      expect(screen.getByText("1")).toBeInTheDocument();
+    });
+  });
+
+  it("sends a sticker without the text outbox", async () => {
+    const user = userEvent.setup();
+    seedPositions(9, 0);
+    setAccessSession(testSession());
+    render(
+      <AppProviders>
+        <EmptyHarness />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText("0")).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: "send-sticker" }));
+    await waitFor(() => {
+      expect(screen.getByText("1")).toBeInTheDocument();
+    });
+  });
+
+  it("queues a body-less send through the outbox", async () => {
+    const user = userEvent.setup();
+    seedPositions(9, 0);
+    setAccessSession(testSession());
+    render(
+      <AppProviders>
+        <EmptyHarness />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText("0")).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: "send-blank" }));
     await waitFor(() => {
       expect(screen.getByText("1")).toBeInTheDocument();
     });

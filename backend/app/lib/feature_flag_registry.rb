@@ -54,7 +54,8 @@ module FeatureFlagRegistry
     ai_summarize: "Summarize unread messages on demand.",
     ai_smart_reply: "On-demand reply suggestions.",
     ai_translate: "Per-message translation.",
-    webrtc_calls: "P2P audio/video via Cable signaling."
+    webrtc_calls: "P2P audio/video via Cable signaling.",
+    gif_search: "Server-side Tenor GIF search proxy (NR-29)."
   }.freeze
 
   DEFINITIONS = DESCRIPTIONS.keys.index_with do |key|

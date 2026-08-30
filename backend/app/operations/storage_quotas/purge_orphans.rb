@@ -18,6 +18,7 @@ module StorageQuotas
       ActiveStorage::Blob
         .where("created_at < ?", Settings.fetch(:orphan_blob_max_age).seconds.ago)
         .where.not(id: ActiveStorage::Attachment.select(:blob_id))
+        .where.not(id: Sticker.select(:blob_id))
         .where.not("key LIKE ?", like)
       # rubocop:enable Rajya/NoUserFacingStrings
     end

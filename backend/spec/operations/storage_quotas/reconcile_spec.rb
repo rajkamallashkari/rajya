@@ -17,6 +17,23 @@ RSpec.describe StorageQuotas::Reconcile do
     expect(quota.recomputed_at).to be_present
   end
 
+  it "attributes user-pack sticker blobs to the owner and not to a later sender" do
+    owner = create(:user)
+    sender = create(:user)
+    blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("img"), filename: "a.png")
+    pack = create(:sticker_pack, owner_account: owner.account)
+    create(:sticker, sticker_pack: pack, blob: blob)
+    copy = create(:attachment, message: create(:message, sender_account: sender.account))
+    copy.file.attach(blob)
+    create(:storage_quota, account: owner.account, used_bytes: 0)
+    create(:storage_quota, account: sender.account, used_bytes: 99)
+
+    described_class.call
+
+    expect(StorageQuota.find(owner.account.id).used_bytes).to eq(blob.byte_size)
+    expect(StorageQuota.find(sender.account.id).used_bytes).to eq(0)
+  end
+
   it "repairs bucket used_bytes without double-counting shared blobs" do
     bucket = create(:storage_bucket, service_name: "test", used_bytes: 50)
     blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("img"), filename: "a.png")
@@ -50,6 +67,17 @@ RSpec.describe StorageQuotas::Reconcile do
 
     expect(overflowing.reload.status).to eq("full")
     expect(reopened.reload.status).to eq("active")
+  end
+
+  it "counts sticker blobs toward bucket usage" do
+    bucket = create(:storage_bucket, service_name: "test", used_bytes: 0)
+    blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("img"), filename: "s.png")
+    blob.update_column(:service_name, "test")
+    create(:sticker, blob: blob)
+
+    described_class.call
+
+    expect(bucket.reload.used_bytes).to eq(blob.byte_size)
   end
 
   it "leaves a failed bucket's status unchanged" do

@@ -83,7 +83,9 @@ module Api
           poll: params[:poll],
           location: params[:location],
           contacts: params[:contacts],
-          silent: params[:silent]
+          silent: params[:silent],
+          sticker_id: params[:sticker_id],
+          gif_id: params[:gif_id]
         }
       end
     end

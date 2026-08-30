@@ -2,6 +2,12 @@ import { useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } fr
 import { useTranslation } from "react-i18next";
 import { getAccessSession } from "@/features/auth/model/access-session";
 import { Composer } from "@/features/composer";
+import {
+  gifsFromList,
+  stickerViewsFromPacks,
+  type GifView,
+  type StickerView,
+} from "@/features/composer/model/picker";
 import { postReceipts, type Message } from "@/features/conversations/api/http";
 import {
   useBulkForward,
@@ -35,6 +41,7 @@ import { THREAD_LOAD_OLDER_PX } from "@/features/conversations/model/constants";
 import { formatThreadDate, sameCalendarDay } from "@/features/conversations/model/dates";
 import { newClientNonce, parseConversationId } from "@/features/conversations/model/ids";
 import { conversationTitle } from "@/features/conversations/model/title";
+import { useGifSearch, useStickerPacks } from "@/features/media/api/queries";
 import {
   DateDivider,
   MessageContextMenu,
@@ -172,6 +179,9 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const pinned = usePinnedIds(conversationId);
   const saved = useSavedIds();
   const savedReplies = useSavedReplies();
+  const packs = useStickerPacks();
+  const [gifQuery, setGifQuery] = useState("");
+  const gifs = useGifSearch(gifQuery);
   const remind = useCreateReminder();
   const [infoId, setInfoId] = useState<number | null>(null);
   const [remindId, setRemindId] = useState<number | null>(null);
@@ -365,7 +375,18 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           }
           setDraft("");
         }}
+        onGifQueryChange={setGifQuery}
+        onPickGif={(gif: GifView) => {
+          send.mutate({ client_nonce: newClientNonce(), gif_id: gif.id });
+        }}
+        onPickSticker={(sticker: StickerView) => {
+          send.mutate({ client_nonce: newClientNonce(), sticker_id: Number(sticker.id) });
+        }}
+        remoteGifs
+        gifUnavailable={gifs.isError}
+        gifs={gifsFromList(gifs.data?.gifs)}
         savedReplies={savedReplyViews(savedReplies.data?.saved_replies)}
+        stickers={stickerViewsFromPacks(packs.data?.sticker_packs)}
         value={draft}
       />
       {menu ? (

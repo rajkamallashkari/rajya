@@ -618,8 +618,11 @@
     "replies": "Replies",
     "search_gifs": "Search GIFs",
     "search_replies": "Search replies",
+    "slash_gifs": "Search GIFs",
+    "slash_stickers": "Browse stickers",
     "stickers": "Stickers",
-    "title": "Stickers and emoji"
+    "title": "Stickers and emoji",
+    "unavailable_gifs": "GIF search is unavailable"
   },
   "location": {
     "accuracy": "Accurate to {{meters}} m",

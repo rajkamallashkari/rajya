@@ -8,6 +8,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { PickerSheet } from "@/features/composer/components/picker-sheet";
 import {
   ComposerAttachmentChips,
   ComposerScheduleBar,
@@ -23,8 +24,14 @@ import {
 import {
   expandSavedReplyShortcut,
   filterCommands,
+  isPickerSlash,
+  pickerTabForSlash,
   savedRepliesAsCommands,
+  type GifView,
+  type PickerTab,
   type SavedReplyView,
+  type SlashCommand,
+  type StickerView,
 } from "@/features/composer/model/picker";
 import { selectVoicePeaks } from "@/features/composer/model/waveform";
 import { usePressHold } from "@/shared/hooks/use-press-hold";
@@ -51,11 +58,16 @@ export function Composer({
   attachments = [],
   defaultValue = "",
   editing = false,
+  gifUnavailable = false,
+  gifs = [],
   onAttach,
   onChange,
   onDismissEdit,
   onDismissReply,
   onEditLast,
+  onGifQueryChange,
+  onPickGif,
+  onPickSticker,
   onRemoveAttachment,
   onRewrite,
   onSchedule,
@@ -64,31 +76,40 @@ export function Composer({
   onSend,
   onVoiceSend,
   placeholder,
+  remoteGifs = false,
   replyTo,
   savedReplies = [],
   scheduledLabel,
+  stickers = [],
   value,
   voice,
 }: {
   attachments?: ComposerAttachment[];
   defaultValue?: string;
   editing?: boolean;
+  gifUnavailable?: boolean;
+  gifs?: GifView[];
   onAttach?: () => void;
   onChange?: (value: string) => void;
   onClearSchedule?: () => void;
   onDismissEdit?: () => void;
   onDismissReply?: () => void;
   onEditLast?: () => void;
+  onGifQueryChange?: (query: string) => void;
   onOpenSchedule?: () => void;
+  onPickGif?: (gif: GifView) => void;
+  onPickSticker?: (sticker: StickerView) => void;
   onRemoveAttachment?: (id: string) => void;
   onRewrite?: () => void;
   onSchedule?: () => void;
   onSend: (payload: ComposerSendPayload) => void;
   onVoiceSend?: (payload: ComposerVoicePayload) => void;
   placeholder?: string;
+  remoteGifs?: boolean;
   replyTo?: ComposerReply | null;
   savedReplies?: SavedReplyView[];
   scheduledLabel?: string | null;
+  stickers?: StickerView[];
   value?: string;
   voice?: VoiceRecorderResult;
 }) {
@@ -97,6 +118,8 @@ export function Composer({
   const recorder = voice ?? hooked;
   const [uncontrolled, setUncontrolled] = useState(defaultValue);
   const [sendMenuOpen, setSendMenuOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerTab, setPickerTab] = useState<PickerTab>("emoji");
   const pendingVoiceSend = useRef(false);
   const controlled = value !== undefined;
   const text = controlled ? value : uncontrolled;
@@ -193,6 +216,11 @@ export function Composer({
       onEditLast?.();
     }
     if (event.key === SHORTCUTS.popLayer) {
+      if (pickerOpen) {
+        event.stopPropagation();
+        setPickerOpen(false);
+        return;
+      }
       if (sendMenuOpen) {
         event.stopPropagation();
         setSendMenuOpen(false);
@@ -248,7 +276,28 @@ export function Composer({
   ].filter((item) => !item.hidden);
 
   const replyCommands = savedRepliesAsCommands(savedReplies);
-  const slashMatches = text.startsWith("/") ? filterCommands(replyCommands, text) : [];
+  const pickerCommands: SlashCommand[] = [
+    { description: t("picker.slash_stickers"), name: "sticker", source: "builtin" },
+    { description: t("picker.slash_gifs"), name: "gif", source: "builtin" },
+  ];
+  const slashMatches = text.startsWith("/")
+    ? filterCommands([...pickerCommands, ...replyCommands], text)
+    : [];
+
+  function openPicker(tab: PickerTab): void {
+    setPickerTab(tab);
+    setPickerOpen(true);
+  }
+
+  function onSlashSelect(command: SlashCommand): void {
+    const tab = pickerTabForSlash(command.name);
+    if (tab && isPickerSlash(command.name)) {
+      setText("");
+      openPicker(tab);
+      return;
+    }
+    setText(`${command.description} `);
+  }
 
   return (
     <div
@@ -272,8 +321,8 @@ export function Composer({
       {slashMatches.length > 0 ? (
         <div className="px-[var(--space-3)] pb-[var(--space-2)]">
           <SlashCommandMenu
-            commands={replyCommands}
-            onSelect={(command) => setText(`${command.description} `)}
+            commands={[...pickerCommands, ...replyCommands]}
+            onSelect={onSlashSelect}
             query={text}
           />
         </div>
@@ -355,6 +404,30 @@ export function Composer({
           </>
         )}
       </form>
+      <PickerSheet
+        gifUnavailable={gifUnavailable}
+        gifs={gifs}
+        initialTab={pickerTab}
+        onGifQueryChange={onGifQueryChange}
+        onOpenChange={setPickerOpen}
+        onPickEmoji={(emoji) => setText(`${text}${emoji}`)}
+        onPickGif={(gif) => {
+          setPickerOpen(false);
+          onPickGif?.(gif);
+        }}
+        onPickReply={(reply) => {
+          setPickerOpen(false);
+          setText(`${reply.body} `);
+        }}
+        onPickSticker={(sticker) => {
+          setPickerOpen(false);
+          onPickSticker?.(sticker);
+        }}
+        open={pickerOpen}
+        remoteGifs={remoteGifs}
+        replies={savedReplies}
+        stickers={stickers}
+      />
     </div>
   );
 }

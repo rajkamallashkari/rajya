@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import registry from "@/shared/lib/config/settings-registry.json";
 import type { components } from "@/shared/lib/api/schema";
 
 export type Attachment = components["schemas"]["Attachment"];
@@ -33,6 +34,7 @@ export const MEDIA_URL_STALE_MAX_MS = 86_400_000;
 export const LIGHTBOX_MAX_ZOOM = 3;
 export const LIGHTBOX_ZOOM_STEP = 1;
 export const GALLERY_FIRST_PAGE = 1;
+export const GIF_SEARCH_MIN_QUERY_LENGTH = registry.gif_search_min_query_length.default as number;
 
 export const IMAGE_KINDS = new Set(["image"]);
 export const ALBUM_KINDS = new Set(["image"]);

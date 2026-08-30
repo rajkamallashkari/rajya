@@ -442,6 +442,105 @@
     "max": 100,
     "allow_nil": false
   },
+  "gif_search_limit": {
+    "type": "integer",
+    "category": "media",
+    "default": 16,
+    "description": "Maximum Tenor GIF search results returned by the proxy (NR-29).",
+    "min": 1,
+    "max": 50,
+    "allow_nil": false
+  },
+  "gif_search_min_query_length": {
+    "type": "integer",
+    "category": "media",
+    "default": 2,
+    "description": "Minimum characters before a GIF search is executed (NR-29).",
+    "min": 1,
+    "max": 10,
+    "allow_nil": false
+  },
+  "sticker_pack_max_bytes": {
+    "type": "integer",
+    "category": "media",
+    "default": 5242880,
+    "description": "Maximum total blob bytes in one sticker or emoji pack (NR-28).",
+    "min": 1,
+    "max": null,
+    "allow_nil": false
+  },
+  "sticker_pack_max_items": {
+    "type": "integer",
+    "category": "media",
+    "default": 80,
+    "description": "Maximum stickers or custom emoji in one pack (NR-28).",
+    "min": 1,
+    "max": 500,
+    "allow_nil": false
+  },
+  "sticker_pack_name_max_length": {
+    "type": "integer",
+    "category": "media",
+    "default": 64,
+    "description": "Maximum characters in a sticker pack name (NR-28).",
+    "min": 1,
+    "max": 200,
+    "allow_nil": false
+  },
+  "sticker_pack_slug_max_length": {
+    "type": "integer",
+    "category": "media",
+    "default": 48,
+    "description": "Maximum characters in a sticker pack slug (NR-28).",
+    "min": 1,
+    "max": 80,
+    "allow_nil": false
+  },
+  "sticker_shortcode_max_length": {
+    "type": "integer",
+    "category": "media",
+    "default": 32,
+    "description": "Maximum characters in a sticker or custom-emoji shortcode (NR-28).",
+    "min": 1,
+    "max": 64,
+    "allow_nil": false
+  },
+  "sticker_storage_max_bytes": {
+    "type": "integer",
+    "category": "media",
+    "default": 52428800,
+    "description": "Maximum sticker/emoji bytes per owner, or across all system packs (NR-28, S-19).",
+    "min": 1,
+    "max": null,
+    "allow_nil": false
+  },
+  "tenor_api_key": {
+    "type": "string",
+    "category": "media",
+    "default": "",
+    "description": "Tenor API key for the server-side GIF proxy; blank disables search (NR-29).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "tenor_client_key": {
+    "type": "string",
+    "category": "media",
+    "default": "rajya",
+    "description": "Tenor client_key sent with GIF search requests (NR-29).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "tenor_host": {
+    "type": "string",
+    "category": "media",
+    "default": "tenor.googleapis.com",
+    "description": "Tenor API host for the GIF proxy (NR-29).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
   "blocked_upload_extensions": {
     "type": "array",
     "category": "media",

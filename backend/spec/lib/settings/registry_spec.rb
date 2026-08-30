@@ -18,7 +18,8 @@ RSpec.describe Settings::Registry do
       :reminder_note_max_length, :saved_reply_shortcut_max_length,
       :presence_ttl, :last_active_debounce, :presence_offline_grace,
       :mention_everyone_limit, :mention_everyone_period, :slow_mode_presets,
-      :file_caps, :user_quota_bytes, :blocked_upload_extensions, :orphan_blob_max_age, :gallery_page_size
+      :file_caps, :user_quota_bytes, :blocked_upload_extensions, :orphan_blob_max_age, :gallery_page_size,
+      :sticker_pack_max_bytes, :gif_search_limit
     )
   end
 

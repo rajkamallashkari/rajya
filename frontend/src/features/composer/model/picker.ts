@@ -37,12 +37,30 @@ export interface StickerView {
   id: string;
   packId: string;
   shortcode: string;
+  url?: string | null;
 }
 
 export interface GifView {
   id: string;
   previewLabel: string;
+  previewUrl?: string | null;
   title: string;
+}
+
+export const PICKER_SLASH_NAMES = ["sticker", "gif"] as const;
+
+export function isPickerSlash(name: string): boolean {
+  return (PICKER_SLASH_NAMES as readonly string[]).includes(name);
+}
+
+export function pickerTabForSlash(name: string): PickerTab | null {
+  if (name === "sticker") {
+    return "stickers";
+  }
+  if (name === "gif") {
+    return "gifs";
+  }
+  return null;
 }
 
 export interface SavedReplyView {
@@ -65,6 +83,38 @@ export function rememberEmoji(recent: string[], emoji: string, cap = RECENT_EMOJ
     return next;
   }
   return next.slice(0, cap);
+}
+
+export function gifsFromList(
+  gifs: Array<{ id: string; preview_url: string; title: string }> | undefined,
+): GifView[] {
+  return (gifs ?? []).map((gif) => ({
+    id: gif.id,
+    previewLabel: gif.title,
+    previewUrl: gif.preview_url,
+    title: gif.title,
+  }));
+}
+
+export function stickerViewsFromPacks(
+  packs:
+    | Array<{
+        id: number;
+        kind: "emoji" | "sticker";
+        stickers: Array<{ id: number; shortcode: string; url?: string | null }>;
+      }>
+    | undefined,
+): StickerView[] {
+  return (packs ?? [])
+    .filter((pack) => pack.kind === "sticker")
+    .flatMap((pack) =>
+      pack.stickers.map((sticker) => ({
+        id: String(sticker.id),
+        packId: String(pack.id),
+        shortcode: sticker.shortcode,
+        url: sticker.url,
+      })),
+    );
 }
 
 export function filterGifs(items: GifView[], query: string): GifView[] {

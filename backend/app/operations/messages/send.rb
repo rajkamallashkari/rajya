@@ -2,7 +2,7 @@ module Messages
   class Send < ApplicationOperation
     def call(conversation:, sender:, body: nil, client_nonce: nil, reply_to_message_id: nil,
              attachment_signed_ids: [], voice_duration_ms: nil, voice_waveform: nil,
-             poll: nil, location: nil, contacts: nil, silent: false)
+             poll: nil, location: nil, contacts: nil, silent: false, sticker_id: nil, gif_id: nil)
       @conversation = conversation
       @sender = sender
       @body = body.to_s
@@ -16,8 +16,13 @@ module Messages
       @contacts = contacts
       @silent = ActiveModel::Type::Boolean.new.cast(silent)
       @silent = false if @silent.nil?
+      @sticker_id = sticker_id
+      @gif_id = gif_id
 
       return failure(:forbidden) unless ConversationPolicy.new(sender, conversation).send?
+
+      error = resolve_media_refs
+      return error if error
 
       error = authorize_content
       return error if error
@@ -49,6 +54,26 @@ module Messages
       unarchive_on_activity!
       publish!(message)
       success(message)
+    end
+
+    def resolve_media_refs
+      return failure(:validation_failed) if @sticker_id.present? && @gif_id.present?
+
+      if @sticker_id.present?
+        sticker = Sticker.find_by(id: @sticker_id)
+        return failure(:not_found) if sticker.nil?
+        return failure(:not_found) unless sticker.sticker_pack.visible_to?(@sender)
+        return failure(:validation_failed) unless sticker.sticker_pack.kind == "sticker"
+
+        @signed_ids = [ sticker.blob.signed_id ]
+      elsif @gif_id.present?
+        imported = Gifs::Import.call(account: @sender, gif_id: @gif_id)
+        return imported unless imported.success?
+
+        @signed_ids = [ imported.value.signed_id ]
+      end
+
+      nil
     end
 
     def authorize_content

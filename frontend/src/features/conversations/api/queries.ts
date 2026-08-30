@@ -281,19 +281,28 @@ function optimisticMessage(
   };
 }
 
+export type SendMessageInput = {
+  body?: string;
+  client_nonce: string;
+  gif_id?: string;
+  silent?: boolean;
+  sticker_id?: number;
+};
+
 export function useSendMessage(conversationId: number) {
   const queryClient = useQueryClient();
   const key = messageKeys.page(conversationId);
   return useMutation({
-    mutationFn: async (input: { body: string; client_nonce: string; silent?: boolean }) => {
+    mutationFn: async (input: SendMessageInput) => {
       const session = getAccessSession();
-      if (session == null) {
+      const skipOutbox = input.sticker_id != null || input.gif_id != null;
+      if (session == null || skipOutbox) {
         return sendMessage({ conversation_id: conversationId, ...input });
       }
       const result = await enqueueAndFlush(
         session.accountId,
         {
-          body: input.body,
+          body: input.body ?? "",
           conversationId,
           createdAt: new Date().toISOString(),
           id: input.client_nonce,
@@ -321,7 +330,12 @@ export function useSendMessage(conversationId: number) {
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<MessagePages>(key);
-      const optimistic = optimisticMessage(conversationId, input.body, input.client_nonce, input);
+      const optimistic = optimisticMessage(
+        conversationId,
+        input.body ?? "",
+        input.client_nonce,
+        input,
+      );
       optimistic.position = newestPosition(previous) + 1;
       if (previous) {
         queryClient.setQueryData(key, appendToNewest(previous, optimistic));

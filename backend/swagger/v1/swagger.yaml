@@ -1137,6 +1137,25 @@ paths:
                   type: string
                 content_type:
                   type: string
+  "/api/v1/gifs":
+    get:
+      summary: Search GIFs through the Tenor proxy
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/GifList"
   "/api/v1/conversations/{conversation_id}/invites":
     get:
       summary: List group invites
@@ -1484,6 +1503,10 @@ paths:
                       email:
                         type: string
                         nullable: true
+                sticker_id:
+                  type: integer
+                gif_id:
+                  type: string
   "/api/v1/messages/{id}":
     patch:
       summary: Edit a message
@@ -2260,6 +2283,159 @@ paths:
       responses:
         '200':
           description: revoked
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+  "/api/v1/sticker_packs":
+    get:
+      summary: List sticker and emoji packs
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/StickerPackList"
+    post:
+      summary: Create a sticker pack
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/StickerPack"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                kind:
+                  type: string
+                  enum:
+                  - sticker
+                  - emoji
+                slug:
+                  type: string
+                position:
+                  type: integer
+  "/api/v1/sticker_packs/{id}":
+    patch:
+      summary: Update a sticker pack
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/StickerPack"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                position:
+                  type: integer
+                published:
+                  type: boolean
+    delete:
+      summary: Delete a sticker pack
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: deleted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+  "/api/v1/sticker_packs/{sticker_pack_id}/stickers":
+    post:
+      summary: Add a sticker to a pack
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: sticker_pack_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Sticker"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                signed_id:
+                  type: string
+                shortcode:
+                  type: string
+                position:
+                  type: integer
+  "/api/v1/sticker_packs/{sticker_pack_id}/stickers/{id}":
+    delete:
+      summary: Remove a sticker from a pack
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: sticker_pack_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: deleted
           content:
             application/json:
               schema:
@@ -3937,6 +4113,96 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/SavedReply"
+    Sticker:
+      type: object
+      required:
+      - id
+      - sticker_pack_id
+      - shortcode
+      - position
+      properties:
+        id:
+          type: integer
+        sticker_pack_id:
+          type: integer
+        shortcode:
+          type: string
+        position:
+          type: integer
+        url:
+          type: string
+          nullable: true
+    StickerPack:
+      type: object
+      required:
+      - id
+      - slug
+      - name
+      - kind
+      - position
+      - stickers
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+          - sticker
+          - emoji
+        position:
+          type: integer
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        owner_account_id:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        stickers:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Sticker"
+    StickerPackList:
+      type: object
+      required:
+      - sticker_packs
+      properties:
+        sticker_packs:
+          type: array
+          items:
+            "$ref": "#/components/schemas/StickerPack"
+    Gif:
+      type: object
+      required:
+      - id
+      - title
+      - preview_url
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        preview_url:
+          type: string
+    GifList:
+      type: object
+      required:
+      - gifs
+      properties:
+        gifs:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Gif"
     Passkey:
       type: object
       required:

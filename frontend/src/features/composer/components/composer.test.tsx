@@ -277,4 +277,48 @@ describe("Composer", () => {
     await user.click(screen.getByRole("option"));
     expect(onChange).toHaveBeenCalledWith("On my way ");
   });
+
+  it("opens the sticker picker from a slash command without an extra composer button", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    const onPickSticker = vi.fn();
+    const onPickGif = vi.fn();
+    const onChange = vi.fn();
+    render(
+      <Composer
+        gifs={[{ id: "g1", previewLabel: "Party", title: "Party" }]}
+        onChange={onChange}
+        onPickGif={onPickGif}
+        onPickSticker={onPickSticker}
+        onSend={vi.fn()}
+        savedReplies={[{ body: "On my way", id: "1", shortcut: "/omw" }]}
+        stickers={[{ id: "9", packId: "1", shortcode: "wave" }]}
+      />,
+    );
+    expect(screen.getByLabelText(en.composer.mic)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: en.picker.title })).toBeNull();
+    await user.type(screen.getByRole("textbox"), "/sticker");
+    await user.click(screen.getByRole("option", { name: /sticker/i }));
+    expect(screen.getByText(en.picker.title)).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: en.picker.stickers }));
+    await user.click(screen.getByRole("button", { name: "wave" }));
+    expect(onPickSticker).toHaveBeenCalled();
+    await user.type(screen.getByRole("textbox"), "/gif");
+    await user.click(screen.getByRole("option", { name: /gif/i }));
+    await user.click(screen.getByRole("button", { name: "Party" }));
+    expect(onPickGif).toHaveBeenCalled();
+    await user.type(screen.getByRole("textbox"), "/gif");
+    await user.click(screen.getByRole("option", { name: /gif/i }));
+    await user.click(screen.getByRole("tab", { name: en.picker.emoji }));
+    await user.click(screen.getByRole("button", { name: "👍" }));
+    expect(onChange).toHaveBeenCalled();
+    await user.click(screen.getByRole("tab", { name: en.picker.replies }));
+    await user.click(screen.getByRole("button", { name: /omw/i }));
+    await user.clear(screen.getByRole("textbox"));
+    await user.type(screen.getByRole("textbox"), "/sticker");
+    await user.click(screen.getByRole("option", { name: /sticker/i }));
+    fireEvent.keyDown(document.querySelector("[data-composer] textarea") as HTMLTextAreaElement, {
+      key: "Escape",
+    });
+    expect(screen.queryByRole("dialog", { name: en.picker.title })).not.toBeInTheDocument();
+  });
 });

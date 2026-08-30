@@ -120,6 +120,13 @@ describe("conversation layers", () => {
     );
     expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
     const field = screen.getByRole("textbox");
+    await user.type(field, "/sticker");
+    await user.click(await screen.findByRole("option", { name: /sticker/i }));
+    await user.click(await screen.findByRole("button", { name: "wave" }));
+    await user.type(field, "/gif");
+    await user.click(await screen.findByRole("option", { name: /gif/i }));
+    await user.type(screen.getByPlaceholderText(en.picker.search_gifs), "party");
+    await user.click(await screen.findByRole("button", { name: "Party" }));
     await user.type(field, "/om");
     expect(await screen.findByRole("option")).toBeInTheDocument();
     await user.clear(field);

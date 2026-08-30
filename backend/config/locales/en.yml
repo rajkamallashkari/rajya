@@ -85,6 +85,13 @@ en:
         reason: "must be a configured report reason"
         details_too_long: "is too long (maximum is %{count} characters)"
         self: "can't be yourself"
+      sticker:
+        shortcode_invalid: "must be lowercase letters, numbers, or underscores"
+        shortcode_too_long: "is too long (maximum is %{count} characters)"
+      sticker_pack:
+        name_too_long: "is too long (maximum is %{count} characters)"
+        slug_invalid: "must be lowercase letters, numbers, or hyphens"
+        slug_too_long: "is too long (maximum is %{count} characters)"
       contact_nickname:
         blank: "can't be blank"
         self: "can't be yourself"

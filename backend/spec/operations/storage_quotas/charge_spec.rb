@@ -39,4 +39,14 @@ RSpec.describe StorageQuotas::Charge do
 
     expect(StorageQuota.find(user.account.id).used_bytes).to eq(blob.byte_size)
   end
+
+  it "charges only the bucket when the pack has no owner (S-19)" do
+    bucket = create(:storage_bucket, service_name: "test", used_bytes: 0)
+    blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("img"), filename: "a.png")
+    create(:sticker, blob: blob)
+
+    described_class.call(account: nil, blob: blob, bucket: bucket)
+
+    expect(bucket.reload.used_bytes).to eq(blob.byte_size)
+  end
 end

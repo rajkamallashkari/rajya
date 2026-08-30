@@ -12,6 +12,10 @@ import {
   rememberEmoji,
   expandSavedReplyShortcut,
   savedRepliesAsCommands,
+  gifsFromList,
+  isPickerSlash,
+  pickerTabForSlash,
+  stickerViewsFromPacks,
 } from "@/features/composer/model/picker";
 import { en } from "@/shared/lib/i18n/catalog";
 
@@ -53,9 +57,27 @@ describe("picker model", () => {
     expect(expandSavedReplyShortcut(" ", [{ body: "Hi", id: "1", shortcut: "/omw" }])).toBe(" ");
     expect(expandSavedReplyShortcut("hi ", [{ body: "hi", id: "1", shortcut: "hi" }])).toBe("hi ");
     expect(savedRepliesAsCommands([{ body: "Hi", id: "1", shortcut: "/omw" }])[0]?.name).toBe("omw");
+    expect(isPickerSlash("sticker")).toBe(true);
+    expect(isPickerSlash("gif")).toBe(true);
+    expect(isPickerSlash("omw")).toBe(false);
+    expect(pickerTabForSlash("sticker")).toBe("stickers");
+    expect(pickerTabForSlash("gif")).toBe("gifs");
+    expect(pickerTabForSlash("omw")).toBeNull();
     expect(
-      filterCommands([{ description: "Find", name: "search", source: "builtin" }], "/zz"),
-    ).toHaveLength(0);
+      stickerViewsFromPacks([
+        {
+          id: 1,
+          kind: "sticker",
+          stickers: [{ id: 9, shortcode: "wave", url: "https://x" }],
+        },
+        { id: 2, kind: "emoji", stickers: [{ id: 8, shortcode: "smile" }] },
+      ]),
+    ).toEqual([{ id: "9", packId: "1", shortcode: "wave", url: "https://x" }]);
+    expect(stickerViewsFromPacks(undefined)).toEqual([]);
+    expect(gifsFromList([{ id: "g", preview_url: "https://g", title: "Party" }])[0]?.previewUrl).toBe(
+      "https://g",
+    );
+    expect(gifsFromList(undefined)).toEqual([]);
   });
 });
 
@@ -109,6 +131,52 @@ describe("PickerSheet", () => {
     );
     await user.click(screen.getByRole("tab", { name: en.picker.stickers }));
     expect(screen.getByText(en.picker.empty_stickers)).toBeInTheDocument();
+  });
+
+  it("uses remote GIF results, previews, and the unavailable empty state", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    const onGifQueryChange = vi.fn();
+    const { rerender } = render(
+      <PickerSheet
+        gifs={[
+          { id: "g1", previewLabel: "gif", previewUrl: "https://media.test/gif.gif", title: "Party" },
+        ]}
+        initialTab="gifs"
+        onGifQueryChange={onGifQueryChange}
+        onOpenChange={vi.fn()}
+        onPickEmoji={vi.fn()}
+        onPickGif={vi.fn()}
+        onPickReply={vi.fn()}
+        onPickSticker={vi.fn()}
+        open
+        remoteGifs
+        replies={[]}
+        stickers={[{ id: "s1", packId: "p", shortcode: "wave", url: "https://media.test/s.png" }]}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "Party" })).toBeInTheDocument();
+    await user.type(screen.getByPlaceholderText(en.picker.search_gifs), "zzz");
+    expect(onGifQueryChange).toHaveBeenCalledWith("zzz");
+    expect(screen.getByRole("img", { name: "Party" })).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: en.picker.stickers }));
+    expect(screen.getByRole("img", { name: "wave" })).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: en.picker.gifs }));
+    rerender(
+      <PickerSheet
+        gifUnavailable
+        gifs={[]}
+        initialTab="gifs"
+        onOpenChange={vi.fn()}
+        onPickEmoji={vi.fn()}
+        onPickGif={vi.fn()}
+        onPickReply={vi.fn()}
+        onPickSticker={vi.fn()}
+        open
+        replies={[]}
+        stickers={[]}
+      />,
+    );
+    expect(screen.getByText(en.picker.unavailable_gifs)).toBeInTheDocument();
   });
 });
 
