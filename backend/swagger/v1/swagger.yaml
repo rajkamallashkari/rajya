@@ -51,6 +51,52 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Error"
+  "/api/v1/attachments/{id}/download":
+    get:
+      summary: Issue a short-lived media URL
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: url issued
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MediaUrl"
+        '403':
+          description: non-member refused (BR-94)
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  "/api/v1/attachments/{id}/thumbnail":
+    get:
+      summary: Issue a short-lived thumbnail URL
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: url issued
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MediaUrl"
   "/api/v1/blocks":
     get:
       summary: List accounts the current account has blocked
@@ -971,6 +1017,52 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Ok"
+  "/api/v1/direct_uploads":
+    post:
+      summary: Presign a direct upload
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: checksum reuse
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DirectUpload"
+        '422':
+          description: file too large
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '507':
+          description: quota exceeded
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - filename
+              - byte_size
+              - checksum
+              - content_type
+              properties:
+                filename:
+                  type: string
+                byte_size:
+                  type: integer
+                checksum:
+                  type: string
+                content_type:
+                  type: string
   "/api/v1/conversations/{conversation_id}/invites":
     get:
       summary: List group invites
@@ -2950,6 +3042,90 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/DeviceSession"
+    DirectUpload:
+      type: object
+      required:
+      - blob_signed_id
+      - skip_upload
+      properties:
+        blob_signed_id:
+          type: string
+        direct_upload_url:
+          type: string
+          nullable: true
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+        bucket_service_name:
+          type: string
+          nullable: true
+        skip_upload:
+          type: boolean
+    MediaUrl:
+      type: object
+      required:
+      - url
+      - expires_at
+      properties:
+        url:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      required:
+      - id
+      - kind
+      - content_type
+      - byte_size
+      - processing_status
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+          enum:
+          - image
+          - video
+          - audio
+          - voice
+          - file
+        content_type:
+          type: string
+        byte_size:
+          type: integer
+        width:
+          type: integer
+          nullable: true
+        height:
+          type: integer
+          nullable: true
+        duration_ms:
+          type: integer
+          nullable: true
+        blurhash:
+          type: string
+          nullable: true
+        waveform:
+          type: array
+          items:
+            type: number
+          nullable: true
+          description: 'Voice-note peaks: floats in [0.0, 1.0], length waveform_peak_count.'
+        processing_status:
+          type: string
+          enum:
+          - pending
+          - ready
+          - failed
+        processing_error:
+          type: string
+          nullable: true
+        filename:
+          type: string
+          nullable: true
     Session:
       type: object
       required:
@@ -3222,7 +3398,7 @@ components:
         attachments:
           type: array
           items:
-            type: object
+            "$ref": "#/components/schemas/Attachment"
         poll:
           "$ref": "#/components/schemas/Poll"
           nullable: true

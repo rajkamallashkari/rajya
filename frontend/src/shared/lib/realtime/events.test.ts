@@ -17,6 +17,19 @@ describe("realtime events", () => {
       conversation_id: 1,
       message_id: 2,
     });
+    expect(
+      parseRealtimeEvent({
+        type: "attachment_processed",
+        conversation_id: 1,
+        message_id: 2,
+        attachment_id: 9,
+      }),
+    ).toEqual({
+      type: "attachment_processed",
+      conversation_id: 1,
+      message_id: 2,
+      attachment_id: 9,
+    });
     expect(parseRealtimeEvent({ type: "sidebar_update", conversation_id: 3 })).toEqual({
       type: "sidebar_update",
       conversation_id: 3,

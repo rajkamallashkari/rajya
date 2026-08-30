@@ -44,6 +44,7 @@ export async function routeRealtimeEvent(
     case "message_deleted":
     case "message_edited":
     case "message_reacted":
+    case "attachment_processed":
     case "poll_closed":
     case "poll_voted":
       await mergeFetchedMessage(event.message_id, event.conversation_id, deps);

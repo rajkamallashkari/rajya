@@ -89,6 +89,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/attachments/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Issue a short-lived media URL */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description url issued */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MediaUrl"];
+                    };
+                };
+                /** @description non-member refused (BR-94) */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attachments/{id}/thumbnail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Issue a short-lived thumbnail URL */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description url issued */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MediaUrl"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/blocks": {
         parameters: {
             query?: never;
@@ -1514,6 +1599,69 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/direct_uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Presign a direct upload */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        filename: string;
+                        byte_size: number;
+                        checksum: string;
+                        content_type: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description checksum reuse */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DirectUpload"];
+                    };
+                };
+                /** @description file too large */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description quota exceeded */
+                507: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -4542,6 +4690,37 @@ export interface components {
         DeviceSessionList: {
             sessions: components["schemas"]["DeviceSession"][];
         };
+        DirectUpload: {
+            blob_signed_id: string;
+            direct_upload_url?: string | null;
+            headers?: {
+                [key: string]: string;
+            };
+            bucket_service_name?: string | null;
+            skip_upload: boolean;
+        };
+        MediaUrl: {
+            url: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        Attachment: {
+            id: number;
+            /** @enum {string} */
+            kind: "image" | "video" | "audio" | "voice" | "file";
+            content_type: string;
+            byte_size: number;
+            width?: number | null;
+            height?: number | null;
+            duration_ms?: number | null;
+            blurhash?: string | null;
+            /** @description Voice-note peaks: floats in [0.0, 1.0], length waveform_peak_count. */
+            waveform?: number[] | null;
+            /** @enum {string} */
+            processing_status: "pending" | "ready" | "failed";
+            processing_error?: string | null;
+            filename?: string | null;
+        };
         Session: {
             token: string;
             account: components["schemas"]["Account"];
@@ -4649,7 +4828,7 @@ export interface components {
             /** @enum {string|null} */
             tick?: "sent" | "delivered" | "read" | null;
             reply_to?: Record<string, never> | null;
-            attachments?: Record<string, never>[];
+            attachments?: components["schemas"]["Attachment"][];
             poll?: components["schemas"]["Poll"];
             location?: components["schemas"]["MessageLocation"];
             contacts?: components["schemas"]["MessageContact"][];

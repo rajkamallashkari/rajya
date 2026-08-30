@@ -164,6 +164,48 @@ RSpec.configure do |config|
                 sessions: { type: :array, items: { "$ref" => "#/components/schemas/DeviceSession" } }
               }
             },
+            DirectUpload: {
+              type: :object,
+              required: %w[blob_signed_id skip_upload],
+              properties: {
+                blob_signed_id: { type: :string },
+                direct_upload_url: { type: :string, nullable: true },
+                headers: { type: :object, additionalProperties: { type: :string } },
+                bucket_service_name: { type: :string, nullable: true },
+                skip_upload: { type: :boolean }
+              }
+            },
+            MediaUrl: {
+              type: :object,
+              required: %w[url expires_at],
+              properties: {
+                url: { type: :string },
+                expires_at: { type: :string, format: :"date-time" }
+              }
+            },
+            Attachment: {
+              type: :object,
+              required: %w[id kind content_type byte_size processing_status],
+              properties: {
+                id: { type: :integer },
+                kind: { type: :string, enum: %w[image video audio voice file] },
+                content_type: { type: :string },
+                byte_size: { type: :integer },
+                width: { type: :integer, nullable: true },
+                height: { type: :integer, nullable: true },
+                duration_ms: { type: :integer, nullable: true },
+                blurhash: { type: :string, nullable: true },
+                waveform: {
+                  type: :array,
+                  items: { type: :number },
+                  nullable: true,
+                  description: "Voice-note peaks: floats in [0.0, 1.0], length waveform_peak_count."
+                },
+                processing_status: { type: :string, enum: %w[pending ready failed] },
+                processing_error: { type: :string, nullable: true },
+                filename: { type: :string, nullable: true }
+              }
+            },
             Session: {
               type: :object,
               required: %w[token account user],
@@ -301,7 +343,7 @@ RSpec.configure do |config|
                 sender: { "$ref" => "#/components/schemas/Account", nullable: true },
                 tick: { type: :string, enum: %w[sent delivered read], nullable: true },
                 reply_to: { type: :object, nullable: true },
-                attachments: { type: :array, items: { type: :object } },
+                attachments: { type: :array, items: { "$ref" => "#/components/schemas/Attachment" } },
                 poll: { "$ref" => "#/components/schemas/Poll", nullable: true },
                 location: { "$ref" => "#/components/schemas/MessageLocation", nullable: true },
                 contacts: { type: :array, items: { "$ref" => "#/components/schemas/MessageContact" } }

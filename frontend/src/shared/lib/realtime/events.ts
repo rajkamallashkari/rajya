@@ -1,4 +1,5 @@
 export interface RealtimePayloads {
+  attachment_processed: { conversation_id: number; message_id: number; attachment_id: number };
   message_created: { conversation_id: number; message_id: number };
   message_deleted: { conversation_id: number; message_id: number };
   message_edited: { conversation_id: number; message_id: number };
@@ -30,6 +31,7 @@ export interface RealtimePayloads {
 }
 
 export const REALTIME_EVENT_TYPES = [
+  "attachment_processed",
   "message_created",
   "message_deleted",
   "message_edited",
@@ -109,6 +111,10 @@ function parseMessageEvent<Type extends ListedType>(
 }
 
 const PARSERS: { [Type in ListedType]: (data: Record<string, unknown>) => RealtimeEvent } = {
+  attachment_processed: (data) => ({
+    ...parseMessageEvent("attachment_processed", data),
+    attachment_id: requireNumber(data, "attachment_id"),
+  }),
   message_created: (data) => parseMessageEvent("message_created", data),
   message_deleted: (data) => parseMessageEvent("message_deleted", data),
   message_edited: (data) => parseMessageEvent("message_edited", data),

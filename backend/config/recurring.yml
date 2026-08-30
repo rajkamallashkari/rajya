@@ -21,3 +21,15 @@ production:
     class: MessageReminders::DispatchDueJob
     queue: default
     schedule: every minute
+  reconcile_storage_quotas:
+    class: StorageQuotas::ReconcileJob
+    queue: background
+    schedule: every day at 3:40am
+  purge_orphaned_blobs:
+    class: StorageQuotas::OrphanedBlobCleanupJob
+    queue: background
+    schedule: every day at 4:10am
+  check_storage_bucket_health:
+    class: StorageBuckets::HealthJob
+    queue: background
+    schedule: every hour at minute 7

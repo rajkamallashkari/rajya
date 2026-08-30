@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 6.5 |
-| **Next session** | 7.1 |
+| **Last completed** | 7.1 |
+| **Next session** | 7.2 |
 | **Phase** | P7 — Media |
-| **Sessions remaining in phase** | 4 (7.1–7.4) |
+| **Sessions remaining in phase** | 3 (7.2–7.4) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 7.1 — Upload, buckets, quotas, processing pipeline, MIME sniffing, authorization**
+**Session 7.2 — Progressive rendering, album grid, lightbox, galleries, voice playback**
 
-Deliverable: Upload, buckets, quotas, processing pipeline, MIME sniffing, authorization
+Deliverable: Progressive rendering, album grid, lightbox, galleries, voice playback
 
-Docs: SCHEMA §6; GAP §3; AUDIT §2.5 (BR-87…97), §5 (F-5, F-16, F-17, F-18)
+Docs: DESIGN_SYSTEM §5.1, §7; AUDIT §1.3
 
-Legacy to read: `cognify/app/services/bucket_router.rb`, `app/models/storage_bucket.rb`, `storage_ledger.rb`, `app/jobs/process_attachment_job.rb`, `orphaned_blob_cleanup_job.rb`, `bucket_health_job.rb`, `app/controllers/api/v1/direct_uploads_controller.rb`, `media_controller.rb`
+Legacy to read: `botverse/src/components/chat/AlbumGrid.tsx`, `MediaLightbox.tsx`, `VideoBubble.tsx`, `VoiceNoteBubble.tsx`, `DocumentBubble.tsx`, `UploadPreview.tsx`, `botverse/src/hooks/useDirectUpload.ts`
 
 ---
 
@@ -63,6 +63,7 @@ Legacy to read: `cognify/app/services/bucket_router.rb`, `app/models/storage_buc
 | 6.3 | Folders, archive (NR-14), mute, blocking enforcement | Custom folders persist (All/Unread/Archived are client tabs). Archive is per-account `archived_at`, auto-unarchives on new activity, orthogonal to mute. Mute durations 1h/8h/24h/until-on. Blocking: reverse new-DM 404, groups still work. Playwright create-group → archive → block waits for the P6 flow. |
 | 6.4 | Granular permission overrides (NR-34), `@everyone`/`@admins` (NR-35), slow mode (NR-36), forwarding restrictions (NR-37) | Overrides may only narrow the §3.1 matrix (S-17); generated KEYS × ACTORS spec. Mentions rate-limited behind `mention_everyone`. Slow mode uses persisted `last_message_at` (S-18); admins/owners exempt. Copy/forward hidden when restricted; export waits for P7. Playwright restrict-permissions waits for the P6 flow. |
 | 6.5 | Reporting (NR-39) submission: report sheet, pending-subject dedupe, admin mail and `report_created` | Second pending report by the same reporter on the same subject is `conflict`; a new one is accepted after resolve. Reasons come from `app_settings` (S-21). Wired from message and profile menus. Playwright P6 flow (including report) waits; the admin queue waits for P12.6. |
+| 7.1 | Upload, buckets, quotas, processing pipeline, MIME sniffing, authorization | Presign + Marcel sniff (BR-89), per-type caps (BR-88), checksum reuse (BR-90), lowest-priority bucket routing (BR-91), membership-checked 5-min URLs (BR-94, F-16). Quota charges on first blob use only; unsend does not decrement (BR-92); reconcile repairs unique owned blobs (F-5). Processing failures set `processing_status=failed` with catalog copy (F-17); `thumbnail_blob_id` is gone (F-18). Lightbox, galleries, and failed-state UI wait for 7.2. |
 
 ---
 

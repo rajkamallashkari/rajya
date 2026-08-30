@@ -195,6 +195,47 @@ module Settings
         type: :integer, category: :media, default: 86_400, min: 60, max: 2_592_000,
         description: "Seconds an export artefact remains downloadable (NR-32)."
       },
+      blocked_upload_extensions: {
+        type: :array, category: :media,
+        default: %w[
+          .apk .app .bat .cmd .com .deb .dmg .exe .ipa .jar .msi .pkg .ps1
+          .rpm .scr .sh .vbs .wsf
+        ],
+        description: "Filename extensions rejected at presign (BR-89)."
+      },
+      blocked_mime_prefixes: {
+        type: :array, category: :media,
+        default: %w[
+          application/x-executable
+          application/x-msdownload
+          application/x-msdos-program
+        ],
+        description: "MIME prefixes rejected at presign and after magic-byte sniffing (BR-89)."
+      },
+      blurhash_x_components: {
+        type: :integer, category: :media, default: 4, min: 1, max: 9,
+        description: "Horizontal BlurHash components for image placeholders."
+      },
+      blurhash_y_components: {
+        type: :integer, category: :media, default: 3, min: 1, max: 9,
+        description: "Vertical BlurHash components for image placeholders."
+      },
+      image_variant_quality: {
+        type: :object, category: :media, default: { "thumb" => 75, "preview" => 80 },
+        description: "WebP quality for generated image variants."
+      },
+      link_preview_blob_prefix: {
+        type: :string, category: :media, default: "link_previews/",
+        description: "Active Storage key prefix excluded from orphan blob cleanup (BR-95)."
+      },
+      media_process_retry_attempts: {
+        type: :integer, category: :media, default: 3, min: 1, max: 10,
+        description: "Retries for transient attachment processing failures (F-17)."
+      },
+      orphan_blob_max_age: {
+        type: :integer, category: :media, default: 3_600, min: 60, max: 86_400,
+        description: "Seconds before an unattached blob is treated as orphaned (BR-95)."
+      },
 
       # --- calls (BR-62, BR-64, BR-111) ---
       ring_timeout: {

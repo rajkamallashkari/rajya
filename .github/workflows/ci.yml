@@ -101,6 +101,8 @@ jobs:
           ruby-version: "4.0.3"
           bundler-cache: true
           working-directory: backend
+      - name: Install media tools
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libvips-dev ffmpeg
       - name: Prepare database
         run: bin/rails db:prepare
       - name: RuboCop

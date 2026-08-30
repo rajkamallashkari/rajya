@@ -2,9 +2,28 @@ test:
   service: Disk
   root: <%= Rails.root.join("tmp/storage") %>
 
+# Second disk service so BucketRouter tests can cover multi-bucket routing
+# without Cloudflare credentials.
+test_secondary:
+  service: Disk
+  root: <%= Rails.root.join("tmp/storage_secondary") %>
+
 local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
+
+<% if ENV["R2_ACCESS_KEY_ID"].present? %>
+r2_primary:
+  service: S3
+  access_key_id: <%= ENV.fetch("R2_ACCESS_KEY_ID") %>
+  secret_access_key: <%= ENV.fetch("R2_SECRET_ACCESS_KEY") %>
+  region: auto
+  bucket: <%= ENV.fetch("R2_BUCKET") %>
+  endpoint: <%= ENV.fetch("R2_ENDPOINT") %>
+  force_path_style: true
+  request_checksum_calculation: "when_required"
+  response_checksum_validation: "when_required"
+<% end %>
 
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:

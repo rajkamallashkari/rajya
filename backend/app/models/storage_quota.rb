@@ -10,4 +10,15 @@ class StorageQuota < ApplicationRecord
 
   validates :quota_bytes, numericality: { greater_than: 0 }
   validates :used_bytes, numericality: { greater_than_or_equal_to: 0 }
+
+  def self.ensure_for!(account)
+    find_or_create_by!(account_id: account.id) do |row|
+      row.quota_bytes = Settings.fetch(:user_quota_bytes)
+      row.used_bytes = 0
+    end
+  end
+
+  def can_upload?(byte_size)
+    used_bytes + byte_size.to_i <= quota_bytes
+  end
 end

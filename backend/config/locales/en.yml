@@ -146,6 +146,13 @@ en:
     redis_unexpected: "Redis did not answer PONG."
     solid_queue_stale: "No Solid Queue process has heartbeated recently."
 
+  media:
+    processing:
+      ffmpeg_missing: "Media tools are unavailable. Try again later."
+      unreadable: "This file could not be processed."
+      blocked_type: "This file type is not allowed."
+      probe_failed: "This file could not be inspected."
+
   report:
     reasons:
       spam: Spam

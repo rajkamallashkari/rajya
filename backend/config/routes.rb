@@ -31,6 +31,13 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
+      resources :direct_uploads, only: :create
+      resources :attachments, only: [] do
+        member do
+          get :download
+          get :thumbnail
+        end
+      end
       resources :passkeys, only: %i[index update destroy] do
         collection do
           post :registration_options

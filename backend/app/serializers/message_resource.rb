@@ -51,17 +51,7 @@ class MessageResource < ApplicationResource
   end
 
   attribute :attachments do
-    object.attachments.map do |attachment|
-      {
-        "id" => attachment.id,
-        "kind" => attachment.kind,
-        "content_type" => attachment.content_type,
-        "byte_size" => attachment.byte_size,
-        "processing_status" => attachment.processing_status,
-        "duration_ms" => attachment.duration_ms,
-        "waveform" => attachment.waveform
-      }
-    end
+    object.attachments.map { |attachment| AttachmentResource.new(attachment).to_h }
   end
 
   attribute :poll do

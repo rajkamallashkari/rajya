@@ -6,6 +6,7 @@ module Realtime
   CONVERSATION_STREAM = /\Aconversation:(\d+)\z/
   BUFFER_KEY = :rajya_realtime_buffer
   EVENTS = %w[
+    attachment_processed
     join_request
     message_created
     message_deleted
@@ -23,7 +24,7 @@ module Realtime
     sidebar_update
     typing
   ].freeze
-  EPHEMERAL_EVENTS = %w[typing].freeze
+  EPHEMERAL_EVENTS = %w[attachment_processed typing].freeze
 
   Item = Data.define(:stream, :event, :data, :conversation_id) do
     def conversation_fanout?

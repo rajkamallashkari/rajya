@@ -8,7 +8,7 @@ WORKDIR /rails
 
 # Runtime dependencies shared by every stage.
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libpq-dev libvips && \
+    apt-get install --no-install-recommends -y curl libpq-dev libvips ffmpeg && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives
 
 ENV RAILS_ENV="production" \

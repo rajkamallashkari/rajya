@@ -18,4 +18,39 @@ RSpec.describe Messages::Blobs do
     expect(described_class.normalize_waveform("{")).to be_nil
     expect(described_class.normalize_waveform("{\"a\":1}")).to be_nil
   end
+
+  it "binds the storage bucket and charges quota on attach" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    message = create(:message, conversation: conversation, sender_account: user.account)
+    bucket = create(:storage_bucket, service_name: "test")
+    allow(Attachments::ProcessJob).to receive(:perform_later)
+
+    described_class.attach!(message, signed_ids: [ blob_signed_id, "bad" ])
+
+    attachment = message.attachments.first
+    expect(attachment.storage_bucket_id).to eq(bucket.id)
+    expect(StorageQuota.find(user.account.id).used_bytes).to eq(attachment.byte_size)
+    expect(Attachments::ProcessJob).to have_received(:perform_later).with(attachment.id)
+  end
+
+  it "leaves storage_bucket unset when no matching bucket exists" do
+    message = create(:message)
+    allow(Attachments::ProcessJob).to receive(:perform_later)
+
+    described_class.attach!(message, signed_ids: [ blob_signed_id ])
+
+    expect(message.attachments.first.storage_bucket_id).to be_nil
+  end
+
+  it "copies an attached blob onto the target message" do
+    source = create(:message)
+    target = create(:message)
+    original = create(:attachment, message: source)
+    original.file.attach(io: StringIO.new("img"), filename: "a.png", content_type: "image/png")
+
+    described_class.copy!(source, target)
+
+    expect(target.attachments.first.file.blob).to eq(original.file.blob)
+  end
 end

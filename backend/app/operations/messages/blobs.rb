@@ -13,6 +13,9 @@ module Messages
 
         attachment = message.attachments.create!(attrs_for(blob, voice:, voice_duration_ms:, voice_waveform:))
         attachment.file.attach(blob)
+        bind_bucket!(attachment, blob)
+        StorageQuotas::Charge.call(account: message.sender_account, blob: blob, bucket: attachment.storage_bucket)
+        Attachments::ProcessJob.perform_later(attachment.id)
         created += 1
       end
       message.update_column(:attachment_count, created)
@@ -49,6 +52,11 @@ module Messages
       return attrs unless voice
 
       attrs.merge(duration_ms: voice_duration_ms, waveform: normalize_waveform(voice_waveform))
+    end
+
+    def bind_bucket!(attachment, blob)
+      bucket = StorageBucket.find_by(service_name: blob.service_name)
+      attachment.update_column(:storage_bucket_id, bucket.id) if bucket
     end
 
     def normalize_waveform(raw)

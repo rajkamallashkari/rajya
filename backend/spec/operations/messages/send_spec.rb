@@ -190,6 +190,17 @@ RSpec.describe Messages::Send do
       .to eq(:forbidden)
   end
 
+  it "charges quota on attach and leaves it in place after unsend (BR-92)" do
+    user, conversation = setup
+    create(:storage_bucket, service_name: "test")
+    message = send!(conversation, user.account, attachment_signed_ids: [ blob_signed_id ]).value
+    used = StorageQuota.find(user.account.id).used_bytes
+    Messages::Unsend.call(message: message, actor: user.account)
+
+    expect(used).to be > 0
+    expect(StorageQuota.find(user.account.id).used_bytes).to eq(used)
+  end
+
   it "forbids @everyone without mention_everyone and rate-limits a second special mention (NR-35)" do
     _owner, member, conversation = group_setup
     conversation.update!(member_permissions: { "mention_everyone" => "admin" })

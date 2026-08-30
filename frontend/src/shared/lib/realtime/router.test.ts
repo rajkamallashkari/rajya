@@ -67,6 +67,10 @@ describe("routeRealtimeEvent", () => {
       { type: "message_reacted", conversation_id: 1, message_id: 1 },
       deps,
     );
+    await routeRealtimeEvent(
+      { type: "attachment_processed", conversation_id: 1, message_id: 1, attachment_id: 9 },
+      deps,
+    );
     await routeRealtimeEvent({ type: "poll_voted", conversation_id: 1, message_id: 1 }, deps);
     await routeRealtimeEvent({ type: "poll_closed", conversation_id: 1, message_id: 1 }, deps);
     await routeRealtimeEvent({ type: "message_pinned", conversation_id: 1, message_id: 1 }, deps);
