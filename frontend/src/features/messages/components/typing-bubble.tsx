@@ -1,13 +1,16 @@
 import { useTranslation } from "react-i18next";
 import { TYPING_DOT_COUNT } from "@/features/messages/model/constants";
+import type { ActivityKind } from "@/features/conversations/model/typing";
 import { cn } from "@/shared/lib/cn";
 import { Avatar } from "@/shared/ui";
 
 export function TypingBubble({
+  activity = "typing",
   senderName,
   senderSrc,
   showAvatar = true,
 }: {
+  activity?: ActivityKind;
   senderName?: string | null;
   senderSrc?: string | null;
   showAvatar?: boolean;
@@ -15,8 +18,9 @@ export function TypingBubble({
   const { t } = useTranslation();
   return (
     <div
-      aria-label={t("messages.typing")}
+      aria-label={t(`messages.activity.${activity}`)}
       className="mr-auto flex max-w-[var(--bubble-max-width)] items-end gap-[var(--space-1_5)]"
+      data-activity={activity}
       data-typing-bubble=""
       role="status"
     >

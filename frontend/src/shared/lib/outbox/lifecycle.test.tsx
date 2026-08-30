@@ -166,6 +166,9 @@ describe("outbox lifecycle", () => {
     expect(window.__rajyaDrainOutbox).toBeTypeOf("function");
     await window.__rajyaDrainOutbox?.();
     await window.__rajyaDualDrainOutbox?.();
+    expect(window.__rajyaWriteSystemEvent?.(1, "member_left", "Grace left")).toEqual(
+      expect.objectContaining({ kind: "system", system_event: "member_left", body: "Grace left" }),
+    );
     unbind();
     bindOutboxTestHooks(1, undefined)();
   });

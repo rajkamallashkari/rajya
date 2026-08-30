@@ -11,6 +11,7 @@ RSpec.describe Messages::Unpin do
     expect(conversation.pinned_messages.reload).to exist
     expect(described_class.call(message: message.reload, actor: user.account)).to be_success
     expect(conversation.pinned_messages.reload).not_to exist
+    expect(conversation.messages.where(system_event: "message_unpinned")).to exist
   end
 
   it "returns not_found when the message is not pinned and forbids a stranger" do

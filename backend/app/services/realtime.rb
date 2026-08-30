@@ -19,7 +19,9 @@ module Realtime
     presence
     receipts_updated
     sidebar_update
+    typing
   ].freeze
+  EPHEMERAL_EVENTS = %w[typing].freeze
 
   Item = Data.define(:stream, :event, :data, :conversation_id) do
     def conversation_fanout?
@@ -136,8 +138,23 @@ module Realtime
     def fanout(items, recipient_ids)
       items.select(&:conversation_fanout?).group_by(&:conversation_id).each do |conversation_id, grouped|
         ids = recipient_ids.fetch(conversation_id)
-        ids.each { |account_id| broadcast_sidebar(account_id, conversation_id) }
-        grouped.each { |item| enqueue_push(item, ids) }
+        grouped.each do |item|
+          if EPHEMERAL_EVENTS.include?(item.event.to_s)
+            fanout_ephemeral(item, ids)
+          else
+            ids.each { |account_id| broadcast_sidebar(account_id, conversation_id) }
+            enqueue_push(item, ids)
+          end
+        end
+      end
+    end
+
+    def fanout_ephemeral(item, ids)
+      actor_id = item.data["account_id"]
+      ids.each do |account_id|
+        next if account_id == actor_id
+
+        ActionCable.server.broadcast(account_stream(account_id), event_hash(item.event, item.data))
       end
     end
 

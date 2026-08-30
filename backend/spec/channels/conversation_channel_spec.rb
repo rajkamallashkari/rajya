@@ -42,4 +42,39 @@ RSpec.describe ConversationChannel, type: :channel do
     unsubscribe
     expect(Receipts::Subscribers.account_ids(conversation.id)).to eq([ user.account.id ])
   end
+
+  Typing::Store::ACTIVITIES.each do |activity|
+    it "broadcasts #{activity} on an ephemeral key without writing a row (NR-3, NR-40)" do
+      conversation = create_direct_between(user.account, create(:account))
+      subscribe conversation_id: conversation.id
+      captured = []
+      allow(ActionCable.server).to receive(:broadcast) { |stream, payload| captured << [ stream, payload ] }
+
+      expect { perform :typing, activity: activity }.not_to change(Message, :count)
+      expect(Typing::Store.read(conversation.id, user.account.id)).to eq(activity)
+      expect(captured.assoc(Realtime.conversation_stream(conversation.id)).last).to include(
+        "type" => "typing", "activity" => activity, "account_id" => user.account.id
+      )
+    end
+  end
+
+  it "expires typing without a cleanup job" do
+    expect(Dir[Rails.root.join("app/jobs/**/*typing*")]).to be_empty
+  end
+
+  it "reads activity from string keys as the socket sends them" do
+    conversation = create_direct_between(user.account, create(:account))
+    subscribe conversation_id: conversation.id
+    subscription.perform_action("action" => "typing", "activity" => "uploading_file")
+
+    expect(Typing::Store.read(conversation.id, user.account.id)).to eq("uploading_file")
+  end
+
+  it "skips typing when the subscription never tracked a conversation" do
+    conversation = create_direct_between(user.account, create(:account))
+    subscribe conversation_id: conversation.id
+    subscription.instance_variable_set(:@tracking_conversation_id, nil)
+    expect { perform :typing, activity: "typing" }.not_to change(Message, :count)
+    expect(Typing::Store.read(conversation.id, user.account.id)).to be_nil
+  end
 end

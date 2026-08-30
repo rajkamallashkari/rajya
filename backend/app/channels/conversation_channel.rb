@@ -18,4 +18,14 @@ class ConversationChannel < ApplicationCable::Channel
 
     Receipts::Subscribers.remove(@tracking_conversation_id, current_account.id)
   end
+
+  def typing(data)
+    return if @tracking_conversation_id.blank?
+
+    Typing::Announce.call(
+      account: current_account,
+      conversation_id: @tracking_conversation_id,
+      activity: data["activity"]
+    )
+  end
 end

@@ -264,3 +264,18 @@ export async function getPoll(pollId: number) {
     "poll_failed",
   );
 }
+
+export async function postReceipts(
+  conversationId: number,
+  kind: "delivered" | "viewed",
+  position: number,
+) {
+  return unwrap(
+    await apiClient().POST("/api/v1/conversations/{id}/receipts", {
+      headers: bearerHeaders(),
+      params: { path: { id: conversationId } },
+      body: { kind, position },
+    }),
+    "receipts_failed",
+  );
+}

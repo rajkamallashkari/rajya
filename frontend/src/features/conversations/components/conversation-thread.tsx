@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } fr
 import { useTranslation } from "react-i18next";
 import { getAccessSession } from "@/features/auth/model/access-session";
 import { Composer } from "@/features/composer";
-import type { Message } from "@/features/conversations/api/http";
+import { postReceipts, type Message } from "@/features/conversations/api/http";
 import {
   useBulkForward,
   useBulkSave,
@@ -28,6 +28,7 @@ import {
 import { MessageInfoSheet } from "@/features/conversations/components/message-info-sheet";
 import { ReminderSheet } from "@/features/conversations/components/reminder-sheet";
 import { useConversationChannel } from "@/features/conversations/hooks/use-conversation-channel";
+import { useTypingIndicators } from "@/features/conversations/hooks/use-typing-indicators";
 import { conversationById, type DemoMessage } from "@/features/conversations/model/demo";
 import { THREAD_LOAD_OLDER_PX } from "@/features/conversations/model/constants";
 import { formatThreadDate, sameCalendarDay } from "@/features/conversations/model/dates";
@@ -40,16 +41,19 @@ import {
   PollResultsSheet,
   ReactionDetailsSheet,
   SelectionToolbar,
+  TypingBubble,
   groupMessageRuns,
   type MessageMenuActions,
 } from "@/features/messages";
+import { tickStatus } from "@/features/messages/model/ticks";
+import type { GroupableMessage } from "@/features/messages/model/constants";
+import type { ActivityKind } from "@/features/conversations/model/typing";
 import { copyText } from "@/features/messages/model/copy-text";
 import {
   contactViewFromApi,
   locationViewFromApi,
   pollViewFromApi,
 } from "@/features/messages/model/poll";
-import type { GroupableMessage } from "@/features/messages/model/constants";
 import { LayerHeader } from "@/app/navigation/layer-header";
 import { useMobileViewport } from "@/shared/hooks/use-mobile-viewport";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
@@ -150,7 +154,8 @@ function DemoThread({
 
 function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const { t, i18n } = useTranslation();
-  useConversationChannel(conversationId);
+  const { publishActivity } = useConversationChannel(conversationId);
+  const typists = useTypingIndicators(conversationId);
   const conversationQuery = useConversation(conversationId);
   const page = useMessagePage(conversationId);
   const send = useSendMessage(conversationId);
@@ -228,6 +233,14 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   }, [focusMessageId, messages.length]);
 
   const lastSent = [...messages].reverse().find((message) => message.sender?.id === viewerId);
+  const newestPosition = messages.reduce((max, message) => Math.max(max, message.position), 0);
+
+  useEffect(() => {
+    if (newestPosition < 1) {
+      return;
+    }
+    void postReceipts(conversationId, "viewed", newestPosition).catch(() => undefined);
+  }, [conversationId, newestPosition]);
 
   if (conversationQuery.isPending || page.isPending) {
     return (
@@ -308,13 +321,19 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           onOpenMenu={(id, point) => setMenu({ id, x: point.clientX, y: point.clientY })}
           onOpenPollResults={(id) => setResultsPollId(pollResultsId(messages, id))}
           onVote={(id, optionIds) => voteFromThread(messages, id, optionIds, vote.mutate)}
+          typists={typists}
           untitled={t("conversations.untitled")}
           viewerId={viewerId}
         />
       </div>
       <Composer
         editing={editingId !== null}
-        onChange={setDraft}
+        onChange={(value) => {
+          setDraft(value);
+          if (value.trim()) {
+            publishActivity("typing");
+          }
+        }}
         onDismissEdit={() => {
           setEditingId(null);
           setDraft("");
@@ -414,6 +433,7 @@ function ThreadMessages({
   onOpenMenu,
   onOpenPollResults,
   onVote,
+  typists,
   untitled,
   viewerId,
 }: {
@@ -422,6 +442,7 @@ function ThreadMessages({
   onOpenMenu: (id: number, point: { clientX: number; clientY: number }) => void;
   onOpenPollResults: (id: number) => void;
   onVote: (id: number, optionIds: string[]) => void;
+  typists: Array<{ accountId: number; activity: ActivityKind; displayName: string }>;
   untitled: string;
   viewerId: number;
 }): ReactNode {
@@ -460,7 +481,7 @@ function ThreadMessages({
                 <p
                   className="px-[var(--space-4)] py-[var(--space-3)] text-center text-[length:var(--text-sm)] text-[var(--text-tertiary)]"
                   data-message-id={item.id}
-                  data-system-message=""
+                  data-system-message={item.message.system_event ?? ""}
                   key={item.id}
                 >
                   {item.message.body}
@@ -483,7 +504,7 @@ function ThreadMessages({
                   ? locationViewFromApi(item.message.location)
                   : undefined,
                 poll: item.message.poll ? pollViewFromApi(item.message.poll) : undefined,
-                status: item.message.id < 0 ? "queued" : undefined,
+                status: tickStatus(item.message),
               }))}
               onOpenMenu={bindNumericId(onOpenMenu)}
               onOpenPollResults={bindNumericId(onOpenPollResults)}
@@ -494,6 +515,13 @@ function ThreadMessages({
           </div>
         );
       })}
+      {typists.map((typist) => (
+        <TypingBubble
+          activity={typist.activity}
+          key={typist.accountId}
+          senderName={typist.displayName}
+        />
+      ))}
     </>
   );
 }

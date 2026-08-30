@@ -356,6 +356,12 @@
   },
   "conversations": {
     "typing": "typing…",
+    "activity": {
+      "typing": "typing…",
+      "recording_audio": "recording audio…",
+      "uploading_media": "uploading media…",
+      "uploading_file": "uploading a file…"
+    },
     "muted": "Muted",
     "pinned": "Pinned",
     "unread": "Unread",
@@ -400,6 +406,13 @@
       "title": "Message info"
     },
     "typing": "Someone is typing",
+    "activity": {
+      "typing": "Someone is typing",
+      "recording_audio": "Someone is recording audio",
+      "uploading_file": "Someone is uploading a file",
+      "uploading_media": "Someone is uploading media"
+    },
+    "typing_many": "{{name}} and {{count}} others",
     "unread": "Unread",
     "menu": {
       "retry": "Retry",
@@ -419,15 +432,29 @@
       "remind": "Remind me"
     },
     "system": {
+      "member_added": "{{name}} was added",
       "member_joined": "{{name}} joined",
       "member_left": "{{name}} left",
       "member_removed": "{{name}} was removed",
       "member_promoted": "{{name}} is now an admin",
       "member_demoted": "{{name}} is now a member",
       "ownership_transferred": "{{name}} is the new owner",
+      "role_changed": "{{name}} is now {{role}}",
       "title_changed": "Group renamed to {{title}}",
+      "description_changed": "Group description updated",
       "icon_changed": "Group icon updated",
-      "chat_created": "Group created by {{name}}"
+      "avatar_changed": "Group icon updated",
+      "chat_created": "Group created by {{name}}",
+      "conversation_created": "Group created by {{name}}",
+      "message_pinned": "{{name}} pinned a message",
+      "message_unpinned": "{{name}} unpinned a message",
+      "call_started": "Call started",
+      "call_ended": "Call ended",
+      "call_missed": "Missed call",
+      "permissions_changed": "Group permissions updated",
+      "slow_mode_changed": "Slow mode updated",
+      "forwarding_restricted": "Forwarding restricted",
+      "forwarding_unrestricted": "Forwarding unrestricted"
     }
   },
   "polls": {

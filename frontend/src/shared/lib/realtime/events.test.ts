@@ -65,6 +65,28 @@ describe("realtime events", () => {
       type: "message_reminder",
       id: 9,
     });
+    expect(
+      parseRealtimeEvent({
+        type: "typing",
+        conversation_id: 1,
+        account_id: 2,
+        activity: "recording_audio",
+        display_name: "Priya",
+      }),
+    ).toEqual({
+      type: "typing",
+      conversation_id: 1,
+      account_id: 2,
+      activity: "recording_audio",
+      display_name: "Priya",
+    });
+    expect(parseRealtimeEvent({ type: "typing", conversation_id: 1, account_id: 2 })).toEqual({
+      type: "typing",
+      conversation_id: 1,
+      account_id: 2,
+      activity: "typing",
+      display_name: "",
+    });
     for (const type of [
       "message_deleted",
       "message_edited",

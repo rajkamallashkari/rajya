@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   appendToNewest,
+  applyReceiptTick,
   flattenMessages,
   mapPages,
   restorePages,
@@ -139,5 +140,25 @@ describe("message cache", () => {
         [message(5)],
       ).pages[0]?.messages.map((row) => row.id),
     ).toEqual([1, 5]);
+  });
+
+  it("advances sent ticks from receipts without downgrading read", () => {
+    const ada = { id: 1, username: "ada", display_name: "Ada", kind: "human" as const };
+    const grace = { id: 2, username: "grace", display_name: "Grace", kind: "human" as const };
+    const seeded = pages([
+      message(1, { sender: ada, tick: "sent" }),
+      message(2, { sender: grace, tick: "sent" }),
+      message(-3, { sender: ada, tick: "sent" }),
+      message(4, { sender: ada, tick: "read" }),
+    ]);
+    expect(applyReceiptTick(seeded, 1, "viewed", 4)).toBe(seeded);
+    const delivered = applyReceiptTick(seeded, 1, "delivered", 1);
+    expect(delivered.pages[0]?.messages[0]?.tick).toBe("delivered");
+    expect(delivered.pages[0]?.messages[1]?.tick).toBe("sent");
+    expect(delivered.pages[0]?.messages[2]?.tick).toBe("sent");
+    const read = applyReceiptTick(delivered, 1, "read", 4);
+    expect(read.pages[0]?.messages[0]?.tick).toBe("read");
+    expect(read.pages[0]?.messages[3]?.tick).toBe("read");
+    expect(applyReceiptTick(read, 1, "delivered", 4).pages[0]?.messages[0]?.tick).toBe("read");
   });
 });

@@ -4,6 +4,7 @@ class MessageResource < ApplicationResource
   attribute :position, &:position
   attribute :revision, &:revision
   attribute :kind, &:kind
+  attribute :system_event, &:system_event
   attribute :forward_count, &:forward_count
   attribute :attachment_count, &:attachment_count
   attribute :reaction_summary, &:reaction_summary

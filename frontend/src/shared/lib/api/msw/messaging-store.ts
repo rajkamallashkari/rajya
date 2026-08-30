@@ -221,6 +221,7 @@ export function appendSent(
     client_nonce: nonce ?? null,
     created_at: created,
     sender: VIEWER,
+    tick: "sent",
   };
   store.nextId += 1;
   store.messages[conversationId] = [...rows, message];
@@ -236,6 +237,7 @@ export function appendSent(
       sender_name: VIEWER.display_name,
     };
   }
+  publishMswStore({ type: "append", message });
   return message;
 }
 
@@ -367,3 +369,122 @@ export function infoFor(id: number): MessageInfo | null {
 }
 
 export const emptyInfo: MessageInfo = { delivered: [], read: [] };
+
+const STORE_CHANNEL = "rajya:msw-store";
+
+type StoreSync =
+  | { type: "append"; message: Message }
+  | { type: "ticks"; actorId: number; conversationId: number; tick: "delivered" | "read" };
+
+function syncEnabled(): boolean {
+  return import.meta.env.VITE_MSW === "1" && typeof BroadcastChannel !== "undefined";
+}
+
+function publishMswStore(event: StoreSync): void {
+  if (!syncEnabled()) {
+    return;
+  }
+  const channel = new BroadcastChannel(STORE_CHANNEL);
+  channel.postMessage(event);
+  channel.close();
+}
+
+export function ingestRemoteMessage(message: Message): void {
+  const rows = store.messages[message.conversation_id] ?? [];
+  if (rows.some((row) => row.id === message.id || (message.client_nonce && row.client_nonce === message.client_nonce))) {
+    return;
+  }
+  store.messages[message.conversation_id] = [...rows, message];
+  store.nextId = Math.max(store.nextId, message.id + 1);
+  const conversation = findConversation(message.conversation_id);
+  if (conversation) {
+    conversation.last_activity_at = message.created_at;
+    conversation.last_message = {
+      id: message.id,
+      kind: message.kind,
+      body: message.body ?? null,
+      deleted: message.deleted,
+      created_at: message.created_at,
+      sender_name: message.sender?.display_name,
+    };
+  }
+}
+
+export function listenForMswStoreSync(): () => void {
+  if (!syncEnabled()) {
+    return () => undefined;
+  }
+  const channel = new BroadcastChannel(STORE_CHANNEL);
+  channel.onmessage = (event: MessageEvent<StoreSync>) => {
+    const payload = event.data;
+    if (payload.type === "append") {
+      ingestRemoteMessage(payload.message);
+      return;
+    }
+    if (payload.type === "ticks") {
+      applyTicks(payload.conversationId, payload.tick, payload.actorId);
+    }
+  };
+  return () => channel.close();
+}
+
+export function setConversationTicks(
+  conversationId: number,
+  tick: "delivered" | "read",
+  actorId = VIEWER.id,
+): void {
+  applyTicks(conversationId, tick, actorId);
+  publishMswStore({ type: "ticks", actorId, conversationId, tick });
+}
+
+function applyTicks(conversationId: number, tick: "delivered" | "read", actorId: number): void {
+  if (actorId === VIEWER.id) {
+    return;
+  }
+  const rows = store.messages[conversationId];
+  if (!rows) {
+    return;
+  }
+  store.messages[conversationId] = rows.map((message) =>
+    message.sender?.id === VIEWER.id && message.id > 0 ? { ...message, tick } : message,
+  );
+}
+
+export function appendSystemEvent(
+  conversationId: number,
+  systemEvent: string,
+  body: string,
+): Message {
+  const rows = store.messages[conversationId] ?? [];
+  const last = rows[rows.length - 1];
+  const created = new Date().toISOString();
+  const message: Message = {
+    id: store.nextId,
+    conversation_id: conversationId,
+    position: (last?.position ?? 0) + 1,
+    revision: 1,
+    kind: "system",
+    system_event: systemEvent,
+    body,
+    deleted: false,
+    silent: false,
+    created_at: created,
+  };
+  store.nextId += 1;
+  store.messages[conversationId] = [...rows, message];
+  const conversation = findConversation(conversationId);
+  if (conversation) {
+    conversation.last_activity_at = created;
+    conversation.last_message = {
+      id: message.id,
+      kind: "system",
+      body,
+      deleted: false,
+      created_at: created,
+    };
+  }
+  publishMswStore({ type: "append", message });
+  return message;
+}
+
+listenForMswStoreSync();

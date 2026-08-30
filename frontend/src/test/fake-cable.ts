@@ -9,6 +9,7 @@ import {
 export interface FakeSubscription extends CableSubscription {
   handlers: CableHandlers;
   params: Record<string, unknown>;
+  performs: Array<{ action: string; data?: Record<string, unknown> }>;
   unsubscribed: boolean;
 }
 
@@ -31,9 +32,13 @@ export class FakeCable {
           const subscription: FakeSubscription = {
             handlers,
             params,
+            performs: [],
             unsubscribed: false,
             unsubscribe: () => {
               subscription.unsubscribed = true;
+            },
+            perform: (action, data) => {
+              subscription.performs.push({ action, data });
             },
           };
           this.subscriptions.push(subscription);

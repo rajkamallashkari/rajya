@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import { getCableConsumer, isCableConnected, resetCableConsumer } from "@/shared/lib/cable/consumer";
 import { catchUpCachedConversations, scheduleCatchUp } from "@/shared/lib/realtime/catch-up";
+import { subscribeMswRealtime } from "@/shared/lib/realtime/msw-bridge";
 import { dispatchRealtimePayload, realtimeDeps } from "@/shared/lib/realtime/router";
 
 export function useAccountChannel(): void {
@@ -47,4 +48,13 @@ export function useAccountChannel(): void {
       resetCableConsumer();
     };
   }, [queryClient, runCatchUp, token]);
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+    return subscribeMswRealtime((data) => {
+      void dispatchRealtimePayload(data, realtimeDeps(queryClient));
+    });
+  }, [queryClient, token]);
 }

@@ -72,4 +72,20 @@ RSpec.describe MessageResource do
 
     expect(json.fetch("tick")).to be_nil
   end
+
+  it "includes system_event and catalog body on a system message" do
+    owner = create(:user)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ create(:account) ])
+    message = SystemEvents::Write.call(
+      conversation: conversation, event: "member_left", actor: owner.account,
+      payload: { name: owner.account.display_name }
+    ).value
+    json = described_class.new(message).to_h
+
+    expect(json).to include(
+      "kind" => "system",
+      "system_event" => "member_left",
+      "body" => Catalog.t("system_events.member_left", name: owner.account.display_name)
+    )
+  end
 end

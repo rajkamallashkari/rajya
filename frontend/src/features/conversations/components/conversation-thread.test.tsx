@@ -22,6 +22,7 @@ import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { testSession } from "@/test/access-session";
+import { testCable } from "@/test/fake-cable";
 import { server } from "@/test/msw";
 import { THREAD_LOAD_OLDER_PX } from "@/features/conversations/model/constants";
 
@@ -462,5 +463,46 @@ describe("conversation layers", () => {
     expect(pollVotePayload(withPoll, 9, ["3"])).toEqual({ optionIds: [3], pollId: 8 });
     voteFromThread(withPoll, 9, ["3"], mutate);
     expect(mutate).toHaveBeenCalledWith({ optionIds: [3], pollId: 8 });
+  });
+
+  it("wires live ticks, typing bubbles, and system event copy", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    messagingStore().messages[1] = [
+      ...(messagingStore().messages[1] ?? []),
+      {
+        id: 198,
+        conversation_id: 1,
+        position: 98,
+        revision: 1,
+        kind: "system",
+        system_event: "member_left",
+        body: "Grace left",
+        deleted: false,
+        silent: false,
+        created_at: "2026-01-01T13:00:00.000Z",
+      },
+    ];
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("Grace left")).toHaveAttribute("data-system-message", "member_left");
+    await user.type(screen.getByRole("textbox"), "tick-body");
+    await user.keyboard("{Enter}");
+    const sent = await screen.findByText("tick-body");
+    expect(sent.closest("[data-message-bubble]")).toHaveAttribute("data-status", "sent");
+    testCable().emit({
+      type: "typing",
+      conversation_id: 1,
+      account_id: 9,
+      activity: "uploading_media",
+      display_name: "Priya",
+    });
+    expect(await screen.findByRole("status", { name: en.messages.activity.uploading_media })).toHaveAttribute(
+      "data-activity",
+      "uploading_media",
+    );
   });
 });

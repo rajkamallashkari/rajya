@@ -131,6 +131,26 @@ en:
   conversations:
     fallback_title: "Group %{token}"
 
+  system_events:
+    member_added: "%{name} was added"
+    member_removed: "%{name} was removed"
+    member_left: "%{name} left"
+    member_joined: "%{name} joined"
+    title_changed: "Group renamed to \"%{title}\""
+    description_changed: "Group description updated"
+    avatar_changed: "Group icon updated"
+    role_changed: "%{name} is now %{role}"
+    message_pinned: "%{name} pinned a message"
+    message_unpinned: "%{name} unpinned a message"
+    call_started: "Call started"
+    call_ended: "Call ended"
+    call_missed: "Missed call"
+    conversation_created: "Group created by %{name}"
+    permissions_changed: "Group permissions updated"
+    slow_mode_changed: "Slow mode updated"
+    forwarding_restricted: "Forwarding restricted"
+    forwarding_unrestricted: "Forwarding unrestricted"
+
   passkeys:
     default_nickname: "Passkey"
 

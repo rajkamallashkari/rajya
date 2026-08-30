@@ -1,8 +1,16 @@
 import type { QueryClient } from "@tanstack/react-query";
+import { getAccessSession } from "@/features/auth/model/access-session";
 import { conversationKeys, messageKeys } from "@/features/conversations/api/keys";
 import { getMessage, type Message } from "@/features/conversations/api/http";
-import { upsertMessages, type MessagePages } from "@/features/conversations/api/cache";
+import { applyReceiptTick, upsertMessages, type MessagePages } from "@/features/conversations/api/cache";
 import { persistRealtimeMessage } from "@/features/conversations/api/persist";
+import {
+  isActivityKind,
+  removeTypist,
+  upsertTypingEntry,
+  TYPING_KEY_TTL_MS,
+  type TypingEntry,
+} from "@/features/conversations/model/typing";
 import { parseRealtimeEvent, type RealtimeEvent } from "@/shared/lib/realtime/events";
 import { realtimeKeys } from "@/shared/lib/realtime/keys";
 
@@ -53,8 +61,20 @@ export async function routeRealtimeEvent(
     case "presence":
       deps.cache.setQueryData(realtimeKeys.presence(event.account_id), event.online);
       return;
-    case "receipts_updated":
-      await deps.cache.invalidateQueries({ queryKey: messageKeys.page(event.conversation_id) });
+    case "receipts_updated": {
+      const viewerId = getAccessSession()?.accountId;
+      if (viewerId == null || event.account_id === viewerId) {
+        return;
+      }
+      const key = messageKeys.page(event.conversation_id);
+      const current = deps.cache.getQueryData<MessagePages>(key);
+      if (current) {
+        deps.cache.setQueryData(key, applyReceiptTick(current, viewerId, event.kind, event.position));
+      }
+      return;
+    }
+    case "typing":
+      applyTyping(event, deps);
       return;
     case "phone_verified":
       await deps.cache.invalidateQueries({ queryKey: realtimeKeys.me });
@@ -69,6 +89,31 @@ export async function routeRealtimeEvent(
   }
 }
 
+function applyTyping(
+  event: Extract<RealtimeEvent, { type: "typing" }>,
+  deps: RealtimeRouterDeps,
+): void {
+  if (!isActivityKind(event.activity)) {
+    return;
+  }
+  const now = Date.now();
+  const key = realtimeKeys.typing(event.conversation_id);
+  const current = deps.cache.getQueryData<TypingEntry[]>(key) ?? [];
+  deps.cache.setQueryData(
+    key,
+    upsertTypingEntry(
+      current,
+      {
+        accountId: event.account_id,
+        activity: event.activity,
+        displayName: event.display_name,
+        expiresAt: now + TYPING_KEY_TTL_MS,
+      },
+      now,
+    ),
+  );
+}
+
 async function mergeFetchedMessage(
   messageId: number,
   conversationId: number,
@@ -78,6 +123,7 @@ async function mergeFetchedMessage(
   try {
     message = await deps.fetchMessage(messageId);
   } catch {
+    await deps.cache.invalidateQueries({ queryKey: messageKeys.page(conversationId) });
     return;
   }
   const key = messageKeys.page(conversationId);
@@ -87,4 +133,11 @@ async function mergeFetchedMessage(
   }
   deps.cache.setQueryData(messageKeys.permalink(messageId), message);
   persistRealtimeMessage(conversationId, message);
+  if (message.sender) {
+    const typingKey = realtimeKeys.typing(conversationId);
+    const typists = deps.cache.getQueryData<TypingEntry[]>(typingKey);
+    if (typists) {
+      deps.cache.setQueryData(typingKey, removeTypist(typists, message.sender.id, Date.now()));
+    }
+  }
 }

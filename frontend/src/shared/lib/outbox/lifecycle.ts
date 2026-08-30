@@ -4,6 +4,7 @@ import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import { upsertMessages, type MessagePages } from "@/features/conversations/api/cache";
 import { conversationKeys, messageKeys } from "@/features/conversations/api/keys";
 import { persistMessagePages } from "@/features/conversations/api/persist";
+import { appendSystemEvent } from "@/shared/lib/api/msw/messaging-store";
 import { shouldStartMsw } from "@/shared/lib/api/msw/flag";
 import { drainOutbox, setOutboxCallbacks } from "@/shared/lib/outbox/processor";
 import {
@@ -11,11 +12,13 @@ import {
   OUTBOX_SYNC_SUCCESS,
   type OutboxWorkerMessage,
 } from "@/shared/lib/outbox/worker";
+import { publishMswRealtime } from "@/shared/lib/realtime/msw-bridge";
 
 declare global {
   interface Window {
     __rajyaDrainOutbox?: () => Promise<unknown>;
     __rajyaDualDrainOutbox?: () => Promise<unknown>;
+    __rajyaWriteSystemEvent?: (conversationId: number, event: string, body: string) => unknown;
   }
 }
 
@@ -40,9 +43,19 @@ export function bindOutboxTestHooks(
   }
   window.__rajyaDrainOutbox = () => drainOutbox(accountId);
   window.__rajyaDualDrainOutbox = () => Promise.all([drainOutbox(accountId), drainOutbox(accountId)]);
+  window.__rajyaWriteSystemEvent = (conversationId, event, body) => {
+    const message = appendSystemEvent(conversationId, event, body);
+    publishMswRealtime({
+      type: "message_created",
+      conversation_id: message.conversation_id,
+      message_id: message.id,
+    });
+    return message;
+  };
   return () => {
     delete window.__rajyaDrainOutbox;
     delete window.__rajyaDualDrainOutbox;
+    delete window.__rajyaWriteSystemEvent;
   };
 }
 

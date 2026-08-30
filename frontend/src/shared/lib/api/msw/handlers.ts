@@ -10,12 +10,14 @@ import {
   pageFor,
   patchMessage,
   reactStoredMessage,
+  setConversationTicks,
   tombstoneMessage,
   voteStoredPoll,
   closeStoredPoll,
   findPoll,
   VIEWER,
 } from "./messaging-store";
+import { publishMswRealtime } from "@/shared/lib/realtime/msw-bridge";
 
 type HealthBody = NonNullable<
   paths["/health"]["get"]["responses"][200]["content"]
@@ -46,6 +48,12 @@ type WebauthnOptionsBody = NonNullable<
 >["application/json"];
 
 type HandlerMap = { [Path in keyof paths]: HttpHandler };
+
+function actorIdFromRequest(request: Request): number {
+  const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  const match = /^dev-(\d+)$/.exec(token);
+  return match ? Number(match[1]) : VIEWER.id;
+}
 
 const readyHealth = {
   status: "ok",
@@ -299,6 +307,27 @@ export const handlerMap = {
     conversation.pinned_at = request.method === "DELETE" ? null : MESSAGE_STAMP;
     return HttpResponse.json(conversation);
   }),
+  "/api/v1/conversations/{id}/receipts": http.post(
+    "*/api/v1/conversations/:id/receipts",
+    async ({ params, request }) => {
+      const conversation = findConversation(Number(params.id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      const body = (await request.json()) as { kind?: string; position?: number };
+      const tick = body.kind === "viewed" ? "read" : "delivered";
+      const accountId = actorIdFromRequest(request);
+      setConversationTicks(conversation.id, tick, accountId);
+      publishMswRealtime({
+        type: "receipts_updated",
+        conversation_id: conversation.id,
+        account_id: accountId,
+        kind: tick,
+        position: body.position ?? 0,
+      });
+      return HttpResponse.json(conversation);
+    },
+  ),
   "/api/v1/conversations/{id}/unread": http.all(
     "*/api/v1/conversations/:id/unread",
     ({ params, request }) => {
@@ -346,10 +375,18 @@ export const handlerMap = {
       conversation_id?: number;
       silent?: boolean;
     };
-    return HttpResponse.json(
-      appendSent(body.conversation_id ?? 1, body.body ?? "", body.client_nonce, body.silent),
-      { status: 201 },
+    const message = appendSent(
+      body.conversation_id ?? 1,
+      body.body ?? "",
+      body.client_nonce,
+      body.silent,
     );
+    publishMswRealtime({
+      type: "message_created",
+      conversation_id: message.conversation_id,
+      message_id: message.id,
+    });
+    return HttpResponse.json(message, { status: 201 });
   }),
   "/api/v1/messages/{id}/forward": http.post(
     "*/api/v1/messages/:id/forward",

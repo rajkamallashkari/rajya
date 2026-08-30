@@ -77,7 +77,8 @@ describe("realtime channel hooks", () => {
 
   it("does not subscribe when the conversation id is null", () => {
     const cable = installTestCable();
-    renderHook(() => useConversationChannel(null), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useConversationChannel(null), { wrapper: createWrapper() });
+    result.current.publishActivity("typing");
     expect(cable.subscriptions).toHaveLength(0);
   });
 
@@ -154,6 +155,61 @@ describe("realtime channel hooks", () => {
     renderHook(() => useAccountChannel(), { wrapper: createWrapper() });
     cable.connectAll();
     expect(cable.subscriptions).toHaveLength(2);
+  });
+
+  it("performs typing even when no access session is bound", () => {
+    const cable = installTestCable();
+    const { result } = renderHook(() => useConversationChannel(1), { wrapper: createWrapper() });
+    result.current.publishActivity("uploading_file");
+    expect(cable.subscriptions[0]?.performs).toEqual([
+      { action: "typing", data: { activity: "uploading_file" } },
+    ]);
+  });
+
+  it("routes MSW realtime events through the account channel", async () => {
+    const listeners: Array<(event: MessageEvent<unknown>) => void> = [];
+    vi.stubEnv("VITE_MSW", "1");
+    vi.stubGlobal(
+      "BroadcastChannel",
+      class {
+        public onmessage: ((event: MessageEvent<unknown>) => void) | null = null;
+        public postMessage(data: unknown): void {
+          for (const listener of listeners) {
+            listener({ data } as MessageEvent<unknown>);
+          }
+        }
+        public close(): void {
+          return undefined;
+        }
+        constructor() {
+          listeners.push((event) => this.onmessage?.(event));
+        }
+      },
+    );
+    seedAccount();
+    const wrapper = createWrapper();
+    renderHook(() => useAccountChannel(), { wrapper });
+    const { publishMswRealtime } = await import("@/shared/lib/realtime/msw-bridge");
+    publishMswRealtime({ type: "presence", account_id: 4, online: true });
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it("throttles typing performs and still sends the first activity", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T12:00:00.000Z"));
+    seedAccount();
+    const cable = installTestCable();
+    const { result } = renderHook(() => useConversationChannel(1), { wrapper: createWrapper() });
+    result.current.publishActivity("typing");
+    result.current.publishActivity("recording_audio");
+    expect(cable.subscriptions[0]?.performs).toEqual([{ action: "typing", data: { activity: "typing" } }]);
+    vi.setSystemTime(new Date("2026-01-01T12:00:04.000Z"));
+    result.current.publishActivity("recording_audio");
+    expect(cable.subscriptions[0]?.performs).toEqual([
+      { action: "typing", data: { activity: "typing" } },
+      { action: "typing", data: { activity: "recording_audio" } },
+    ]);
   });
 });
 

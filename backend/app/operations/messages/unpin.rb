@@ -9,6 +9,9 @@ module Messages
 
       pin.destroy!
       Realtime.publish("conversation:#{conversation.id}", :message_unpinned, "message_id" => message.id)
+      SystemEvents::Write.call(
+        conversation: conversation, event: "message_unpinned", actor: actor, payload: { name: actor.display_name }
+      )
       success(pin)
     end
   end

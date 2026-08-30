@@ -18,6 +18,13 @@ RSpec.describe Message do
     expect(message.errors[:system_event]).to include("must be present only for system messages")
   end
 
+  it "is invalid when a system message has an unknown system_event" do
+    message = build(:message, kind: "system", system_event: "nope", sender_account: nil)
+
+    expect(message).not_to be_valid
+    expect(message.errors[:system_event]).to be_present
+  end
+
   it "is invalid when a system message has no system_event" do
     message = build(:message, kind: "system", system_event: nil)
 

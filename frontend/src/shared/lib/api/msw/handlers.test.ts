@@ -17,6 +17,7 @@ const expectedPaths = [
   "/api/v1/conversations/{conversation_id}/pins/{message_id}",
   "/api/v1/conversations/{id}",
   "/api/v1/conversations/{id}/pin",
+  "/api/v1/conversations/{id}/receipts",
   "/api/v1/conversations/{id}/unread",
   "/api/v1/messages",
   "/api/v1/messages/bulk_forward",
@@ -237,6 +238,22 @@ describe("MSW handlers", () => {
     expect(created.data?.id).toBe(1);
     const shown = await client.GET("/api/v1/conversations/{id}", { params: { path: { id: 1 } } });
     expect(shown.data?.id).toBe(1);
+    const receipts = await client.POST("/api/v1/conversations/{id}/receipts", {
+      headers: { Authorization: "Bearer dev-2" },
+      params: { path: { id: 1 } },
+      body: { kind: "viewed", position: 1 },
+    });
+    expect(receipts.data?.id).toBe(1);
+    const deliveredReceipts = await client.POST("/api/v1/conversations/{id}/receipts", {
+      params: { path: { id: 1 } },
+      body: { kind: "delivered" },
+    });
+    expect(deliveredReceipts.data?.id).toBe(1);
+    const missingReceipts = await client.POST("/api/v1/conversations/{id}/receipts", {
+      params: { path: { id: 999 } },
+      body: { kind: "delivered", position: 1 },
+    });
+    expect(missingReceipts.response.status).toBe(404);
     const missingConversation = await client.GET("/api/v1/conversations/{id}", {
       params: { path: { id: 999 } },
     });

@@ -10,7 +10,7 @@ declare module "@rails/actioncable" {
           disconnected?: () => void;
           received?: (data: unknown) => void;
         },
-      ) => { unsubscribe: () => void };
+      ) => { unsubscribe: () => void; perform: (action: string, data?: Record<string, unknown>) => void };
     };
   };
 }

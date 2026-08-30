@@ -3578,6 +3578,7 @@ export interface components {
             position: number;
             revision: number;
             kind: string;
+            system_event?: string | null;
             body?: string | null;
             deleted: boolean;
             silent: boolean;

@@ -11,6 +11,9 @@ module Messages
 
       pin = conversation.pinned_messages.create!(message: message, pinned_by_account: actor)
       Realtime.publish("conversation:#{conversation.id}", :message_pinned, "message_id" => message.id)
+      SystemEvents::Write.call(
+        conversation: conversation, event: "message_pinned", actor: actor, payload: { name: actor.display_name }
+      )
       success(pin)
     end
 

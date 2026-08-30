@@ -10,23 +10,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 5.1 |
-| **Next session** | 5.2 |
-| **Phase** | P5 — Read state, typing, system events |
-| **Sessions remaining in phase** | 1 (5.2) |
+| **Last completed** | 5.2 |
+| **Next session** | 6.1 |
+| **Phase** | P6 — Groups, invites, organization & blocking |
+| **Sessions remaining in phase** | 5 (6.1–6.5) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 5.2 — Typing and granular activity status (NR-3, NR-40), system event writers for all nineteen events (NR-4), tick UI wiring**
+**Session 6.1 — Roles, add/remove, leave guards, the §3.2 lifecycle**
 
-Deliverable: **Typing and granular activity status (NR-3, NR-40), system event writers for all nineteen events (NR-4), tick UI wiring**
+Deliverable: **Roles, add/remove, leave guards, the §3.2 lifecycle**
 
-Docs: SCHEMA §4 (`system_event` enum); DESIGN_SYSTEM §5.1, §5.2; TARGET §3
+Docs: SCHEMA §3.1, §3.2; GAP §2; AUDIT §2.3 (BR-48…56)
 
 Legacy to read:
-- `botverse/src/components/chat/TypingIndicator.tsx`, `SystemEventBubble.tsx` — visuals exist, the write path does not
+- `cognify/app/services/chat_membership.rb`, `app/controllers/api/v1/group_members_controller.rb`
 
 ---
 
@@ -58,6 +58,7 @@ Legacy to read:
 | 4.2 | Typed event union and router, cache writes, reconnect and catch-up | Exhaustive Cable event union fails the client build on an unhandled backend type. The router writes fetched messages into TanStack Query. Reconnect catch-up uses `after_revision` so send/edit/tombstone/react converge (BR-26, BR-30, BR-33). IndexedDB/outbox/Background Sync wait for 4.3; Playwright offline-send waits for that layer. |
 | 4.3 | IndexedDB per account, outbox single-flight, Background Sync | Per-account IndexedDB (`rajya:{accountId}`) holds outbox, a 200-message cache (BR-107), and SW auth. Outbox is `queued → sending → failed` under a Web Lock so tab drain and Background Sync cannot double-send (F-3). Playwright: offline send three, reconnect once in order; dual drain one row. Real SW dual-drain waits for a non-MSW Playwright project. |
 | 5.1 | Watermarks, `receipt_marks`, tick computation incl. bots, unread counts | Two-watermark split (BR-36): `last_seen` always, `last_read` only with receipts on; `from_position` holes so enabling receipts never discloses prior private views. Exact info times from covering `receipt_marks` (D-5). Server ticks `sent`/`delivered`/`read`; groups MIN over active humans; bots excluded from the group set and consume their own watermarks (S-9). Delivery via live socket, fetch/catch-up ack, or push acceptance including muted (Q-5; real Web Push is P10.2). `POST /receipts`, `receipts_updated`, unread reconcile job. Tick UI, typing, and nineteen system-event writers wait for 5.2. |
+| 5.2 | Typing and granular activity, system-event writers, tick UI | Ephemeral typing (NR-3) plus activity kinds (NR-40) on one cache key — TTL/throttle from Settings, no DB row, no cleanup job. `SystemEvents::Write` covers the 18 SCHEMA §4 events (`disappearing_timer_changed` was cut with NR-16); pin/create-group/update emit theirs with catalog copy. Thread ticks follow `receipts_updated` (own receipts skipped). Playwright two-context: accent ticks, typing bubble, system line. Leave-group write waits for 6.1; live Cable (non-MSW) Playwright waits for a later project. |
 
 ---
 

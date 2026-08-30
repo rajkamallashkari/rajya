@@ -128,3 +128,24 @@ function upsertOne(data: MessagePages, incoming: Message): MessagePages {
 export function upsertMessages(data: MessagePages, updates: Message[]): MessagePages {
   return updates.reduce(upsertOne, data);
 }
+
+export function applyReceiptTick(
+  data: MessagePages,
+  viewerId: number,
+  kind: string,
+  position: number,
+): MessagePages {
+  const nextTick = kind === "read" ? "read" : kind === "delivered" ? "delivered" : null;
+  if (!nextTick) {
+    return data;
+  }
+  return mapPages(data, (message) => {
+    if (!message.sender || message.sender.id !== viewerId || message.position > position || message.id < 0) {
+      return message;
+    }
+    if (nextTick === "delivered" && message.tick === "read") {
+      return message;
+    }
+    return { ...message, tick: nextTick };
+  });
+}

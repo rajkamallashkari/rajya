@@ -15,6 +15,7 @@ RSpec.describe Messages::Pin do
 
     expect(first.id).to eq(second.id)
     expect(message.conversation.pinned_messages.count).to eq(1)
+    expect(message.conversation.messages.where(system_event: "message_pinned").count).to eq(1)
   end
 
   it "rejects a pin past the configured cap and a deleted message (BR-21, BR-23)" do

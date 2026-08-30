@@ -9,6 +9,8 @@ RSpec.describe Conversations::Update do
     expect(result).to be_success
     expect(result.value.conversation.title).to eq("New")
     expect(result.value.conversation.description).to eq("Bio")
+    events = conversation.messages.where(kind: "system").order(:position).pluck(:system_event)
+    expect(events).to eq(%w[title_changed description_changed])
   end
 
   it "rejects a blank title, a direct conversation, and still allows clearing description" do
@@ -32,5 +34,13 @@ RSpec.describe Conversations::Update do
     described_class.call(account: owner.account, conversation: conversation, title: "Only")
 
     expect(conversation.reload).to have_attributes(title: "Only", description: "keep")
+  end
+
+  it "does not write a system event when the title is unchanged" do
+    owner = create(:user)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ create(:account) ])
+    described_class.call(account: owner.account, conversation: conversation, title: conversation.title)
+
+    expect(conversation.reload.messages.where(system_event: "title_changed")).not_to exist
   end
 end

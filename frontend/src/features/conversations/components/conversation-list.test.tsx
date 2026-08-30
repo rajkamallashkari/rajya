@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useQueryClient } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
+import { useEffect, type ReactNode } from "react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 import { ConversationList } from "./conversation-list";
@@ -10,9 +12,26 @@ import {
   conversationById,
   latestDemoConversation,
 } from "@/features/conversations/model/demo";
+import { TYPING_KEY_TTL_MS } from "@/features/conversations/model/typing";
 import { en } from "@/shared/lib/i18n/catalog";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { realtimeKeys } from "@/shared/lib/realtime/keys";
 import { server } from "@/test/msw";
+
+function SeedTyping({ children }: { children: ReactNode }): ReactNode {
+  const client = useQueryClient();
+  useEffect(() => {
+    client.setQueryData(realtimeKeys.typing(1), [
+      {
+        accountId: 9,
+        activity: "recording_audio",
+        displayName: "Priya",
+        expiresAt: Date.now() + TYPING_KEY_TTL_MS,
+      },
+    ]);
+  }, [client]);
+  return children;
+}
 
 describe("ConversationList", () => {
   it("keeps demo helpers for the gallery path", () => {
@@ -93,5 +112,18 @@ describe("ConversationList", () => {
     server.resetHandlers();
     await user.click(screen.getByRole("button", { name: en.lists.error_retry }));
     expect(await screen.findByText(ADA_DEMO.name)).toBeInTheDocument();
+  });
+
+  it("overlays live activity on the chat list preview", async () => {
+    render(
+      <AppProviders>
+        <MemoryRouter>
+          <SeedTyping>
+            <ConversationList />
+          </SeedTyping>
+        </MemoryRouter>
+      </AppProviders>,
+    );
+    expect(await screen.findByText(en.conversations.activity.recording_audio)).toBeInTheDocument();
   });
 });

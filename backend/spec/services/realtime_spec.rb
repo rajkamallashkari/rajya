@@ -75,6 +75,38 @@ RSpec.describe Realtime do
     expect(captured.map { |row| row.fetch(:stream) }).to eq([ "account:4" ])
   end
 
+  it "does not enqueue push or sidebar_update for typing (NR-3)" do
+    owner = create(:user)
+    member = create(:account)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ member ])
+
+    expect {
+      described_class.publish(
+        conversation, :typing,
+        "account_id" => owner.account.id, "activity" => "typing", "display_name" => owner.account.display_name
+      )
+    }.not_to have_enqueued_job(Push::FanoutJob)
+
+    types = captured.map { |row| row.dig(:payload, "type") }
+    expect(types).to include("typing")
+    expect(types).not_to include("sidebar_update")
+  end
+
+  it "fans typing to other members' account streams" do
+    owner = create(:user)
+    member = create(:account)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ member ])
+    described_class.publish(
+      conversation, :typing,
+      "account_id" => owner.account.id, "activity" => "typing", "display_name" => owner.account.display_name
+    )
+
+    streams = captured.map { |row| row.fetch(:stream) }
+    expect(streams).to include(described_class.conversation_stream(conversation.id),
+                               described_class.account_stream(member.id))
+    expect(streams).not_to include(described_class.account_stream(owner.account.id))
+  end
+
   it "accepts a Message as payload and a Conversation as the target" do
     user = create(:user)
     conversation = create_direct_between(user.account, create(:account))

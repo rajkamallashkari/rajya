@@ -237,8 +237,12 @@ describe("thread chrome", () => {
     rerender(<UnreadDivider />);
     expect(screen.getByText(en.messages.unread)).toBeInTheDocument();
     rerender(<TypingBubble senderName={en.gallery.messages.sender} />);
-    expect(screen.getByRole("status", { name: en.messages.typing })).toBeInTheDocument();
-    rerender(<TypingBubble showAvatar={false} />);
+    expect(screen.getByRole("status", { name: en.messages.activity.typing })).toBeInTheDocument();
+    rerender(<TypingBubble activity="recording_audio" showAvatar={false} />);
+    expect(screen.getByRole("status", { name: en.messages.activity.recording_audio })).toHaveAttribute(
+      "data-activity",
+      "recording_audio",
+    );
     expect(document.querySelector("[data-typing-bubble]")).not.toBeNull();
     rerender(<SystemMessage eventKey="icon_changed" />);
     expect(screen.getByText(en.messages.system.icon_changed)).toBeInTheDocument();

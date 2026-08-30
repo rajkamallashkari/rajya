@@ -9,6 +9,7 @@ export interface CableHandlers {
 
 export interface CableSubscription {
   unsubscribe: () => void;
+  perform: (action: string, data?: Record<string, unknown>) => void;
 }
 
 export interface CableConsumer {

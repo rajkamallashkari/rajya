@@ -3,8 +3,10 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { formatMessageTime } from "@/features/messages";
 import { ChatListItem } from "@/features/conversations/components/chat-list-item";
+import type { Conversation } from "@/features/conversations/api/http";
 import { useConversations, useMarkConversationUnread, usePinConversation } from "@/features/conversations/api/queries";
 import { lastActivityFromPreview } from "@/features/conversations/model/preview";
+import { useTypingIndicators } from "@/features/conversations/hooks/use-typing-indicators";
 import {
   conversationTitle,
   isGroupConversation,
@@ -90,32 +92,66 @@ export function ConversationList({
           onRetry={() => void conversations.refetch()}
           status={listStatus}
         >
-          {filtered.map((item) => {
-            const name = conversationTitle(item, t("conversations.untitled"));
-            return (
-              <ChatListItem
-                isGroup={isGroupConversation(item)}
-                key={item.id}
-                lastActivity={lastActivityFromPreview(
-                  item.last_message,
-                  t("conversations.last_message_deleted"),
-                )}
-                markedUnread={Boolean(item.manually_unread_at)}
-                muted={isMuted(item)}
-                name={name}
-                onMarkRead={() => markUnread.mutate({ id: item.id, unread: false })}
-                onMarkUnread={() => markUnread.mutate({ id: item.id, unread: true })}
-                onOpen={() => openConversation(conversationLayer(String(item.id), name))}
-                onPin={() => pinConversation.mutate({ id: item.id, pinned: !item.pinned_at })}
-                pinned={Boolean(item.pinned_at)}
-                selected={selectedId === String(item.id)}
-                timestampLabel={formatMessageTime(item.last_activity_at, i18n.language)}
-                unreadCount={item.unread_count}
-              />
-            );
-          })}
+          {filtered.map((item) => (
+            <LiveChatRow
+              item={item}
+              key={item.id}
+              locale={i18n.language}
+              onMarkRead={() => markUnread.mutate({ id: item.id, unread: false })}
+              onMarkUnread={() => markUnread.mutate({ id: item.id, unread: true })}
+              onOpen={(name) => openConversation(conversationLayer(String(item.id), name))}
+              onPin={() => pinConversation.mutate({ id: item.id, pinned: !item.pinned_at })}
+              selected={selectedId === String(item.id)}
+              untitled={t("conversations.untitled")}
+            />
+          ))}
         </ListView>
       </div>
     </div>
+  );
+}
+
+function LiveChatRow({
+  item,
+  locale,
+  onMarkRead,
+  onMarkUnread,
+  onOpen,
+  onPin,
+  selected,
+  untitled,
+}: {
+  item: Conversation;
+  locale: string;
+  onMarkRead: () => void;
+  onMarkUnread: () => void;
+  onOpen: (name: string) => void;
+  onPin: () => void;
+  selected: boolean;
+  untitled: string;
+}): ReactNode {
+  const { t } = useTranslation();
+  const typists = useTypingIndicators(item.id);
+  const name = conversationTitle(item, untitled);
+  const preview = lastActivityFromPreview(item.last_message, t("conversations.last_message_deleted"));
+  const lastActivity = typists[0]
+    ? { kind: "typing" as const, text: t(`conversations.activity.${typists[0].activity}`) }
+    : preview;
+  return (
+    <ChatListItem
+      isGroup={isGroupConversation(item)}
+      lastActivity={lastActivity}
+      markedUnread={Boolean(item.manually_unread_at)}
+      muted={isMuted(item)}
+      name={name}
+      onMarkRead={onMarkRead}
+      onMarkUnread={onMarkUnread}
+      onOpen={() => onOpen(name)}
+      onPin={onPin}
+      pinned={Boolean(item.pinned_at)}
+      selected={selected}
+      timestampLabel={formatMessageTime(item.last_activity_at, locale)}
+      unreadCount={item.unread_count}
+    />
   );
 }

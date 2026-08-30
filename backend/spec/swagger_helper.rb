@@ -242,6 +242,7 @@ RSpec.configure do |config|
                 position: { type: :integer },
                 revision: { type: :integer },
                 kind: { type: :string },
+                system_event: { type: :string, nullable: true },
                 body: { type: :string, nullable: true },
                 deleted: { type: :boolean },
                 silent: { type: :boolean },

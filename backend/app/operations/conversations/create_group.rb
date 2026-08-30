@@ -45,6 +45,10 @@ module Conversations
             account_id: account_id, role: role, joined_at: Time.current
           )
         end
+        SystemEvents::Write.call(
+          conversation: conversation, event: "conversation_created", actor: creator,
+          payload: { name: creator.display_name }
+        )
         conversation
       end
     end

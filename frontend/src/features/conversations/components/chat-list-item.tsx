@@ -75,7 +75,7 @@ export function ChatListItem({
   const prefix = lastActivityPrefix(lastActivity, isGroup);
   const previewText =
     lastActivity.kind === "typing"
-      ? t("conversations.typing")
+      ? lastActivity.text || t("conversations.typing")
       : lastActivity.kind === "media" && lastActivity.mediaType
         ? t(`conversations.media.${lastActivity.mediaType}`)
         : lastActivity.text;

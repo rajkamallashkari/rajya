@@ -16,6 +16,17 @@ RSpec.describe Conversations::CreateGroup do
     expect(conversation).to have_attributes(title: "Crew", description: "Hi")
   end
 
+  it "writes conversation_created as the last-activity system message" do
+    creator = create(:user).account
+    conversation = described_class.call(
+      creator: creator, kind: "group", account_ids: [ create(:account).id ], title: "Crew", description: nil
+    ).value.conversation
+    system = conversation.messages.find_by!(kind: "system")
+
+    expect(system.system_event).to eq("conversation_created")
+    expect(conversation.last_message_id).to eq(system.id)
+  end
+
   it "generates a fallback title when none is given (BR-55)" do
     creator = create(:user).account
     other = create(:account)

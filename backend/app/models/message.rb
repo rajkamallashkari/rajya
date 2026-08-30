@@ -1,5 +1,6 @@
 class Message < ApplicationRecord
   KINDS = %w[text system image video audio voice file].freeze
+  SYSTEM_EVENTS = SystemEvents::EVENTS
 
   belongs_to :conversation, inverse_of: :messages
   belongs_to :sender_account, class_name: "Account", optional: true, inverse_of: :sent_messages
@@ -24,6 +25,7 @@ class Message < ApplicationRecord
   scope :visible, -> { where(deleted_at: nil) }
 
   validates :kind, presence: true, inclusion: { in: KINDS }
+  validates :system_event, inclusion: { in: SYSTEM_EVENTS }, allow_nil: true
   validates :position, :revision, presence: true
   validates :forward_count, :attachment_count, numericality: { greater_than_or_equal_to: 0 }
   validate :system_event_present_iff_system_kind

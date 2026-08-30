@@ -2,14 +2,28 @@ export type MessageSide = "sent" | "received";
 export type BubbleRole = "single" | "first" | "middle" | "last";
 export type TickStatus = "queued" | "sent" | "delivered" | "read" | "failed";
 export type SystemEventKey =
+  | "avatar_changed"
+  | "call_ended"
+  | "call_missed"
+  | "call_started"
   | "chat_created"
+  | "conversation_created"
+  | "description_changed"
+  | "forwarding_restricted"
+  | "forwarding_unrestricted"
   | "icon_changed"
+  | "member_added"
   | "member_demoted"
   | "member_joined"
   | "member_left"
   | "member_promoted"
   | "member_removed"
+  | "message_pinned"
+  | "message_unpinned"
   | "ownership_transferred"
+  | "permissions_changed"
+  | "role_changed"
+  | "slow_mode_changed"
   | "title_changed";
 
 export interface GroupableMessage {
