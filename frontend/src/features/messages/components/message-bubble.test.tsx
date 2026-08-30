@@ -122,6 +122,7 @@ describe("MessageGroup", () => {
   it("renders a received run with one avatar and a sent run with retry", async () => {
     const user = userEvent.setup();
     const onRetry = vi.fn();
+    const onOpenMenu = vi.fn();
     const { rerender } = render(
       <MessageGroup
         messages={[
@@ -154,12 +155,15 @@ describe("MessageGroup", () => {
     rerender(
       <MessageGroup
         messages={[{ body: "fail", id: "f", status: "failed" }]}
+        onOpenMenu={onOpenMenu}
         onRetry={onRetry}
         side="sent"
       />,
     );
     await user.click(screen.getByRole("button", { name: en.messages.ticks.failed }));
     expect(onRetry).toHaveBeenCalledWith("f");
+    fireEvent.contextMenu(document.querySelector("[data-message-bubble]") as HTMLElement);
+    expect(onOpenMenu).toHaveBeenCalled();
   });
 });
 

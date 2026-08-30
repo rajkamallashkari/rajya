@@ -1,0 +1,15 @@
+export const conversationKeys = {
+  all: ["conversations"] as const,
+  list: () => [...conversationKeys.all, "list"] as const,
+  detail: (id: number) => [...conversationKeys.all, "detail", id] as const,
+};
+
+export const messageKeys = {
+  all: ["messages"] as const,
+  page: (conversationId: number) => [...messageKeys.all, "page", conversationId] as const,
+  around: (conversationId: number, target: { at?: string; messageId?: number }) =>
+    [...messageKeys.all, "around", conversationId, target] as const,
+  info: (id: number) => [...messageKeys.all, "info", id] as const,
+  pinned: (conversationId: number) => [...messageKeys.all, "pinned", conversationId] as const,
+  saved: () => [...messageKeys.all, "saved"] as const,
+};

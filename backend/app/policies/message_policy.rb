@@ -1,4 +1,8 @@
 class MessagePolicy < ApplicationPolicy
+  def show?
+    record.is_a?(Message) && conversation_policy.show?
+  end
+
   def update?
     own? && conversation_policy.edit_own?
   end

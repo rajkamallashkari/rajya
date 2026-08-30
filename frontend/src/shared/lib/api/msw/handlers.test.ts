@@ -1,9 +1,7 @@
-import { setupServer } from "msw/node";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../client";
 import { handlerMap, handlers } from "./handlers";
-
-const server = setupServer(...handlers);
+import { MESSAGE_STAMP, resetMessagingStore } from "./messaging-store";
 
 const expectedPaths = [
   "/api/v1/accounts/username",
@@ -13,12 +11,28 @@ const expectedPaths = [
   "/api/v1/blocks/{id}",
   "/api/v1/contact_nicknames",
   "/api/v1/contact_nicknames/{account_id}",
+  "/api/v1/conversations",
+  "/api/v1/conversations/{conversation_id}/messages",
+  "/api/v1/conversations/{conversation_id}/pins",
+  "/api/v1/conversations/{conversation_id}/pins/{message_id}",
+  "/api/v1/conversations/{id}",
+  "/api/v1/messages",
+  "/api/v1/messages/{id}",
+  "/api/v1/messages/{id}/forward",
+  "/api/v1/messages/{id}/info",
+  "/api/v1/messages/{message_id}/reactions",
+  "/api/v1/messages/{message_id}/reactions/{emoji}",
   "/api/v1/passkeys",
   "/api/v1/passkeys/assert_lock",
   "/api/v1/passkeys/lock_options",
   "/api/v1/passkeys/register",
   "/api/v1/passkeys/registration_options",
   "/api/v1/passkeys/{id}",
+  "/api/v1/saved_messages",
+  "/api/v1/saved_messages/{id}",
+  "/api/v1/scheduled_messages",
+  "/api/v1/scheduled_messages/{id}",
+  "/api/v1/scheduled_messages/{id}/send_now",
   "/api/v1/sessions",
   "/api/v1/sessions/others",
   "/api/v1/sessions/{id}",
@@ -48,9 +62,7 @@ const expectedPaths = [
 ];
 
 describe("MSW handlers", () => {
-  beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
-  afterEach(() => server.resetHandlers());
-  afterAll(() => server.close());
+  afterEach(() => resetMessagingStore());
 
   it("serves every generated path with typed bodies", async () => {
     expect(Object.keys(handlerMap).sort()).toEqual(expectedPaths.sort());
@@ -177,7 +189,9 @@ describe("MSW handlers", () => {
     expect(sessions.data?.sessions[0]?.current).toBe(true);
     const revokedOther = await client.DELETE("/api/v1/sessions/others");
     expect(revokedOther.data?.ok).toBe(true);
-    const revokedOne = await client.DELETE("/api/v1/sessions/{id}", { params: { path: { id: 1 } } });
+    const revokedOne = await client.DELETE("/api/v1/sessions/{id}", {
+      params: { path: { id: 1 } },
+    });
     expect(revokedOne.data?.ok).toBe(true);
     const nicknames = await client.GET("/api/v1/contact_nicknames");
     expect(nicknames.data?.nicknames[0]?.nickname).toBe("Ada");
@@ -201,5 +215,165 @@ describe("MSW handlers", () => {
       body: { object: "whatsapp_business_account" },
     });
     expect(inbound.data?.ok).toBe(true);
+  });
+
+  it("serves conversation and message routes from the in-memory store", async () => {
+    const client = createApiClient("http://rajya.test");
+    const listed = await client.GET("/api/v1/conversations");
+    expect(listed.data?.conversations.length).toBeGreaterThan(0);
+    const created = await client.POST("/api/v1/conversations", { body: { kind: "group" } });
+    expect(created.data?.id).toBe(1);
+    const shown = await client.GET("/api/v1/conversations/{id}", { params: { path: { id: 1 } } });
+    expect(shown.data?.id).toBe(1);
+    const missingConversation = await client.GET("/api/v1/conversations/{id}", {
+      params: { path: { id: 999 } },
+    });
+    expect(missingConversation.response.status).toBe(404);
+    const patched = await client.PATCH("/api/v1/conversations/{id}", {
+      params: { path: { id: 1 } },
+      body: { description: "notes" },
+    });
+    expect(patched.data?.id).toBe(1);
+    const page = await client.GET("/api/v1/conversations/{conversation_id}/messages", {
+      params: { path: { conversation_id: 1 } },
+    });
+    expect(page.data?.messages.length).toBeGreaterThan(0);
+    const firstId = page.data?.messages[0]?.id ?? 0;
+    const around = await client.GET("/api/v1/conversations/{conversation_id}/messages", {
+      params: { path: { conversation_id: 1 }, query: { around_id: firstId } },
+    });
+    expect(around.data?.meta.pivot_id).toBe(firstId);
+    const aroundAt = await client.GET("/api/v1/conversations/{conversation_id}/messages", {
+      params: { path: { conversation_id: 1 }, query: { around_at: MESSAGE_STAMP } },
+    });
+    expect(aroundAt.data?.messages.length).toBeGreaterThan(0);
+    const after = await client.GET("/api/v1/conversations/{conversation_id}/messages", {
+      params: { path: { conversation_id: 1 }, query: { after: 0 } },
+    });
+    expect(after.data?.messages.length).toBeGreaterThan(0);
+    const before = await client.GET("/api/v1/conversations/{conversation_id}/messages", {
+      params: { path: { conversation_id: 1 }, query: { before: 99 } },
+    });
+    expect(before.data?.messages.length).toBeGreaterThan(0);
+    const missingAround = await client.GET("/api/v1/conversations/{conversation_id}/messages", {
+      params: { path: { conversation_id: 1 }, query: { around_id: 0 } },
+    });
+    expect(missingAround.response.status).toBe(404);
+    const sent = await client.POST("/api/v1/messages", {
+      body: { conversation_id: 1, body: "hello", client_nonce: "nonce-1" },
+    });
+    expect(sent.data?.body).toBe("hello");
+    const forwarded = await client.POST("/api/v1/messages/{id}/forward", {
+      params: { path: { id: sent.data?.id ?? 1 } },
+      body: { conversation_id: 1 },
+    });
+    expect(forwarded.response.status).toBe(201);
+    const edited = await client.PATCH("/api/v1/messages/{id}", {
+      params: { path: { id: sent.data?.id ?? 1 } },
+      body: { body: "edited" },
+    });
+    expect(edited.data?.body).toBe("edited");
+    const info = await client.GET("/api/v1/messages/{id}/info", {
+      params: { path: { id: sent.data?.id ?? 1 } },
+    });
+    expect(info.data?.delivered.length).toBeGreaterThan(0);
+    const missingInfo = await client.GET("/api/v1/messages/{id}/info", {
+      params: { path: { id: 0 } },
+    });
+    expect(missingInfo.response.status).toBe(404);
+    const reacted = await client.POST("/api/v1/messages/{message_id}/reactions", {
+      params: { path: { message_id: sent.data?.id ?? 1 } },
+      body: { emoji: "👍" },
+    });
+    expect(reacted.response.status).toBe(201);
+    const unreacted = await client.DELETE("/api/v1/messages/{message_id}/reactions/{emoji}", {
+      params: { path: { message_id: sent.data?.id ?? 1, emoji: "👍" } },
+    });
+    expect(unreacted.data?.id).toBe(sent.data?.id);
+    const pinned = await client.POST("/api/v1/conversations/{conversation_id}/pins", {
+      params: { path: { conversation_id: 1 } },
+      body: { message_id: sent.data?.id ?? 1 },
+    });
+    expect(pinned.response.status).toBe(201);
+    const unpinned = await client.DELETE(
+      "/api/v1/conversations/{conversation_id}/pins/{message_id}",
+      { params: { path: { conversation_id: 1, message_id: sent.data?.id ?? 1 } } },
+    );
+    expect(unpinned.data?.ok).toBe(true);
+    const saved = await client.POST("/api/v1/saved_messages", {
+      body: { message_id: sent.data?.id ?? 1 },
+    });
+    expect(saved.response.status).toBe(201);
+    const unsaved = await client.DELETE("/api/v1/saved_messages/{id}", {
+      params: { path: { id: sent.data?.id ?? 1 } },
+    });
+    expect(unsaved.data?.ok).toBe(true);
+    const tombstone = await client.DELETE("/api/v1/messages/{id}", {
+      params: { path: { id: sent.data?.id ?? 1 } },
+    });
+    expect(tombstone.data?.deleted).toBe(true);
+    const missingEdit = await client.PATCH("/api/v1/messages/{id}", {
+      params: { path: { id: 0 } },
+      body: { body: "nope" },
+    });
+    expect(missingEdit.response.status).toBe(404);
+    const missingUnsend = await client.DELETE("/api/v1/messages/{id}", {
+      params: { path: { id: 0 } },
+    });
+    expect(missingUnsend.response.status).toBe(404);
+    const missingReact = await client.POST("/api/v1/messages/{message_id}/reactions", {
+      params: { path: { message_id: 0 } },
+      body: { emoji: "👍" },
+    });
+    expect(missingReact.response.status).toBe(404);
+    const missingUnreact = await client.DELETE("/api/v1/messages/{message_id}/reactions/{emoji}", {
+      params: { path: { message_id: 0, emoji: "👍" } },
+    });
+    expect(missingUnreact.response.status).toBe(404);
+    const missingPin = await client.POST("/api/v1/conversations/{conversation_id}/pins", {
+      params: { path: { conversation_id: 1 } },
+      body: { message_id: 0 },
+    });
+    expect(missingPin.response.status).toBe(404);
+    const missingSave = await client.POST("/api/v1/saved_messages", { body: { message_id: 0 } });
+    expect(missingSave.response.status).toBe(404);
+    const scheduled = await client.GET("/api/v1/scheduled_messages");
+    expect(scheduled.data?.scheduled_messages).toHaveLength(1);
+    const booked = await client.POST("/api/v1/scheduled_messages", {
+      body: { conversation_id: 1, body: "later", scheduled_at: MESSAGE_STAMP },
+    });
+    expect(booked.response.status).toBe(201);
+    const updated = await client.PATCH("/api/v1/scheduled_messages/{id}", {
+      params: { path: { id: 1 } },
+      body: { body: "soon" },
+    });
+    expect(updated.data?.id).toBe(1);
+    const sentNow = await client.POST("/api/v1/scheduled_messages/{id}/send_now", {
+      params: { path: { id: 1 } },
+    });
+    expect(sentNow.response.status).toBe(201);
+    const cancelled = await client.DELETE("/api/v1/scheduled_messages/{id}", {
+      params: { path: { id: 1 } },
+    });
+    expect(cancelled.data?.ok).toBe(true);
+    const forwardedMissing = await client.POST("/api/v1/messages/{id}/forward", {
+      params: { path: { id: 0 } },
+      body: {},
+    });
+    expect(forwardedMissing.response.status).toBe(201);
+    const patchedEmpty = await client.PATCH("/api/v1/messages/{id}", {
+      params: { path: { id: 102 } },
+      body: {},
+    });
+    expect(patchedEmpty.data?.body).toBe("");
+    const pinEmpty = await client.POST("/api/v1/conversations/{conversation_id}/pins", {
+      params: { path: { conversation_id: 1 } },
+      body: {},
+    });
+    expect(pinEmpty.response.status).toBe(404);
+    const saveEmpty = await client.POST("/api/v1/saved_messages", { body: {} });
+    expect(saveEmpty.response.status).toBe(404);
+    const sentBare = await client.POST("/api/v1/messages", { body: {} });
+    expect(sentBare.response.status).toBe(201);
   });
 });

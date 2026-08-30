@@ -189,12 +189,14 @@ RSpec.configure do |config|
             },
             MessagePreview: {
               type: :object,
-              required: %w[id kind created_at],
+              required: %w[id kind created_at deleted],
               properties: {
                 id: { type: :integer },
                 kind: { type: :string },
                 body: { type: :string, nullable: true },
-                created_at: { type: :string, format: :"date-time" }
+                deleted: { type: :boolean },
+                created_at: { type: :string, format: :"date-time" },
+                sender_name: { type: :string, nullable: true }
               }
             },
             ConversationMember: {
@@ -252,6 +254,41 @@ RSpec.configure do |config|
                 sender: { "$ref" => "#/components/schemas/Account", nullable: true },
                 reply_to: { type: :object, nullable: true },
                 attachments: { type: :array, items: { type: :object } }
+              }
+            },
+            MessagePageMeta: {
+              type: :object,
+              required: %w[has_more_before has_more_after],
+              properties: {
+                has_more_before: { type: :boolean },
+                has_more_after: { type: :boolean },
+                oldest_position: { type: :integer, nullable: true },
+                newest_position: { type: :integer, nullable: true },
+                pivot_id: { type: :integer, nullable: true }
+              }
+            },
+            MessagePage: {
+              type: :object,
+              required: %w[messages meta],
+              properties: {
+                messages: { type: :array, items: { "$ref" => "#/components/schemas/Message" } },
+                meta: { "$ref" => "#/components/schemas/MessagePageMeta" }
+              }
+            },
+            MessageInfoReceipt: {
+              type: :object,
+              required: %w[account],
+              properties: {
+                account: { "$ref" => "#/components/schemas/Account" },
+                at: { type: :string, format: :"date-time", nullable: true }
+              }
+            },
+            MessageInfo: {
+              type: :object,
+              required: %w[delivered read],
+              properties: {
+                delivered: { type: :array, items: { "$ref" => "#/components/schemas/MessageInfoReceipt" } },
+                read: { type: :array, items: { "$ref" => "#/components/schemas/MessageInfoReceipt" } }
               }
             },
             PinnedMessage: {

@@ -32,7 +32,21 @@ RSpec.describe ConversationResource do
 
   it "includes a last_message preview when one exists" do
     json, _conversation, _owner, _member, message = group_json
-    expect(json.fetch("last_message")).to include("id" => message.id, "body" => "Hi", "kind" => "text")
+    expect(json.fetch("last_message")).to include(
+      "id" => message.id, "body" => "Hi", "kind" => "text", "deleted" => false,
+      "sender_name" => message.sender_account.display_name
+    )
+  end
+
+  it "omits the body of a deleted last_message (BR-8)" do
+    owner = create(:user)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ create(:account) ])
+    message = create(:message, conversation: conversation, sender_account: owner.account, body: "Hi")
+    Messages::Unsend.call(message: message, actor: owner.account)
+    conversation.update!(last_message: message)
+    json = described_class.new(Conversations::View.for(conversation.reload, owner.account)).to_h
+
+    expect(json.fetch("last_message")).to include("id" => message.id, "body" => nil, "deleted" => true)
   end
 
   it "serializes a direct with the other account as peer and no members on the list view" do

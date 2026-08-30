@@ -4,6 +4,7 @@ export const UNREAD_TIER_TRIPLE = 1000;
 export const SWIPE_COMMIT_PX = 44;
 export const SWIPE_MAX_LEFT_PX = 88;
 export const SWIPE_MAX_RIGHT_PX = 44;
+export const THREAD_LOAD_OLDER_PX = 80;
 
 export type ConversationKind = "direct" | "group" | "channel";
 export type LastActivityKind = "text" | "system" | "media" | "typing";

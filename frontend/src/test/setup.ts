@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
-import { afterEach, beforeAll } from "vitest";
+import { afterAll, afterEach, beforeAll } from "vitest";
 import "@/test/memory-storage";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { resetAccountsStore } from "@/features/auth/store/accounts-store";
@@ -8,9 +8,16 @@ import { resetLockStore } from "@/features/auth/store/lock-store";
 import { initI18n } from "@/shared/lib/i18n";
 import { en } from "@/shared/lib/i18n/catalog";
 import { resetAccountDatabases } from "@/shared/lib/db";
+import { resetMessagingStore } from "@/shared/lib/api/msw/messaging-store";
 import { _testReset as resetLayerStack } from "@/shared/lib/navigation/layer-stack";
 import { resetLayerStore } from "@/shared/lib/navigation/layer-store";
 import { FakeAudio } from "@/test/fake-audio";
+import { server } from "@/test/msw";
+
+beforeAll(async () => {
+  server.listen({ onUnhandledRequest: "bypass" });
+  await initI18n({ catalog: en });
+});
 
 afterEach(() => {
   cleanup();
@@ -23,10 +30,12 @@ afterEach(() => {
   resetAccountDatabases();
   resetLayerStore();
   resetLayerStack();
+  server.resetHandlers();
+  resetMessagingStore();
 });
 
-beforeAll(async () => {
-  await initI18n({ catalog: en });
+afterAll(() => {
+  server.close();
 });
 
 if (typeof Element !== "undefined") {

@@ -73,7 +73,19 @@ export const DEMO_CONVERSATIONS: DemoConversation[] = [
   })),
 ];
 
+const SENT_ONLY_DEMO: DemoConversation = {
+  id: "sent-only",
+  lastActivity: { kind: "text", text: "solo" },
+  messages: [{ body: "solo", id: "solo-1", side: "sent" }],
+  name: "Solo",
+  timestampLabel: "10:00",
+  unreadCount: 0,
+};
+
 export function conversationById(id: string): DemoConversation | undefined {
+  if (id === SENT_ONLY_DEMO.id) {
+    return SENT_ONLY_DEMO;
+  }
   return DEMO_CONVERSATIONS.find((item) => item.id === id);
 }
 

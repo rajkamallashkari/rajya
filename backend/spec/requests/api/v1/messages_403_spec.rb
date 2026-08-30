@@ -137,6 +137,20 @@ RSpec.describe "Session 3.2 message authorization 403s", type: :request do
     expect(response).to have_http_status(:forbidden)
   end
 
+  it "returns 403 when listing messages is denied" do
+    user, conversation, _message = member_setup
+    stub_deny(ConversationPolicy, :show?)
+    get "/api/v1/conversations/#{conversation.id}/messages", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when message info is denied" do
+    user, _conversation, message = member_setup
+    stub_deny(MessagePolicy, :show?)
+    get "/api/v1/messages/#{message.id}/info", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
   it "returns 403 when send_now is denied" do
     user, conversation, _message = member_setup
     row = ScheduledMessages::Create.call(

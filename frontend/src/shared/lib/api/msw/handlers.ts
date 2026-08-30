@@ -1,5 +1,17 @@
 import { http, HttpResponse, type HttpHandler } from "msw";
 import type { paths } from "@/shared/lib/api/schema";
+import {
+  appendSent,
+  findConversation,
+  findMessage,
+  infoFor,
+  MESSAGE_STAMP,
+  messagingStore,
+  pageFor,
+  patchMessage,
+  reactStoredMessage,
+  tombstoneMessage,
+} from "./messaging-store";
 
 type HealthBody = NonNullable<
   paths["/health"]["get"]["responses"][200]["content"]
@@ -127,6 +139,22 @@ const acceptedResponse = () => HttpResponse.json(accepted);
 const okResponse = () => HttpResponse.json(ok);
 const webauthnResponse = () => HttpResponse.json(webauthnOptions);
 
+const errorBody = {
+  error: { code: "not_found", message: "not_found", details: {} },
+};
+
+function jsonError(status: number) {
+  return HttpResponse.json(errorBody, { status });
+}
+
+const scheduled = {
+  id: 1,
+  conversation_id: 1,
+  body: "later",
+  scheduled_at: MESSAGE_STAMP,
+  created_at: MESSAGE_STAMP,
+};
+
 export const handlerMap = {
   "/health": http.get("*/health", () => HttpResponse.json(readyHealth)),
   "/up": http.get("*/up", () => new HttpResponse(null, { status: 200 })),
@@ -222,6 +250,145 @@ export const handlerMap = {
         status: 200,
         headers: { "content-type": "text/plain" },
       });
+    }
+    return HttpResponse.json(ok);
+  }),
+  "/api/v1/conversations": http.all("*/api/v1/conversations", ({ request }) => {
+    if (request.method === "POST") {
+      const first = messagingStore().conversations[0];
+      return HttpResponse.json(first, { status: 201 });
+    }
+    return HttpResponse.json({ conversations: messagingStore().conversations });
+  }),
+  "/api/v1/conversations/{id}": http.all("*/api/v1/conversations/:id", ({ params }) => {
+    const conversation = findConversation(Number(params.id));
+    if (!conversation) {
+      return jsonError(404);
+    }
+    return HttpResponse.json(conversation);
+  }),
+  "/api/v1/conversations/{conversation_id}/messages": http.get(
+    "*/api/v1/conversations/:conversation_id/messages",
+    ({ params, request }) => {
+      const url = new URL(request.url);
+      const aroundId = url.searchParams.get("around_id");
+      const aroundAt = url.searchParams.get("around_at");
+      const before = url.searchParams.get("before");
+      const after = url.searchParams.get("after");
+      const page = pageFor(Number(params.conversation_id), {
+        around_id: aroundId ? Number(aroundId) : undefined,
+        around_at: aroundAt ?? undefined,
+        before: before ? Number(before) : undefined,
+        after: after ? Number(after) : undefined,
+      });
+      if (!page) {
+        return jsonError(404);
+      }
+      return HttpResponse.json(page);
+    },
+  ),
+  "/api/v1/messages/{id}/info": http.get("*/api/v1/messages/:id/info", ({ params }) => {
+    const info = infoFor(Number(params.id));
+    if (!info) {
+      return jsonError(404);
+    }
+    return HttpResponse.json(info);
+  }),
+  "/api/v1/messages": http.post("*/api/v1/messages", async ({ request }) => {
+    const body = (await request.json()) as {
+      body?: string;
+      client_nonce?: string;
+      conversation_id?: number;
+    };
+    return HttpResponse.json(
+      appendSent(body.conversation_id ?? 1, body.body ?? "", body.client_nonce),
+      { status: 201 },
+    );
+  }),
+  "/api/v1/messages/{id}/forward": http.post(
+    "*/api/v1/messages/:id/forward",
+    async ({ request, params }) => {
+      const body = (await request.json()) as { conversation_id?: number };
+      const source = findMessage(Number(params.id));
+      return HttpResponse.json(
+        appendSent(body.conversation_id ?? 1, source?.body ?? "", undefined),
+        { status: 201 },
+      );
+    },
+  ),
+  "/api/v1/messages/{id}": http.all("*/api/v1/messages/:id", async ({ request, params }) => {
+    const id = Number(params.id);
+    if (request.method === "PATCH") {
+      const body = (await request.json()) as { body?: string };
+      const next = patchMessage(id, body.body ?? "");
+      return next ? HttpResponse.json(next) : jsonError(404);
+    }
+    const next = tombstoneMessage(id);
+    return next ? HttpResponse.json(next) : jsonError(404);
+  }),
+  "/api/v1/messages/{message_id}/reactions/{emoji}": http.delete(
+    "*/api/v1/messages/:message_id/reactions/:emoji",
+    ({ params }) => {
+      const next = reactStoredMessage(Number(params.message_id));
+      return next ? HttpResponse.json(next) : jsonError(404);
+    },
+  ),
+  "/api/v1/messages/{message_id}/reactions": http.post(
+    "*/api/v1/messages/:message_id/reactions",
+    ({ params }) => {
+      const next = reactStoredMessage(Number(params.message_id));
+      return next ? HttpResponse.json(next, { status: 201 }) : jsonError(404);
+    },
+  ),
+  "/api/v1/conversations/{conversation_id}/pins/{message_id}": http.delete(
+    "*/api/v1/conversations/:conversation_id/pins/:message_id",
+    okResponse,
+  ),
+  "/api/v1/conversations/{conversation_id}/pins": http.post(
+    "*/api/v1/conversations/:conversation_id/pins",
+    async ({ request, params }) => {
+      const body = (await request.json()) as { message_id?: number };
+      const message = findMessage(body.message_id ?? 0);
+      if (!message) {
+        return jsonError(404);
+      }
+      return HttpResponse.json(
+        {
+          id: message.id,
+          conversation_id: Number(params.conversation_id),
+          message_id: message.id,
+          created_at: MESSAGE_STAMP,
+          message,
+        },
+        { status: 201 },
+      );
+    },
+  ),
+  "/api/v1/saved_messages/{id}": http.delete("*/api/v1/saved_messages/:id", okResponse),
+  "/api/v1/saved_messages": http.post("*/api/v1/saved_messages", async ({ request }) => {
+    const body = (await request.json()) as { message_id?: number };
+    const message = findMessage(body.message_id ?? 0);
+    if (!message) {
+      return jsonError(404);
+    }
+    return HttpResponse.json(
+      { id: message.id, message_id: message.id, created_at: MESSAGE_STAMP, message },
+      { status: 201 },
+    );
+  }),
+  "/api/v1/scheduled_messages": http.all("*/api/v1/scheduled_messages", ({ request }) => {
+    if (request.method === "POST") {
+      return HttpResponse.json(scheduled, { status: 201 });
+    }
+    return HttpResponse.json({ scheduled_messages: [scheduled] });
+  }),
+  "/api/v1/scheduled_messages/{id}/send_now": http.post(
+    "*/api/v1/scheduled_messages/:id/send_now",
+    () => HttpResponse.json(appendSent(1, scheduled.body), { status: 201 }),
+  ),
+  "/api/v1/scheduled_messages/{id}": http.all("*/api/v1/scheduled_messages/:id", ({ request }) => {
+    if (request.method === "PATCH") {
+      return HttpResponse.json(scheduled);
     }
     return HttpResponse.json(ok);
   }),

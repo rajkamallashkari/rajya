@@ -8,7 +8,7 @@ module Conversations
 
     def call
       @scope
-        .includes(:last_message, conversation_memberships: :account)
+        .includes(last_message: :sender_account, conversation_memberships: :account)
         .order(last_activity_at: :desc)
         .to_a
     end

@@ -44,8 +44,9 @@ describe("AppShell", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
     expect(useShellStore.getState().impersonatingName).toBeNull();
+    expect(await screen.findByRole("button", { name: en.shell.open_profile })).toBeInTheDocument();
     expect(useLayerStore.getState().layers).toEqual([
-      expect.objectContaining({ conversationId: ADA_DEMO.id, kind: "conversation" }),
+      expect.objectContaining({ conversationId: "1", kind: "conversation" }),
     ]);
     window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
     expect(useLayerStore.getState().layers).toHaveLength(1);
@@ -53,11 +54,11 @@ describe("AppShell", () => {
     expect(useLayerStore.getState().layers.some((layer) => layer.kind === "profile")).toBe(true);
     window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
     expect(useLayerStore.getState().layers).toEqual([
-      expect.objectContaining({ conversationId: ADA_DEMO.id, kind: "conversation" }),
+      expect.objectContaining({ conversationId: "1", kind: "conversation" }),
     ]);
-    await user.click(screen.getByText("Team"));
+    await user.click(await screen.findByText("Team"));
     expect(useLayerStore.getState().layers).toEqual([
-      expect.objectContaining({ conversationId: "team", kind: "conversation" }),
+      expect.objectContaining({ conversationId: "2", kind: "conversation" }),
     ]);
     window.dispatchEvent(
       new KeyboardEvent("keydown", { key: SHORTCUTS.focusSearch, bubbles: true }),
@@ -91,7 +92,7 @@ describe("AppShell", () => {
     expect(useLayerStore.getState().layers).toHaveLength(0);
     window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
     expect(useLayerStore.getState().layers).toHaveLength(0);
-    await user.click(screen.getByText(ADA_DEMO.name));
+    await user.click(await screen.findByText(ADA_DEMO.name));
     expect(useLayerStore.getState().layers).toHaveLength(1);
     window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
     expect(useLayerStore.getState().layers).toHaveLength(0);

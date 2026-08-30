@@ -291,6 +291,97 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conversations/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List messages in a conversation */
+        get: {
+            parameters: {
+                query?: {
+                    before?: number;
+                    after?: number;
+                    around_id?: number;
+                    /** Format: date_time */
+                    around_at?: string;
+                };
+                header?: never;
+                path: {
+                    conversation_id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description jump around id */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MessagePage"];
+                    };
+                };
+                /** @description unknown pivot */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messages/{id}/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Message delivery and read info */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description info */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MessageInfo"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conversations": {
         parameters: {
             query?: never;
@@ -2699,8 +2790,10 @@ export interface components {
             id: number;
             kind: string;
             body?: string | null;
+            deleted: boolean;
             /** Format: date-time */
             created_at: string;
+            sender_name?: string | null;
         };
         ConversationMember: {
             role: string;
@@ -2748,6 +2841,26 @@ export interface components {
             sender?: components["schemas"]["Account"];
             reply_to?: Record<string, never> | null;
             attachments?: Record<string, never>[];
+        };
+        MessagePageMeta: {
+            has_more_before: boolean;
+            has_more_after: boolean;
+            oldest_position?: number | null;
+            newest_position?: number | null;
+            pivot_id?: number | null;
+        };
+        MessagePage: {
+            messages: components["schemas"]["Message"][];
+            meta: components["schemas"]["MessagePageMeta"];
+        };
+        MessageInfoReceipt: {
+            account: components["schemas"]["Account"];
+            /** Format: date-time */
+            at?: string | null;
+        };
+        MessageInfo: {
+            delivered: components["schemas"]["MessageInfoReceipt"][];
+            read: components["schemas"]["MessageInfoReceipt"][];
         };
         PinnedMessage: {
             id: number;

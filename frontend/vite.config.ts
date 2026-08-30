@@ -20,6 +20,7 @@ export default defineConfig({
       injectRegister: false,
       injectManifest: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webmanifest,json}"],
+        globIgnores: ["**/mockServiceWorker.js"],
         injectionPoint: undefined,
       },
       manifest: false,

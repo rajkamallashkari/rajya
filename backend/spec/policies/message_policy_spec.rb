@@ -12,8 +12,7 @@ RSpec.describe MessagePolicy do
     user, message = setup
     policy = described_class.new(user.account, message)
 
-    expect(policy).to be_update
-    expect(policy).to be_destroy
+    expect(policy).to be_show.and be_update.and be_destroy
     expect(policy).to be_forward.and be_react.and be_save.and be_pin
   end
 
@@ -24,7 +23,7 @@ RSpec.describe MessagePolicy do
 
     expect(policy).not_to be_update
     expect(policy).not_to be_destroy
-    expect(policy).to be_react
+    expect(policy).to be_show.and be_react
   end
 
   it "scopes to conversations the account is an active member of" do
@@ -36,7 +35,9 @@ RSpec.describe MessagePolicy do
 
   it "denies update on a class record and with no acting account" do
     user, message = setup
-    expect(described_class.new(user.account, Message)).not_to be_update
-    expect(described_class.new(nil, message)).not_to be_update
+    policy = described_class.new(nil, message)
+    expect(described_class.new(user.account, Message)).not_to be_show
+    expect(policy).not_to be_update
+    expect(policy).not_to be_show
   end
 end

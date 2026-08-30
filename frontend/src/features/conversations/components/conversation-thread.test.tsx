@@ -1,16 +1,22 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
-import { ConversationThread } from "./conversation-thread";
+import { http, HttpResponse } from "msw";
+import { describe, expect, it, vi } from "vitest";
+import { ConversationThread, buildMessageMenuActions, nextInfoId } from "./conversation-thread";
 import { ProfilePanel } from "./profile-panel";
 import { AppProviders } from "@/app/providers";
+import { setAccessSession } from "@/features/auth/model/access-session";
 import { ADA_DEMO } from "@/features/conversations/model/demo";
+import { messagingStore, seedPositions } from "@/shared/lib/api/msw/messaging-store";
 import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { testSession } from "@/test/access-session";
+import { server } from "@/test/msw";
+import { THREAD_LOAD_OLDER_PX } from "@/features/conversations/model/constants";
 
 describe("conversation layers", () => {
-  it("sends, edits the last message, and opens the profile", async () => {
+  it("sends, edits the last message, and opens the profile on the demo path", async () => {
     const user = userEvent.setup();
     render(
       <AppProviders>
@@ -53,6 +59,9 @@ describe("conversation layers", () => {
     );
     fireEvent.keyDown(screen.getByRole("textbox"), { key: SHORTCUTS.editLast });
     expect(screen.queryByText(en.composer.editing)).toBeNull();
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "keep" } });
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: SHORTCUTS.editLast });
+    expect(screen.queryByText(en.composer.editing)).toBeNull();
     rerender(
       <AppProviders>
         <ProfilePanel conversationId="missing" />
@@ -77,5 +86,234 @@ describe("conversation layers", () => {
       </AppProviders>,
     );
     expect(screen.getByRole("button", { name: en.shell.back })).toBeInTheDocument();
+  });
+
+  it("loads a live conversation, sends, and opens message info", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
+    const field = screen.getByRole("textbox");
+    await user.type(field, "live-hello");
+    await user.keyboard("{Enter}");
+    expect(await screen.findByText("live-hello")).toBeInTheDocument();
+    fireEvent.keyDown(field, { key: SHORTCUTS.editLast });
+    expect(screen.getByText(en.composer.editing)).toBeInTheDocument();
+    await user.clear(field);
+    await user.type(field, "live-edited");
+    await user.keyboard("{Enter}");
+    expect(await screen.findByText("live-edited")).toBeInTheDocument();
+    const bubbles = document.querySelectorAll("[data-message-bubble]");
+    fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.copy }));
+    expect(writeText).toHaveBeenCalled();
+    fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
+    await user.click(
+      screen.getByRole("button", { name: en.messages.menu.react.replace("{{emoji}}", "👍") }),
+    );
+    fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.pin }));
+    fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.save }));
+    fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.edit }));
+    expect(screen.getByText(en.composer.editing)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.composer.dismiss_edit }));
+    fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.info }));
+    expect(await screen.findByText(en.messages.info.title)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.ui.close }));
+    fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.unsend }));
+    expect(await screen.findByText(en.messages.deleted)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.shell.open_profile }));
+    expect(useLayerStore.getState().layers.some((layer) => layer.kind === "profile")).toBe(true);
+  });
+
+  it("shows queued ticks while a live send is in flight", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    server.use(http.post("*/api/v1/messages", () => new Promise(() => undefined)));
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
+    await user.type(screen.getByRole("textbox"), "queued-body");
+    await user.keyboard("{Enter}");
+    expect(await screen.findByText("queued-body")).toBeInTheDocument();
+    expect(document.querySelector("[data-status='queued']")).not.toBeNull();
+  });
+
+  it("skips edit-last when the live thread has no sent body", async () => {
+    messagingStore().messages[3] = [
+      {
+        id: 301,
+        conversation_id: 3,
+        position: 1,
+        revision: 1,
+        kind: "text",
+        body: null,
+        deleted: false,
+        created_at: "2026-01-01T12:00:00.000Z",
+      },
+    ];
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="3" />
+      </AppProviders>,
+    );
+    expect(await screen.findByLabelText(en.conversations.untitled)).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: SHORTCUTS.editLast });
+    expect(screen.queryByText(en.composer.editing)).toBeNull();
+  });
+
+  it("loads older messages on scroll", async () => {
+    seedPositions(1, 60);
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("m60")).toBeInTheDocument();
+    expect(screen.queryByText("m1")).not.toBeInTheDocument();
+    const scroller = document.querySelector("[data-layer-scroll='1']") as HTMLDivElement;
+    Object.defineProperty(scroller, "scrollTop", { configurable: true, writable: true, value: 0 });
+    fireEvent.scroll(scroller);
+    fireEvent.scroll(scroller);
+    expect(await screen.findByText("m1")).toBeInTheDocument();
+    Object.defineProperty(scroller, "scrollTop", {
+      configurable: true,
+      writable: true,
+      value: THREAD_LOAD_OLDER_PX + 1,
+    });
+    fireEvent.scroll(scroller);
+  });
+
+  it("renders nothing for a missing live conversation", async () => {
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="999" />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(document.querySelector("[data-conversation-thread]")).toBeNull();
+    });
+    render(
+      <AppProviders>
+        <ProfilePanel conversationId="999" />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(document.querySelector("[data-profile-panel]")).toBeNull();
+    });
+    render(
+      <AppProviders>
+        <ProfilePanel conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText(en.shell.profile_subtitle)).toBeInTheDocument();
+  });
+
+  it("renders nothing when the live conversation request fails", async () => {
+    server.use(
+      http.get("*/api/v1/conversations/:id", () =>
+        HttpResponse.json(
+          { error: { code: "not_found", message: "not_found", details: {} } },
+          { status: 404 },
+        ),
+      ),
+    );
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(document.querySelector("[data-conversation-thread]")).toBeNull();
+    });
+  });
+
+  it("renders nothing when the message page fails", async () => {
+    server.use(
+      http.get("*/api/v1/conversations/:conversation_id/messages", () =>
+        HttpResponse.json(
+          { error: { code: "server", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+    );
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(document.querySelector("[data-conversation-thread]")).toBeNull();
+    });
+  });
+
+  it("renders a sent-only demo thread", () => {
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="sent-only" />
+      </AppProviders>,
+    );
+    expect(screen.getByText("solo")).toBeInTheDocument();
+    expect(screen.getByText("Solo")).toBeInTheDocument();
+  });
+
+  it("builds an empty menu when the message is missing", () => {
+    expect(
+      buildMessageMenuActions({
+        message: undefined,
+        onCopy: () => undefined,
+        onEdit: () => undefined,
+        onInfo: () => undefined,
+        onPin: () => undefined,
+        onReact: () => undefined,
+        onSave: () => undefined,
+        onUnsend: () => undefined,
+        pinned: [],
+        saved: [],
+        viewerId: 1,
+      }),
+    ).toEqual({});
+    const actions = buildMessageMenuActions({
+      message: {
+        id: 1,
+        conversation_id: 1,
+        position: 1,
+        revision: 1,
+        kind: "text",
+        body: null,
+        deleted: true,
+        created_at: "2026-01-01T12:00:00.000Z",
+      },
+      onCopy: () => undefined,
+      onEdit: () => undefined,
+      onInfo: () => undefined,
+      onPin: () => undefined,
+      onReact: () => undefined,
+      onSave: () => undefined,
+      onUnsend: () => undefined,
+      pinned: [],
+      saved: [],
+      viewerId: 1,
+    });
+    expect(actions.onCopy).toBeUndefined();
+    expect(actions.onEdit).toBeUndefined();
+    expect(nextInfoId(true, 4)).toBe(4);
+    expect(nextInfoId(false, 4)).toBeNull();
   });
 });

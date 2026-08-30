@@ -362,6 +362,8 @@
     "mute": "Mute",
     "unmute": "Unmute",
     "archive": "Archive",
+    "last_message_deleted": "Message deleted",
+    "untitled": "Untitled chat",
     "pin": "Pin",
     "unpin": "Unpin",
     "open": "Open conversation",
@@ -388,6 +390,13 @@
       "revealed": "Hidden content, tap to hide"
     },
     "mention": "@{{handle}}",
+    "deleted": "Message deleted",
+    "info": {
+      "delivered": "Delivered",
+      "empty": "No receipt information yet",
+      "read": "Read",
+      "title": "Message info"
+    },
     "typing": "Someone is typing",
     "unread": "Unread",
     "menu": {

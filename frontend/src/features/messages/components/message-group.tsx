@@ -14,6 +14,7 @@ export interface GroupMessage {
 export function MessageGroup({
   messages,
   onMentionClick,
+  onOpenMenu,
   onRetry,
   senderName,
   senderSrc,
@@ -21,6 +22,7 @@ export function MessageGroup({
 }: {
   messages: GroupMessage[];
   onMentionClick?: (handle: string) => void;
+  onOpenMenu?: (id: string, point: { clientX: number; clientY: number }) => void;
   onRetry?: (id: string) => void;
   senderName?: string | null;
   senderSrc?: string | null;
@@ -55,6 +57,9 @@ export function MessageGroup({
               createdAt={message.createdAt}
               key={message.id}
               onMentionClick={onMentionClick}
+              onOpenMenu={
+                onOpenMenu ? (point) => onOpenMenu(message.id, point) : undefined
+              }
               onRetry={onRetry ? () => onRetry(message.id) : undefined}
               reserveAvatar={false}
               role={role}

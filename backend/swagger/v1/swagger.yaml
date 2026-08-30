@@ -168,6 +168,73 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Ok"
+  "/api/v1/conversations/{conversation_id}/messages":
+    get:
+      summary: List messages in a conversation
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: before
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: after
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: around_id
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: around_at
+        in: query
+        format: date_time
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: jump around id
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MessagePage"
+        '404':
+          description: unknown pivot
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  "/api/v1/messages/{id}/info":
+    get:
+      summary: Message delivery and read info
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: info
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MessageInfo"
   "/api/v1/conversations":
     get:
       summary: List the current account's conversations
@@ -1722,6 +1789,7 @@ components:
       - id
       - kind
       - created_at
+      - deleted
       properties:
         id:
           type: integer
@@ -1730,9 +1798,14 @@ components:
         body:
           type: string
           nullable: true
+        deleted:
+          type: boolean
         created_at:
           type: string
           format: date-time
+        sender_name:
+          type: string
+          nullable: true
     ConversationMember:
       type: object
       required:
@@ -1857,6 +1930,62 @@ components:
           type: array
           items:
             type: object
+    MessagePageMeta:
+      type: object
+      required:
+      - has_more_before
+      - has_more_after
+      properties:
+        has_more_before:
+          type: boolean
+        has_more_after:
+          type: boolean
+        oldest_position:
+          type: integer
+          nullable: true
+        newest_position:
+          type: integer
+          nullable: true
+        pivot_id:
+          type: integer
+          nullable: true
+    MessagePage:
+      type: object
+      required:
+      - messages
+      - meta
+      properties:
+        messages:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Message"
+        meta:
+          "$ref": "#/components/schemas/MessagePageMeta"
+    MessageInfoReceipt:
+      type: object
+      required:
+      - account
+      properties:
+        account:
+          "$ref": "#/components/schemas/Account"
+        at:
+          type: string
+          format: date-time
+          nullable: true
+    MessageInfo:
+      type: object
+      required:
+      - delivered
+      - read
+      properties:
+        delivered:
+          type: array
+          items:
+            "$ref": "#/components/schemas/MessageInfoReceipt"
+        read:
+          type: array
+          items:
+            "$ref": "#/components/schemas/MessageInfoReceipt"
     PinnedMessage:
       type: object
       required:

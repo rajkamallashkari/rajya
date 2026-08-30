@@ -4,7 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 describe("bootstrap", () => {
   it("no-ops without a root and mounts when present", async () => {
     vi.resetModules();
-    const { bootstrap } = await import("./main");
+    vi.doMock("@/shared/lib/api/msw/start-browser", () => ({
+      defaultStartMsw: vi.fn().mockResolvedValue(undefined),
+    }));
+    const { bootstrap, mount } = await import("./main");
     await bootstrap(document);
 
     const root = document.createElement("div");
@@ -22,6 +25,7 @@ describe("bootstrap", () => {
     await waitFor(() => {
       expect(root.childNodes.length > 0).toBe(true);
     });
+    await mount(root, "1");
     vi.unstubAllGlobals();
   });
 });

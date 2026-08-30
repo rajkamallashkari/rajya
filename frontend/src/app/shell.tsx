@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { ImpersonationBanner } from "@/app/banners/impersonation-banner";
 import { OfflineBanner } from "@/app/banners/offline-banner";
 import { AppLockOverlay } from "@/features/auth/components/app-lock-overlay";
@@ -8,7 +9,8 @@ import { LayerHost } from "@/app/navigation/layer-host";
 import { ConversationList } from "@/features/conversations/components/conversation-list";
 import { ConversationThread } from "@/features/conversations/components/conversation-thread";
 import { ProfilePanel } from "@/features/conversations/components/profile-panel";
-import { latestDemoConversation } from "@/features/conversations/model/demo";
+import { useConversations } from "@/features/conversations/api/queries";
+import { conversationTitle } from "@/features/conversations/model/title";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import { useShellStore } from "@/features/settings/store/shell-store";
 import { useMobileViewport } from "@/shared/hooks/use-mobile-viewport";
@@ -16,6 +18,7 @@ import { useShortcuts } from "@/shared/hooks/use-shortcuts";
 import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
 
 export function AppShell() {
+  const { t } = useTranslation();
   const searchRef = useRef<HTMLInputElement>(null);
   const impersonatingName = useShellStore((state) => state.impersonatingName);
   const setImpersonatingName = useShellStore((state) => state.setImpersonatingName);
@@ -30,6 +33,7 @@ export function AppShell() {
     const active = state.accounts.find((account) => account.id === state.activeAccountId);
     return active !== undefined && !active.onboarded;
   });
+  const conversations = useConversations();
 
   useEffect(() => {
     hydrateAccounts();
@@ -39,9 +43,14 @@ export function AppShell() {
     if (mobile || hasConversation) {
       return;
     }
-    const latest = latestDemoConversation();
-    openConversation(conversationLayer(latest.id, latest.name));
-  }, [hasConversation, mobile, openConversation]);
+    const first = conversations.data?.conversations[0];
+    if (!first) {
+      return;
+    }
+    openConversation(
+      conversationLayer(String(first.id), conversationTitle(first, t("conversations.untitled"))),
+    );
+  }, [conversations.data, hasConversation, mobile, openConversation, t]);
 
   useShortcuts({
     onPopLayer: () => {

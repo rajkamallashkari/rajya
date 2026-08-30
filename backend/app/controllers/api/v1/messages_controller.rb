@@ -1,6 +1,12 @@
 module Api
   module V1
     class MessagesController < ApplicationController
+      def info
+        message = policy_scope(Message).find(params[:id])
+        authorize message, :show?
+        render_result(Messages::Info.call(message: message), serializer: MessageInfoResource)
+      end
+
       def create
         conversation = policy_scope(Conversation).find(params[:conversation_id])
         authorize conversation, :send?

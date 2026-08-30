@@ -40,7 +40,14 @@ class ConversationResource < ApplicationResource
     message = conversation.last_message
     next unless message
 
-    { "id" => message.id, "kind" => message.kind, "body" => message.body, "created_at" => message.created_at }
+    {
+      "id" => message.id,
+      "kind" => message.kind,
+      "body" => message.deleted? ? nil : message.body,
+      "deleted" => message.deleted?,
+      "created_at" => message.created_at,
+      "sender_name" => message.sender_account&.display_name
+    }
   end
 
   attribute :members do

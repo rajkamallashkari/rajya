@@ -10,23 +10,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 3.2 |
-| **Next session** | 3.3 |
+| **Last completed** | 3.3 |
+| **Next session** | 3.4 |
 | **Phase** | P3 — Conversations & messaging core |
-| **Sessions remaining in phase** | 4 (3.3–3.6) |
+| **Sessions remaining in phase** | 3 (3.4–3.6) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 3.3 — Cursor pagination, message queries, TanStack Query layer replacing mocks**
+**Session 3.4 — Polls (NR-15) with the transactional single-choice rule, plus `message_locations` and `message_contacts` as message children (NR-30, NR-31)**
 
-Deliverable: Cursor pagination, message queries, TanStack Query layer replacing mocks
+Deliverable: **Polls (NR-15)** with the transactional single-choice rule, plus `message_locations` and `message_contacts` as message children (NR-30, NR-31)
 
-Docs: `TARGET §4.4, §5.4; DESIGN_SYSTEM §5.1; AUDIT §2.1 (BR-107, BR-108)`
+Docs: `SCHEMA §12.1, §12.4, S-12, S-13, S-16`
 
 Legacy to read:
-- `legacy/botverse/src/stores/chatStore.ts` (the store being dissolved into Query), `botverse/src/api/index.ts`, `botverse/src/components/chat/ChatBox.tsx`
+- None — new features. Read `message_attachment.rb` only for the message-child pattern to imitate
 
 ---
 
@@ -50,6 +50,7 @@ Legacy to read:
 | 2.5 | `sessions` with per-token `jti` (NR-44), device list, nicknames (NR-41) | Each login persists a `sessions` row and embeds `jti`. Individual and bulk revoke; revoked-`jti` cache fails closed. `credentials_epoch` still signs out every device (S-20). Contact nicknames are owner-private and never appear on Account/Me/Session/Block payloads (S-22). Device/nickname settings panels wait for P12.3. |
 | 3.1 | Conversations, memberships, the §3.1 permission matrix in Pundit | Unique `direct_key` closes the DM race (F-13). Sidebar reads denormalized `last_message_id` / `last_activity_at` with a reconcile job (F-4). Pundit enforces SCHEMA §3.1; generated policy spec covers every cell; 403s on conversation HTTP. NR-1 blocks new DMs with 404. Add/remove/leave mutations wait for 6.1; send/edit/pin 403s wait for 3.2. |
 | 3.2 | Position/revision allocators, idempotent send, edit, unsend, forward, react, pin, save, schedule | Sequencer `UPDATE … RETURNING` for send (position+revision) and mutations (revision). `(conversation_id, client_nonce)` unique (F-3). Unsend is a tombstone (BR-1). Forward copies independently (BR-10–14). Reactions/pins/saves and one-shot schedule. 403s on every write. Recurring RRULE waits for 3.5; cursor pagination and TanStack Query wait for 3.3. |
+| 3.3 | Cursor pagination, message queries, TanStack Query layer replacing mocks | Position cursors (`before`/`after`) plus jump (`around_id`/`around_at`). Page size 50, jump window 60 (BR-108); client cache 200 newest (BR-107). TanStack Query owns server state with optimistic send/edit/react/pin/save/unsend rollback. Message info from watermarks (shape only). Catch-up/IndexedDB wait for P4; exact ticks wait for P5. |
 
 ---
 

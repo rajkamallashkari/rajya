@@ -62,9 +62,13 @@ Rails.application.routes.draw do
       end
       resources :conversations, only: %i[index show create update] do
         resources :pins, only: %i[create destroy], param: :message_id
+        resources :messages, only: :index, controller: "conversation_messages"
       end
       resources :messages, only: %i[create update destroy] do
-        member { post :forward }
+        member do
+          post :forward
+          get :info
+        end
         resources :reactions, only: %i[create destroy], param: :emoji, constraints: { emoji: /.*/ }
       end
       resources :saved_messages, only: %i[create destroy]
