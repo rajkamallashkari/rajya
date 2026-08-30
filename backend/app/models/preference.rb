@@ -18,9 +18,16 @@ class Preference < ApplicationRecord
 
   belongs_to :account, inverse_of: :preference
 
+  DEFAULT_TIMEZONE = "UTC"
+
   def privacy(key)
     stored = data.is_a?(Hash) ? data.dig("privacy", key.to_s) : nil
     stored.nil? ? self.class.privacy_default(key) : stored
+  end
+
+  def timezone
+    stored = data.is_a?(Hash) ? data.dig("locale", "timezone") : nil
+    stored.presence || DEFAULT_TIMEZONE
   end
 
   def self.privacy_default(key)

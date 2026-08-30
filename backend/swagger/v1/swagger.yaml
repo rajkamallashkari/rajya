@@ -481,6 +481,8 @@ paths:
                       format: date-time
                 location:
                   "$ref": "#/components/schemas/MessageLocation"
+                silent:
+                  type: boolean
                 contacts:
                   type: array
                   items:
@@ -544,6 +546,25 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Message"
+    get:
+      summary: Resolve a message permalink
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Message"
   "/api/v1/messages/{id}/forward":
     post:
       summary: Forward a message
@@ -600,6 +621,25 @@ paths:
               properties:
                 emoji:
                   type: string
+    get:
+      summary: List reaction details
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ReactionDetails"
   "/api/v1/messages/{message_id}/reactions/{emoji}":
     delete:
       summary: Remove a reaction
@@ -625,6 +665,83 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Message"
+  "/api/v1/messages/bulk_unsend":
+    post:
+      summary: Bulk unsend messages
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: tombstoned
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MessageList"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message_ids:
+                  type: array
+                  items:
+                    type: integer
+  "/api/v1/messages/bulk_forward":
+    post:
+      summary: Bulk forward messages
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: forwarded
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MessageList"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message_ids:
+                  type: array
+                  items:
+                    type: integer
+                conversation_id:
+                  type: integer
+  "/api/v1/messages/bulk_save":
+    post:
+      summary: Bulk save messages
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: saved
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SavedMessageList"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message_ids:
+                  type: array
+                  items:
+                    type: integer
   "/api/v1/users/me/phone/verification":
     post:
       summary: Start WhatsApp click-to-verify (NR-9)
@@ -890,6 +1007,8 @@ paths:
                 client_nonce:
                   type: string
                   format: uuid
+                recurrence_rule:
+                  type: string
   "/api/v1/scheduled_messages/{id}":
     patch:
       summary: Update a scheduled message
@@ -921,6 +1040,8 @@ paths:
                 scheduled_at:
                   type: string
                   format: date-time
+                recurrence_rule:
+                  type: string
     delete:
       summary: Cancel a scheduled message
       tags:
@@ -1983,6 +2104,7 @@ components:
       - revision
       - kind
       - deleted
+      - silent
       - created_at
       properties:
         id:
@@ -1999,6 +2121,8 @@ components:
           type: string
           nullable: true
         deleted:
+          type: boolean
+        silent:
           type: boolean
         client_nonce:
           type: string
@@ -2044,6 +2168,32 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/MessageContact"
+    MessageList:
+      type: object
+      required:
+      - messages
+      properties:
+        messages:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Message"
+    ReactionDetails:
+      type: object
+      required:
+      - reactions
+      properties:
+        reactions:
+          type: array
+          items:
+            type: object
+            required:
+            - emoji
+            - account
+            properties:
+              emoji:
+                type: string
+              account:
+                "$ref": "#/components/schemas/Account"
     PollOption:
       type: object
       required:
@@ -2229,6 +2379,15 @@ components:
           format: date-time
         message:
           "$ref": "#/components/schemas/Message"
+    SavedMessageList:
+      type: object
+      required:
+      - saved_messages
+      properties:
+        saved_messages:
+          type: array
+          items:
+            "$ref": "#/components/schemas/SavedMessage"
     ScheduledMessage:
       type: object
       required:
@@ -2236,6 +2395,7 @@ components:
       - conversation_id
       - body
       - scheduled_at
+      - occurrences_sent
       properties:
         id:
           type: integer
@@ -2252,6 +2412,23 @@ components:
           nullable: true
         reply_to_message_id:
           type: integer
+          nullable: true
+        recurrence_rule:
+          type: string
+          nullable: true
+        next_run_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_run_at:
+          type: string
+          format: date-time
+          nullable: true
+        occurrences_sent:
+          type: integer
+        ends_at:
+          type: string
+          format: date-time
           nullable: true
         created_at:
           type: string

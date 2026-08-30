@@ -233,7 +233,7 @@ RSpec.configure do |config|
             },
             Message: {
               type: :object,
-              required: %w[id conversation_id position revision kind deleted created_at],
+              required: %w[id conversation_id position revision kind deleted silent created_at],
               properties: {
                 id: { type: :integer },
                 conversation_id: { type: :integer },
@@ -242,6 +242,7 @@ RSpec.configure do |config|
                 kind: { type: :string },
                 body: { type: :string, nullable: true },
                 deleted: { type: :boolean },
+                silent: { type: :boolean },
                 client_nonce: { type: :string, format: :uuid, nullable: true },
                 forward_count: { type: :integer },
                 attachment_count: { type: :integer },
@@ -257,6 +258,30 @@ RSpec.configure do |config|
                 poll: { "$ref" => "#/components/schemas/Poll", nullable: true },
                 location: { "$ref" => "#/components/schemas/MessageLocation", nullable: true },
                 contacts: { type: :array, items: { "$ref" => "#/components/schemas/MessageContact" } }
+              }
+            },
+            MessageList: {
+              type: :object,
+              required: %w[messages],
+              properties: {
+                messages: { type: :array, items: { "$ref" => "#/components/schemas/Message" } }
+              }
+            },
+            ReactionDetails: {
+              type: :object,
+              required: %w[reactions],
+              properties: {
+                reactions: {
+                  type: :array,
+                  items: {
+                    type: :object,
+                    required: %w[emoji account],
+                    properties: {
+                      emoji: { type: :string },
+                      account: { "$ref" => "#/components/schemas/Account" }
+                    }
+                  }
+                }
               }
             },
             PollOption: {
@@ -371,9 +396,16 @@ RSpec.configure do |config|
                 message: { "$ref" => "#/components/schemas/Message" }
               }
             },
+            SavedMessageList: {
+              type: :object,
+              required: %w[saved_messages],
+              properties: {
+                saved_messages: { type: :array, items: { "$ref" => "#/components/schemas/SavedMessage" } }
+              }
+            },
             ScheduledMessage: {
               type: :object,
-              required: %w[id conversation_id body scheduled_at],
+              required: %w[id conversation_id body scheduled_at occurrences_sent],
               properties: {
                 id: { type: :integer },
                 conversation_id: { type: :integer },
@@ -381,6 +413,11 @@ RSpec.configure do |config|
                 scheduled_at: { type: :string, format: :"date-time" },
                 client_nonce: { type: :string, format: :uuid, nullable: true },
                 reply_to_message_id: { type: :integer, nullable: true },
+                recurrence_rule: { type: :string, nullable: true },
+                next_run_at: { type: :string, format: :"date-time", nullable: true },
+                last_run_at: { type: :string, format: :"date-time", nullable: true },
+                occurrences_sent: { type: :integer },
+                ends_at: { type: :string, format: :"date-time", nullable: true },
                 created_at: { type: :string, format: :"date-time" }
               }
             },

@@ -44,6 +44,7 @@ export function formatMessageTime(iso: string, locale: string): string {
 export function MessageBubble({
   body,
   createdAt,
+  id,
   lifted = false,
   locale = "en",
   onMentionClick,
@@ -63,6 +64,7 @@ export function MessageBubble({
   status,
 }: {
   body: string;
+  id?: string;
   createdAt?: string;
   lifted?: boolean;
   locale?: string;
@@ -102,6 +104,7 @@ export function MessageBubble({
         lifted && "relative z-[var(--z-popover)]",
       )}
       data-lifted={lifted ? "true" : "false"}
+      data-message-id={id}
       data-message-bubble=""
       data-role={role}
       data-side={side}

@@ -73,6 +73,25 @@ RSpec.describe ScheduledMessages::Create do
                                 scheduled_at: 1.hour.from_now).error_code).to eq(:validation_failed)
   end
 
+  it "stages a recurring rule with next_run_at" do
+    user, conversation = setup
+    result = described_class.call(
+      conversation: conversation, sender: user.account, body: "Daily",
+      scheduled_at: 1.hour.from_now, recurrence_rule: "FREQ=DAILY"
+    )
+
+    expect(result.value.recurrence_rule).to eq("FREQ=DAILY")
+    expect(result.value.next_run_at).to be_within(2.seconds).of(result.value.scheduled_at)
+  end
+
+  it "rejects an unsupported recurrence rule" do
+    user, conversation = setup
+    expect(described_class.call(
+      conversation: conversation, sender: user.account, body: "Later",
+      scheduled_at: 1.hour.from_now, recurrence_rule: "FREQ=HOURLY"
+    ).error_code).to eq(:validation_failed)
+  end
+
   it "rejects an unparsable scheduled_at" do
     user, conversation = setup
     expect(described_class.call(conversation: conversation, sender: user.account, body: "Later",

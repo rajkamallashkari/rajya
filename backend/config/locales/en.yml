@@ -60,6 +60,7 @@ en:
         emoji_too_long: "is too long (maximum is %{count} characters)"
       scheduled_message:
         not_future: "must be in the future"
+        rrule: "must use FREQ with optional INTERVAL, BYDAY, COUNT, or UNTIL"
       account:
         username_invalid: "must be %{min}–%{max} letters, numbers, underscores, or dots"
         username_taken: "has already been taken"

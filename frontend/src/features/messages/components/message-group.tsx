@@ -66,6 +66,7 @@ export function MessageGroup({
               body={message.body}
               contacts={message.contacts}
               createdAt={message.createdAt}
+              id={message.id}
               key={message.id}
               location={message.location}
               onMentionClick={onMentionClick}

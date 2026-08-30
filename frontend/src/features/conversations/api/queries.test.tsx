@@ -8,18 +8,23 @@ import {
   emptyIdList,
   newerPageParam,
   olderPageParam,
+  useBulkForward,
+  useBulkSave,
+  useBulkUnsend,
+  useClosePoll,
   useEditMessage,
   useJumpToMessage,
   useMessageInfo,
   useMessagePage,
+  useMessagePermalink,
   usePinMessage,
+  usePollResults,
   useReactMessage,
+  useReactionDetails,
   useSaveMessage,
   useSendMessage,
   useUnsendMessage,
   useVotePoll,
-  useClosePoll,
-  usePollResults,
 } from "./queries";
 import type { MessagePage } from "./http";
 import { attachPoll, seedPositions } from "@/shared/lib/api/msw/messaging-store";
@@ -309,6 +314,73 @@ describe("message queries", () => {
     await user.click(screen.getByRole("button", { name: en.messages.menu.save }));
     await waitFor(() => {
       expect(screen.queryByText(/nope/)).toBeNull();
+    });
+  });
+
+  it("loads a permalink and reaction details, and rolls bulk unsend back", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    server.use(
+      http.post("*/api/v1/messages/bulk_unsend", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+      http.post("*/api/v1/messages/bulk_save", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+      http.post("*/api/v1/messages/bulk_forward", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+    );
+
+    function BulkHarness() {
+      const permalink = useMessagePermalink(101);
+      const reactions = useReactionDetails(101);
+      const idlePermalink = useMessagePermalink(null);
+      const idleReactions = useReactionDetails(null);
+      const unsend = useBulkUnsend(1);
+      const save = useBulkSave();
+      const forward = useBulkForward(1);
+      return (
+        <div>
+          <p data-permalink={permalink.isSuccess ? "yes" : "no"}>{permalink.data?.id}</p>
+          <p data-reactions={reactions.isSuccess ? "yes" : "no"} />
+          <p data-idle-permalink={idlePermalink.fetchStatus} />
+          <p data-idle-reactions={idleReactions.fetchStatus} />
+          <Button onClick={() => unsend.mutate([101])} type="button">
+            bulk-unsend
+          </Button>
+          <Button onClick={() => save.mutate([101])} type="button">
+            bulk-save
+          </Button>
+          <Button onClick={() => forward.mutate({ messageIds: [101], targetId: 1 })} type="button">
+            bulk-forward
+          </Button>
+        </div>
+      );
+    }
+
+    render(
+      <AppProviders>
+        <BulkHarness />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText("101")).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: "bulk-unsend" }));
+    await user.click(screen.getByRole("button", { name: "bulk-save" }));
+    await user.click(screen.getByRole("button", { name: "bulk-forward" }));
+    await waitFor(() => {
+      expect(screen.getByText("101")).toBeInTheDocument();
     });
   });
 });

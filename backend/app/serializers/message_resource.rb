@@ -11,6 +11,7 @@ class MessageResource < ApplicationResource
   attribute :sender_snapshot, &:sender_snapshot
   attribute :forwarded_from_account_id, &:forwarded_from_account_id
   attribute :client_nonce, &:client_nonce
+  attribute :silent, &:silent
   attribute :edited_at, &:edited_at
   attribute :created_at, &:created_at
 

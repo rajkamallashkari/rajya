@@ -10,5 +10,6 @@ RSpec.describe ScheduledMessageResource do
     json = described_class.new(row).to_h
 
     expect(json).to include("id" => row.id, "body" => "Later", "conversation_id" => conversation.id)
+    expect(json.fetch("recurrence_rule")).to be_nil
   end
 end

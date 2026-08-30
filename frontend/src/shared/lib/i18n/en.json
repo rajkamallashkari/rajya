@@ -411,7 +411,9 @@
       "unsave": "Unsave",
       "info": "Info",
       "unsend": "Unsend",
-      "react": "React with {{emoji}}"
+      "react": "React with {{emoji}}",
+      "select": "Select",
+      "reactions": "Reactions"
     },
     "system": {
       "member_joined": "{{name}} joined",

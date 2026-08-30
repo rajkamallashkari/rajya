@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ImpersonationBanner } from "@/app/banners/impersonation-banner";
 import { OfflineBanner } from "@/app/banners/offline-banner";
@@ -9,6 +10,7 @@ import { LayerHost } from "@/app/navigation/layer-host";
 import { ConversationList } from "@/features/conversations/components/conversation-list";
 import { ConversationThread } from "@/features/conversations/components/conversation-thread";
 import { ProfilePanel } from "@/features/conversations/components/profile-panel";
+import { getMessage } from "@/features/conversations/api/http";
 import { useConversations } from "@/features/conversations/api/queries";
 import { conversationTitle } from "@/features/conversations/model/title";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
@@ -34,10 +36,39 @@ export function AppShell() {
     return active !== undefined && !active.onboarded;
   });
   const conversations = useConversations();
+  const params = useParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     hydrateAccounts();
   }, [hydrateAccounts]);
+
+  useEffect(() => {
+    const conversationId = params.conversationId;
+    if (!conversationId) {
+      return;
+    }
+    const listed = conversations.data?.conversations.find((row) => String(row.id) === conversationId);
+    openConversation(
+      conversationLayer(
+        conversationId,
+        listed ? conversationTitle(listed, t("conversations.untitled")) : t("conversations.untitled"),
+        params.messageId,
+      ),
+    );
+  }, [conversations.data, openConversation, params.conversationId, params.messageId, t]);
+
+  useEffect(() => {
+    const messageId = params.messageId;
+    if (!messageId || params.conversationId) {
+      return;
+    }
+    void getMessage(Number(messageId))
+      .then((message) => {
+        navigate(`/c/${String(message.conversation_id)}/m/${String(message.id)}`, { replace: true });
+      })
+      .catch(() => undefined);
+  }, [navigate, params.conversationId, params.messageId]);
 
   useEffect(() => {
     if (mobile || hasConversation) {

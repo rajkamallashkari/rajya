@@ -14,6 +14,7 @@ import {
   voteStoredPoll,
   closeStoredPoll,
   findPoll,
+  VIEWER,
 } from "./messaging-store";
 
 type HealthBody = NonNullable<
@@ -156,6 +157,9 @@ const scheduled = {
   body: "later",
   scheduled_at: MESSAGE_STAMP,
   created_at: MESSAGE_STAMP,
+  occurrences_sent: 0,
+  recurrence_rule: "FREQ=DAILY",
+  next_run_at: MESSAGE_STAMP,
 };
 
 export const handlerMap = {
@@ -302,9 +306,10 @@ export const handlerMap = {
       body?: string;
       client_nonce?: string;
       conversation_id?: number;
+      silent?: boolean;
     };
     return HttpResponse.json(
-      appendSent(body.conversation_id ?? 1, body.body ?? "", body.client_nonce),
+      appendSent(body.conversation_id ?? 1, body.body ?? "", body.client_nonce, body.silent),
       { status: 201 },
     );
   }),
@@ -319,8 +324,40 @@ export const handlerMap = {
       );
     },
   ),
+  "/api/v1/messages/bulk_unsend": http.post("*/api/v1/messages/bulk_unsend", async ({ request }) => {
+    const body = (await request.json()) as { message_ids?: number[] };
+    const messages = (body.message_ids ?? [])
+      .map((id) => tombstoneMessage(id))
+      .filter((row): row is NonNullable<typeof row> => Boolean(row));
+    return HttpResponse.json({ messages });
+  }),
+  "/api/v1/messages/bulk_forward": http.post("*/api/v1/messages/bulk_forward", async ({ request }) => {
+    const body = (await request.json()) as { conversation_id?: number; message_ids?: number[] };
+    const messages = (body.message_ids ?? []).map((id) => {
+      const source = findMessage(id);
+      return appendSent(body.conversation_id ?? 1, source?.body ?? "", undefined);
+    });
+    return HttpResponse.json({ messages }, { status: 201 });
+  }),
+  "/api/v1/messages/bulk_save": http.post("*/api/v1/messages/bulk_save", async ({ request }) => {
+    const body = (await request.json()) as { message_ids?: number[] };
+    const saved_messages = (body.message_ids ?? []).map((id) => {
+      const message = findMessage(id);
+      return {
+        id,
+        message_id: id,
+        created_at: MESSAGE_STAMP,
+        message: message ?? appendSent(1, "", undefined),
+      };
+    });
+    return HttpResponse.json({ saved_messages }, { status: 201 });
+  }),
   "/api/v1/messages/{id}": http.all("*/api/v1/messages/:id", async ({ request, params }) => {
     const id = Number(params.id);
+    if (request.method === "GET") {
+      const message = findMessage(id);
+      return message ? HttpResponse.json(message) : jsonError(404);
+    }
     if (request.method === "PATCH") {
       const body = (await request.json()) as { body?: string };
       const next = patchMessage(id, body.body ?? "");
@@ -336,9 +373,21 @@ export const handlerMap = {
       return next ? HttpResponse.json(next) : jsonError(404);
     },
   ),
-  "/api/v1/messages/{message_id}/reactions": http.post(
+  "/api/v1/messages/{message_id}/reactions": http.all(
     "*/api/v1/messages/:message_id/reactions",
-    ({ params }) => {
+    ({ params, request }) => {
+      const message = findMessage(Number(params.message_id));
+      if (!message) {
+        return jsonError(404);
+      }
+      if (request.method === "GET") {
+        const summary = message.reaction_summary ?? {};
+        const reactions = Object.keys(summary).map((emoji) => ({
+          emoji,
+          account: message.sender ?? VIEWER,
+        }));
+        return HttpResponse.json({ reactions });
+      }
       const next = reactStoredMessage(Number(params.message_id));
       return next ? HttpResponse.json(next, { status: 201 }) : jsonError(404);
     },

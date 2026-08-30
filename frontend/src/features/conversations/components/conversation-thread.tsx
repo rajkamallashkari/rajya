@@ -4,14 +4,19 @@ import { getAccessSession } from "@/features/auth/model/access-session";
 import { Composer } from "@/features/composer";
 import type { Message } from "@/features/conversations/api/http";
 import {
+  useBulkForward,
+  useBulkSave,
+  useBulkUnsend,
   useConversation,
   useEditMessage,
+  useJumpToMessage,
   useMessageInfo,
   useMessagePage,
   usePinMessage,
   usePinnedIds,
   usePollResults,
   useReactMessage,
+  useReactionDetails,
   useSaveMessage,
   useSavedIds,
   useSendMessage,
@@ -29,9 +34,12 @@ import {
   MessageContextMenu,
   MessageGroup,
   PollResultsSheet,
+  ReactionDetailsSheet,
+  SelectionToolbar,
   groupMessageRuns,
   type MessageMenuActions,
 } from "@/features/messages";
+import { copyText } from "@/features/messages/model/copy-text";
 import {
   contactViewFromApi,
   locationViewFromApi,
@@ -146,13 +154,29 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const pin = usePinMessage(conversationId);
   const save = useSaveMessage();
   const unsend = useUnsendMessage(conversationId);
+  const bulkUnsend = useBulkUnsend(conversationId);
+  const bulkSave = useBulkSave();
+  const bulkForward = useBulkForward(conversationId);
   const vote = useVotePoll(conversationId);
   const pinned = usePinnedIds(conversationId);
   const saved = useSavedIds();
   const [infoId, setInfoId] = useState<number | null>(null);
   const [resultsPollId, setResultsPollId] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [reactionsId, setReactionsId] = useState<number | null>(null);
   const info = useMessageInfo(infoId);
   const results = usePollResults(resultsPollId);
+  const reactions = useReactionDetails(reactionsId);
+  const focusMessageId = useLayerStore(
+    (state) =>
+      state.layers.find(
+        (layer) => layer.kind === "conversation" && layer.conversationId === String(conversationId),
+      )?.focusMessageId,
+  );
+  const jump = useJumpToMessage(
+    conversationId,
+    focusMessageId ? { messageId: Number(focusMessageId) } : {},
+  );
   const pushLayer = useLayerStore((state) => state.pushLayer);
   const mobile = useMobileViewport();
   const [draft, setDraft] = useState("");
@@ -165,13 +189,19 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const scroller = useRef<HTMLDivElement>(null);
   const stuck = useRef(false);
   const viewerId = getAccessSession()?.accountId ?? 0;
-  const messages = page.messages;
+  const listed = page.messages;
+  const jumped = jump.data?.messages ?? [];
+  const focusId = focusMessageId ? Number(focusMessageId) : null;
+  const messages =
+    focusId != null && !listed.some((row) => row.id === focusId) && jumped.length > 0
+      ? jumped
+      : listed;
   const conversation = conversationQuery.data;
   const title = conversation ? conversationTitle(conversation, t("conversations.untitled")) : "";
 
   useEffect(() => {
     stuck.current = false;
-  }, [conversationId]);
+  }, [conversationId, focusMessageId]);
 
   useEffect(() => {
     const node = scroller.current;
@@ -179,8 +209,15 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
       return;
     }
     stuck.current = true;
+    if (focusMessageId) {
+      const target = node.querySelector(`[data-message-id="${focusMessageId}"]`);
+      if (target) {
+        target.scrollIntoView({ block: "center" });
+        return;
+      }
+    }
     node.scrollTop = node.scrollHeight;
-  }, [messages.length]);
+  }, [focusMessageId, messages.length]);
 
   const lastSent = [...messages].reverse().find((message) => message.sender?.id === viewerId);
 
@@ -215,6 +252,32 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         showBack={mobile}
         title={title}
       />
+      {selectedIds.length > 0 ? (
+        <SelectionToolbar
+          count={selectedIds.length}
+          onClear={() => setSelectedIds([])}
+          onCopy={() => {
+            const text = messages
+              .filter((row) => selectedIds.includes(row.id) && row.body)
+              .map((row) => row.body)
+              .join("\n");
+            void copyText(text);
+          }}
+          onDelete={() => {
+            bulkUnsend.mutate(selectedIds);
+            setSelectedIds([]);
+          }}
+          onForward={() => {
+            bulkForward.mutate({ messageIds: selectedIds, targetId: conversationId });
+            setSelectedIds([]);
+          }}
+          onSave={() => {
+            bulkSave.mutate(selectedIds);
+            setSelectedIds([]);
+          }}
+          onSelectAll={() => setSelectedIds(messages.map((row) => row.id))}
+        />
+      ) : null}
       <div
         className="flex min-h-0 flex-1 flex-col gap-[var(--space-4)] overflow-y-auto px-[var(--space-list-x)] py-[var(--space-list-y)]"
         data-layer-scroll={String(conversationId)}
@@ -255,12 +318,12 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           setEditingId(lastSent.id);
           setDraft(lastSent.body);
         }}
-        onSend={({ text }) => {
+        onSend={({ silent, text }) => {
           if (editingId) {
             edit.mutate({ body: text, id: editingId });
             setEditingId(null);
           } else {
-            send.mutate({ body: text, client_nonce: newClientNonce() });
+            send.mutate({ body: text, client_nonce: newClientNonce(), silent });
           }
           setDraft("");
         }}
@@ -280,7 +343,9 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
             onInfo: setInfoId,
             onPin: (id) => pin.mutate(id),
             onReact: (id, emoji) => react.mutate({ emoji, id }),
+            onReactions: setReactionsId,
             onSave: (id) => save.mutate(id),
+            onSelect: (id) => setSelectedIds((current) => (current.includes(id) ? current : [...current, id])),
             onUnsend: (id) => unsend.mutate(id),
             pinned: pinned.data,
             saved: saved.data,
@@ -295,6 +360,19 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         info={info.data}
         onOpenChange={(open) => setInfoId(nextInfoId(open, infoId))}
         open={infoId != null}
+      />
+      <ReactionDetailsSheet
+        onOpenChange={(open) => {
+          if (!open) {
+            setReactionsId(null);
+          }
+        }}
+        open={reactionsId != null}
+        reactions={(reactions.data?.reactions ?? []).map((row) => ({
+          accountId: String(row.account.id),
+          emoji: row.emoji,
+          name: row.account.display_name,
+        }))}
       />
       {results.data ? (
         <PollResultsSheet
@@ -362,6 +440,7 @@ function ThreadMessages({
               {run.messages.map((item) => (
                 <p
                   className="px-[var(--space-4)] py-[var(--space-3)] text-center text-[length:var(--text-sm)] text-[var(--text-tertiary)]"
+                  data-message-id={item.id}
                   data-system-message=""
                   key={item.id}
                 >
@@ -443,7 +522,9 @@ export function buildMessageMenuActions({
   onInfo,
   onPin,
   onReact,
+  onReactions,
   onSave,
+  onSelect,
   onUnsend,
   pinned,
   saved,
@@ -455,7 +536,9 @@ export function buildMessageMenuActions({
   onInfo: (id: number) => void;
   onPin: (id: number) => void;
   onReact: (id: number, emoji: string) => void;
+  onReactions: (id: number) => void;
   onSave: (id: number) => void;
+  onSelect: (id: number) => void;
   onUnsend: (id: number) => void;
   pinned: number[];
   saved: number[];
@@ -476,7 +559,9 @@ export function buildMessageMenuActions({
     onInfo: () => onInfo(message.id),
     onPin: () => onPin(message.id),
     onReact: (emoji) => onReact(message.id, emoji),
+    onReactions: () => onReactions(message.id),
     onSave: () => onSave(message.id),
+    onSelect: () => onSelect(message.id),
     onUnsend: () => onUnsend(message.id),
   };
 }

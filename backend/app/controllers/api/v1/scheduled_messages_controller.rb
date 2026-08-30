@@ -22,7 +22,8 @@ module Api
         render_result(
           ScheduledMessages::Update.call(
             scheduled_message: scheduled_message, actor: current_account,
-            body: params[:body], scheduled_at: params[:scheduled_at]
+            body: params[:body], scheduled_at: params[:scheduled_at],
+            recurrence_rule: params[:recurrence_rule]
           ),
           serializer: ScheduledMessageResource
         )
@@ -49,7 +50,8 @@ module Api
           body: params[:body],
           scheduled_at: params[:scheduled_at],
           client_nonce: params[:client_nonce],
-          reply_to_message_id: params[:reply_to_message_id]
+          reply_to_message_id: params[:reply_to_message_id],
+          recurrence_rule: params[:recurrence_rule]
         }
       end
     end

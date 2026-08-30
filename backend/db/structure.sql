@@ -1104,6 +1104,7 @@ CREATE TABLE public.messages (
     deleted_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    silent boolean DEFAULT false NOT NULL,
     search_vector tsvector GENERATED ALWAYS AS (to_tsvector('simple'::regconfig, COALESCE(body, ''::text))) STORED,
     CONSTRAINT ck_messages_kind CHECK (((kind)::text = ANY ((ARRAY['text'::character varying, 'system'::character varying, 'image'::character varying, 'video'::character varying, 'audio'::character varying, 'voice'::character varying, 'file'::character varying])::text[]))),
     CONSTRAINT ck_messages_sender_required_unless_system CHECK ((((kind)::text = 'system'::text) OR (sender_account_id IS NOT NULL) OR (sender_snapshot <> '{}'::jsonb))),
@@ -1486,7 +1487,13 @@ CREATE TABLE public.scheduled_messages (
     body text NOT NULL,
     scheduled_at timestamp(6) without time zone NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    recurrence_rule text,
+    next_run_at timestamp(6) without time zone,
+    last_run_at timestamp(6) without time zone,
+    occurrences_sent integer DEFAULT 0 NOT NULL,
+    ends_at timestamp(6) without time zone,
+    CONSTRAINT ck_scheduled_messages_occurrences_sent CHECK ((occurrences_sent >= 0))
 );
 
 
@@ -3363,6 +3370,13 @@ CREATE UNIQUE INDEX idx_scheduled_messages_client_nonce ON public.scheduled_mess
 
 
 --
+-- Name: idx_scheduled_messages_next_run; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scheduled_messages_next_run ON public.scheduled_messages USING btree (next_run_at) WHERE (recurrence_rule IS NOT NULL);
+
+
+--
 -- Name: idx_verification_codes_active; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4691,6 +4705,7 @@ ALTER TABLE ONLY public.message_link_previews
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260830074100'),
 ('20260830052200'),
 ('20260830040900'),
 ('20260830000000'),

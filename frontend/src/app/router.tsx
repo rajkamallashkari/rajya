@@ -31,6 +31,9 @@ function AccountsRoute() {
 
 export const appRoutes = [
   { path: "/", element: <ShellRoute /> },
+  { path: "/c/:conversationId", element: <ShellRoute /> },
+  { path: "/c/:conversationId/m/:messageId", element: <ShellRoute /> },
+  { path: "/m/:messageId", element: <ShellRoute /> },
   { path: "/dev/gallery", element: <GalleryRoute /> },
   { path: "/dev/accounts", element: <AccountsRoute /> },
 ];

@@ -191,4 +191,42 @@ RSpec.describe "Session 3.2 message authorization 403s", type: :request do
     get "/api/v1/polls/#{poll.id}", headers: auth_headers_for(user)
     expect(response).to have_http_status(:forbidden)
   end
+
+  it "returns 403 when permalink show is denied" do
+    user, _conversation, message = member_setup
+    stub_deny(MessagePolicy, :show?)
+    get "/api/v1/messages/#{message.id}", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when reaction details are denied" do
+    user, _conversation, message = member_setup
+    stub_deny(MessagePolicy, :show?)
+    get "/api/v1/messages/#{message.id}/reactions", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when bulk unsend is denied" do
+    user, _conversation, message = member_setup
+    stub_deny(MessagePolicy, :bulk_unsend?)
+    post "/api/v1/messages/bulk_unsend", headers: auth_headers_for(user),
+         params: { message_ids: [ message.id ] }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when bulk forward is denied" do
+    user, conversation, message = member_setup
+    stub_deny(MessagePolicy, :bulk_forward?)
+    post "/api/v1/messages/bulk_forward", headers: auth_headers_for(user),
+         params: { message_ids: [ message.id ], conversation_id: conversation.id }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when bulk save is denied" do
+    user, _conversation, message = member_setup
+    stub_deny(MessagePolicy, :bulk_save?)
+    post "/api/v1/messages/bulk_save", headers: auth_headers_for(user),
+         params: { message_ids: [ message.id ] }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
 end

@@ -46,6 +46,14 @@ module Settings
         type: :integer, category: :messaging, default: 16, min: 1, max: 64,
         description: "Maximum characters in a reaction emoji string (BR-25)."
       },
+      rrule_count_max: {
+        type: :integer, category: :messaging, default: 365, min: 1, max: 10_000,
+        description: "Maximum COUNT in a scheduled-message RRULE subset (NR-26)."
+      },
+      rrule_interval_max: {
+        type: :integer, category: :messaging, default: 366, min: 1, max: 10_000,
+        description: "Maximum INTERVAL in a scheduled-message RRULE subset (NR-26)."
+      },
       pinned_conversations_cap: {
         type: :integer, category: :messaging, default: 10, min: 1, max: 100,
         description: "Maximum conversations a member may pin (NR-21)."

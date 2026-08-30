@@ -28,6 +28,7 @@ RSpec.describe "Messages create", type: :request do
             }
           },
           location: { "$ref" => "#/components/schemas/MessageLocation" },
+          silent: { type: :boolean },
           contacts: {
             type: :array,
             items: {
@@ -199,6 +200,142 @@ RSpec.describe "Reactions destroy", type: :request do
 
         run_test! do |response|
           expect(JSON.parse(response.body).fetch("reaction_summary")).to eq({})
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Messages show", type: :request do
+  path "/api/v1/messages/{id}" do
+    get "Resolve a message permalink" do
+      tags "Messages"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+
+      response "200", "found" do
+        schema "$ref" => "#/components/schemas/Message"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:message) { Messages::Send.call(conversation: conversation, sender: user.account, body: "Hi").value }
+        let(:id) { message.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("id")).to eq(message.id)
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Reaction details", type: :request do
+  path "/api/v1/messages/{message_id}/reactions" do
+    get "List reaction details" do
+      tags "Messages"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :message_id, in: :path, type: :integer
+
+      response "200", "listed" do
+        schema "$ref" => "#/components/schemas/ReactionDetails"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:message) { Messages::Send.call(conversation: conversation, sender: user.account, body: "Hi").value }
+        let(:message_id) { message.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        before { Messages::React.call(message: message, actor: user.account, emoji: "👍") }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("reactions").sole.fetch("emoji")).to eq("👍")
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Messages bulk unsend", type: :request do
+  path "/api/v1/messages/bulk_unsend" do
+    post "Bulk unsend messages" do
+      tags "Messages"
+      consumes "application/json"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :payload, in: :body, schema: {
+        type: :object, properties: { message_ids: { type: :array, items: { type: :integer } } }
+      }
+
+      response "200", "tombstoned" do
+        schema "$ref" => "#/components/schemas/MessageList"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:message) { Messages::Send.call(conversation: conversation, sender: user.account, body: "Bye").value }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+        let(:payload) { { message_ids: [ message.id ] } }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("messages").sole.fetch("deleted")).to be(true)
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Messages bulk forward", type: :request do
+  path "/api/v1/messages/bulk_forward" do
+    post "Bulk forward messages" do
+      tags "Messages"
+      consumes "application/json"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :payload, in: :body, schema: {
+        type: :object,
+        properties: {
+          message_ids: { type: :array, items: { type: :integer } },
+          conversation_id: { type: :integer }
+        }
+      }
+
+      response "201", "forwarded" do
+        schema "$ref" => "#/components/schemas/MessageList"
+        let(:user) { create(:user) }
+        let(:source) { create_direct_between(user.account, create(:account)) }
+        let(:target) { create_direct_between(user.account, create(:account)) }
+        let(:message) { Messages::Send.call(conversation: source, sender: user.account, body: "Fwd").value }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+        let(:payload) { { message_ids: [ message.id ], conversation_id: target.id } }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("messages").sole.fetch("conversation_id")).to eq(target.id)
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Messages bulk save", type: :request do
+  path "/api/v1/messages/bulk_save" do
+    post "Bulk save messages" do
+      tags "Messages"
+      consumes "application/json"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :payload, in: :body, schema: {
+        type: :object, properties: { message_ids: { type: :array, items: { type: :integer } } }
+      }
+
+      response "201", "saved" do
+        schema "$ref" => "#/components/schemas/SavedMessageList"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:message) { Messages::Send.call(conversation: conversation, sender: user.account, body: "Hi").value }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+        let(:payload) { { message_ids: [ message.id ] } }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("saved_messages").size).to eq(1)
         end
       end
     end

@@ -36,6 +36,56 @@ export async function listMessages(
   );
 }
 
+export async function getMessage(id: number) {
+  return unwrap(
+    await apiClient().GET("/api/v1/messages/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "message_failed",
+  );
+}
+
+export async function listReactions(messageId: number) {
+  return unwrap(
+    await apiClient().GET("/api/v1/messages/{message_id}/reactions", {
+      headers: bearerHeaders(),
+      params: { path: { message_id: messageId } },
+    }),
+    "reactions_failed",
+  );
+}
+
+export async function bulkUnsendMessages(messageIds: number[]) {
+  return unwrap(
+    await apiClient().POST("/api/v1/messages/bulk_unsend", {
+      headers: bearerHeaders(),
+      body: { message_ids: messageIds },
+    }),
+    "bulk_unsend_failed",
+  );
+}
+
+export async function bulkForwardMessages(messageIds: number[], conversationId: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/messages/bulk_forward", {
+      headers: bearerHeaders(),
+      body: { conversation_id: conversationId, message_ids: messageIds },
+    }),
+    "bulk_forward_failed",
+  );
+}
+
+export async function bulkSaveMessages(messageIds: number[]) {
+  return unwrap(
+    await apiClient().POST("/api/v1/messages/bulk_save", {
+      headers: bearerHeaders(),
+      body: { message_ids: messageIds },
+    }),
+    "bulk_save_failed",
+  );
+}
+
 export async function getMessageInfo(id: number) {
   return unwrap(
     await apiClient().GET("/api/v1/messages/{id}/info", {
@@ -60,6 +110,7 @@ export async function sendMessage(body: {
     question: string;
   };
   reply_to_message_id?: number;
+  silent?: boolean;
 }) {
   return unwrap(
     await apiClient().POST("/api/v1/messages", { headers: bearerHeaders(), body }),

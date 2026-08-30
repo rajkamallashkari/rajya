@@ -1,7 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router";
-import { describe, expect, it } from "vitest";
+import { MemoryRouter, Route, Routes } from "react-router";
+import { afterEach, describe, expect, it } from "vitest";
 import { AppProviders } from "@/app/providers";
 import { AppShell } from "@/app/shell";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
@@ -22,6 +22,10 @@ function renderShell(): void {
 }
 
 describe("AppShell", () => {
+  afterEach(() => {
+    useLayerStore.getState().clearLayers();
+    useShellStore.setState({ impersonatingName: null });
+  });
   it("renders the chat list, impersonation banner, shortcuts, and gallery link", async () => {
     const user = userEvent.setup();
     Object.defineProperty(window, "innerWidth", {
@@ -65,6 +69,23 @@ describe("AppShell", () => {
     );
     expect(screen.getByLabelText(en.search.label)).toHaveFocus();
     window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
+  });
+
+  it("opens a conversation focused on a permalink message", async () => {
+    render(
+      <AppProviders>
+        <MemoryRouter initialEntries={["/c/1/m/101"]}>
+          <Routes>
+            <Route element={<AppShell />} path="/c/:conversationId/m/:messageId" />
+          </Routes>
+        </MemoryRouter>
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(useLayerStore.getState().layers[0]).toEqual(
+        expect.objectContaining({ conversationId: "1", focusMessageId: "101" }),
+      );
+    });
   });
 
   it("shows onboarding when the active account is not onboarded", () => {

@@ -38,6 +38,7 @@ RSpec.describe MessagePolicy do
     policy = described_class.new(nil, message)
     expect(described_class.new(user.account, Message)).not_to be_show
     expect(policy).not_to be_update
-    expect(policy).not_to be_show
+    expect(described_class.new(user.account, Message)).to be_bulk_unsend.and be_bulk_forward.and be_bulk_save
+    expect(described_class.new(nil, Message)).not_to be_bulk_unsend
   end
 end

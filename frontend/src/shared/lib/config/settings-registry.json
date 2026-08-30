@@ -89,6 +89,24 @@
     "max": 64,
     "allow_nil": false
   },
+  "rrule_count_max": {
+    "type": "integer",
+    "category": "messaging",
+    "default": 365,
+    "description": "Maximum COUNT in a scheduled-message RRULE subset (NR-26).",
+    "min": 1,
+    "max": 10000,
+    "allow_nil": false
+  },
+  "rrule_interval_max": {
+    "type": "integer",
+    "category": "messaging",
+    "default": 366,
+    "description": "Maximum INTERVAL in a scheduled-message RRULE subset (NR-26).",
+    "min": 1,
+    "max": 10000,
+    "allow_nil": false
+  },
   "pinned_conversations_cap": {
     "type": "integer",
     "category": "messaging",

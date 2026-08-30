@@ -20,7 +20,9 @@ describe("MessageContextMenu", () => {
       onPin: vi.fn(),
       onReact: vi.fn(),
       onReply: vi.fn(),
+      onReactions: vi.fn(),
       onSave: vi.fn(),
+      onSelect: vi.fn(),
       onUnsend: vi.fn(),
     };
     const onClose = vi.fn();
@@ -48,7 +50,11 @@ describe("MessageContextMenu", () => {
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.unpin }));
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.unsave }));
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.info }));
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.select }));
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.reactions }));
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.unsend }));
+    expect(actions.onSelect).toHaveBeenCalled();
+    expect(actions.onReactions).toHaveBeenCalled();
     expect(actions.onUnsend).toHaveBeenCalled();
 
     const failed = {

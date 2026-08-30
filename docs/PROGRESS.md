@@ -10,23 +10,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 3.4 |
-| **Next session** | 3.5 |
+| **Last completed** | 3.5 |
+| **Next session** | 3.6 |
 | **Phase** | P3 — Conversations & messaging core |
-| **Sessions remaining in phase** | 2 (3.5–3.6) |
+| **Sessions remaining in phase** | 1 (3.6) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 3.5 — Permalinks (NR-19), multi-select bulk actions (NR-20), silent send (NR-23), recurring schedules (NR-26), reaction details (NR-27)**
+**Session 3.6 — Personal organization: pinned conversations (NR-21), mark-as-unread (NR-22), reminders (NR-24), saved replies (NR-25), and the P8 filter indexes (NR-43)**
 
-Deliverable: Permalinks (NR-19), multi-select bulk actions (NR-20), silent send (NR-23), recurring schedules (NR-26), reaction details (NR-27)
+Deliverable: **Personal organization**: pinned conversations (NR-21), mark-as-unread (NR-22), reminders (NR-24), saved replies (NR-25), and the P8 filter indexes (NR-43)
 
-Docs: `SCHEMA §12.7, §12.16; AUDIT §2.1 (BR-1 absolute — no hard-delete exception)`
+Docs: `SCHEMA §12.6, §12.9`
 
 Legacy to read:
-- `cognify/app/jobs/dispatch_scheduled_messages_job.rb` — the dispatcher gaining recurrence
+- `botverse/src/components/chat/ScheduledDrawer.tsx`, `StarredDrawer.tsx` — the drawer pattern reminders and saved replies reuse
 
 ---
 
@@ -52,6 +52,7 @@ Legacy to read:
 | 3.2 | Position/revision allocators, idempotent send, edit, unsend, forward, react, pin, save, schedule | Sequencer `UPDATE … RETURNING` for send (position+revision) and mutations (revision). `(conversation_id, client_nonce)` unique (F-3). Unsend is a tombstone (BR-1). Forward copies independently (BR-10–14). Reactions/pins/saves and one-shot schedule. 403s on every write. Recurring RRULE waits for 3.5; cursor pagination and TanStack Query wait for 3.3. |
 | 3.3 | Cursor pagination, message queries, TanStack Query layer replacing mocks | Position cursors (`before`/`after`) plus jump (`around_id`/`around_at`). Page size 50, jump window 60 (BR-108); client cache 200 newest (BR-107). TanStack Query owns server state with optimistic send/edit/react/pin/save/unsend rollback. Message info from watermarks (shape only). Catch-up/IndexedDB wait for P4; exact ticks wait for P5. |
 | 3.4 | Polls (NR-15), static location and contact message children (NR-30, NR-31) | Polls are message children: unsend tombstones the parent and omits poll/location from JSON (BR-7). Single-choice is a locked `Polls::Vote` transaction (S-12); anonymity is serializer-only (S-13). Locations are static points (S-16). Vote follows react; close is author or group admin/owner. Composer poll/location pickers wait so DS-13 stays intact; Playwright poll create/vote waits for that attach UI. |
+| 3.5 | Permalinks (NR-19), bulk actions (NR-20), silent send (NR-23), recurring schedules (NR-26), reaction details (NR-27) | Permalinks resolve through membership (`GET /messages/:id` 404s for non-members). Bulk unsend/forward/save is all-or-nothing (BR-1 tombstones). Silent persists on send and still advances delivered. Recurring uses the documented RRULE subset in the account timezone. Reaction details query existing `reactions`. Composer schedule/recurrence picker, conversation-picker for bulk forward, push suppression, and Playwright bulk-forward wait for later (P10.2 / phase DoD / DS-13). |
 
 ---
 

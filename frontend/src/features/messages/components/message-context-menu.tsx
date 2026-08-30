@@ -2,11 +2,13 @@ import {
   Copy,
   Forward,
   Info,
+  List,
   Pencil,
   Pin,
   PinOff,
   Reply,
   RotateCcw,
+  Smile,
   Star,
   StarOff,
   Trash2,
@@ -41,6 +43,8 @@ export interface MessageMenuActions {
   onReply?: () => void;
   onRetry?: () => void;
   onSave?: () => void;
+  onSelect?: () => void;
+  onReactions?: () => void;
   onUnsend?: () => void;
   quickReactions?: string[];
 }
@@ -106,6 +110,16 @@ export function MessageContextMenu({
       key: "info",
       label: t("messages.menu.info"),
       onClick: actions.isMine && persisted ? actions.onInfo : undefined,
+    },
+    {
+      key: "select",
+      label: t("messages.menu.select"),
+      onClick: persisted ? actions.onSelect : undefined,
+    },
+    {
+      key: "reactions",
+      label: t("messages.menu.reactions"),
+      onClick: persisted ? actions.onReactions : undefined,
     },
     {
       key: "unsend",
@@ -194,6 +208,12 @@ function MenuIcon({ name, pinned, saved }: { name: string; pinned?: boolean; sav
   }
   if (name === "info") {
     return <Info className={className} />;
+  }
+  if (name === "select") {
+    return <List className={className} />;
+  }
+  if (name === "reactions") {
+    return <Smile className={className} />;
   }
   return <Trash2 className={className} />;
 }

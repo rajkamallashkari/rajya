@@ -22,4 +22,15 @@ RSpec.describe Preference do
       expect(preference.privacy("last_active")).to be(true)
     end
   end
+
+  describe "#timezone" do
+    it "reads locale.timezone and falls back to UTC" do
+      stored = build(:preference, data: { "locale" => { "timezone" => "Asia/Kolkata" } })
+      expect(stored.timezone).to eq("Asia/Kolkata")
+      expect(build(:preference, data: {}).timezone).to eq("UTC")
+      broken = build(:preference)
+      allow(broken).to receive(:data).and_return("x")
+      expect(broken.timezone).to eq("UTC")
+    end
+  end
 end

@@ -14,6 +14,7 @@ RSpec.describe MessageResource do
     expect(json).to include("id" => message.id, "body" => "Hi", "deleted" => false, "kind" => "text")
     expect(json.fetch("sender").fetch("id")).to eq(user.account.id)
     expect(json.fetch("attachments")).to eq([])
+    expect(json.fetch("silent")).to be(false)
   end
 
   it "omits the body of a tombstone and keeps the sender snapshot (BR-8)" do

@@ -27,6 +27,18 @@ class MessagePolicy < ApplicationPolicy
     conversation_policy.pin?
   end
 
+  def bulk_unsend?
+    account.present?
+  end
+
+  def bulk_forward?
+    account.present?
+  end
+
+  def bulk_save?
+    account.present?
+  end
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       return scope.none unless account

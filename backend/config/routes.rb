@@ -64,12 +64,17 @@ Rails.application.routes.draw do
         resources :pins, only: %i[create destroy], param: :message_id
         resources :messages, only: :index, controller: "conversation_messages"
       end
-      resources :messages, only: %i[create update destroy] do
+      resources :messages, only: %i[show create update destroy] do
+        collection do
+          post :bulk_unsend
+          post :bulk_forward
+          post :bulk_save
+        end
         member do
           post :forward
           get :info
         end
-        resources :reactions, only: %i[create destroy], param: :emoji, constraints: { emoji: /.*/ }
+        resources :reactions, only: %i[index create destroy], param: :emoji, constraints: { emoji: /.*/ }
       end
       resources :polls, only: :show do
         member do

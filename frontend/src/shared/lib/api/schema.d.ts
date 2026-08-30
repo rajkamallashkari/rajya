@@ -751,6 +751,7 @@ export interface paths {
                             closes_at?: string;
                         };
                         location?: components["schemas"]["MessageLocation"];
+                        silent?: boolean;
                         contacts?: {
                             contact_account_id?: number | null;
                             display_name?: string;
@@ -785,7 +786,29 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Resolve a message permalink */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description found */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Message"];
+                    };
+                };
+            };
+        };
         put?: never;
         post?: never;
         /** Unsend a message */
@@ -895,7 +918,29 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List reaction details */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    message_id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReactionDetails"];
+                    };
+                };
+            };
+        };
         put?: never;
         /** Add a reaction */
         post: {
@@ -966,6 +1011,133 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messages/bulk_unsend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk unsend messages */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        message_ids?: number[];
+                    };
+                };
+            };
+            responses: {
+                /** @description tombstoned */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MessageList"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messages/bulk_forward": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk forward messages */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        message_ids?: number[];
+                        conversation_id?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description forwarded */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MessageList"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/messages/bulk_save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk save messages */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        message_ids?: number[];
+                    };
+                };
+            };
+            responses: {
+                /** @description saved */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SavedMessageList"];
+                    };
+                };
+            };
+        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1400,6 +1572,7 @@ export interface paths {
                         scheduled_at?: string;
                         /** Format: uuid */
                         client_nonce?: string;
+                        recurrence_rule?: string;
                     };
                 };
             };
@@ -1472,6 +1645,7 @@ export interface paths {
                         body?: string;
                         /** Format: date-time */
                         scheduled_at?: string;
+                        recurrence_rule?: string;
                     };
                 };
             };
@@ -2961,6 +3135,7 @@ export interface components {
             kind: string;
             body?: string | null;
             deleted: boolean;
+            silent: boolean;
             /** Format: uuid */
             client_nonce?: string | null;
             forward_count?: number;
@@ -2979,6 +3154,15 @@ export interface components {
             poll?: components["schemas"]["Poll"];
             location?: components["schemas"]["MessageLocation"];
             contacts?: components["schemas"]["MessageContact"][];
+        };
+        MessageList: {
+            messages: components["schemas"]["Message"][];
+        };
+        ReactionDetails: {
+            reactions: {
+                emoji: string;
+                account: components["schemas"]["Account"];
+            }[];
         };
         PollOption: {
             id: number;
@@ -3050,6 +3234,9 @@ export interface components {
             created_at?: string;
             message: components["schemas"]["Message"];
         };
+        SavedMessageList: {
+            saved_messages: components["schemas"]["SavedMessage"][];
+        };
         ScheduledMessage: {
             id: number;
             conversation_id: number;
@@ -3059,6 +3246,14 @@ export interface components {
             /** Format: uuid */
             client_nonce?: string | null;
             reply_to_message_id?: number | null;
+            recurrence_rule?: string | null;
+            /** Format: date-time */
+            next_run_at?: string | null;
+            /** Format: date-time */
+            last_run_at?: string | null;
+            occurrences_sent: number;
+            /** Format: date-time */
+            ends_at?: string | null;
             /** Format: date-time */
             created_at?: string;
         };

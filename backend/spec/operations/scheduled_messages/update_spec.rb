@@ -42,6 +42,29 @@ RSpec.describe ScheduledMessages::Update do
       .to eq(:forbidden)
   end
 
+  it "updates a recurrence rule" do
+    user, row = setup
+    result = described_class.call(scheduled_message: row, actor: user.account, recurrence_rule: "FREQ=WEEKLY")
+
+    expect(result.value.recurrence_rule).to eq("FREQ=WEEKLY")
+    expect(result.value.next_run_at).to be_within(2.seconds).of(row.scheduled_at)
+  end
+
+  it "rejects an unsupported recurrence rule" do
+    user, row = setup
+    expect(described_class.call(scheduled_message: row, actor: user.account, recurrence_rule: "FREQ=HOURLY")
+           .error_code).to eq(:validation_failed)
+  end
+
+  it "clears recurrence when the rule is blank" do
+    user, row = setup
+    described_class.call(scheduled_message: row, actor: user.account, recurrence_rule: "FREQ=DAILY")
+    result = described_class.call(scheduled_message: row.reload, actor: user.account, recurrence_rule: "")
+
+    expect(result.value.recurrence_rule).to be_nil
+    expect(result.value.next_run_at).to be_nil
+  end
+
   it "parses an ISO-8601 scheduled_at string" do
     user, row = setup
     at = 3.hours.from_now

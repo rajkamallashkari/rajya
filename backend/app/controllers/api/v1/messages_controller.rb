@@ -1,6 +1,12 @@
 module Api
   module V1
     class MessagesController < ApplicationController
+      def show
+        message = policy_scope(Message).find(params[:id])
+        authorize message
+        render_result(Messages::Show.call(message: message), serializer: MessageResource)
+      end
+
       def info
         message = policy_scope(Message).find(params[:id])
         authorize message, :show?
@@ -36,6 +42,34 @@ module Api
                       serializer: MessageResource, status: :created)
       end
 
+      def bulk_unsend
+        authorize Message, :bulk_unsend?
+        render_result(
+          Messages::BulkUnsend.call(actor: current_account, message_ids: params[:message_ids]),
+          serializer: MessageListResource
+        )
+      end
+
+      def bulk_forward
+        authorize Message, :bulk_forward?
+        target = policy_scope(Conversation).find(params[:conversation_id])
+        authorize target, :send?
+        render_result(
+          Messages::BulkForward.call(
+            actor: current_account, message_ids: params[:message_ids], target: target
+          ),
+          serializer: MessageListResource, status: :created
+        )
+      end
+
+      def bulk_save
+        authorize Message, :bulk_save?
+        render_result(
+          Messages::BulkSave.call(actor: current_account, message_ids: params[:message_ids]),
+          serializer: SavedMessageListResource, status: :created
+        )
+      end
+
       private
 
       def send_params
@@ -48,7 +82,8 @@ module Api
           voice_waveform: params[:voice_waveform],
           poll: params[:poll],
           location: params[:location],
-          contacts: params[:contacts]
+          contacts: params[:contacts],
+          silent: params[:silent]
         }
       end
     end

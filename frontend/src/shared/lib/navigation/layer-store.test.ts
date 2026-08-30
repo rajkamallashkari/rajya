@@ -62,6 +62,8 @@ describe("layer-store", () => {
     expect(useLayerStore.getState().layers).toEqual([ada]);
     useLayerStore.getState().openConversation(ada);
     expect(useLayerStore.getState().layers).toEqual([ada]);
+    useLayerStore.getState().openConversation({ ...ada, focusMessageId: "9" });
+    expect(useLayerStore.getState().layers).toEqual([{ ...ada, focusMessageId: "9" }]);
   });
 
   it("partitions the conversation from the detail stack", () => {
@@ -74,5 +76,8 @@ describe("layer-store", () => {
     expect(layersForOpenConversation([ada, adaProfile], ada)).toEqual([ada]);
     expect(layersForOpenConversation([ada, adaProfile], team)).toEqual([team]);
     expect(layersForOpenConversation([], ada)).toEqual([ada]);
+    expect(
+      layersForOpenConversation([ada, adaProfile], { ...ada, focusMessageId: "101" }),
+    ).toEqual([{ ...ada, focusMessageId: "101" }]);
   });
 });

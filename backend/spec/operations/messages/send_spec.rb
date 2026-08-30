@@ -148,4 +148,14 @@ RSpec.describe Messages::Send do
     audio = blob_signed_id(filename: "a.mp3", content_type: "audio/mpeg")
     expect(send!(conversation, user.account, attachment_signed_ids: [ audio ]).value.kind).to eq("audio")
   end
+
+  it "persists silent send and still advances the delivered watermark (NR-23)" do
+    user, conversation = setup
+    membership = conversation.conversation_memberships.find_by!(account: user.account)
+    message = send!(conversation, user.account, body: "Quiet", silent: true).value
+    membership.reload
+
+    expect(message.silent).to be(true)
+    expect(membership.last_delivered_position).to eq(message.position)
+  end
 end

@@ -13,6 +13,8 @@ export type SettingKey =
   | "unsend_window"
   | "max_message_length"
   | "reaction_emoji_max_length"
+  | "rrule_count_max"
+  | "rrule_interval_max"
   | "pinned_conversations_cap"
   | "multi_select_cap"
   | "contacts_per_message"

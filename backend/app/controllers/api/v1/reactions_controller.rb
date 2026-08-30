@@ -1,6 +1,12 @@
 module Api
   module V1
     class ReactionsController < ApplicationController
+      def index
+        message = policy_scope(Message).find(params[:message_id])
+        authorize message, :show?
+        render_result(Messages::ReactionDetails.call(message: message), serializer: ReactionDetailsResource)
+      end
+
       def create
         message = policy_scope(Message).find(params[:message_id])
         authorize message, :react?

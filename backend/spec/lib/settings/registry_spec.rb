@@ -13,7 +13,8 @@ RSpec.describe Settings::Registry do
       :otp_length, :rate_limit_login_attempts, :email_from_name,
       :nickname_max_length, :session_last_seen_granularity,
       :search_min_query_length, :search_debounce,
-      :poll_min_options, :contacts_per_message, :latitude_min
+      :poll_min_options, :contacts_per_message, :latitude_min,
+      :rrule_count_max, :rrule_interval_max, :multi_select_cap
     )
   end
 

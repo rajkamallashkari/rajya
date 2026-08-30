@@ -2,13 +2,18 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { getAccessSession } from "@/features/auth/model/access-session";
 import { conversationKeys, messageKeys } from "@/features/conversations/api/keys";
 import {
+  bulkForwardMessages,
+  bulkSaveMessages,
+  bulkUnsendMessages,
   closePoll,
   editMessage,
   getConversation,
+  getMessage,
   getMessageInfo,
   getPoll,
   listConversations,
   listMessages,
+  listReactions,
   pinMessage,
   reactToMessage,
   saveMessage,
@@ -93,6 +98,79 @@ export function useMessageInfo(id: number | null) {
   });
 }
 
+export function useMessagePermalink(id: number | null) {
+  return useQuery({
+    enabled: id != null,
+    queryFn: () => getMessage(id as number),
+    queryKey: messageKeys.permalink(id ?? 0),
+  });
+}
+
+export function useReactionDetails(id: number | null) {
+  return useQuery({
+    enabled: id != null,
+    queryFn: () => listReactions(id as number),
+    queryKey: messageKeys.reactions(id ?? 0),
+  });
+}
+
+export function useBulkUnsend(conversationId: number) {
+  const queryClient = useQueryClient();
+  const key = messageKeys.page(conversationId);
+  return useMutation({
+    mutationFn: (messageIds: number[]) => bulkUnsendMessages(messageIds),
+    onMutate: async (messageIds) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<MessagePages>(key);
+      const selected = new Set(messageIds);
+      if (previous) {
+        queryClient.setQueryData(
+          key,
+          mapPages(previous, (message) =>
+            selected.has(message.id) ? { ...message, body: null, deleted: true } : message,
+          ),
+        );
+      }
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      rollbackPages(queryClient, key, context?.previous);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+export function useBulkSave() {
+  const queryClient = useQueryClient();
+  const key = messageKeys.saved();
+  return useMutation({
+    mutationFn: (messageIds: number[]) => bulkSaveMessages(messageIds),
+    onMutate: async (messageIds) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<number[]>(key);
+      queryClient.setQueryData(key, [...new Set([...(previous ?? []), ...messageIds])]);
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      queryClient.setQueryData(key, context?.previous ?? []);
+    },
+  });
+}
+
+export function useBulkForward(conversationId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ messageIds, targetId }: { messageIds: number[]; targetId: number }) =>
+      bulkForwardMessages(messageIds, targetId),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: messageKeys.page(conversationId) });
+      void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
+    },
+  });
+}
+
 function newestPosition(data: MessagePages | undefined): number {
   const last = flattenMessages(data).at(-1);
   return last?.position ?? 0;
@@ -109,7 +187,12 @@ function rollbackPages(
   }
 }
 
-function optimisticMessage(conversationId: number, body: string, nonce: string): Message {
+function optimisticMessage(
+  conversationId: number,
+  body: string,
+  nonce: string,
+  input: { silent?: boolean },
+): Message {
   const session = getAccessSession();
   return {
     id: -Date.now(),
@@ -119,6 +202,7 @@ function optimisticMessage(conversationId: number, body: string, nonce: string):
     kind: "text",
     body,
     deleted: false,
+    silent: input.silent ?? false,
     client_nonce: nonce,
     created_at: new Date().toISOString(),
     sender: session
@@ -136,12 +220,12 @@ export function useSendMessage(conversationId: number) {
   const queryClient = useQueryClient();
   const key = messageKeys.page(conversationId);
   return useMutation({
-    mutationFn: (input: { body: string; client_nonce: string }) =>
+    mutationFn: (input: { body: string; client_nonce: string; silent?: boolean }) =>
       sendMessage({ conversation_id: conversationId, ...input }),
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<MessagePages>(key);
-      const optimistic = optimisticMessage(conversationId, input.body, input.client_nonce);
+      const optimistic = optimisticMessage(conversationId, input.body, input.client_nonce, input);
       optimistic.position = newestPosition(previous) + 1;
       if (previous) {
         queryClient.setQueryData(key, appendToNewest(previous, optimistic));

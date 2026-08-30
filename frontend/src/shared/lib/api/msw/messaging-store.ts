@@ -72,6 +72,7 @@ export function buildMessages(conversationId: number, demoIndex: number): Messag
       kind: "text",
       body: item.body,
       deleted: false,
+      silent: false,
       created_at: MESSAGE_STAMP,
       sender: sent ? VIEWER : peerAccount(conversationId + 1, demo.name),
     };
@@ -184,7 +185,12 @@ export function pageFor(
   return wrapPage(rows.slice(Math.max(0, rows.length - MESSAGE_PAGE_SIZE)), rows);
 }
 
-export function appendSent(conversationId: number, body: string, nonce?: string): Message {
+export function appendSent(
+  conversationId: number,
+  body: string,
+  nonce?: string,
+  silent = false,
+): Message {
   const rows = store.messages[conversationId] ?? [];
   const last = rows[rows.length - 1];
   const created = new Date().toISOString();
@@ -196,6 +202,7 @@ export function appendSent(conversationId: number, body: string, nonce?: string)
     kind: "text",
     body,
     deleted: false,
+    silent,
     client_nonce: nonce ?? null,
     created_at: created,
     sender: VIEWER,
@@ -312,6 +319,7 @@ export function seedPositions(conversationId: number, count: number): void {
       kind: position === 1 ? "system" : "text",
       body: `m${String(position)}`,
       deleted: false,
+      silent: false,
       created_at: MESSAGE_STAMP,
       sender: position % 2 === 0 ? VIEWER : peerAccount(2, "Peer"),
     });

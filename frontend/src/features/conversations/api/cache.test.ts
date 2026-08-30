@@ -18,6 +18,7 @@ function message(id: number): Message {
     kind: "text",
     body: `m${String(id)}`,
     deleted: false,
+    silent: false,
     created_at: "2026-01-01T12:00:00.000Z",
   };
 }

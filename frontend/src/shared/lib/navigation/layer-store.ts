@@ -5,6 +5,7 @@ export type LayerKind = "conversation" | "profile";
 
 export interface LayerEntry {
   conversationId: string;
+  focusMessageId?: string;
   id: string;
   kind: LayerKind;
   title: string;
@@ -28,21 +29,21 @@ export function partitionLayers(layers: LayerEntry[]): {
   };
 }
 
-export function conversationLayer(conversationId: string, title: string): LayerEntry {
+export function conversationLayer(
+  conversationId: string,
+  title: string,
+  focusMessageId?: string,
+): LayerEntry {
   return {
     conversationId,
+    focusMessageId,
     id: `conversation:${conversationId}`,
     kind: "conversation",
     title,
   };
 }
 
-export function layersForOpenConversation(layers: LayerEntry[], next: LayerEntry): LayerEntry[] {
-  const current = layers.find((layer) => layer.kind === "conversation");
-  if (current?.conversationId === next.conversationId) {
-    const index = layers.findIndex((layer) => layer.kind === "conversation");
-    return layers.slice(0, index + 1);
-  }
+export function layersForOpenConversation(_layers: LayerEntry[], next: LayerEntry): LayerEntry[] {
   return [next];
 }
 
@@ -57,7 +58,11 @@ export const useLayerStore = create<LayerState>((set, get) => ({
       const next = layersForOpenConversation(state.layers, layer);
       if (
         next.length === state.layers.length &&
-        next.every((entry, index) => entry.id === state.layers[index]?.id)
+        next.every(
+          (entry, index) =>
+            entry.id === state.layers[index]?.id &&
+            entry.focusMessageId === state.layers[index]?.focusMessageId,
+        )
       ) {
         return state;
       }

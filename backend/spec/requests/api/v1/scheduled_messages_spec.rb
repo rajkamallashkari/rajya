@@ -38,7 +38,8 @@ RSpec.describe "Scheduled messages index", type: :request do
           conversation_id: { type: :integer },
           body: { type: :string },
           scheduled_at: { type: :string, format: :"date-time" },
-          client_nonce: { type: :string, format: :uuid }
+          client_nonce: { type: :string, format: :uuid },
+          recurrence_rule: { type: :string }
         }
       }
 
@@ -66,7 +67,10 @@ RSpec.describe "Scheduled messages update", type: :request do
       security [ { bearerAuth: [] } ]
       parameter name: :id, in: :path, type: :integer
       parameter name: :payload, in: :body, schema: {
-        type: :object, properties: { body: { type: :string }, scheduled_at: { type: :string, format: :"date-time" } }
+        type: :object, properties: {
+          body: { type: :string }, scheduled_at: { type: :string, format: :"date-time" },
+          recurrence_rule: { type: :string }
+        }
       }
 
       response "200", "updated" do

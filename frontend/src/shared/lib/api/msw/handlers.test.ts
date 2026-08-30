@@ -17,6 +17,9 @@ const expectedPaths = [
   "/api/v1/conversations/{conversation_id}/pins/{message_id}",
   "/api/v1/conversations/{id}",
   "/api/v1/messages",
+  "/api/v1/messages/bulk_forward",
+  "/api/v1/messages/bulk_save",
+  "/api/v1/messages/bulk_unsend",
   "/api/v1/messages/{id}",
   "/api/v1/messages/{id}/forward",
   "/api/v1/messages/{id}/info",
@@ -266,6 +269,35 @@ describe("MSW handlers", () => {
       body: { conversation_id: 1, body: "hello", client_nonce: "nonce-1" },
     });
     expect(sent.data?.body).toBe("hello");
+    expect(sent.data?.silent).toBe(false);
+    const silent = await client.POST("/api/v1/messages", {
+      body: { conversation_id: 1, body: "quiet", client_nonce: "nonce-silent", silent: true },
+    });
+    expect(silent.data?.silent).toBe(true);
+    const permalink = await client.GET("/api/v1/messages/{id}", {
+      params: { path: { id: sent.data?.id ?? 1 } },
+    });
+    expect(permalink.data?.id).toBe(sent.data?.id);
+    const missingPermalink = await client.GET("/api/v1/messages/{id}", {
+      params: { path: { id: 0 } },
+    });
+    expect(missingPermalink.response.status).toBe(404);
+    const reactionDetails = await client.GET("/api/v1/messages/{message_id}/reactions", {
+      params: { path: { message_id: sent.data?.id ?? 1 } },
+    });
+    expect(reactionDetails.data?.reactions).toEqual([]);
+    const bulkSaved = await client.POST("/api/v1/messages/bulk_save", {
+      body: { message_ids: [sent.data?.id ?? 1] },
+    });
+    expect(bulkSaved.response.status).toBe(201);
+    const bulkForwarded = await client.POST("/api/v1/messages/bulk_forward", {
+      body: { conversation_id: 1, message_ids: [sent.data?.id ?? 1] },
+    });
+    expect(bulkForwarded.response.status).toBe(201);
+    const bulkUnsent = await client.POST("/api/v1/messages/bulk_unsend", {
+      body: { message_ids: [silent.data?.id ?? 1] },
+    });
+    expect(bulkUnsent.data?.messages[0]?.deleted).toBe(true);
     const forwarded = await client.POST("/api/v1/messages/{id}/forward", {
       params: { path: { id: sent.data?.id ?? 1 } },
       body: { conversation_id: 1 },
@@ -343,9 +375,15 @@ describe("MSW handlers", () => {
     const scheduled = await client.GET("/api/v1/scheduled_messages");
     expect(scheduled.data?.scheduled_messages).toHaveLength(1);
     const booked = await client.POST("/api/v1/scheduled_messages", {
-      body: { conversation_id: 1, body: "later", scheduled_at: MESSAGE_STAMP },
+      body: {
+        conversation_id: 1,
+        body: "later",
+        scheduled_at: MESSAGE_STAMP,
+        recurrence_rule: "FREQ=DAILY",
+      },
     });
     expect(booked.response.status).toBe(201);
+    expect(booked.data?.recurrence_rule).toBe("FREQ=DAILY");
     const updated = await client.PATCH("/api/v1/scheduled_messages/{id}", {
       params: { path: { id: 1 } },
       body: { body: "soon" },

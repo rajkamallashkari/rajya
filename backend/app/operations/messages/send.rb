@@ -2,7 +2,7 @@ module Messages
   class Send < ApplicationOperation
     def call(conversation:, sender:, body: nil, client_nonce: nil, reply_to_message_id: nil,
              attachment_signed_ids: [], voice_duration_ms: nil, voice_waveform: nil,
-             poll: nil, location: nil, contacts: nil)
+             poll: nil, location: nil, contacts: nil, silent: false)
       @conversation = conversation
       @sender = sender
       @body = body.to_s
@@ -14,6 +14,8 @@ module Messages
       @poll = poll
       @location = location
       @contacts = contacts
+      @silent = ActiveModel::Type::Boolean.new.cast(silent)
+      @silent = false if @silent.nil?
 
       return failure(:forbidden) unless ConversationPolicy.new(sender, conversation).send?
 
@@ -113,7 +115,8 @@ module Messages
         reply_to_message: parent,
         position: position,
         revision: revision,
-        sender_snapshot: Snapshot.for(@sender)
+        sender_snapshot: Snapshot.for(@sender),
+        silent: @silent
       )
       Blobs.attach!(
         message,

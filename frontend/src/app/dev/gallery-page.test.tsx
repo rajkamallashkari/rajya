@@ -96,6 +96,8 @@ describe("gallery route", () => {
     expect(createRouter()).toBeTruthy();
     expect(appRoutes.some((route) => route.path === "/dev/gallery")).toBe(true);
     expect(appRoutes.some((route) => route.path === "/dev/accounts")).toBe(true);
+    expect(appRoutes.some((route) => route.path === "/c/:conversationId/m/:messageId")).toBe(true);
+    expect(appRoutes.some((route) => route.path === "/m/:messageId")).toBe(true);
   });
 
   it("renders the gallery at /dev/gallery", () => {
