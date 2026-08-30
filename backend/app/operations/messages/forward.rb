@@ -17,6 +17,7 @@ module Messages
         message.increment!(:forward_count)
         copy = insert_copy!(message, actor, target)
         Blobs.copy!(message, copy)
+        Children.copy!(message, copy)
         target.update_columns(last_message_id: copy.id, last_activity_at: copy.created_at)
         copy
       end

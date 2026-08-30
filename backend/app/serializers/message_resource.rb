@@ -53,4 +53,36 @@ class MessageResource < ApplicationResource
       }
     end
   end
+
+  attribute :poll do
+    next if object.deleted? || object.poll.nil?
+
+    PollResource.new(object.poll, params: params).to_h
+  end
+
+  attribute :location do
+    next if object.deleted? || object.message_location.nil?
+
+    point = object.message_location
+    {
+      "latitude" => point.latitude.to_s,
+      "longitude" => point.longitude.to_s,
+      "accuracy_m" => point.accuracy_m,
+      "label" => point.label
+    }
+  end
+
+  attribute :contacts do
+    next [] if object.deleted?
+
+    object.message_contacts.sort_by(&:position).map do |card|
+      {
+        "contact_account_id" => card.contact_account_id,
+        "display_name" => card.display_name,
+        "phone" => card.phone,
+        "email" => card.email,
+        "position" => card.position
+      }
+    end
+  end
 end

@@ -17,9 +17,12 @@ import {
   useSaveMessage,
   useSendMessage,
   useUnsendMessage,
+  useVotePoll,
+  useClosePoll,
+  usePollResults,
 } from "./queries";
 import type { MessagePage } from "./http";
-import { seedPositions } from "@/shared/lib/api/msw/messaging-store";
+import { attachPoll, seedPositions } from "@/shared/lib/api/msw/messaging-store";
 import { testSession } from "@/test/access-session";
 import { server } from "@/test/msw";
 import { en } from "@/shared/lib/i18n/catalog";
@@ -64,6 +67,9 @@ function Harness() {
   const react = useReactMessage(1);
   const pin = usePinMessage(1);
   const save = useSaveMessage();
+  const vote = useVotePoll(1);
+  const close = useClosePoll(1);
+  usePollResults(null);
   return (
     <div>
       <p>{messages.messages.map((row) => row.body).join(",")}</p>
@@ -88,6 +94,12 @@ function Harness() {
       </Button>
       <Button onClick={() => save.mutate(102)} type="button">
         {en.messages.menu.save}
+      </Button>
+      <Button onClick={() => vote.mutate({ optionIds: [1], pollId: 7 })} type="button">
+        vote
+      </Button>
+      <Button onClick={() => close.mutate(7)} type="button">
+        close-poll
       </Button>
     </div>
   );
@@ -149,6 +161,18 @@ describe("message queries", () => {
           { status: 500 },
         ),
       ),
+      http.post("*/api/v1/polls/:id/vote", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+      http.post("*/api/v1/polls/:id/close", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
     );
     render(
       <AppProviders>
@@ -170,7 +194,61 @@ describe("message queries", () => {
     );
     await user.click(screen.getByRole("button", { name: en.messages.menu.pin }));
     await user.click(screen.getByRole("button", { name: en.messages.menu.save }));
+    await user.click(screen.getByRole("button", { name: "vote" }));
+    await user.click(screen.getByRole("button", { name: "close-poll" }));
     expect(screen.getByText("idle")).toBeInTheDocument();
+  });
+
+  it("optimistically votes and closes a cached poll, then loads results", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    attachPoll(102, {
+      id: 7,
+      question: "Lunch?",
+      allows_multiple: false,
+      is_anonymous: false,
+      voter_count: 0,
+      closed: false,
+      options: [{ id: 1, label: "Yes", position: 0, vote_count: 0, selected: false }],
+    });
+
+    function PollHarness() {
+      const page = useMessagePage(1);
+      const vote = useVotePoll(1);
+      const close = useClosePoll(1);
+      const results = usePollResults(7);
+      return (
+        <div data-close={close.status} data-vote={vote.status}>
+          <p data-loaded={String(page.messages.length)}>{results.data?.question ?? "none"}</p>
+          <Button onClick={() => vote.mutate({ optionIds: [1], pollId: 7 })} type="button">
+            vote-live
+          </Button>
+          <Button onClick={() => close.mutate(7)} type="button">
+            close-live
+          </Button>
+        </div>
+      );
+    }
+
+    const view = render(
+      <AppProviders>
+        <PollHarness />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("Lunch?")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Lunch?").closest("[data-loaded]")?.getAttribute("data-loaded")).not.toBe(
+        "0",
+      );
+    });
+    await user.click(screen.getByRole("button", { name: "vote-live" }));
+    await user.click(screen.getByRole("button", { name: "close-live" }));
+    await waitFor(() => {
+      const root = screen.getByText("Lunch?").closest("[data-close]");
+      expect(root?.getAttribute("data-vote")).toBe("success");
+      expect(root?.getAttribute("data-close")).toBe("success");
+    });
+    view.unmount();
   });
 
   it("assigns the first position when the cached page is empty", async () => {

@@ -13,6 +13,9 @@ class Message < ApplicationRecord
   has_many :saved_messages, dependent: :destroy
   has_many :pinned_messages, dependent: :destroy
   has_many :attachments, dependent: :destroy
+  has_one :poll, dependent: :destroy
+  has_one :message_location, dependent: :destroy
+  has_many :message_contacts, dependent: :destroy
   has_many :message_link_previews, dependent: :destroy
   has_many :link_previews, through: :message_link_previews
   has_many :bot_memories, foreign_key: :source_message_id, inverse_of: :source_message, dependent: :nullify

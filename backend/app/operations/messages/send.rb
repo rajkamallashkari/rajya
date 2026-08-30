@@ -1,7 +1,8 @@
 module Messages
   class Send < ApplicationOperation
     def call(conversation:, sender:, body: nil, client_nonce: nil, reply_to_message_id: nil,
-             attachment_signed_ids: [], voice_duration_ms: nil, voice_waveform: nil)
+             attachment_signed_ids: [], voice_duration_ms: nil, voice_waveform: nil,
+             poll: nil, location: nil, contacts: nil)
       @conversation = conversation
       @sender = sender
       @body = body.to_s
@@ -10,6 +11,9 @@ module Messages
       @signed_ids = Array(attachment_signed_ids).compact_blank
       @voice_duration_ms = voice_duration_ms
       @voice_waveform = voice_waveform
+      @poll = poll
+      @location = location
+      @contacts = contacts
 
       return failure(:forbidden) unless ConversationPolicy.new(sender, conversation).send?
 
@@ -35,14 +39,21 @@ module Messages
     end
 
     def validate
-      return failure(:validation_failed) if @body.strip.empty? && @signed_ids.empty?
+      return failure(:validation_failed) if blank_content?
       return failure(:validation_failed) if @body.length > Settings.fetch(:max_message_length)
       return failure(:validation_failed) if invalid_nonce?
       return failure(:validation_failed) if voice_too_long?
       return failure(:not_found) if reply_missing?
       return failure(:validation_failed) if reply_cross_conversation?
+      child_error = Children.validate(poll: @poll, location: @location, contacts: @contacts)
+      return failure(child_error) if child_error
 
       nil
+    end
+
+    def blank_content?
+      @body.strip.empty? && @signed_ids.empty? &&
+        !Children.present?(poll: @poll, location: @location, contacts: @contacts)
     end
 
     def invalid_nonce?
@@ -111,9 +122,15 @@ module Messages
         voice_duration_ms: @voice_duration_ms.to_i,
         voice_waveform: @voice_waveform
       )
-      raise ActiveRecord::Rollback if message.body.blank? && message.attachment_count.zero?
+      Children.attach!(message, poll: @poll, location: @location, contacts: @contacts)
+      raise ActiveRecord::Rollback if empty_after_attach?(message)
 
       message
+    end
+
+    def empty_after_attach?(message)
+      message.body.blank? && message.attachment_count.zero? &&
+        message.poll.nil? && message.message_location.nil? && message.message_contacts.empty?
     end
 
     def nonce_conflict?(error)

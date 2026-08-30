@@ -1,4 +1,48 @@
+import type { Message } from "@/features/conversations/api/http";
+import type { ContactView } from "@/features/messages/components/contact-card";
+import type { LocationView } from "@/features/messages/components/location-card";
+
 export const POLL_BAR_MAX = 100;
+
+export function pollViewFromApi(poll: NonNullable<Message["poll"]>): PollView {
+  return {
+    allowsMultiple: poll.allows_multiple,
+    closed: poll.closed,
+    closesAt: poll.closes_at ?? null,
+    isAnonymous: poll.is_anonymous,
+    question: poll.question,
+    voterCount: poll.voter_count,
+    options: poll.options.map((option) => ({
+      id: String(option.id),
+      label: option.label,
+      position: option.position,
+      selected: option.selected,
+      voteCount: option.vote_count,
+      voters: (option.voters ?? []).map((voter) => ({
+        accountId: String(voter.account_id ?? ""),
+        name: voter.display_name ?? "",
+      })),
+    })),
+  };
+}
+
+export function locationViewFromApi(location: NonNullable<Message["location"]>): LocationView {
+  return {
+    accuracyM: location.accuracy_m ?? null,
+    label: location.label ?? null,
+    latitude: Number(location.latitude),
+    longitude: Number(location.longitude),
+  };
+}
+
+export function contactViewFromApi(contact: NonNullable<Message["contacts"]>[number]): ContactView {
+  return {
+    contactAccountId: contact.contact_account_id == null ? null : String(contact.contact_account_id),
+    displayName: contact.display_name,
+    email: contact.email ?? null,
+    phone: contact.phone ?? null,
+  };
+}
 
 export interface PollVoter {
   accountId: string;

@@ -1,6 +1,6 @@
 class MessagePageResource < ApplicationResource
   attribute :messages do
-    object.messages.map { |message| MessageResource.new(message).to_h }
+    object.messages.map { |message| MessageResource.new(message, params: params).to_h }
   end
 
   attribute :meta do

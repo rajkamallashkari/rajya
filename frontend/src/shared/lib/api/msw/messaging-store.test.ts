@@ -12,6 +12,10 @@ import {
   resetMessagingStore,
   seedPositions,
   tombstoneMessage,
+  voteStoredPoll,
+  closeStoredPoll,
+  attachPoll,
+  findPoll,
 } from "./messaging-store";
 
 describe("messaging store", () => {
@@ -34,6 +38,21 @@ describe("messaging store", () => {
     expect(tombstoneMessage(0)).toBeNull();
     expect(reactStoredMessage(0)).toBeNull();
     expect(reactStoredMessage(sent.id)?.revision).toBe(2);
+    expect(voteStoredPoll(0, [])).toBeNull();
+    expect(closeStoredPoll(0)).toBeNull();
+    expect(findPoll(0)).toBeUndefined();
+    attachPoll(sent.id, {
+      id: 3,
+      question: "Q",
+      allows_multiple: false,
+      is_anonymous: false,
+      voter_count: 0,
+      closed: false,
+      options: [{ id: 1, label: "A", position: 0, vote_count: 0, selected: false }],
+    });
+    expect(voteStoredPoll(3, [1])?.poll?.options[0]?.selected).toBe(true);
+    expect(closeStoredPoll(3)?.poll?.closed).toBe(true);
+    expect(findPoll(3)?.question).toBe("Q");
     resetMessagingStore();
     expect(findConversation(1)?.id).toBe(1);
   });

@@ -463,6 +463,40 @@ paths:
                   type: array
                   items:
                     type: string
+                poll:
+                  type: object
+                  properties:
+                    question:
+                      type: string
+                    options:
+                      type: array
+                      items:
+                        type: string
+                    allows_multiple:
+                      type: boolean
+                    is_anonymous:
+                      type: boolean
+                    closes_at:
+                      type: string
+                      format: date-time
+                location:
+                  "$ref": "#/components/schemas/MessageLocation"
+                contacts:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      contact_account_id:
+                        type: integer
+                        nullable: true
+                      display_name:
+                        type: string
+                      phone:
+                        type: string
+                        nullable: true
+                      email:
+                        type: string
+                        nullable: true
   "/api/v1/messages/{id}":
     patch:
       summary: Edit a message
@@ -742,6 +776,76 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Ok"
+  "/api/v1/polls/{id}":
+    get:
+      summary: Poll results
+      tags:
+      - Polls
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: results
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Poll"
+  "/api/v1/polls/{id}/vote":
+    post:
+      summary: Vote in a poll
+      tags:
+      - Polls
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: voted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Message"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                option_ids:
+                  type: array
+                  items:
+                    type: integer
+  "/api/v1/polls/{id}/close":
+    post:
+      summary: Close a poll
+      tags:
+      - Polls
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: closed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Message"
   "/api/v1/scheduled_messages":
     get:
       summary: List pending scheduled messages
@@ -1930,6 +2034,110 @@ components:
           type: array
           items:
             type: object
+        poll:
+          "$ref": "#/components/schemas/Poll"
+          nullable: true
+        location:
+          "$ref": "#/components/schemas/MessageLocation"
+          nullable: true
+        contacts:
+          type: array
+          items:
+            "$ref": "#/components/schemas/MessageContact"
+    PollOption:
+      type: object
+      required:
+      - id
+      - label
+      - position
+      - vote_count
+      - selected
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        position:
+          type: integer
+        vote_count:
+          type: integer
+        selected:
+          type: boolean
+        voters:
+          type: array
+          items:
+            type: object
+            properties:
+              account_id:
+                type: integer
+              display_name:
+                type: string
+    Poll:
+      type: object
+      required:
+      - id
+      - question
+      - allows_multiple
+      - is_anonymous
+      - voter_count
+      - closed
+      - options
+      properties:
+        id:
+          type: integer
+        question:
+          type: string
+        allows_multiple:
+          type: boolean
+        is_anonymous:
+          type: boolean
+        voter_count:
+          type: integer
+        closes_at:
+          type: string
+          format: date-time
+          nullable: true
+        closed:
+          type: boolean
+        options:
+          type: array
+          items:
+            "$ref": "#/components/schemas/PollOption"
+    MessageLocation:
+      type: object
+      required:
+      - latitude
+      - longitude
+      properties:
+        latitude:
+          type: string
+        longitude:
+          type: string
+        accuracy_m:
+          type: integer
+          nullable: true
+        label:
+          type: string
+          nullable: true
+    MessageContact:
+      type: object
+      required:
+      - display_name
+      - position
+      properties:
+        contact_account_id:
+          type: integer
+          nullable: true
+        display_name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        position:
+          type: integer
     MessagePageMeta:
       type: object
       required:

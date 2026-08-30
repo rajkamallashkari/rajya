@@ -45,6 +45,12 @@ en:
       message:
         system_event: "must be present only for system messages"
         sender_required: "or sender_snapshot is required for non-system messages"
+      message_location:
+        latitude: "must be between %{min} and %{max}"
+        longitude: "must be between %{min} and %{max}"
+      poll:
+        question_blank: "can't be blank"
+        options: "must have between %{min} and %{max} options"
       conversation:
         direct_key: "must be present only for direct conversations"
         title: "can't be blank for non-direct conversations"

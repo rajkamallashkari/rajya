@@ -2,12 +2,19 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
-import { ConversationThread, buildMessageMenuActions, nextInfoId } from "./conversation-thread";
+import {
+  ConversationThread,
+  buildMessageMenuActions,
+  nextInfoId,
+  pollResultsId,
+  pollVotePayload,
+  voteFromThread,
+} from "./conversation-thread";
 import { ProfilePanel } from "./profile-panel";
 import { AppProviders } from "@/app/providers";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { ADA_DEMO } from "@/features/conversations/model/demo";
-import { messagingStore, seedPositions } from "@/shared/lib/api/msw/messaging-store";
+import { attachPoll, findMessage, messagingStore, seedPositions } from "@/shared/lib/api/msw/messaging-store";
 import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
@@ -137,6 +144,41 @@ describe("conversation layers", () => {
     expect(await screen.findByText(en.messages.deleted)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.shell.open_profile }));
     expect(useLayerStore.getState().layers.some((layer) => layer.kind === "profile")).toBe(true);
+  });
+
+  it("votes in a live poll, opens results, and renders location and contact cards", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    attachPoll(102, {
+      id: 8,
+      question: "Gate?",
+      allows_multiple: false,
+      is_anonymous: false,
+      voter_count: 0,
+      closed: false,
+      options: [{ id: 1, label: "Yes", position: 0, vote_count: 0, selected: false }],
+    });
+    const row = findMessage(101);
+    if (row) {
+      row.location = { latitude: "1", longitude: "2", accuracy_m: null, label: "Cafe" };
+      row.contacts = [{ display_name: "Priya", position: 0, contact_account_id: 2 }];
+    }
+    const view = render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("Gate?")).toBeInTheDocument();
+    expect(document.querySelector("[data-location-card]")).not.toBeNull();
+    expect(document.querySelector("[data-contact-card]")).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: "Yes" }));
+    await user.click(screen.getByRole("button", { name: en.polls.results }));
+    expect(await screen.findByText(en.polls.results_title)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.ui.close }));
+    await waitFor(() => {
+      expect(screen.queryByText(en.polls.results_title)).toBeNull();
+    });
+    view.unmount();
   });
 
   it("shows queued ticks while a live send is in flight", async () => {
@@ -315,5 +357,35 @@ describe("conversation layers", () => {
     expect(actions.onEdit).toBeUndefined();
     expect(nextInfoId(true, 4)).toBe(4);
     expect(nextInfoId(false, 4)).toBeNull();
+    expect(pollVotePayload([], 1, ["2"])).toBeNull();
+    expect(pollResultsId([], 1)).toBeNull();
+    const mutate = vi.fn();
+    voteFromThread([], 1, ["2"], mutate);
+    expect(mutate).not.toHaveBeenCalled();
+    const withPoll = [
+      {
+        id: 9,
+        conversation_id: 1,
+        position: 1,
+        revision: 1,
+        kind: "text",
+        body: null,
+        deleted: false,
+        created_at: "2026-01-01T12:00:00.000Z",
+        poll: {
+          id: 8,
+          question: "Q",
+          allows_multiple: false,
+          is_anonymous: false,
+          voter_count: 0,
+          closed: false,
+          options: [],
+        },
+      },
+    ];
+    expect(pollResultsId(withPoll, 9)).toBe(8);
+    expect(pollVotePayload(withPoll, 9, ["3"])).toEqual({ optionIds: [3], pollId: 8 });
+    voteFromThread(withPoll, 9, ["3"], mutate);
+    expect(mutate).toHaveBeenCalledWith({ optionIds: [3], pollId: 8 });
   });
 });

@@ -160,4 +160,35 @@ RSpec.describe "Session 3.2 message authorization 403s", type: :request do
     post "/api/v1/scheduled_messages/#{row.id}/send_now", headers: auth_headers_for(user)
     expect(response).to have_http_status(:forbidden)
   end
+
+  it "returns 403 when poll vote is denied" do
+    user, conversation, _message = member_setup
+    poll = Messages::Send.call(
+      conversation: conversation, sender: user.account, poll: { question: "Q", options: %w[A B] }
+    ).value.poll
+    stub_deny(PollPolicy, :vote?)
+    post "/api/v1/polls/#{poll.id}/vote", headers: auth_headers_for(user),
+         params: { option_ids: [ poll.poll_options.first.id ] }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when poll close is denied" do
+    user, conversation, _message = member_setup
+    poll = Messages::Send.call(
+      conversation: conversation, sender: user.account, poll: { question: "Q", options: %w[A B] }
+    ).value.poll
+    stub_deny(PollPolicy, :close?)
+    post "/api/v1/polls/#{poll.id}/close", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when poll results are denied" do
+    user, conversation, _message = member_setup
+    poll = Messages::Send.call(
+      conversation: conversation, sender: user.account, poll: { question: "Q", options: %w[A B] }
+    ).value.poll
+    stub_deny(PollPolicy, :show?)
+    get "/api/v1/polls/#{poll.id}", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
 end

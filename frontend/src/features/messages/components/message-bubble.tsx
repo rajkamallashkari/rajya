@@ -1,6 +1,10 @@
 import { useState } from "react";
+import { ContactCard, type ContactView } from "@/features/messages/components/contact-card";
+import { LocationCard, type LocationView } from "@/features/messages/components/location-card";
 import { MessageContent } from "@/features/messages/components/message-content";
+import { PollCard } from "@/features/messages/components/poll-card";
 import { TickIndicator } from "@/features/messages/components/tick-indicator";
+import type { PollView } from "@/features/messages/model/poll";
 import type { BubbleRole, MessageSide, TickStatus } from "@/features/messages/model/constants";
 import { showsTimestampByDefault } from "@/features/messages/model/grouping";
 import { getJumboInfo } from "@/features/messages/model/jumbo-emoji";
@@ -44,7 +48,12 @@ export function MessageBubble({
   locale = "en",
   onMentionClick,
   onOpenMenu,
+  onOpenPollResults,
   onRetry,
+  onVote,
+  poll,
+  location,
+  contacts = [],
   reserveAvatar,
   role = "single",
   senderName,
@@ -59,7 +68,12 @@ export function MessageBubble({
   locale?: string;
   onMentionClick?: (handle: string) => void;
   onOpenMenu?: (point: { clientX: number; clientY: number }) => void;
+  onOpenPollResults?: () => void;
   onRetry?: () => void;
+  onVote?: (optionIds: string[]) => void;
+  poll?: PollView;
+  location?: LocationView;
+  contacts?: ContactView[];
   reserveAvatar?: boolean;
   role?: BubbleRole;
   senderName?: string | null;
@@ -123,7 +137,14 @@ export function MessageBubble({
           data-jumbo={jumbo ? "true" : "false"}
           data-side={side}
         >
-          <MessageContent body={body} onMentionClick={onMentionClick} />
+          {body ? <MessageContent body={body} onMentionClick={onMentionClick} /> : null}
+          {poll ? (
+            <PollCard onOpenResults={onOpenPollResults} onVote={onVote} poll={poll} />
+          ) : null}
+          {location ? <LocationCard location={location} /> : null}
+          {contacts.map((contact) => (
+            <ContactCard contact={contact} key={`${contact.displayName}-${contact.phone ?? ""}`} />
+          ))}
           {showTime || showTicks ? (
             <div
               className={cn(

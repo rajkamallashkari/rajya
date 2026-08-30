@@ -49,6 +49,16 @@ RSpec.describe ConversationResource do
     expect(json.fetch("last_message")).to include("id" => message.id, "body" => nil, "deleted" => true)
   end
 
+  it "omits sender_name when the last message has no sender account" do
+    owner = create(:user)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ create(:account) ])
+    message = create(:message, conversation: conversation, sender_account: nil, sender_snapshot: { "display_name" => "Ghost" })
+    conversation.update!(last_message: message)
+    json = described_class.new(Conversations::View.for(conversation.reload, owner.account)).to_h
+
+    expect(json.fetch("last_message")).to include("id" => message.id, "sender_name" => nil)
+  end
+
   it "serializes a direct with the other account as peer and no members on the list view" do
     alice = create(:user)
     bob = create(:account)

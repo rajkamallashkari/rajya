@@ -246,6 +246,61 @@ export function reactStoredMessage(id: number): Message | null {
   return replaceMessage(id, (message) => ({ ...message, revision: message.revision + 1 }));
 }
 
+export function voteStoredPoll(pollId: number, optionIds: number[]): Message | null {
+  const selected = new Set(optionIds);
+  for (const rows of Object.values(store.messages)) {
+    const current = rows.find((row) => row.poll?.id === pollId);
+    if (!current?.poll) {
+      continue;
+    }
+    const poll = current.poll;
+    return replaceMessage(current.id, (message) => ({
+      ...message,
+      poll: {
+        ...poll,
+        options: poll.options.map((option) => ({
+          ...option,
+          selected: selected.has(option.id),
+        })),
+      },
+    }));
+  }
+  return null;
+}
+
+export function closeStoredPoll(pollId: number): Message | null {
+  for (const rows of Object.values(store.messages)) {
+    const current = rows.find((row) => row.poll?.id === pollId);
+    if (!current?.poll) {
+      continue;
+    }
+    const poll = current.poll;
+    return replaceMessage(current.id, (message) => ({
+      ...message,
+      poll: { ...poll, closed: true },
+    }));
+  }
+  return null;
+}
+
+export function attachPoll(messageId: number, poll: NonNullable<Message["poll"]>): Message | null {
+  return replaceMessage(messageId, (message) => ({ ...message, poll }));
+}
+
+export function findPoll(pollId: number): NonNullable<Message["poll"]> | undefined {
+  return findMessageByPoll(pollId)?.poll;
+}
+
+function findMessageByPoll(pollId: number): Message | undefined {
+  for (const rows of Object.values(store.messages)) {
+    const found = rows.find((row) => row.poll?.id === pollId);
+    if (found) {
+      return found;
+    }
+  }
+  return undefined;
+}
+
 export function seedPositions(conversationId: number, count: number): void {
   const rows: Message[] = [];
   for (let position = 1; position <= count; position += 1) {

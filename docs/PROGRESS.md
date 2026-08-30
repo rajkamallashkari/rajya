@@ -10,23 +10,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 3.3 |
-| **Next session** | 3.4 |
+| **Last completed** | 3.4 |
+| **Next session** | 3.5 |
 | **Phase** | P3 — Conversations & messaging core |
-| **Sessions remaining in phase** | 3 (3.4–3.6) |
+| **Sessions remaining in phase** | 2 (3.5–3.6) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 3.4 — Polls (NR-15) with the transactional single-choice rule, plus `message_locations` and `message_contacts` as message children (NR-30, NR-31)**
+**Session 3.5 — Permalinks (NR-19), multi-select bulk actions (NR-20), silent send (NR-23), recurring schedules (NR-26), reaction details (NR-27)**
 
-Deliverable: **Polls (NR-15)** with the transactional single-choice rule, plus `message_locations` and `message_contacts` as message children (NR-30, NR-31)
+Deliverable: Permalinks (NR-19), multi-select bulk actions (NR-20), silent send (NR-23), recurring schedules (NR-26), reaction details (NR-27)
 
-Docs: `SCHEMA §12.1, §12.4, S-12, S-13, S-16`
+Docs: `SCHEMA §12.7, §12.16; AUDIT §2.1 (BR-1 absolute — no hard-delete exception)`
 
 Legacy to read:
-- None — new features. Read `message_attachment.rb` only for the message-child pattern to imitate
+- `cognify/app/jobs/dispatch_scheduled_messages_job.rb` — the dispatcher gaining recurrence
 
 ---
 
@@ -51,6 +51,7 @@ Legacy to read:
 | 3.1 | Conversations, memberships, the §3.1 permission matrix in Pundit | Unique `direct_key` closes the DM race (F-13). Sidebar reads denormalized `last_message_id` / `last_activity_at` with a reconcile job (F-4). Pundit enforces SCHEMA §3.1; generated policy spec covers every cell; 403s on conversation HTTP. NR-1 blocks new DMs with 404. Add/remove/leave mutations wait for 6.1; send/edit/pin 403s wait for 3.2. |
 | 3.2 | Position/revision allocators, idempotent send, edit, unsend, forward, react, pin, save, schedule | Sequencer `UPDATE … RETURNING` for send (position+revision) and mutations (revision). `(conversation_id, client_nonce)` unique (F-3). Unsend is a tombstone (BR-1). Forward copies independently (BR-10–14). Reactions/pins/saves and one-shot schedule. 403s on every write. Recurring RRULE waits for 3.5; cursor pagination and TanStack Query wait for 3.3. |
 | 3.3 | Cursor pagination, message queries, TanStack Query layer replacing mocks | Position cursors (`before`/`after`) plus jump (`around_id`/`around_at`). Page size 50, jump window 60 (BR-108); client cache 200 newest (BR-107). TanStack Query owns server state with optimistic send/edit/react/pin/save/unsend rollback. Message info from watermarks (shape only). Catch-up/IndexedDB wait for P4; exact ticks wait for P5. |
+| 3.4 | Polls (NR-15), static location and contact message children (NR-30, NR-31) | Polls are message children: unsend tombstones the parent and omits poll/location from JSON (BR-7). Single-choice is a locked `Polls::Vote` transaction (S-12); anonymity is serializer-only (S-13). Locations are static points (S-16). Vote follows react; close is author or group admin/owner. Composer poll/location pickers wait so DS-13 stays intact; Playwright poll create/vote waits for that attach UI. |
 
 ---
 

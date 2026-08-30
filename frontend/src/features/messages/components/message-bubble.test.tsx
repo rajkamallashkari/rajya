@@ -90,6 +90,27 @@ describe("MessageBubble", () => {
     rerender(<MessageBubble body="plain received" side="received" />);
     expect(document.querySelector("[data-status='none']")).not.toBeNull();
 
+    rerender(
+      <MessageBubble
+        body=""
+        contacts={[{ contactAccountId: null, displayName: "Ada", email: null, phone: null }]}
+        location={{ accuracyM: null, label: "Cafe", latitude: 1, longitude: 2 }}
+        poll={{
+          allowsMultiple: false,
+          closed: false,
+          closesAt: null,
+          isAnonymous: false,
+          options: [],
+          question: "Q",
+          voterCount: 0,
+        }}
+        side="received"
+      />,
+    );
+    expect(document.querySelector("[data-poll-card]")).not.toBeNull();
+    expect(document.querySelector("[data-location-card]")).not.toBeNull();
+    expect(document.querySelector("[data-contact-card]")).not.toBeNull();
+
     rerender(<MessageBubble body="🎉" side="sent" status="read" />);
     expect(document.querySelector("[data-jumbo='true']")).not.toBeNull();
     expect(document.querySelector("[data-tail]")).toBeNull();
@@ -164,6 +185,44 @@ describe("MessageGroup", () => {
     expect(onRetry).toHaveBeenCalledWith("f");
     fireEvent.contextMenu(document.querySelector("[data-message-bubble]") as HTMLElement);
     expect(onOpenMenu).toHaveBeenCalled();
+
+    const onVote = vi.fn();
+    const onOpenPollResults = vi.fn();
+    rerender(
+      <MessageGroup
+        messages={[
+          {
+            body: "",
+            id: "p1",
+            poll: {
+              allowsMultiple: false,
+              closed: false,
+              closesAt: null,
+              isAnonymous: false,
+              options: [
+                {
+                  id: "a",
+                  label: "A",
+                  position: 0,
+                  selected: false,
+                  voteCount: 0,
+                  voters: [],
+                },
+              ],
+              question: "Q",
+              voterCount: 0,
+            },
+          },
+        ]}
+        onOpenPollResults={onOpenPollResults}
+        onVote={onVote}
+        side="received"
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "A" }));
+    expect(onVote).toHaveBeenCalledWith("p1", ["a"]);
+    await user.click(screen.getByRole("button", { name: en.polls.results }));
+    expect(onOpenPollResults).toHaveBeenCalledWith("p1");
   });
 });
 

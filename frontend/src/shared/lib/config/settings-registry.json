@@ -107,6 +107,96 @@
     "max": 500,
     "allow_nil": false
   },
+  "contacts_per_message": {
+    "type": "integer",
+    "category": "messaging",
+    "default": 10,
+    "description": "Maximum contact cards on one message (NR-31).",
+    "min": 1,
+    "max": 50,
+    "allow_nil": false
+  },
+  "latitude_max": {
+    "type": "integer",
+    "category": "messaging",
+    "default": 90,
+    "description": "Maximum latitude degrees for a static location (NR-30).",
+    "min": 0,
+    "max": 90,
+    "allow_nil": false
+  },
+  "latitude_min": {
+    "type": "integer",
+    "category": "messaging",
+    "default": -90,
+    "description": "Minimum latitude degrees for a static location (NR-30).",
+    "min": -90,
+    "max": 0,
+    "allow_nil": false
+  },
+  "location_label_max_length": {
+    "type": "integer",
+    "category": "messaging",
+    "default": 120,
+    "description": "Maximum characters in a location label (NR-30).",
+    "min": 1,
+    "max": 500,
+    "allow_nil": false
+  },
+  "longitude_max": {
+    "type": "integer",
+    "category": "messaging",
+    "default": 180,
+    "description": "Maximum longitude degrees for a static location (NR-30).",
+    "min": 0,
+    "max": 180,
+    "allow_nil": false
+  },
+  "longitude_min": {
+    "type": "integer",
+    "category": "messaging",
+    "default": -180,
+    "description": "Minimum longitude degrees for a static location (NR-30).",
+    "min": -180,
+    "max": 0,
+    "allow_nil": false
+  },
+  "poll_max_options": {
+    "type": "integer",
+    "category": "messaging",
+    "default": 12,
+    "description": "Maximum options on one poll (NR-15).",
+    "min": 2,
+    "max": 50,
+    "allow_nil": false
+  },
+  "poll_min_options": {
+    "type": "integer",
+    "category": "messaging",
+    "default": 2,
+    "description": "Minimum options on one poll (NR-15).",
+    "min": 2,
+    "max": 20,
+    "allow_nil": false
+  },
+  "poll_option_max_length": {
+    "type": "integer",
+    "category": "messaging",
+    "default": 100,
+    "description": "Maximum characters in a poll option label (NR-15).",
+    "min": 1,
+    "max": 500,
+    "allow_nil": false
+  },
+  "poll_question_max_length": {
+    "type": "integer",
+    "category": "messaging",
+    "default": 256,
+    "description": "Maximum characters in a poll question (NR-15).",
+    "min": 1,
+    "max": 4096,
+    "allow_nil": false
+  },
   "min_members": {
     "type": "integer",
     "category": "groups",

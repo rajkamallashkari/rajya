@@ -49,7 +49,16 @@ export async function getMessageInfo(id: number) {
 export async function sendMessage(body: {
   body?: string;
   client_nonce?: string;
+  contacts?: components["schemas"]["MessageContact"][];
   conversation_id: number;
+  location?: components["schemas"]["MessageLocation"];
+  poll?: {
+    allows_multiple?: boolean;
+    closes_at?: string;
+    is_anonymous?: boolean;
+    options: string[];
+    question: string;
+  };
   reply_to_message_id?: number;
 }) {
   return unwrap(
@@ -108,5 +117,36 @@ export async function saveMessage(messageId: number) {
       body: { message_id: messageId },
     }),
     "save_failed",
+  );
+}
+
+export async function votePoll(pollId: number, optionIds: number[]) {
+  return unwrap(
+    await apiClient().POST("/api/v1/polls/{id}/vote", {
+      headers: bearerHeaders(),
+      params: { path: { id: pollId } },
+      body: { option_ids: optionIds },
+    }),
+    "poll_vote_failed",
+  );
+}
+
+export async function closePoll(pollId: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/polls/{id}/close", {
+      headers: bearerHeaders(),
+      params: { path: { id: pollId } },
+    }),
+    "poll_close_failed",
+  );
+}
+
+export async function getPoll(pollId: number) {
+  return unwrap(
+    await apiClient().GET("/api/v1/polls/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id: pollId } },
+    }),
+    "poll_failed",
   );
 }

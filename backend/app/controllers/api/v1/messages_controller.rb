@@ -45,7 +45,10 @@ module Api
           reply_to_message_id: params[:reply_to_message_id],
           attachment_signed_ids: params[:attachment_signed_ids],
           voice_duration_ms: params[:voice_duration_ms],
-          voice_waveform: params[:voice_waveform]
+          voice_waveform: params[:voice_waveform],
+          poll: params[:poll],
+          location: params[:location],
+          contacts: params[:contacts]
         }
       end
     end

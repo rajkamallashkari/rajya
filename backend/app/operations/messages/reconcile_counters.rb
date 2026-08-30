@@ -13,6 +13,7 @@ module Messages
         reaction_summary: message.reactions.group(:emoji).count,
         attachment_count: message.attachments.count
       )
+      Polls::Counters.refresh!(message.poll) if message.poll
     end
   end
 end

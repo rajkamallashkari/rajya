@@ -71,6 +71,12 @@ Rails.application.routes.draw do
         end
         resources :reactions, only: %i[create destroy], param: :emoji, constraints: { emoji: /.*/ }
       end
+      resources :polls, only: :show do
+        member do
+          post :vote
+          post :close
+        end
+      end
       resources :saved_messages, only: %i[create destroy]
       resources :scheduled_messages, only: %i[index create update destroy] do
         member { post :send_now }

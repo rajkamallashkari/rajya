@@ -8,6 +8,7 @@
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -948,6 +949,40 @@ ALTER SEQUENCE public.link_previews_id_seq OWNED BY public.link_previews.id;
 
 
 --
+-- Name: message_contacts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.message_contacts (
+    id bigint NOT NULL,
+    message_id bigint NOT NULL,
+    contact_account_id bigint,
+    display_name text NOT NULL,
+    phone text,
+    email public.citext,
+    "position" smallint DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: message_contacts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.message_contacts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: message_contacts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.message_contacts_id_seq OWNED BY public.message_contacts.id;
+
+
+--
 -- Name: message_link_previews; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -975,6 +1010,42 @@ CREATE SEQUENCE public.message_link_previews_id_seq
 --
 
 ALTER SEQUENCE public.message_link_previews_id_seq OWNED BY public.message_link_previews.id;
+
+
+--
+-- Name: message_locations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.message_locations (
+    id bigint NOT NULL,
+    message_id bigint NOT NULL,
+    latitude numeric(9,6) NOT NULL,
+    longitude numeric(9,6) NOT NULL,
+    accuracy_m integer,
+    label text,
+    created_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT ck_message_locations_latitude CHECK (((latitude >= ('-90'::integer)::numeric) AND (latitude <= (90)::numeric))),
+    CONSTRAINT ck_message_locations_longitude CHECK (((longitude >= ('-180'::integer)::numeric) AND (longitude <= (180)::numeric)))
+);
+
+
+--
+-- Name: message_locations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.message_locations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: message_locations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.message_locations_id_seq OWNED BY public.message_locations.id;
 
 
 --
@@ -1158,6 +1229,107 @@ CREATE SEQUENCE public.pinned_messages_id_seq
 --
 
 ALTER SEQUENCE public.pinned_messages_id_seq OWNED BY public.pinned_messages.id;
+
+
+--
+-- Name: poll_options; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.poll_options (
+    id bigint NOT NULL,
+    poll_id bigint NOT NULL,
+    "position" smallint NOT NULL,
+    label text NOT NULL,
+    vote_count integer DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: poll_options_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.poll_options_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: poll_options_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.poll_options_id_seq OWNED BY public.poll_options.id;
+
+
+--
+-- Name: poll_votes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.poll_votes (
+    id bigint NOT NULL,
+    poll_id bigint NOT NULL,
+    poll_option_id bigint NOT NULL,
+    account_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: poll_votes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.poll_votes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: poll_votes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.poll_votes_id_seq OWNED BY public.poll_votes.id;
+
+
+--
+-- Name: polls; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.polls (
+    id bigint NOT NULL,
+    message_id bigint NOT NULL,
+    question text NOT NULL,
+    allows_multiple boolean DEFAULT false NOT NULL,
+    is_anonymous boolean DEFAULT false NOT NULL,
+    closes_at timestamp(6) without time zone,
+    closed_at timestamp(6) without time zone,
+    voter_count integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: polls_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.polls_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: polls_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.polls_id_seq OWNED BY public.polls.id;
 
 
 --
@@ -1381,6 +1553,440 @@ CREATE SEQUENCE public.sessions_id_seq
 --
 
 ALTER SEQUENCE public.sessions_id_seq OWNED BY public.sessions.id;
+
+
+--
+-- Name: solid_cable_messages; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solid_cable_messages (
+    id bigint NOT NULL,
+    channel bytea NOT NULL,
+    payload bytea NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    channel_hash bigint NOT NULL
+);
+
+
+--
+-- Name: solid_cable_messages_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solid_cable_messages_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solid_cable_messages_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solid_cable_messages_id_seq OWNED BY public.solid_cable_messages.id;
+
+
+--
+-- Name: solid_cache_entries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solid_cache_entries (
+    id bigint NOT NULL,
+    key bytea NOT NULL,
+    value bytea NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    key_hash bigint NOT NULL,
+    byte_size integer NOT NULL
+);
+
+
+--
+-- Name: solid_cache_entries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solid_cache_entries_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solid_cache_entries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solid_cache_entries_id_seq OWNED BY public.solid_cache_entries.id;
+
+
+--
+-- Name: solid_queue_blocked_executions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solid_queue_blocked_executions (
+    id bigint NOT NULL,
+    job_id bigint NOT NULL,
+    queue_name character varying NOT NULL,
+    priority integer DEFAULT 0 NOT NULL,
+    concurrency_key character varying NOT NULL,
+    expires_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: solid_queue_blocked_executions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solid_queue_blocked_executions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solid_queue_blocked_executions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solid_queue_blocked_executions_id_seq OWNED BY public.solid_queue_blocked_executions.id;
+
+
+--
+-- Name: solid_queue_claimed_executions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solid_queue_claimed_executions (
+    id bigint NOT NULL,
+    job_id bigint NOT NULL,
+    process_id bigint,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: solid_queue_claimed_executions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solid_queue_claimed_executions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solid_queue_claimed_executions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solid_queue_claimed_executions_id_seq OWNED BY public.solid_queue_claimed_executions.id;
+
+
+--
+-- Name: solid_queue_failed_executions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solid_queue_failed_executions (
+    id bigint NOT NULL,
+    job_id bigint NOT NULL,
+    error text,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: solid_queue_failed_executions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solid_queue_failed_executions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solid_queue_failed_executions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solid_queue_failed_executions_id_seq OWNED BY public.solid_queue_failed_executions.id;
+
+
+--
+-- Name: solid_queue_jobs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solid_queue_jobs (
+    id bigint NOT NULL,
+    queue_name character varying NOT NULL,
+    class_name character varying NOT NULL,
+    arguments text,
+    priority integer DEFAULT 0 NOT NULL,
+    active_job_id character varying,
+    scheduled_at timestamp(6) without time zone,
+    finished_at timestamp(6) without time zone,
+    concurrency_key character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: solid_queue_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solid_queue_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solid_queue_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solid_queue_jobs_id_seq OWNED BY public.solid_queue_jobs.id;
+
+
+--
+-- Name: solid_queue_pauses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solid_queue_pauses (
+    id bigint NOT NULL,
+    queue_name character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: solid_queue_pauses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solid_queue_pauses_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solid_queue_pauses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solid_queue_pauses_id_seq OWNED BY public.solid_queue_pauses.id;
+
+
+--
+-- Name: solid_queue_processes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solid_queue_processes (
+    id bigint NOT NULL,
+    kind character varying NOT NULL,
+    last_heartbeat_at timestamp(6) without time zone NOT NULL,
+    supervisor_id bigint,
+    pid integer NOT NULL,
+    hostname character varying,
+    metadata text,
+    created_at timestamp(6) without time zone NOT NULL,
+    name character varying NOT NULL
+);
+
+
+--
+-- Name: solid_queue_processes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solid_queue_processes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solid_queue_processes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solid_queue_processes_id_seq OWNED BY public.solid_queue_processes.id;
+
+
+--
+-- Name: solid_queue_ready_executions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solid_queue_ready_executions (
+    id bigint NOT NULL,
+    job_id bigint NOT NULL,
+    queue_name character varying NOT NULL,
+    priority integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: solid_queue_ready_executions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solid_queue_ready_executions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solid_queue_ready_executions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solid_queue_ready_executions_id_seq OWNED BY public.solid_queue_ready_executions.id;
+
+
+--
+-- Name: solid_queue_recurring_executions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solid_queue_recurring_executions (
+    id bigint NOT NULL,
+    job_id bigint NOT NULL,
+    task_key character varying NOT NULL,
+    run_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: solid_queue_recurring_executions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solid_queue_recurring_executions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solid_queue_recurring_executions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solid_queue_recurring_executions_id_seq OWNED BY public.solid_queue_recurring_executions.id;
+
+
+--
+-- Name: solid_queue_recurring_tasks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solid_queue_recurring_tasks (
+    id bigint NOT NULL,
+    key character varying NOT NULL,
+    schedule character varying NOT NULL,
+    command character varying(2048),
+    class_name character varying,
+    arguments text,
+    queue_name character varying,
+    priority integer DEFAULT 0,
+    static boolean DEFAULT true NOT NULL,
+    description text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: solid_queue_recurring_tasks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solid_queue_recurring_tasks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solid_queue_recurring_tasks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solid_queue_recurring_tasks_id_seq OWNED BY public.solid_queue_recurring_tasks.id;
+
+
+--
+-- Name: solid_queue_scheduled_executions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solid_queue_scheduled_executions (
+    id bigint NOT NULL,
+    job_id bigint NOT NULL,
+    queue_name character varying NOT NULL,
+    priority integer DEFAULT 0 NOT NULL,
+    scheduled_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: solid_queue_scheduled_executions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solid_queue_scheduled_executions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solid_queue_scheduled_executions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solid_queue_scheduled_executions_id_seq OWNED BY public.solid_queue_scheduled_executions.id;
+
+
+--
+-- Name: solid_queue_semaphores; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solid_queue_semaphores (
+    id bigint NOT NULL,
+    key character varying NOT NULL,
+    value integer DEFAULT 1 NOT NULL,
+    expires_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: solid_queue_semaphores_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solid_queue_semaphores_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solid_queue_semaphores_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solid_queue_semaphores_id_seq OWNED BY public.solid_queue_semaphores.id;
 
 
 --
@@ -1782,10 +2388,24 @@ ALTER TABLE ONLY public.link_previews ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: message_contacts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_contacts ALTER COLUMN id SET DEFAULT nextval('public.message_contacts_id_seq'::regclass);
+
+
+--
 -- Name: message_link_previews id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.message_link_previews ALTER COLUMN id SET DEFAULT nextval('public.message_link_previews_id_seq'::regclass);
+
+
+--
+-- Name: message_locations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_locations ALTER COLUMN id SET DEFAULT nextval('public.message_locations_id_seq'::regclass);
 
 
 --
@@ -1821,6 +2441,27 @@ ALTER TABLE ONLY public.phone_verification_requests ALTER COLUMN id SET DEFAULT 
 --
 
 ALTER TABLE ONLY public.pinned_messages ALTER COLUMN id SET DEFAULT nextval('public.pinned_messages_id_seq'::regclass);
+
+
+--
+-- Name: poll_options id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.poll_options ALTER COLUMN id SET DEFAULT nextval('public.poll_options_id_seq'::regclass);
+
+
+--
+-- Name: poll_votes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.poll_votes ALTER COLUMN id SET DEFAULT nextval('public.poll_votes_id_seq'::regclass);
+
+
+--
+-- Name: polls id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.polls ALTER COLUMN id SET DEFAULT nextval('public.polls_id_seq'::regclass);
 
 
 --
@@ -1863,6 +2504,97 @@ ALTER TABLE ONLY public.scheduled_messages ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.sessions ALTER COLUMN id SET DEFAULT nextval('public.sessions_id_seq'::regclass);
+
+
+--
+-- Name: solid_cable_messages id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_cable_messages ALTER COLUMN id SET DEFAULT nextval('public.solid_cable_messages_id_seq'::regclass);
+
+
+--
+-- Name: solid_cache_entries id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_cache_entries ALTER COLUMN id SET DEFAULT nextval('public.solid_cache_entries_id_seq'::regclass);
+
+
+--
+-- Name: solid_queue_blocked_executions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_blocked_executions ALTER COLUMN id SET DEFAULT nextval('public.solid_queue_blocked_executions_id_seq'::regclass);
+
+
+--
+-- Name: solid_queue_claimed_executions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_claimed_executions ALTER COLUMN id SET DEFAULT nextval('public.solid_queue_claimed_executions_id_seq'::regclass);
+
+
+--
+-- Name: solid_queue_failed_executions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_failed_executions ALTER COLUMN id SET DEFAULT nextval('public.solid_queue_failed_executions_id_seq'::regclass);
+
+
+--
+-- Name: solid_queue_jobs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_jobs ALTER COLUMN id SET DEFAULT nextval('public.solid_queue_jobs_id_seq'::regclass);
+
+
+--
+-- Name: solid_queue_pauses id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_pauses ALTER COLUMN id SET DEFAULT nextval('public.solid_queue_pauses_id_seq'::regclass);
+
+
+--
+-- Name: solid_queue_processes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_processes ALTER COLUMN id SET DEFAULT nextval('public.solid_queue_processes_id_seq'::regclass);
+
+
+--
+-- Name: solid_queue_ready_executions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_ready_executions ALTER COLUMN id SET DEFAULT nextval('public.solid_queue_ready_executions_id_seq'::regclass);
+
+
+--
+-- Name: solid_queue_recurring_executions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_recurring_executions ALTER COLUMN id SET DEFAULT nextval('public.solid_queue_recurring_executions_id_seq'::regclass);
+
+
+--
+-- Name: solid_queue_recurring_tasks id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_recurring_tasks ALTER COLUMN id SET DEFAULT nextval('public.solid_queue_recurring_tasks_id_seq'::regclass);
+
+
+--
+-- Name: solid_queue_scheduled_executions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_scheduled_executions ALTER COLUMN id SET DEFAULT nextval('public.solid_queue_scheduled_executions_id_seq'::regclass);
+
+
+--
+-- Name: solid_queue_semaphores id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_semaphores ALTER COLUMN id SET DEFAULT nextval('public.solid_queue_semaphores_id_seq'::regclass);
 
 
 --
@@ -2116,11 +2848,27 @@ ALTER TABLE ONLY public.link_previews
 
 
 --
+-- Name: message_contacts message_contacts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_contacts
+    ADD CONSTRAINT message_contacts_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: message_link_previews message_link_previews_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.message_link_previews
     ADD CONSTRAINT message_link_previews_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: message_locations message_locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_locations
+    ADD CONSTRAINT message_locations_pkey PRIMARY KEY (id);
 
 
 --
@@ -2161,6 +2909,30 @@ ALTER TABLE ONLY public.phone_verification_requests
 
 ALTER TABLE ONLY public.pinned_messages
     ADD CONSTRAINT pinned_messages_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: poll_options poll_options_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.poll_options
+    ADD CONSTRAINT poll_options_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: poll_votes poll_votes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.poll_votes
+    ADD CONSTRAINT poll_votes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: polls polls_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.polls
+    ADD CONSTRAINT polls_pkey PRIMARY KEY (id);
 
 
 --
@@ -2225,6 +2997,110 @@ ALTER TABLE ONLY public.schema_migrations
 
 ALTER TABLE ONLY public.sessions
     ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: solid_cable_messages solid_cable_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_cable_messages
+    ADD CONSTRAINT solid_cable_messages_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: solid_cache_entries solid_cache_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_cache_entries
+    ADD CONSTRAINT solid_cache_entries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: solid_queue_blocked_executions solid_queue_blocked_executions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_blocked_executions
+    ADD CONSTRAINT solid_queue_blocked_executions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: solid_queue_claimed_executions solid_queue_claimed_executions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_claimed_executions
+    ADD CONSTRAINT solid_queue_claimed_executions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: solid_queue_failed_executions solid_queue_failed_executions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_failed_executions
+    ADD CONSTRAINT solid_queue_failed_executions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: solid_queue_jobs solid_queue_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_jobs
+    ADD CONSTRAINT solid_queue_jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: solid_queue_pauses solid_queue_pauses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_pauses
+    ADD CONSTRAINT solid_queue_pauses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: solid_queue_processes solid_queue_processes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_processes
+    ADD CONSTRAINT solid_queue_processes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: solid_queue_ready_executions solid_queue_ready_executions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_ready_executions
+    ADD CONSTRAINT solid_queue_ready_executions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: solid_queue_recurring_executions solid_queue_recurring_executions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_recurring_executions
+    ADD CONSTRAINT solid_queue_recurring_executions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: solid_queue_recurring_tasks solid_queue_recurring_tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_recurring_tasks
+    ADD CONSTRAINT solid_queue_recurring_tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: solid_queue_scheduled_executions solid_queue_scheduled_executions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_scheduled_executions
+    ADD CONSTRAINT solid_queue_scheduled_executions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: solid_queue_semaphores solid_queue_semaphores_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_semaphores
+    ADD CONSTRAINT solid_queue_semaphores_pkey PRIMARY KEY (id);
 
 
 --
@@ -2312,13 +3188,6 @@ CREATE UNIQUE INDEX idx_blocks_unique ON public.blocks USING btree (blocker_acco
 
 
 --
--- Name: idx_contact_nicknames_owner_target; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX idx_contact_nicknames_owner_target ON public.contact_nicknames USING btree (owner_account_id, target_account_id);
-
-
---
 -- Name: idx_bot_memories_bot_created; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2344,6 +3213,13 @@ CREATE UNIQUE INDEX idx_call_participants_one_live_per_account ON public.call_pa
 --
 
 CREATE UNIQUE INDEX idx_call_participants_unique ON public.call_participants USING btree (call_id, account_id);
+
+
+--
+-- Name: idx_contact_nicknames_owner_target; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_contact_nicknames_owner_target ON public.contact_nicknames USING btree (owner_account_id, target_account_id);
 
 
 --
@@ -2389,6 +3265,13 @@ CREATE UNIQUE INDEX idx_memberships_conversation_account ON public.conversation_
 
 
 --
+-- Name: idx_message_contacts_position; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_message_contacts_position ON public.message_contacts USING btree (message_id, "position");
+
+
+--
 -- Name: idx_message_link_previews_unique; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2428,6 +3311,27 @@ CREATE INDEX idx_phone_verif_requests_user_id ON public.phone_verification_reque
 --
 
 CREATE UNIQUE INDEX idx_pinned_messages_unique ON public.pinned_messages USING btree (conversation_id, message_id);
+
+
+--
+-- Name: idx_poll_options_position; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_poll_options_position ON public.poll_options USING btree (poll_id, "position");
+
+
+--
+-- Name: idx_poll_votes_option_account; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_poll_votes_option_account ON public.poll_votes USING btree (poll_option_id, account_id);
+
+
+--
+-- Name: idx_poll_votes_poll_account; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_poll_votes_poll_account ON public.poll_votes USING btree (poll_id, account_id);
 
 
 --
@@ -2697,6 +3601,13 @@ CREATE INDEX index_message_link_previews_on_message_id ON public.message_link_pr
 
 
 --
+-- Name: index_message_locations_on_message_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_message_locations_on_message_id ON public.message_locations USING btree (message_id);
+
+
+--
 -- Name: index_message_revisions_on_message_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2743,6 +3654,13 @@ CREATE INDEX index_passkeys_on_user_id ON public.passkeys USING btree (user_id);
 --
 
 CREATE UNIQUE INDEX index_passkeys_on_webauthn_credential_id ON public.passkeys USING btree (webauthn_credential_id);
+
+
+--
+-- Name: index_polls_on_message_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_polls_on_message_id ON public.polls USING btree (message_id);
 
 
 --
@@ -2799,6 +3717,237 @@ CREATE UNIQUE INDEX index_sessions_on_jti ON public.sessions USING btree (jti);
 --
 
 CREATE INDEX index_sessions_on_user_id_active ON public.sessions USING btree (user_id) WHERE (revoked_at IS NULL);
+
+
+--
+-- Name: index_solid_cable_messages_on_channel; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_cable_messages_on_channel ON public.solid_cable_messages USING btree (channel);
+
+
+--
+-- Name: index_solid_cable_messages_on_channel_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_cable_messages_on_channel_hash ON public.solid_cable_messages USING btree (channel_hash);
+
+
+--
+-- Name: index_solid_cable_messages_on_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_cable_messages_on_created_at ON public.solid_cable_messages USING btree (created_at);
+
+
+--
+-- Name: index_solid_cache_entries_on_byte_size; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_cache_entries_on_byte_size ON public.solid_cache_entries USING btree (byte_size);
+
+
+--
+-- Name: index_solid_cache_entries_on_key_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_solid_cache_entries_on_key_hash ON public.solid_cache_entries USING btree (key_hash);
+
+
+--
+-- Name: index_solid_cache_entries_on_key_hash_and_byte_size; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_cache_entries_on_key_hash_and_byte_size ON public.solid_cache_entries USING btree (key_hash, byte_size);
+
+
+--
+-- Name: index_solid_queue_blocked_executions_for_maintenance; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_blocked_executions_for_maintenance ON public.solid_queue_blocked_executions USING btree (expires_at, concurrency_key);
+
+
+--
+-- Name: index_solid_queue_blocked_executions_for_release; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_blocked_executions_for_release ON public.solid_queue_blocked_executions USING btree (concurrency_key, priority, job_id);
+
+
+--
+-- Name: index_solid_queue_blocked_executions_on_job_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_solid_queue_blocked_executions_on_job_id ON public.solid_queue_blocked_executions USING btree (job_id);
+
+
+--
+-- Name: index_solid_queue_claimed_executions_on_job_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_solid_queue_claimed_executions_on_job_id ON public.solid_queue_claimed_executions USING btree (job_id);
+
+
+--
+-- Name: index_solid_queue_claimed_executions_on_process_id_and_job_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_claimed_executions_on_process_id_and_job_id ON public.solid_queue_claimed_executions USING btree (process_id, job_id);
+
+
+--
+-- Name: index_solid_queue_dispatch_all; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_dispatch_all ON public.solid_queue_scheduled_executions USING btree (scheduled_at, priority, job_id);
+
+
+--
+-- Name: index_solid_queue_failed_executions_on_job_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_solid_queue_failed_executions_on_job_id ON public.solid_queue_failed_executions USING btree (job_id);
+
+
+--
+-- Name: index_solid_queue_jobs_for_alerting; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_jobs_for_alerting ON public.solid_queue_jobs USING btree (scheduled_at, finished_at);
+
+
+--
+-- Name: index_solid_queue_jobs_for_filtering; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_jobs_for_filtering ON public.solid_queue_jobs USING btree (queue_name, finished_at);
+
+
+--
+-- Name: index_solid_queue_jobs_on_active_job_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_jobs_on_active_job_id ON public.solid_queue_jobs USING btree (active_job_id);
+
+
+--
+-- Name: index_solid_queue_jobs_on_class_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_jobs_on_class_name ON public.solid_queue_jobs USING btree (class_name);
+
+
+--
+-- Name: index_solid_queue_jobs_on_finished_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_jobs_on_finished_at ON public.solid_queue_jobs USING btree (finished_at);
+
+
+--
+-- Name: index_solid_queue_pauses_on_queue_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_solid_queue_pauses_on_queue_name ON public.solid_queue_pauses USING btree (queue_name);
+
+
+--
+-- Name: index_solid_queue_poll_all; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_poll_all ON public.solid_queue_ready_executions USING btree (priority, job_id);
+
+
+--
+-- Name: index_solid_queue_poll_by_queue; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_poll_by_queue ON public.solid_queue_ready_executions USING btree (queue_name, priority, job_id);
+
+
+--
+-- Name: index_solid_queue_processes_on_last_heartbeat_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_processes_on_last_heartbeat_at ON public.solid_queue_processes USING btree (last_heartbeat_at);
+
+
+--
+-- Name: index_solid_queue_processes_on_name_and_supervisor_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_solid_queue_processes_on_name_and_supervisor_id ON public.solid_queue_processes USING btree (name, supervisor_id);
+
+
+--
+-- Name: index_solid_queue_processes_on_supervisor_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_processes_on_supervisor_id ON public.solid_queue_processes USING btree (supervisor_id);
+
+
+--
+-- Name: index_solid_queue_ready_executions_on_job_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_solid_queue_ready_executions_on_job_id ON public.solid_queue_ready_executions USING btree (job_id);
+
+
+--
+-- Name: index_solid_queue_recurring_executions_on_job_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_solid_queue_recurring_executions_on_job_id ON public.solid_queue_recurring_executions USING btree (job_id);
+
+
+--
+-- Name: index_solid_queue_recurring_executions_on_task_key_and_run_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_solid_queue_recurring_executions_on_task_key_and_run_at ON public.solid_queue_recurring_executions USING btree (task_key, run_at);
+
+
+--
+-- Name: index_solid_queue_recurring_tasks_on_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_solid_queue_recurring_tasks_on_key ON public.solid_queue_recurring_tasks USING btree (key);
+
+
+--
+-- Name: index_solid_queue_recurring_tasks_on_static; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_recurring_tasks_on_static ON public.solid_queue_recurring_tasks USING btree (static);
+
+
+--
+-- Name: index_solid_queue_scheduled_executions_on_job_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_solid_queue_scheduled_executions_on_job_id ON public.solid_queue_scheduled_executions USING btree (job_id);
+
+
+--
+-- Name: index_solid_queue_semaphores_on_expires_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_semaphores_on_expires_at ON public.solid_queue_semaphores USING btree (expires_at);
+
+
+--
+-- Name: index_solid_queue_semaphores_on_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_solid_queue_semaphores_on_key ON public.solid_queue_semaphores USING btree (key);
+
+
+--
+-- Name: index_solid_queue_semaphores_on_key_and_value; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_solid_queue_semaphores_on_key_and_value ON public.solid_queue_semaphores USING btree (key, value);
 
 
 --
@@ -2885,6 +4034,22 @@ ALTER TABLE ONLY public.messages
 
 ALTER TABLE ONLY public.group_invites
     ADD CONSTRAINT fk_rails_05ccd7dcd1 FOREIGN KEY (conversation_id) REFERENCES public.conversations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: polls fk_rails_09aa6c0c53; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.polls
+    ADD CONSTRAINT fk_rails_09aa6c0c53 FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_locations fk_rails_0a70a8021b; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_locations
+    ADD CONSTRAINT fk_rails_0a70a8021b FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
 
 
 --
@@ -3000,6 +4165,14 @@ ALTER TABLE ONLY public.call_participants
 
 
 --
+-- Name: solid_queue_recurring_executions fk_rails_318a5533ed; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_recurring_executions
+    ADD CONSTRAINT fk_rails_318a5533ed FOREIGN KEY (job_id) REFERENCES public.solid_queue_jobs(id) ON DELETE CASCADE;
+
+
+--
 -- Name: scheduled_messages fk_rails_3465c6cd26; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3013,6 +4186,14 @@ ALTER TABLE ONLY public.scheduled_messages
 
 ALTER TABLE ONLY public.phone_verification_requests
     ADD CONSTRAINT fk_rails_378a38ef90 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: solid_queue_failed_executions fk_rails_39bbc7a631; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_failed_executions
+    ADD CONSTRAINT fk_rails_39bbc7a631 FOREIGN KEY (job_id) REFERENCES public.solid_queue_jobs(id) ON DELETE CASCADE;
 
 
 --
@@ -3053,6 +4234,14 @@ ALTER TABLE ONLY public.messages
 
 ALTER TABLE ONLY public.pinned_messages
     ADD CONSTRAINT fk_rails_4a5f237c43 FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
+
+
+--
+-- Name: solid_queue_blocked_executions fk_rails_4cd34e2228; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_blocked_executions
+    ADD CONSTRAINT fk_rails_4cd34e2228 FOREIGN KEY (job_id) REFERENCES public.solid_queue_jobs(id) ON DELETE CASCADE;
 
 
 --
@@ -3160,6 +4349,22 @@ ALTER TABLE ONLY public.conversations
 
 
 --
+-- Name: solid_queue_ready_executions fk_rails_81fcbd66af; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_ready_executions
+    ADD CONSTRAINT fk_rails_81fcbd66af FOREIGN KEY (job_id) REFERENCES public.solid_queue_jobs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: poll_votes fk_rails_848ece0184; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.poll_votes
+    ADD CONSTRAINT fk_rails_848ece0184 FOREIGN KEY (poll_option_id) REFERENCES public.poll_options(id) ON DELETE CASCADE;
+
+
+--
 -- Name: conversations fk_rails_88c0de3c54; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3248,6 +4453,22 @@ ALTER TABLE ONLY public.bots
 
 
 --
+-- Name: solid_queue_claimed_executions fk_rails_9cfe4d4944; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_claimed_executions
+    ADD CONSTRAINT fk_rails_9cfe4d4944 FOREIGN KEY (job_id) REFERENCES public.solid_queue_jobs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: poll_votes fk_rails_a6e6974b7e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.poll_votes
+    ADD CONSTRAINT fk_rails_a6e6974b7e FOREIGN KEY (poll_id) REFERENCES public.polls(id) ON DELETE CASCADE;
+
+
+--
 -- Name: contact_nicknames fk_rails_a777958b87; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3261,6 +4482,22 @@ ALTER TABLE ONLY public.contact_nicknames
 
 ALTER TABLE ONLY public.calls
     ADD CONSTRAINT fk_rails_a7815d2447 FOREIGN KEY (initiator_account_id) REFERENCES public.accounts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: poll_options fk_rails_aa85becb42; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.poll_options
+    ADD CONSTRAINT fk_rails_aa85becb42 FOREIGN KEY (poll_id) REFERENCES public.polls(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_contacts fk_rails_acfaedb38f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_contacts
+    ADD CONSTRAINT fk_rails_acfaedb38f FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
 
 
 --
@@ -3285,6 +4522,14 @@ ALTER TABLE ONLY public.blocks
 
 ALTER TABLE ONLY public.web_push_subscriptions
     ADD CONSTRAINT fk_rails_b006f28dac FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: poll_votes fk_rails_b6c18cf44a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.poll_votes
+    ADD CONSTRAINT fk_rails_b6c18cf44a FOREIGN KEY (account_id) REFERENCES public.accounts(id) ON DELETE CASCADE;
 
 
 --
@@ -3328,6 +4573,14 @@ ALTER TABLE ONLY public.active_storage_attachments
 
 
 --
+-- Name: solid_queue_scheduled_executions fk_rails_c4316f352d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solid_queue_scheduled_executions
+    ADD CONSTRAINT fk_rails_c4316f352d FOREIGN KEY (job_id) REFERENCES public.solid_queue_jobs(id) ON DELETE CASCADE;
+
+
+--
 -- Name: contact_nicknames fk_rails_c478085334; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3349,6 +4602,14 @@ ALTER TABLE ONLY public.ai_usage_events
 
 ALTER TABLE ONLY public.app_settings
     ADD CONSTRAINT fk_rails_cae782806b FOREIGN KEY (updated_by_user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: message_contacts fk_rails_cc45cf32a0; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_contacts
+    ADD CONSTRAINT fk_rails_cc45cf32a0 FOREIGN KEY (contact_account_id) REFERENCES public.accounts(id) ON DELETE SET NULL;
 
 
 --
@@ -3432,6 +4693,7 @@ SET search_path TO "$user", public;
 INSERT INTO "schema_migrations" (version) VALUES
 ('20260830052200'),
 ('20260830040900'),
+('20260830000000'),
 ('20260826143000'),
 ('20260812025731'),
 ('20260812025517');

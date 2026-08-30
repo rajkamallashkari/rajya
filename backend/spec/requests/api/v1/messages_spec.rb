@@ -16,7 +16,30 @@ RSpec.describe "Messages create", type: :request do
           body: { type: :string },
           client_nonce: { type: :string, format: :uuid },
           reply_to_message_id: { type: :integer },
-          attachment_signed_ids: { type: :array, items: { type: :string } }
+          attachment_signed_ids: { type: :array, items: { type: :string } },
+          poll: {
+            type: :object,
+            properties: {
+              question: { type: :string },
+              options: { type: :array, items: { type: :string } },
+              allows_multiple: { type: :boolean },
+              is_anonymous: { type: :boolean },
+              closes_at: { type: :string, format: :"date-time" }
+            }
+          },
+          location: { "$ref" => "#/components/schemas/MessageLocation" },
+          contacts: {
+            type: :array,
+            items: {
+              type: :object,
+              properties: {
+                contact_account_id: { type: :integer, nullable: true },
+                display_name: { type: :string },
+                phone: { type: :string, nullable: true },
+                email: { type: :string, nullable: true }
+              }
+            }
+          }
         }
       }
 
@@ -32,6 +55,17 @@ RSpec.describe "Messages create", type: :request do
         end
       end
     end
+  end
+
+  it "accepts a poll payload on send" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    post "/api/v1/messages", headers: auth_headers_for(user), as: :json, params: {
+      conversation_id: conversation.id,
+      poll: { question: "Lunch?", options: %w[Yes No], closes_at: 1.hour.from_now.iso8601 }
+    }
+    expect(response).to have_http_status(:created)
+    expect(JSON.parse(response.body).dig("poll", "question")).to eq("Lunch?")
   end
 end
 

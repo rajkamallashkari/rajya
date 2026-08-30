@@ -54,6 +54,46 @@ module Settings
         type: :integer, category: :messaging, default: 100, min: 1, max: 500,
         description: "Maximum messages in one multi-select bulk action (NR-20)."
       },
+      contacts_per_message: {
+        type: :integer, category: :messaging, default: 10, min: 1, max: 50,
+        description: "Maximum contact cards on one message (NR-31)."
+      },
+      latitude_max: {
+        type: :integer, category: :messaging, default: 90, min: 0, max: 90,
+        description: "Maximum latitude degrees for a static location (NR-30)."
+      },
+      latitude_min: {
+        type: :integer, category: :messaging, default: -90, min: -90, max: 0,
+        description: "Minimum latitude degrees for a static location (NR-30)."
+      },
+      location_label_max_length: {
+        type: :integer, category: :messaging, default: 120, min: 1, max: 500,
+        description: "Maximum characters in a location label (NR-30)."
+      },
+      longitude_max: {
+        type: :integer, category: :messaging, default: 180, min: 0, max: 180,
+        description: "Maximum longitude degrees for a static location (NR-30)."
+      },
+      longitude_min: {
+        type: :integer, category: :messaging, default: -180, min: -180, max: 0,
+        description: "Minimum longitude degrees for a static location (NR-30)."
+      },
+      poll_max_options: {
+        type: :integer, category: :messaging, default: 12, min: 2, max: 50,
+        description: "Maximum options on one poll (NR-15)."
+      },
+      poll_min_options: {
+        type: :integer, category: :messaging, default: 2, min: 2, max: 20,
+        description: "Minimum options on one poll (NR-15)."
+      },
+      poll_option_max_length: {
+        type: :integer, category: :messaging, default: 100, min: 1, max: 500,
+        description: "Maximum characters in a poll option label (NR-15)."
+      },
+      poll_question_max_length: {
+        type: :integer, category: :messaging, default: 256, min: 1, max: 4_096,
+        description: "Maximum characters in a poll question (NR-15)."
+      },
 
       # --- groups (BR-53) ---
       min_members: {

@@ -4,10 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 import { PollCard } from "./poll-card";
 import { PollResultsSheet } from "./poll-results-sheet";
 import {
+  contactViewFromApi,
+  locationViewFromApi,
   nextPollSelection,
   pollHasVoted,
   pollRevealsCounts,
   pollShare,
+  pollViewFromApi,
   type PollView,
 } from "@/features/messages/model/poll";
 import { en } from "@/shared/lib/i18n/catalog";
@@ -62,6 +65,68 @@ describe("poll model", () => {
         "a",
       ),
     ).toEqual(["b"]);
+    expect(
+      pollViewFromApi({
+        id: 1,
+        question: "Q",
+        allows_multiple: false,
+        is_anonymous: true,
+        voter_count: 0,
+        closed: false,
+        closes_at: "Soon",
+        options: [
+          {
+            id: 9,
+            label: "A",
+            position: 0,
+            vote_count: 0,
+            selected: false,
+            voters: [
+              { account_id: 1, display_name: "Ada" },
+              { account_id: undefined, display_name: undefined },
+            ],
+          },
+        ],
+      }),
+    ).toMatchObject({
+      closesAt: "Soon",
+      options: [
+        {
+          id: "9",
+          voters: [
+            { accountId: "1", name: "Ada" },
+            { accountId: "", name: "" },
+          ],
+        },
+      ],
+    });
+    expect(
+      pollViewFromApi({
+        id: 1,
+        question: "Q",
+        allows_multiple: false,
+        is_anonymous: true,
+        voter_count: 0,
+        closed: false,
+        options: [{ id: 9, label: "A", position: 0, vote_count: 0, selected: false }],
+      }).closesAt,
+    ).toBeNull();
+    expect(
+      locationViewFromApi({ latitude: "1", longitude: "2", accuracy_m: 5, label: "Cafe" }),
+    ).toEqual({ accuracyM: 5, label: "Cafe", latitude: 1, longitude: 2 });
+    expect(
+      locationViewFromApi({ latitude: "1", longitude: "2", accuracy_m: null, label: null }).latitude,
+    ).toBe(1);
+    expect(
+      contactViewFromApi({
+        display_name: "Ada",
+        position: 0,
+        contact_account_id: null,
+      }).contactAccountId,
+    ).toBeNull();
+    expect(contactViewFromApi({ display_name: "Ada", position: 0, contact_account_id: 4 }).contactAccountId).toBe(
+      "4",
+    );
   });
 });
 

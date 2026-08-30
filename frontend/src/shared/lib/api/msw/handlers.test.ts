@@ -28,6 +28,9 @@ const expectedPaths = [
   "/api/v1/passkeys/register",
   "/api/v1/passkeys/registration_options",
   "/api/v1/passkeys/{id}",
+  "/api/v1/polls/{id}",
+  "/api/v1/polls/{id}/close",
+  "/api/v1/polls/{id}/vote",
   "/api/v1/saved_messages",
   "/api/v1/saved_messages/{id}",
   "/api/v1/scheduled_messages",
@@ -375,5 +378,36 @@ describe("MSW handlers", () => {
     expect(saveEmpty.response.status).toBe(404);
     const sentBare = await client.POST("/api/v1/messages", { body: {} });
     expect(sentBare.response.status).toBe(201);
+    const { attachPoll, findMessage } = await import("./messaging-store");
+    attachPoll(101, {
+      id: 7,
+      question: "Q",
+      allows_multiple: false,
+      is_anonymous: false,
+      voter_count: 0,
+      closed: false,
+      options: [{ id: 1, label: "A", position: 0, vote_count: 0, selected: false }],
+    });
+    expect(findMessage(101)?.poll?.id).toBe(7);
+    const voted = await client.POST("/api/v1/polls/{id}/vote", {
+      params: { path: { id: 7 } },
+      body: { option_ids: [1] },
+    });
+    expect(voted.data?.poll?.options[0]?.selected).toBe(true);
+    const closed = await client.POST("/api/v1/polls/{id}/close", { params: { path: { id: 7 } } });
+    expect(closed.data?.poll?.closed).toBe(true);
+    const pollShown = await client.GET("/api/v1/polls/{id}", { params: { path: { id: 7 } } });
+    expect(pollShown.data?.question).toBe("Q");
+    const missingVote = await client.POST("/api/v1/polls/{id}/vote", {
+      params: { path: { id: 0 } },
+      body: {},
+    });
+    expect(missingVote.response.status).toBe(404);
+    const missingClose = await client.POST("/api/v1/polls/{id}/close", {
+      params: { path: { id: 0 } },
+    });
+    expect(missingClose.response.status).toBe(404);
+    const missingPoll = await client.GET("/api/v1/polls/{id}", { params: { path: { id: 0 } } });
+    expect(missingPoll.response.status).toBe(404);
   });
 });

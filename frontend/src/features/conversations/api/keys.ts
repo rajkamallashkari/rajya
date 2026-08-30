@@ -10,6 +10,7 @@ export const messageKeys = {
   around: (conversationId: number, target: { at?: string; messageId?: number }) =>
     [...messageKeys.all, "around", conversationId, target] as const,
   info: (id: number) => [...messageKeys.all, "info", id] as const,
+  poll: (id: number) => [...messageKeys.all, "poll", id] as const,
   pinned: (conversationId: number) => [...messageKeys.all, "pinned", conversationId] as const,
   saved: () => [...messageKeys.all, "saved"] as const,
 };

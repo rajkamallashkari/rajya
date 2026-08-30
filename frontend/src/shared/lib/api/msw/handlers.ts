@@ -11,6 +11,9 @@ import {
   patchMessage,
   reactStoredMessage,
   tombstoneMessage,
+  voteStoredPoll,
+  closeStoredPoll,
+  findPoll,
 } from "./messaging-store";
 
 type HealthBody = NonNullable<
@@ -391,6 +394,19 @@ export const handlerMap = {
       return HttpResponse.json(scheduled);
     }
     return HttpResponse.json(ok);
+  }),
+  "/api/v1/polls/{id}/vote": http.post("*/api/v1/polls/:id/vote", async ({ request, params }) => {
+    const body = (await request.json()) as { option_ids?: number[] };
+    const next = voteStoredPoll(Number(params.id), body.option_ids ?? []);
+    return next ? HttpResponse.json(next) : jsonError(404);
+  }),
+  "/api/v1/polls/{id}/close": http.post("*/api/v1/polls/:id/close", ({ params }) => {
+    const next = closeStoredPoll(Number(params.id));
+    return next ? HttpResponse.json(next) : jsonError(404);
+  }),
+  "/api/v1/polls/{id}": http.get("*/api/v1/polls/:id", ({ params }) => {
+    const poll = findPoll(Number(params.id));
+    return poll ? HttpResponse.json(poll) : jsonError(404);
   }),
 } satisfies HandlerMap;
 

@@ -253,7 +253,66 @@ RSpec.configure do |config|
                 created_at: { type: :string, format: :"date-time" },
                 sender: { "$ref" => "#/components/schemas/Account", nullable: true },
                 reply_to: { type: :object, nullable: true },
-                attachments: { type: :array, items: { type: :object } }
+                attachments: { type: :array, items: { type: :object } },
+                poll: { "$ref" => "#/components/schemas/Poll", nullable: true },
+                location: { "$ref" => "#/components/schemas/MessageLocation", nullable: true },
+                contacts: { type: :array, items: { "$ref" => "#/components/schemas/MessageContact" } }
+              }
+            },
+            PollOption: {
+              type: :object,
+              required: %w[id label position vote_count selected],
+              properties: {
+                id: { type: :integer },
+                label: { type: :string },
+                position: { type: :integer },
+                vote_count: { type: :integer },
+                selected: { type: :boolean },
+                voters: {
+                  type: :array,
+                  items: {
+                    type: :object,
+                    properties: {
+                      account_id: { type: :integer },
+                      display_name: { type: :string }
+                    }
+                  }
+                }
+              }
+            },
+            Poll: {
+              type: :object,
+              required: %w[id question allows_multiple is_anonymous voter_count closed options],
+              properties: {
+                id: { type: :integer },
+                question: { type: :string },
+                allows_multiple: { type: :boolean },
+                is_anonymous: { type: :boolean },
+                voter_count: { type: :integer },
+                closes_at: { type: :string, format: :"date-time", nullable: true },
+                closed: { type: :boolean },
+                options: { type: :array, items: { "$ref" => "#/components/schemas/PollOption" } }
+              }
+            },
+            MessageLocation: {
+              type: :object,
+              required: %w[latitude longitude],
+              properties: {
+                latitude: { type: :string },
+                longitude: { type: :string },
+                accuracy_m: { type: :integer, nullable: true },
+                label: { type: :string, nullable: true }
+              }
+            },
+            MessageContact: {
+              type: :object,
+              required: %w[display_name position],
+              properties: {
+                contact_account_id: { type: :integer, nullable: true },
+                display_name: { type: :string },
+                phone: { type: :string, nullable: true },
+                email: { type: :string, nullable: true },
+                position: { type: :integer }
               }
             },
             MessagePageMeta: {

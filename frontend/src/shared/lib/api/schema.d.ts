@@ -742,6 +742,21 @@ export interface paths {
                         client_nonce?: string;
                         reply_to_message_id?: number;
                         attachment_signed_ids?: string[];
+                        poll?: {
+                            question?: string;
+                            options?: string[];
+                            allows_multiple?: boolean;
+                            is_anonymous?: boolean;
+                            /** Format: date-time */
+                            closes_at?: string;
+                        };
+                        location?: components["schemas"]["MessageLocation"];
+                        contacts?: {
+                            contact_account_id?: number | null;
+                            display_name?: string;
+                            phone?: string | null;
+                            email?: string | null;
+                        }[];
                     };
                 };
             };
@@ -1214,6 +1229,126 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/polls/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Poll results */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Poll"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/polls/{id}/vote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Vote in a poll */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        option_ids?: number[];
+                    };
+                };
+            };
+            responses: {
+                /** @description voted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Message"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/polls/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close a poll */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description closed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Message"];
+                    };
+                };
+            };
+        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2841,6 +2976,44 @@ export interface components {
             sender?: components["schemas"]["Account"];
             reply_to?: Record<string, never> | null;
             attachments?: Record<string, never>[];
+            poll?: components["schemas"]["Poll"];
+            location?: components["schemas"]["MessageLocation"];
+            contacts?: components["schemas"]["MessageContact"][];
+        };
+        PollOption: {
+            id: number;
+            label: string;
+            position: number;
+            vote_count: number;
+            selected: boolean;
+            voters?: {
+                account_id?: number;
+                display_name?: string;
+            }[];
+        };
+        Poll: {
+            id: number;
+            question: string;
+            allows_multiple: boolean;
+            is_anonymous: boolean;
+            voter_count: number;
+            /** Format: date-time */
+            closes_at?: string | null;
+            closed: boolean;
+            options: components["schemas"]["PollOption"][];
+        };
+        MessageLocation: {
+            latitude: string;
+            longitude: string;
+            accuracy_m?: number | null;
+            label?: string | null;
+        };
+        MessageContact: {
+            contact_account_id?: number | null;
+            display_name: string;
+            phone?: string | null;
+            email?: string | null;
+            position: number;
         };
         MessagePageMeta: {
             has_more_before: boolean;

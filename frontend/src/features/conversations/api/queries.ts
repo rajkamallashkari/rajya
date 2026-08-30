@@ -2,9 +2,11 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { getAccessSession } from "@/features/auth/model/access-session";
 import { conversationKeys, messageKeys } from "@/features/conversations/api/keys";
 import {
+  closePoll,
   editMessage,
   getConversation,
   getMessageInfo,
+  getPoll,
   listConversations,
   listMessages,
   pinMessage,
@@ -12,6 +14,7 @@ import {
   saveMessage,
   sendMessage,
   unsendMessage,
+  votePoll,
   type Message,
   type MessagePage,
 } from "@/features/conversations/api/http";
@@ -266,6 +269,91 @@ export function useUnsendMessage(conversationId: number) {
       void queryClient.invalidateQueries({ queryKey: key });
     },
   });
+}
+
+export function useVotePoll(conversationId: number) {
+  const queryClient = useQueryClient();
+  const key = messageKeys.page(conversationId);
+  return useMutation({
+    mutationFn: ({ optionIds, pollId }: { optionIds: number[]; pollId: number }) =>
+      votePoll(pollId, optionIds),
+    onMutate: async ({ optionIds, pollId }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<MessagePages>(key);
+      if (previous) {
+        queryClient.setQueryData(
+          key,
+          mapPages(previous, (message) => withPollVote(message, pollId, optionIds)),
+        );
+      }
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      rollbackPages(queryClient, key, context?.previous);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+export function useClosePoll(conversationId: number) {
+  const queryClient = useQueryClient();
+  const key = messageKeys.page(conversationId);
+  return useMutation({
+    mutationFn: (pollId: number) => closePoll(pollId),
+    onMutate: async (pollId) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<MessagePages>(key);
+      if (previous) {
+        queryClient.setQueryData(
+          key,
+          mapPages(previous, (message) => withPollClosed(message, pollId)),
+        );
+      }
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      rollbackPages(queryClient, key, context?.previous);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+export function usePollResults(pollId: number | null) {
+  return useQuery({
+    enabled: pollId != null,
+    queryFn: () => getPoll(pollId as number),
+    queryKey: messageKeys.poll(pollId ?? 0),
+  });
+}
+
+function withPollVote(message: Message, pollId: number, optionIds: number[]): Message {
+  const poll = message.poll;
+  if (poll?.id !== pollId) {
+    return message;
+  }
+  const selected = new Set(optionIds);
+  return {
+    ...message,
+    poll: {
+      ...poll,
+      options: poll.options.map((option) => ({
+        ...option,
+        selected: selected.has(option.id),
+      })),
+    },
+  };
+}
+
+function withPollClosed(message: Message, pollId: number): Message {
+  const poll = message.poll;
+  if (poll?.id !== pollId) {
+    return message;
+  }
+  return { ...message, poll: { ...poll, closed: true } };
 }
 
 export async function emptyIdList(): Promise<number[]> {

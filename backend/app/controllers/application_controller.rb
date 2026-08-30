@@ -76,7 +76,7 @@ class ApplicationController < ActionController::API
   # owns instantiation so every call site stays declarative.
   def render_result(result, serializer:, status: :ok)
     if result.success?
-      render json: serializer.new(result.value).to_h, status: status
+      render json: serializer.new(result.value, params: serializer_params).to_h, status: status
     else
       render_error(result.error_code, details: result.error_details)
     end
@@ -86,6 +86,10 @@ class ApplicationController < ActionController::API
     skip_authorization
     skip_policy_scope
     render_error(:forbidden)
+  end
+
+  def serializer_params
+    { current_account: current_account, current_jti: current_session&.jti }
   end
 
   def render_error(code, details: {})

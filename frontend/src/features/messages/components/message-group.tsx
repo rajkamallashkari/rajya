@@ -1,13 +1,19 @@
 import { MessageBubble } from "@/features/messages/components/message-bubble";
+import type { ContactView } from "@/features/messages/components/contact-card";
+import type { LocationView } from "@/features/messages/components/location-card";
 import type { BubbleRole, MessageSide, TickStatus } from "@/features/messages/model/constants";
+import type { PollView } from "@/features/messages/model/poll";
 import { bubbleRole } from "@/features/messages/model/grouping";
 import { cn } from "@/shared/lib/cn";
 import { Avatar } from "@/shared/ui";
 
 export interface GroupMessage {
   body: string;
+  contacts?: ContactView[];
   createdAt?: string;
   id: string;
+  location?: LocationView;
+  poll?: PollView;
   status?: TickStatus;
 }
 
@@ -15,7 +21,9 @@ export function MessageGroup({
   messages,
   onMentionClick,
   onOpenMenu,
+  onOpenPollResults,
   onRetry,
+  onVote,
   senderName,
   senderSrc,
   side,
@@ -23,7 +31,9 @@ export function MessageGroup({
   messages: GroupMessage[];
   onMentionClick?: (handle: string) => void;
   onOpenMenu?: (id: string, point: { clientX: number; clientY: number }) => void;
+  onOpenPollResults?: (id: string) => void;
   onRetry?: (id: string) => void;
+  onVote?: (id: string, optionIds: string[]) => void;
   senderName?: string | null;
   senderSrc?: string | null;
   side: MessageSide;
@@ -54,13 +64,20 @@ export function MessageGroup({
           return (
             <MessageBubble
               body={message.body}
+              contacts={message.contacts}
               createdAt={message.createdAt}
               key={message.id}
+              location={message.location}
               onMentionClick={onMentionClick}
               onOpenMenu={
                 onOpenMenu ? (point) => onOpenMenu(message.id, point) : undefined
               }
+              onOpenPollResults={
+                onOpenPollResults ? () => onOpenPollResults(message.id) : undefined
+              }
               onRetry={onRetry ? () => onRetry(message.id) : undefined}
+              onVote={onVote ? (optionIds) => onVote(message.id, optionIds) : undefined}
+              poll={message.poll}
               reserveAvatar={false}
               role={role}
               showAvatar={false}

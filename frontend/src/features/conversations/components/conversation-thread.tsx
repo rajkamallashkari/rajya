@@ -10,11 +10,13 @@ import {
   useMessagePage,
   usePinMessage,
   usePinnedIds,
+  usePollResults,
   useReactMessage,
   useSaveMessage,
   useSavedIds,
   useSendMessage,
   useUnsendMessage,
+  useVotePoll,
 } from "@/features/conversations/api/queries";
 import { MessageInfoSheet } from "@/features/conversations/components/message-info-sheet";
 import { conversationById, type DemoMessage } from "@/features/conversations/model/demo";
@@ -26,9 +28,15 @@ import {
   DateDivider,
   MessageContextMenu,
   MessageGroup,
+  PollResultsSheet,
   groupMessageRuns,
   type MessageMenuActions,
 } from "@/features/messages";
+import {
+  contactViewFromApi,
+  locationViewFromApi,
+  pollViewFromApi,
+} from "@/features/messages/model/poll";
 import type { GroupableMessage } from "@/features/messages/model/constants";
 import { LayerHeader } from "@/app/navigation/layer-header";
 import { useMobileViewport } from "@/shared/hooks/use-mobile-viewport";
@@ -138,10 +146,13 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const pin = usePinMessage(conversationId);
   const save = useSaveMessage();
   const unsend = useUnsendMessage(conversationId);
+  const vote = useVotePoll(conversationId);
   const pinned = usePinnedIds(conversationId);
   const saved = useSavedIds();
   const [infoId, setInfoId] = useState<number | null>(null);
+  const [resultsPollId, setResultsPollId] = useState<number | null>(null);
   const info = useMessageInfo(infoId);
+  const results = usePollResults(resultsPollId);
   const pushLayer = useLayerStore((state) => state.pushLayer);
   const mobile = useMobileViewport();
   const [draft, setDraft] = useState("");
@@ -224,6 +235,8 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           locale={i18n.language}
           messages={messages}
           onOpenMenu={(id, point) => setMenu({ id, x: point.clientX, y: point.clientY })}
+          onOpenPollResults={(id) => setResultsPollId(pollResultsId(messages, id))}
+          onVote={(id, optionIds) => voteFromThread(messages, id, optionIds, vote.mutate)}
           untitled={t("conversations.untitled")}
           viewerId={viewerId}
         />
@@ -283,6 +296,17 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         onOpenChange={(open) => setInfoId(nextInfoId(open, infoId))}
         open={infoId != null}
       />
+      {results.data ? (
+        <PollResultsSheet
+          onOpenChange={(open) => {
+            if (!open) {
+              setResultsPollId(null);
+            }
+          }}
+          open={resultsPollId != null}
+          poll={pollViewFromApi(results.data)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -291,12 +315,16 @@ function ThreadMessages({
   locale,
   messages,
   onOpenMenu,
+  onOpenPollResults,
+  onVote,
   untitled,
   viewerId,
 }: {
   locale: string;
   messages: Message[];
   onOpenMenu: (id: number, point: { clientX: number; clientY: number }) => void;
+  onOpenPollResults: (id: number) => void;
+  onVote: (id: number, optionIds: string[]) => void;
   untitled: string;
   viewerId: number;
 }): ReactNode {
@@ -350,11 +378,18 @@ function ThreadMessages({
             <MessageGroup
               messages={run.messages.map((item) => ({
                 body: item.message.deleted ? deleted : (item.message.body ?? ""),
+                contacts: (item.message.contacts ?? []).map(contactViewFromApi),
                 createdAt: item.message.created_at,
                 id: item.id,
+                location: item.message.location
+                  ? locationViewFromApi(item.message.location)
+                  : undefined,
+                poll: item.message.poll ? pollViewFromApi(item.message.poll) : undefined,
                 status: item.message.id < 0 ? "queued" : undefined,
               }))}
               onOpenMenu={(id, point) => onOpenMenu(Number(id), point)}
+              onOpenPollResults={(id) => onOpenPollResults(Number(id))}
+              onVote={(id, optionIds) => onVote(Number(id), optionIds)}
               senderName={first.sender?.display_name ?? untitled}
               side={side}
             />
@@ -363,6 +398,35 @@ function ThreadMessages({
       })}
     </>
   );
+}
+
+export function pollResultsId(messages: Message[], id: number): number | null {
+  return messages.find((message) => message.id === id)?.poll?.id ?? null;
+}
+
+export function voteFromThread(
+  messages: Message[],
+  id: number,
+  optionIds: string[],
+  mutate: (payload: { optionIds: number[]; pollId: number }) => void,
+): void {
+  const payload = pollVotePayload(messages, id, optionIds);
+  if (!payload) {
+    return;
+  }
+  mutate(payload);
+}
+
+export function pollVotePayload(
+  messages: Message[],
+  id: number,
+  optionIds: string[],
+): { optionIds: number[]; pollId: number } | null {
+  const poll = messages.find((message) => message.id === id)?.poll;
+  if (!poll) {
+    return null;
+  }
+  return { optionIds: optionIds.map(Number), pollId: poll.id };
 }
 
 export function nextInfoId(open: boolean, current: number | null): number | null {
