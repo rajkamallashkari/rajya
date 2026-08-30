@@ -128,6 +128,14 @@ module Settings
         type: :integer, category: :groups, default: nil, min: 2, max: 100_000, allow_nil: true,
         description: "Maximum members for a group; null means uncapped."
       },
+      mention_everyone_limit: {
+        type: :integer, category: :groups, default: 1, min: 1, max: 50,
+        description: "Special @everyone/@admins mentions allowed per account per conversation per window (NR-35)."
+      },
+      mention_everyone_period: {
+        type: :integer, category: :groups, default: 300, min: 1, max: 86_400,
+        description: "Window in seconds for the @everyone/@admins mention rate limit (NR-35)."
+      },
       invite_token_ttl: {
         type: :integer, category: :groups, default: 604_800, min: 60, max: 31_536_000,
         description: "Invite token lifetime in seconds."

@@ -39,11 +39,13 @@ import {
   useSavedReplies,
   useSendMessage,
   useUnsendMessage,
+  useUpdateConversation,
   useUpdateFolder,
   useVotePoll,
 } from "./queries";
 import type { MessagePage } from "./http";
-import { attachPoll, seedPositions } from "@/shared/lib/api/msw/messaging-store";
+import { attachPoll, findConversation, seedPositions } from "@/shared/lib/api/msw/messaging-store";
+import { conversationPermissionDefaults } from "@/features/conversations/model/permissions";
 import { testSession } from "@/test/access-session";
 import { server } from "@/test/msw";
 import { en } from "@/shared/lib/i18n/catalog";
@@ -699,6 +701,7 @@ describe("message queries", () => {
                   last_activity_at: "2026-01-01T12:00:00.000Z",
                   members: [],
                   unread_count: 0,
+                  ...conversationPermissionDefaults(),
                 },
               ],
             });
@@ -730,5 +733,39 @@ describe("message queries", () => {
       </AppProviders>,
     );
     await user.click(screen.getByRole("button", { name: "unarchive-seeded" }));
+  });
+});
+
+describe("useUpdateConversation", () => {
+  it("patches permission overrides onto the conversation", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    function PatchHarness() {
+      const update = useUpdateConversation();
+      return (
+        <Button
+          onClick={() =>
+            update.mutate({
+              id: 2,
+              member_permissions: { send_messages: "admin" },
+              restrict_forwarding: true,
+              slow_mode_seconds: 10,
+            })
+          }
+          type="button"
+        >
+          patch-perms
+        </Button>
+      );
+    }
+    render(
+      <AppProviders>
+        <PatchHarness />
+      </AppProviders>,
+    );
+    await user.click(screen.getByRole("button", { name: "patch-perms" }));
+    await waitFor(() => {
+      expect(findConversation(2)?.slow_mode_seconds).toBe(10);
+      expect(findConversation(2)?.restrict_forwarding).toBe(true);
+    });
   });
 });

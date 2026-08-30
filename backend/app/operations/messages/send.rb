@@ -19,11 +19,20 @@ module Messages
 
       return failure(:forbidden) unless ConversationPolicy.new(sender, conversation).send?
 
+      error = authorize_content
+      return error if error
+
       error = validate
+      return error if error
+
+      error = authorize_mentions
       return error if error
 
       existing = existing_by_nonce
       return success(existing) if existing
+
+      error = enforce_slow_mode
+      return error if error
 
       persist_and_finish
     end
@@ -35,10 +44,53 @@ module Messages
       return failure(:validation_failed) if message.nil?
 
       Receipts::OnSend.call(conversation: @conversation, sender: @sender, position: message.position)
+      SlowMode.touch!(conversation: @conversation, sender: @sender)
       touch_sidebar!(message)
       unarchive_on_activity!
       publish!(message)
       success(message)
+    end
+
+    def authorize_content
+      policy = ConversationPolicy.new(@sender, @conversation)
+      return failure(:forbidden) if poll_post? && !policy.create_polls?
+      return failure(:forbidden) if media_post? && !policy.send_media?
+      return failure(:forbidden) if text_post? && !policy.send_messages?
+
+      nil
+    end
+
+    def authorize_mentions
+      parsed = Mentions::Parser.parse(@body)
+      return unless parsed.special?
+
+      policy = ConversationPolicy.new(@sender, @conversation)
+      return failure(:forbidden) unless policy.mention_everyone?
+      return failure(:rate_limited) unless Mentions::EveryoneLimiter.consume!(
+        conversation_id: @conversation.id, account_id: @sender.id
+      )
+
+      nil
+    end
+
+    def enforce_slow_mode
+      wait = SlowMode.retry_after(conversation: @conversation, sender: @sender)
+      return unless wait
+
+      failure(:rate_limited, details: { retry_after: wait })
+    end
+
+    def poll_post?
+      @poll.present?
+    end
+
+    def media_post?
+      @signed_ids.any? || voice?
+    end
+
+    def text_post?
+      @body.strip.present? ||
+        Children.present?(poll: nil, location: @location, contacts: @contacts)
     end
 
     def validate

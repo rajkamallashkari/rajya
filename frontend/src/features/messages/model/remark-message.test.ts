@@ -22,6 +22,12 @@ describe("inline token splitters", () => {
     expect(start.some((part) => "handle" in part && part.handle === "ada")).toBe(true);
     const mid = splitMentions("hi @bob.");
     expect(mid.some((part) => "handle" in part && part.handle === "bob")).toBe(true);
+    const special = splitMentions("ping @everyone and @ada");
+    expect(special.some((part) => "handle" in part && part.handle === "everyone")).toBe(true);
+    expect(special.some((part) => "handle" in part && part.handle === "ada")).toBe(true);
+    expect(splitMentions("<@admins>").some((part) => "handle" in part && part.handle === "admins")).toBe(
+      true,
+    );
   });
 
   it("covers empty spoiler capture, missing mention handle, and empty schema attrs", () => {

@@ -57,6 +57,9 @@ module Api
         attrs = {}
         attrs[:title] = params[:title] if params.key?(:title)
         attrs[:description] = params[:description] if params.key?(:description)
+        attrs[:member_permissions] = params[:member_permissions] if params.key?(:member_permissions)
+        attrs[:slow_mode_seconds] = params[:slow_mode_seconds] if params.key?(:slow_mode_seconds)
+        attrs[:restrict_forwarding] = params[:restrict_forwarding] if params.key?(:restrict_forwarding)
         attrs
       end
     end

@@ -16,7 +16,8 @@ RSpec.describe Settings::Registry do
       :poll_min_options, :contacts_per_message, :latitude_min,
       :rrule_count_max, :rrule_interval_max, :multi_select_cap,
       :reminder_note_max_length, :saved_reply_shortcut_max_length,
-      :presence_ttl, :last_active_debounce, :presence_offline_grace
+      :presence_ttl, :last_active_debounce, :presence_offline_grace,
+      :mention_everyone_limit, :mention_everyone_period, :slow_mode_presets
     )
   end
 

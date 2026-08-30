@@ -7,6 +7,7 @@ import {
   isUnread,
 } from "@/features/conversations/model/title";
 import type { components } from "@/shared/lib/api/schema";
+import { conversationPermissionDefaults } from "@/features/conversations/model/permissions";
 
 const base: components["schemas"]["Conversation"] = {
   id: 1,
@@ -15,6 +16,7 @@ const base: components["schemas"]["Conversation"] = {
   last_activity_at: "2026-01-01T12:00:00.000Z",
   unread_count: 0,
   members: [],
+  ...conversationPermissionDefaults(),
 };
 
 describe("conversation title", () => {

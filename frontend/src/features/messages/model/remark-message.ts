@@ -10,7 +10,8 @@ import { DISABLED_MARKDOWN_CONSTRUCTS } from "./constants";
 const SKIP_INLINE_PARENTS = new Set(["code", "inlineCode", "link", "mention", "spoiler"]);
 
 const SPOILER_RE = /\|\|(.*?)\|\|/g;
-const MENTION_RE = /(^|\s)@([A-Za-z][\w.]{0,31})\b/g;
+const SPECIAL_MENTION_RE = /<@(everyone|admins)>|(^|\s)@(everyone|admins)\b/g;
+const MENTION_RE = /(^|\s)@(?!everyone\b|admins\b)([A-Za-z][\w.]{0,31})\b/g;
 
 interface DataBag {
   micromarkExtensions?: unknown[];
@@ -61,7 +62,42 @@ function splitSpoilers(value: string): PhrasingContent[] {
   return nodes;
 }
 
-function splitMentions(value: string): PhrasingContent[] {
+function mentionNode(handle: string): PhrasingContent {
+  return {
+    type: "mention",
+    handle,
+    children: [{ type: "text", value: `@${handle}` }],
+  } as unknown as PhrasingContent;
+}
+
+function splitSpecialMentions(value: string): PhrasingContent[] {
+  const nodes: PhrasingContent[] = [];
+  const re = new RegExp(SPECIAL_MENTION_RE.source, "g");
+  let last = 0;
+  let match = re.exec(value);
+  while (match) {
+    const handle = (match[1] || match[3]) as string;
+    const prefix = match[2] || "";
+    if (match.index > last) {
+      nodes.push({ type: "text", value: value.slice(last, match.index) });
+    }
+    if (!match[1] && prefix) {
+      nodes.push({ type: "text", value: prefix });
+    }
+    nodes.push(mentionNode(handle));
+    last = match.index + match[0].length;
+    match = re.exec(value);
+  }
+  if (nodes.length === 0) {
+    return [{ type: "text", value }];
+  }
+  if (last < value.length) {
+    nodes.push({ type: "text", value: value.slice(last) });
+  }
+  return nodes;
+}
+
+function splitHandleMentions(value: string): PhrasingContent[] {
   const nodes: PhrasingContent[] = [];
   const re = new RegExp(MENTION_RE.source, "g");
   let last = 0;
@@ -76,11 +112,7 @@ function splitMentions(value: string): PhrasingContent[] {
     if (prefix) {
       nodes.push({ type: "text", value: prefix });
     }
-    nodes.push({
-      type: "mention",
-      handle,
-      children: [{ type: "text", value: `@${handle}` }],
-    } as unknown as PhrasingContent);
+    nodes.push(mentionNode(handle));
     last = atIndex + handle.length + 1;
     match = re.exec(value);
   }
@@ -91,6 +123,12 @@ function splitMentions(value: string): PhrasingContent[] {
     nodes.push({ type: "text", value: value.slice(last) });
   }
   return nodes;
+}
+
+function splitMentions(value: string): PhrasingContent[] {
+  return splitSpecialMentions(value).flatMap((part) =>
+    part.type === "text" ? splitHandleMentions(part.value) : [part],
+  );
 }
 
 function rewriteText(

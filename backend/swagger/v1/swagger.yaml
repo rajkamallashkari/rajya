@@ -645,7 +645,7 @@ paths:
           type: integer
       responses:
         '200':
-          description: description only
+          description: permissions updated
           content:
             application/json:
               schema:
@@ -656,8 +656,18 @@ paths:
             schema:
               type: object
               properties:
+                title:
+                  type: string
                 description:
                   type: string
+                member_permissions:
+                  type: object
+                  additionalProperties:
+                    type: string
+                slow_mode_seconds:
+                  type: integer
+                restrict_forwarding:
+                  type: boolean
   "/api/v1/conversations/{id}/pin":
     post:
       summary: Pin a conversation for the current account
@@ -2949,6 +2959,10 @@ components:
       - last_activity_at
       - unread_count
       - members
+      - member_permissions
+      - slow_mode_seconds
+      - restrict_forwarding
+      - permissions
       properties:
         id:
           type: integer
@@ -2980,6 +2994,41 @@ components:
         role:
           type: string
           nullable: true
+        member_permissions:
+          type: object
+          additionalProperties:
+            type: string
+            enum:
+            - member
+            - admin
+            - owner
+        slow_mode_seconds:
+          type: integer
+        slow_mode_until:
+          type: string
+          format: date-time
+          nullable: true
+        restrict_forwarding:
+          type: boolean
+        permissions:
+          type: object
+          properties:
+            add_members:
+              type: boolean
+            create_invites:
+              type: boolean
+            create_polls:
+              type: boolean
+            edit_info:
+              type: boolean
+            mention_everyone:
+              type: boolean
+            pin_messages:
+              type: boolean
+            send_media:
+              type: boolean
+            send_messages:
+              type: boolean
         pinned_at:
           type: string
           format: date-time

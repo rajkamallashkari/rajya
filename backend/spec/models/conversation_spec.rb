@@ -36,4 +36,11 @@ RSpec.describe Conversation do
     expect(build(:conversation)).to be_group
     expect(build(:conversation, :channel)).to be_channel
   end
+
+  it "rejects a member_permissions document with unknown keys or roles" do
+    conversation = build(:conversation, member_permissions: { "remove_members" => "admin" })
+
+    expect(conversation).not_to be_valid
+    expect(conversation.errors[:member_permissions]).to be_present
+  end
 end

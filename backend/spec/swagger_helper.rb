@@ -209,7 +209,10 @@ RSpec.configure do |config|
             },
             Conversation: {
               type: :object,
-              required: %w[id kind last_activity_at unread_count members],
+              required: %w[
+                id kind last_activity_at unread_count members member_permissions
+                slow_mode_seconds restrict_forwarding permissions
+              ],
               properties: {
                 id: { type: :integer },
                 kind: { type: :string, enum: %w[direct group channel] },
@@ -220,6 +223,26 @@ RSpec.configure do |config|
                 muted_until: { type: :string, format: :"date-time", nullable: true },
                 archived_at: { type: :string, format: :"date-time", nullable: true },
                 role: { type: :string, nullable: true },
+                member_permissions: {
+                  type: :object,
+                  additionalProperties: { type: :string, enum: %w[member admin owner] }
+                },
+                slow_mode_seconds: { type: :integer },
+                slow_mode_until: { type: :string, format: :"date-time", nullable: true },
+                restrict_forwarding: { type: :boolean },
+                permissions: {
+                  type: :object,
+                  properties: {
+                    add_members: { type: :boolean },
+                    create_invites: { type: :boolean },
+                    create_polls: { type: :boolean },
+                    edit_info: { type: :boolean },
+                    mention_everyone: { type: :boolean },
+                    pin_messages: { type: :boolean },
+                    send_media: { type: :boolean },
+                    send_messages: { type: :boolean }
+                  }
+                },
                 pinned_at: { type: :string, format: :"date-time", nullable: true },
                 manually_unread_at: { type: :string, format: :"date-time", nullable: true },
                 peer: { "$ref" => "#/components/schemas/Account", nullable: true },

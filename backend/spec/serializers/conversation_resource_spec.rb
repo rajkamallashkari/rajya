@@ -1,6 +1,7 @@
 require "rails_helper"
 
 RSpec.describe ConversationResource do
+  include ActiveSupport::Testing::TimeHelpers
   def group_json
     owner = create(:user)
     member = create(:account)
@@ -77,6 +78,56 @@ RSpec.describe ConversationResource do
 
     expect(json.fetch("peer").fetch("id")).to eq(account.id)
     expect(json.fetch("members").size).to eq(1)
+  end
+
+  it "exposes permission overrides, slow mode, and the viewer permission map" do
+    json, _conversation, _owner, _member, _message = group_json
+
+    expect(json).to include(
+      "member_permissions" => {},
+      "slow_mode_seconds" => 0,
+      "restrict_forwarding" => false
+    )
+    expect(json.fetch("permissions")).to include("send_messages" => true, "edit_info" => true)
+    expect(json["slow_mode_until"]).to be_nil
+  end
+
+  it "reports slow_mode_until for a member still in cooldown and omits it for the owner" do
+    freeze_time do
+      owner = create(:user)
+      member = create(:user)
+      conversation = create_talk(kind: "group", owner: owner.account, members: [ member.account ])
+      conversation.update!(slow_mode_seconds: 10)
+      membership = conversation.conversation_memberships.find_by!(account: member.account)
+      membership.update_columns(last_message_at: Time.current)
+      member_json = described_class.new(Conversations::View.for(conversation, member.account)).to_h
+      owner_json = described_class.new(Conversations::View.for(conversation, owner.account)).to_h
+
+      expect(member_json.fetch("slow_mode_until")).to eq((membership.last_message_at + 10).iso8601)
+      expect(owner_json["slow_mode_until"]).to be_nil
+    end
+  end
+
+  it "omits slow_mode_until when the member has not posted or the cooldown elapsed" do
+    freeze_time do
+      member = create(:user)
+      conversation = create_talk(kind: "group", owner: create(:user).account, members: [ member.account ])
+      conversation.update!(slow_mode_seconds: 10)
+      expect(described_class.new(Conversations::View.for(conversation, member.account)).to_h["slow_mode_until"])
+        .to be_nil
+      conversation.conversation_memberships.find_by!(account: member.account)
+                  .update_columns(last_message_at: 11.seconds.ago)
+      expect(described_class.new(Conversations::View.for(conversation, member.account)).to_h["slow_mode_until"])
+        .to be_nil
+    end
+  end
+
+  it "omits slow_mode_until when the viewer has no membership" do
+    conversation = create(:conversation)
+    conversation.update!(slow_mode_seconds: 10)
+    json = described_class.new(Conversations::View.for(conversation, create(:user).account)).to_h
+
+    expect(json["slow_mode_until"]).to be_nil
   end
 
   it "zeros counters when the viewer has no membership and last_message is missing" do

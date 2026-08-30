@@ -12,7 +12,7 @@ class MessagePolicy < ApplicationPolicy
   end
 
   def forward?
-    conversation_policy.forward?
+    conversation_policy.forward? && !record.conversation.restrict_forwarding
   end
 
   def react?

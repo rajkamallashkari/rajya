@@ -1007,12 +1007,18 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
+                        title?: string;
                         description?: string;
+                        member_permissions?: {
+                            [key: string]: string;
+                        };
+                        slow_mode_seconds?: number;
+                        restrict_forwarding?: boolean;
                     };
                 };
             };
             responses: {
-                /** @description description only */
+                /** @description permissions updated */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -4483,6 +4489,23 @@ export interface components {
             /** Format: date-time */
             archived_at?: string | null;
             role?: string | null;
+            member_permissions: {
+                [key: string]: "member" | "admin" | "owner";
+            };
+            slow_mode_seconds: number;
+            /** Format: date-time */
+            slow_mode_until?: string | null;
+            restrict_forwarding: boolean;
+            permissions: {
+                add_members?: boolean;
+                create_invites?: boolean;
+                create_polls?: boolean;
+                edit_info?: boolean;
+                mention_everyone?: boolean;
+                pin_messages?: boolean;
+                send_media?: boolean;
+                send_messages?: boolean;
+            };
             /** Format: date-time */
             pinned_at?: string | null;
             /** Format: date-time */

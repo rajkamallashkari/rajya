@@ -60,6 +60,9 @@ describe("SelectionToolbar", () => {
     await user.click(screen.getByRole("button", { name: en.selection.delete }));
     await user.click(screen.getByRole("button", { name: en.selection.select_all }));
     expect(handlers.onSelectAll).toHaveBeenCalled();
+    rerender(<SelectionToolbar count={2} restrictForwarding {...handlers} />);
+    expect(screen.queryByRole("button", { name: en.selection.copy })).toBeNull();
+    expect(screen.queryByRole("button", { name: en.selection.forward })).toBeNull();
   });
 });
 

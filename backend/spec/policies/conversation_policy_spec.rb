@@ -98,6 +98,49 @@ RSpec.describe ConversationPolicy do
     expect(policy.pin?).to be(false)
     expect(policy.send(:direct?)).to be_falsey
     expect(policy.send(:channel?)).to be_falsey
+    expect(policy.send(:override_allows?, "send_messages")).to be(true)
+  end
+
+  it "evaluates overrides for a stranger against a group" do
+    stranger = create(:user)
+    conversation = create_talk(kind: "group", owner: create(:user).account, members: [ create(:account) ])
+
+    expect(described_class.new(stranger.account, conversation).send(:override_allows?, "send_messages"))
+      .to be(true)
+  end
+
+  MemberPermissions::KEYS.each do |key|
+    ConversationPermissionMatrix::ACTORS.each do |actor|
+      it "does not grant #{actor} #{key} when override is member (S-17)" do
+        user, conversation = actor_setup(actor)
+        conversation.update!(member_permissions: { key => "member" })
+        matrix = ConversationPermissionMatrix::ALLOWED.fetch(MemberPermissions.matrix_query(key)).fetch(actor)
+        expect(described_class.new(user.account, conversation).public_send(MemberPermissions.policy_query(key)))
+          .to eq(matrix)
+      end
+    end
+  end
+
+  it "narrows send_messages so a group member cannot post text (NR-34)" do
+    member = create(:user)
+    conversation = create_talk(kind: "group", owner: create(:user).account, members: [ member.account ])
+    conversation.update!(member_permissions: { "send_messages" => "admin" })
+    policy = described_class.new(member.account, conversation)
+
+    expect(policy).to be_send
+    expect(policy).not_to be_send_messages
+  end
+
+  it "narrows edit_info without taking add_members away from an admin (NR-34)" do
+    admin = create(:user)
+    conversation = create_talk(
+      kind: "group", owner: create(:user).account, admins: [ admin.account ], members: [ create(:account) ]
+    )
+    conversation.update!(member_permissions: { "edit_info" => "owner" })
+    policy = described_class.new(admin.account, conversation)
+
+    expect(policy).not_to be_update
+    expect(policy).to be_add_members
   end
 
   it "reads a preloaded membership without querying" do

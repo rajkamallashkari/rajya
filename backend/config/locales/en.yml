@@ -53,6 +53,8 @@ en:
         options: "must have between %{min} and %{max} options"
       conversation:
         direct_key: "must be present only for direct conversations"
+        member_permissions: "contains unknown keys or roles"
+        slow_mode_seconds: "must be an allowed slow-mode interval"
         title: "can't be blank for non-direct conversations"
       conversation_folder:
         name_too_long: "is too long (maximum is %{count} characters)"

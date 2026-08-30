@@ -10,23 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 6.3 |
-| **Next session** | 6.4 |
+| **Last completed** | 6.4 |
+| **Next session** | 6.5 |
 | **Phase** | P6 — Groups, invites, organization & blocking |
-| **Sessions remaining in phase** | 2 (6.4–6.5) |
+| **Sessions remaining in phase** | 1 (6.5) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 6.4 — Granular permission overrides, mentions, slow mode, forwarding restrictions**
+**Session 6.5 — Reporting (NR-39)**
 
-Deliverable: **Granular permission overrides (NR-34)** with the narrowing-only resolver and the generated escalation spec, `@everyone`/`@admins` (NR-35), slow mode (NR-36), forwarding restrictions (NR-37)
+Deliverable: **Reporting (NR-39)** submission side: report sheet, dedupe, the `reports` queue and its notifications to admins
 
-Docs: SCHEMA §12.8, §3.1, S-17, S-18; GAP §2
+Docs: SCHEMA §12.11, S-21
 
-Legacy to read:
-- `cognify/app/services/mention_dispatcher.rb` for mention parsing; otherwise new
+Legacy to read: None — new feature
 
 ---
 
@@ -62,6 +61,7 @@ Legacy to read:
 | 6.1 | Roles, add/remove, leave guards, the §3.2 lifecycle | Soft `left`/`removed` rows; rejoin flips the unique membership and keeps watermarks (BR-50). Last admin/owner cannot leave while others remain, with no auto-transfer (BR-51). Last member leave retains the conversation (changes BR-52). Remove cannot drop below `min_members` (BR-53). Owner-only promote/demote/transfer; bots stay members. System events for add/remove/leave/role. Invites wait for 6.2; folders/archive/mute UI wait for 6.3. |
 | 6.2 | Invites with atomic redemption, public preview, join requests, QR codes (NR-38) | Atomic `UPDATE … SET uses_count = uses_count + 1 WHERE …` (F-14). Public `GET /api/v1/invites/:token` returns title, avatar, member count (BR-59). Join requests reset to pending on re-request (BR-60). Client `/invite/:token` landing, invite manager + QR (NR-38), `join_request` realtime. Playwright create-group → QR → join → approve waits for the P6 flow. |
 | 6.3 | Folders, archive (NR-14), mute, blocking enforcement | Custom folders persist (All/Unread/Archived are client tabs). Archive is per-account `archived_at`, auto-unarchives on new activity, orthogonal to mute. Mute durations 1h/8h/24h/until-on. Blocking: reverse new-DM 404, groups still work. Playwright create-group → archive → block waits for the P6 flow. |
+| 6.4 | Granular permission overrides (NR-34), `@everyone`/`@admins` (NR-35), slow mode (NR-36), forwarding restrictions (NR-37) | Overrides may only narrow the §3.1 matrix (S-17); generated KEYS × ACTORS spec. Mentions rate-limited behind `mention_everyone`. Slow mode uses persisted `last_message_at` (S-18); admins/owners exempt. Copy/forward hidden when restricted; export waits for P7. Playwright restrict-permissions waits for the P6 flow. |
 
 ---
 

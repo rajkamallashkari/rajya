@@ -282,6 +282,26 @@ export async function unmuteConversation(id: number) {
   );
 }
 
+export async function updateConversation(
+  id: number,
+  body: {
+    description?: string;
+    member_permissions?: { [key: string]: string };
+    restrict_forwarding?: boolean;
+    slow_mode_seconds?: number;
+    title?: string;
+  },
+) {
+  return unwrap(
+    await apiClient().PATCH("/api/v1/conversations/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+      body,
+    }),
+    "conversation_update_failed",
+  );
+}
+
 export type ConversationFolder = components["schemas"]["ConversationFolder"];
 
 export async function listFolders() {

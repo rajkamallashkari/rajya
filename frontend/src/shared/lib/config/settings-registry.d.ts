@@ -33,6 +33,8 @@ export type SettingKey =
   | "folder_name_max_length"
   | "min_members"
   | "max_members"
+  | "mention_everyone_limit"
+  | "mention_everyone_period"
   | "invite_token_ttl"
   | "invite_max_uses_ceiling"
   | "invite_token_bytes"

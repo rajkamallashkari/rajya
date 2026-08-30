@@ -16,7 +16,7 @@ class ConversationPolicy < ApplicationPolicy
   end
 
   def update?
-    admin_or_owner? && !direct?
+    manage_group? && override_allows?("edit_info")
   end
 
   def send?
@@ -26,8 +26,24 @@ class ConversationPolicy < ApplicationPolicy
     true
   end
 
+  def send_messages?
+    send? && override_allows?("send_messages")
+  end
+
+  def send_media?
+    send? && override_allows?("send_media")
+  end
+
+  def create_polls?
+    send? && override_allows?("create_polls")
+  end
+
+  def mention_everyone?
+    send? && override_allows?("mention_everyone")
+  end
+
   def edit_own?
-    send?
+    send_messages?
   end
 
   def unsend_own?
@@ -60,9 +76,9 @@ class ConversationPolicy < ApplicationPolicy
 
   def pin?
     return false unless active_member?
-    return admin_or_owner? if channel?
+    return false if channel? && !admin_or_owner?
 
-    true
+    override_allows?("pin_messages")
   end
 
   def organize?
@@ -74,19 +90,19 @@ class ConversationPolicy < ApplicationPolicy
   end
 
   def add_members?
-    update?
+    manage_group? && override_allows?("add_members")
   end
 
   def create_invite?
-    update?
+    manage_group? && override_allows?("create_invites")
   end
 
   def approve_join?
-    update?
+    manage_group?
   end
 
   def remove_member?
-    update?
+    manage_group?
   end
 
   def remove_owner?
@@ -166,6 +182,21 @@ class ConversationPolicy < ApplicationPolicy
 
   def channel?
     conversation&.channel?
+  end
+
+  def manage_group?
+    admin_or_owner? && !direct?
+  end
+
+  # S-17: empty/missing keys add no restriction; a higher min role can only narrow.
+  def override_allows?(key)
+    return true if conversation.nil? || conversation.direct?
+
+    MemberPermissions.allows?(
+      role: membership&.role,
+      document: conversation.member_permissions,
+      key: key
+    )
   end
 
   def other_active_members?

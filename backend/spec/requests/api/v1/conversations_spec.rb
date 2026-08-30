@@ -242,7 +242,10 @@ RSpec.describe "Conversations update", type: :request do
         type: :object,
         properties: {
           title: { type: :string },
-          description: { type: :string }
+          description: { type: :string },
+          member_permissions: { type: :object, additionalProperties: { type: :string } },
+          slow_mode_seconds: { type: :integer },
+          restrict_forwarding: { type: :boolean }
         }
       }
 
@@ -314,6 +317,50 @@ RSpec.describe "Conversations update description only", type: :request do
 
         run_test! do |response|
           expect(JSON.parse(response.body).fetch("description")).to eq("Bio only")
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Conversations update permissions", type: :request do
+  path "/api/v1/conversations/{id}" do
+    patch "Update conversation info" do
+      tags "Conversations"
+      consumes "application/json"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+      parameter name: :payload, in: :body, schema: {
+        type: :object,
+        properties: {
+          title: { type: :string },
+          description: { type: :string },
+          member_permissions: { type: :object, additionalProperties: { type: :string } },
+          slow_mode_seconds: { type: :integer },
+          restrict_forwarding: { type: :boolean }
+        }
+      }
+
+      response "200", "permissions updated" do
+        schema "$ref" => "#/components/schemas/Conversation"
+        let(:user) { create(:user) }
+        let(:conversation) { create_talk(kind: "group", owner: user.account, members: [ create(:account) ]) }
+        let(:id) { conversation.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+        let(:payload) do
+          {
+            member_permissions: { send_messages: "admin" },
+            slow_mode_seconds: 10,
+            restrict_forwarding: true
+          }
+        end
+
+        run_test! do |response|
+          body = JSON.parse(response.body)
+          expect(body.fetch("member_permissions")).to eq("send_messages" => "admin")
+          expect(body.fetch("slow_mode_seconds")).to eq(10)
+          expect(body.fetch("restrict_forwarding")).to be(true)
         end
       end
     end

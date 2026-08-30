@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 import { AccountProfile } from "@/features/auth/components/account-profile";
 import { useConversation } from "@/features/conversations/api/queries";
 import { InviteManager } from "@/features/conversations/components/invite-manager";
+import { GroupPermissions } from "@/features/conversations/components/group-permissions";
 import { QrSheet } from "@/features/conversations/components/qr-sheet";
 import { conversationById } from "@/features/conversations/model/demo";
 import { parseConversationId } from "@/features/conversations/model/ids";
-import { canManageInvites, profileUrl } from "@/features/conversations/model/links";
+import { canEditInfo, canManageInvites, profileUrl } from "@/features/conversations/model/links";
 import { conversationTitle } from "@/features/conversations/model/title";
 import { copyText } from "@/features/messages/model/copy-text";
 import { LayerHeader } from "@/app/navigation/layer-header";
@@ -53,6 +54,9 @@ function LiveProfile({ conversationId }: { conversationId: number }): ReactNode 
     >
       {canManageInvites(query.data.kind, query.data.role) ? (
         <InviteManager conversationId={conversationId} />
+      ) : null}
+      {canEditInfo(query.data.kind, query.data.role, query.data.permissions?.edit_info !== false) ? (
+        <GroupPermissions conversation={query.data} />
       ) : null}
       {username ? (
         <Button

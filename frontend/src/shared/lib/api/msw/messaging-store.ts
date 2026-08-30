@@ -1,5 +1,6 @@
 import type { components } from "@/shared/lib/api/schema";
 import { DEMO_CONVERSATIONS } from "@/features/conversations/model/demo";
+import { conversationPermissionDefaults } from "@/features/conversations/model/permissions";
 import {
   JUMP_HALF_WINDOW,
   JUMP_WINDOW,
@@ -54,6 +55,7 @@ export function buildConversations(): Conversation[] {
       muted_until: null,
       archived_at: null,
       role: group ? "owner" : "member",
+      ...conversationPermissionDefaults(),
       peer: group ? undefined : peerAccount(id + 1, demo.name),
       last_message: preview(last.text, last.kind === "system" ? "system" : "text"),
       members: [],

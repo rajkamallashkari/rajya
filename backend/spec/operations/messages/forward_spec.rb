@@ -1,6 +1,7 @@
 require "rails_helper"
 
 RSpec.describe Messages::Forward do
+  include ActiveSupport::Testing::TimeHelpers
   def setup
     user = create(:user)
     source = create_direct_between(user.account, create(:account))
@@ -62,5 +63,71 @@ RSpec.describe Messages::Forward do
     message.update_columns(sender_account_id: nil, sender_snapshot: { "display_name" => "Ghost" })
     copy = described_class.call(message: message.reload, actor: user.account, target: target).value
     expect(copy.forwarded_from_account_id).to be_nil
+  end
+
+  it "forbids forwarding a message from a restricted conversation (NR-37)" do
+    user, message, target = setup
+    message.conversation.update!(restrict_forwarding: true)
+
+    expect(described_class.call(message: message, actor: user.account, target: target).error_code)
+      .to eq(:forbidden)
+  end
+
+  it "forbids forwarding media into a target that has send_media admin-only" do
+    user, message, _target = setup
+    group = create_talk(kind: "group", owner: create(:user).account, members: [ user.account ])
+    group.update!(member_permissions: { "send_media" => "admin" })
+
+    expect(described_class.call(message: message, actor: user.account, target: group).error_code)
+      .to eq(:forbidden)
+  end
+
+  it "forbids forwarding text or a poll when those overrides are admin-only" do
+    user = create(:user)
+    source = create_direct_between(user.account, create(:account))
+    text = Messages::Send.call(conversation: source, sender: user.account, body: "Hi").value
+    poll = Messages::Send.call(
+      conversation: source, sender: user.account, poll: { question: "Q?", options: [ "A", "B" ] }
+    ).value
+    group = create_talk(kind: "group", owner: create(:user).account, members: [ user.account ])
+    group.update!(member_permissions: { "send_messages" => "admin", "create_polls" => "admin" })
+
+    expect(described_class.call(message: text, actor: user.account, target: group).error_code)
+      .to eq(:forbidden)
+    expect(described_class.call(message: poll, actor: user.account, target: group).error_code)
+      .to eq(:forbidden)
+  end
+
+  it "forwards a poll when create_polls is not narrowed" do
+    user = create(:user)
+    source = create_direct_between(user.account, create(:account))
+    poll = Messages::Send.call(
+      conversation: source, sender: user.account, poll: { question: "Q?", options: [ "A", "B" ] }
+    ).value
+    group = create_talk(kind: "group", owner: create(:user).account, members: [ user.account ])
+
+    expect(described_class.call(message: poll, actor: user.account, target: group)).to be_success
+  end
+
+  it "forbids forwarding a voice note when send_media is admin-only" do
+    user, message, _target = setup
+    message.update_columns(kind: "voice", attachment_count: 0, body: nil)
+    group = create_talk(kind: "group", owner: create(:user).account, members: [ user.account ])
+    group.update!(member_permissions: { "send_media" => "admin" })
+
+    expect(described_class.call(message: message, actor: user.account, target: group).error_code)
+      .to eq(:forbidden)
+  end
+
+  it "rate-limits a forward into a slow-mode target (NR-36)" do
+    freeze_time do
+      user, message, _target = setup
+      group = create_talk(kind: "group", owner: create(:user).account, members: [ user.account ])
+      group.update!(slow_mode_seconds: 10)
+      Messages::Send.call(conversation: group, sender: user.account, body: "First")
+
+      expect(described_class.call(message: message, actor: user.account, target: group).error_code)
+        .to eq(:rate_limited)
+    end
   end
 end

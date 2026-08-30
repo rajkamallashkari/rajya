@@ -11,6 +11,7 @@ export function SelectionToolbar({
   onForward,
   onSave,
   onSelectAll,
+  restrictForwarding = false,
 }: {
   count: number;
   onClear: () => void;
@@ -19,6 +20,7 @@ export function SelectionToolbar({
   onForward: () => void;
   onSave: () => void;
   onSelectAll: () => void;
+  restrictForwarding?: boolean;
 }) {
   const { t } = useTranslation();
   if (count <= 0) {
@@ -38,12 +40,16 @@ export function SelectionToolbar({
         <Button onClick={onSelectAll} size="sm" type="button" variant="ghost">
           {t("selection.select_all")}
         </Button>
-        <IconButton aria-label={t("selection.copy")} onClick={onCopy} type="button">
-          <Copy className={ICON_CLASS} />
-        </IconButton>
-        <IconButton aria-label={t("selection.forward")} onClick={onForward} type="button">
-          <Forward className={ICON_CLASS} />
-        </IconButton>
+        {restrictForwarding ? null : (
+          <>
+            <IconButton aria-label={t("selection.copy")} onClick={onCopy} type="button">
+              <Copy className={ICON_CLASS} />
+            </IconButton>
+            <IconButton aria-label={t("selection.forward")} onClick={onForward} type="button">
+              <Forward className={ICON_CLASS} />
+            </IconButton>
+          </>
+        )}
         <IconButton aria-label={t("selection.save")} onClick={onSave} type="button">
           <Star className={ICON_CLASS} />
         </IconButton>

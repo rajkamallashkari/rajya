@@ -336,12 +336,33 @@ export const handlerMap = {
     );
     return HttpResponse.json({ conversations });
   }),
-  "/api/v1/conversations/{id}": http.all("*/api/v1/conversations/:id", ({ params }) => {
+  "/api/v1/conversations/{id}": http.all("*/api/v1/conversations/:id", async ({ params, request }) => {
     const conversation = findConversation(Number(params.id));
     if (!conversation) {
       return jsonError(404);
     }
-    conversation.manually_unread_at = null;
+    if (request.method === "PATCH") {
+      const body = (await request.json().catch(() => ({}))) as {
+        description?: string | null;
+        member_permissions?: { [key: string]: string };
+        restrict_forwarding?: boolean;
+        slow_mode_seconds?: number;
+        title?: string | null;
+      };
+      Object.assign(conversation, {
+        ...(body.title !== undefined ? { title: body.title } : {}),
+        ...(body.description !== undefined ? { description: body.description } : {}),
+        ...(body.member_permissions !== undefined
+          ? { member_permissions: body.member_permissions }
+          : {}),
+        ...(body.slow_mode_seconds !== undefined ? { slow_mode_seconds: body.slow_mode_seconds } : {}),
+        ...(body.restrict_forwarding !== undefined
+          ? { restrict_forwarding: body.restrict_forwarding }
+          : {}),
+      });
+    } else {
+      conversation.manually_unread_at = null;
+    }
     return HttpResponse.json(conversation);
   }),
   "/api/v1/conversations/{id}/pin": http.all("*/api/v1/conversations/:id/pin", ({ params, request }) => {

@@ -35,6 +35,30 @@ class ConversationResource < ApplicationResource
     object.membership&.role
   end
 
+  attribute :member_permissions do
+    conversation.member_permissions
+  end
+
+  attribute :slow_mode_seconds do
+    conversation.slow_mode_seconds
+  end
+
+  attribute :slow_mode_until do
+    reset_at = slow_mode_reset_at
+    reset_at&.iso8601
+  end
+
+  attribute :restrict_forwarding do
+    conversation.restrict_forwarding
+  end
+
+  attribute :permissions do
+    policy = ConversationPolicy.new(object.viewer, conversation)
+    MemberPermissions::KEYS.each_with_object({}) do |key, hash|
+      hash[key] = policy.public_send(MemberPermissions.policy_query(key))
+    end
+  end
+
   attribute :pinned_at do
     object.membership&.pinned_at
   end
@@ -81,5 +105,18 @@ class ConversationResource < ApplicationResource
 
     others = conversation.conversation_memberships.select(&:active?).map(&:account)
     others.find { |account| account.id != object.viewer.id } || object.viewer
+  end
+
+  def slow_mode_reset_at
+    return if conversation.slow_mode_seconds <= 0
+
+    membership = object.membership
+    return if membership.blank? || membership.admin_or_owner?
+
+    last = membership.last_message_at
+    return if last.blank?
+
+    reset_at = last + conversation.slow_mode_seconds
+    reset_at if reset_at > Time.current
   end
 end

@@ -682,6 +682,7 @@ CREATE TABLE public.conversation_memberships (
     updated_at timestamp(6) without time zone NOT NULL,
     pinned_at timestamp(6) without time zone,
     manually_unread_at timestamp(6) without time zone,
+    last_message_at timestamp(6) without time zone,
     CONSTRAINT ck_memberships_role CHECK (((role)::text = ANY ((ARRAY['member'::character varying, 'admin'::character varying, 'owner'::character varying])::text[]))),
     CONSTRAINT ck_memberships_seen_gte_read CHECK ((last_seen_position >= last_read_position)),
     CONSTRAINT ck_memberships_status CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'left'::character varying, 'removed'::character varying])::text[])))
@@ -725,9 +726,13 @@ CREATE TABLE public.conversations (
     summarized_through_message_id bigint,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    member_permissions jsonb DEFAULT '{}'::jsonb NOT NULL,
+    slow_mode_seconds integer DEFAULT 0 NOT NULL,
+    restrict_forwarding boolean DEFAULT false NOT NULL,
     CONSTRAINT ck_conversations_direct_key_only_for_direct CHECK ((((kind)::text = 'direct'::text) = (direct_key IS NOT NULL))),
     CONSTRAINT ck_conversations_groups_have_titles CHECK ((((kind)::text = 'direct'::text) OR (title IS NOT NULL))),
-    CONSTRAINT ck_conversations_kind CHECK (((kind)::text = ANY ((ARRAY['direct'::character varying, 'group'::character varying, 'channel'::character varying])::text[])))
+    CONSTRAINT ck_conversations_kind CHECK (((kind)::text = ANY ((ARRAY['direct'::character varying, 'group'::character varying, 'channel'::character varying])::text[]))),
+    CONSTRAINT ck_conversations_slow_mode_seconds CHECK ((slow_mode_seconds >= 0))
 );
 
 
@@ -4869,6 +4874,7 @@ ALTER TABLE ONLY public.message_link_previews
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260830193700'),
 ('20260830100000'),
 ('20260830085500'),
 ('20260830074100'),
@@ -4878,3 +4884,4 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260826143000'),
 ('20260812025731'),
 ('20260812025517');
+

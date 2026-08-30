@@ -8,6 +8,7 @@ import {
   parseFolderTab,
   visibleConversations,
 } from "./folders";
+import { conversationPermissionDefaults } from "./permissions";
 
 const inbox: Conversation[] = [
   {
@@ -16,6 +17,7 @@ const inbox: Conversation[] = [
     last_activity_at: "2026-01-01T12:00:00.000Z",
     unread_count: 2,
     members: [],
+    ...conversationPermissionDefaults(),
   },
   {
     id: 2,
@@ -23,6 +25,7 @@ const inbox: Conversation[] = [
     last_activity_at: "2026-01-01T12:00:00.000Z",
     unread_count: 0,
     members: [],
+    ...conversationPermissionDefaults(),
   },
 ];
 
@@ -34,6 +37,7 @@ const archived: Conversation[] = [
     unread_count: 1,
     archived_at: "2026-01-01T12:00:00.000Z",
     members: [],
+    ...conversationPermissionDefaults(),
   },
 ];
 

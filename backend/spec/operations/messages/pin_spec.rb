@@ -38,4 +38,14 @@ RSpec.describe Messages::Pin do
 
     expect(described_class.call(message: message, actor: member.account).error_code).to eq(:forbidden)
   end
+
+  it "forbids a group member when pin_messages is admin-only (NR-34)" do
+    member = create(:user)
+    owner = create(:user)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ member.account ])
+    conversation.update!(member_permissions: { "pin_messages" => "admin" })
+    message = Messages::Send.call(conversation: conversation, sender: member.account, body: "Hi").value
+
+    expect(described_class.call(message: message, actor: member.account).error_code).to eq(:forbidden)
+  end
 end

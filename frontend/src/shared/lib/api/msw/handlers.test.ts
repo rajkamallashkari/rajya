@@ -280,9 +280,14 @@ describe("MSW handlers", () => {
     expect(missingConversation.response.status).toBe(404);
     const patched = await client.PATCH("/api/v1/conversations/{id}", {
       params: { path: { id: 1 } },
-      body: { description: "notes" },
+      body: { title: "Notes", description: "notes" },
     });
     expect(patched.data?.id).toBe(1);
+    const invalidPatch = await fetch("http://rajya.test/api/v1/conversations/1", {
+      method: "PATCH",
+      body: "not-json",
+    });
+    expect(invalidPatch.status).toBe(200);
     const addedMembers = await client.POST("/api/v1/conversations/{conversation_id}/members", {
       params: { path: { conversation_id: 1 } },
       body: { account_ids: [2] },
@@ -308,7 +313,9 @@ describe("MSW handlers", () => {
       { params: { path: { conversation_id: 1, account_id: 2 } } },
     );
     expect(removedMember.data?.id).toBe(1);
-    const left = await client.POST("/api/v1/conversations/{id}/leave", { params: { path: { id: 1 } } });
+    const left = await client.POST("/api/v1/conversations/{id}/leave", {
+      params: { path: { id: 1 } },
+    });
     expect(left.data?.ok).toBe(true);
     const missingMembers = await client.POST("/api/v1/conversations/{conversation_id}/members", {
       params: { path: { conversation_id: 999 } },
@@ -798,11 +805,16 @@ describe("MSW handlers", () => {
       body: { requires_approval: true, max_uses: 3 },
     });
     expect(limitedInvite.data?.requires_approval).toBe(true);
-    const revokedInvite = await client.DELETE("/api/v1/conversations/{conversation_id}/invites/{id}", {
-      params: { path: { conversation_id: 2, id: limitedInvite.data?.id ?? 0 } },
-    });
+    const revokedInvite = await client.DELETE(
+      "/api/v1/conversations/{conversation_id}/invites/{id}",
+      {
+        params: { path: { conversation_id: 2, id: limitedInvite.data?.id ?? 0 } },
+      },
+    );
     expect(revokedInvite.data?.ok).toBe(true);
-    const preview = await client.GET("/api/v1/invites/{token}", { params: { path: { token: "open" } } });
+    const preview = await client.GET("/api/v1/invites/{token}", {
+      params: { path: { token: "open" } },
+    });
     expect(preview.data?.member_count).toBe(3);
     const missingPreview = await client.GET("/api/v1/invites/{token}", {
       params: { path: { token: "gone" } },

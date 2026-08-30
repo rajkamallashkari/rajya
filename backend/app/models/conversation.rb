@@ -16,8 +16,10 @@ class Conversation < ApplicationRecord
 
   validates :kind, presence: true, inclusion: { in: KINDS }
   validates :last_activity_at, presence: true
+  validates :slow_mode_seconds, numericality: { greater_than_or_equal_to: 0, only_integer: true }
   validate :direct_key_only_for_direct
   validate :groups_have_titles
+  validate :member_permissions_are_registered
 
   def self.direct_key_for(left_id, right_id)
     [ left_id.to_i, right_id.to_i ].sort.join(":")
@@ -47,5 +49,11 @@ class Conversation < ApplicationRecord
     return if kind == "direct" || title.present?
 
     errors.add(:title, Catalog.t("errors.models.conversation.title"))
+  end
+
+  def member_permissions_are_registered
+    return if MemberPermissions.valid?(member_permissions)
+
+    errors.add(:member_permissions, Catalog.t("errors.models.conversation.member_permissions"))
   end
 end

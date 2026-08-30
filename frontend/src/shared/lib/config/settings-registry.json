@@ -274,6 +274,24 @@
     "max": 100000,
     "allow_nil": true
   },
+  "mention_everyone_limit": {
+    "type": "integer",
+    "category": "groups",
+    "default": 1,
+    "description": "Special @everyone/@admins mentions allowed per account per conversation per window (NR-35).",
+    "min": 1,
+    "max": 50,
+    "allow_nil": false
+  },
+  "mention_everyone_period": {
+    "type": "integer",
+    "category": "groups",
+    "default": 300,
+    "description": "Window in seconds for the @everyone/@admins mention rate limit (NR-35).",
+    "min": 1,
+    "max": 86400,
+    "allow_nil": false
+  },
   "invite_token_ttl": {
     "type": "integer",
     "category": "groups",

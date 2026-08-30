@@ -1,6 +1,7 @@
 require "rails_helper"
 
 RSpec.describe Messages::Send do
+  include ActiveSupport::Testing::TimeHelpers
   def setup
     user = create(:user)
     peer = create(:account)
@@ -9,6 +10,12 @@ RSpec.describe Messages::Send do
 
   def send!(conversation, sender, **attrs)
     described_class.call(conversation: conversation, sender: sender, **attrs)
+  end
+
+  def group_setup
+    owner = create(:user)
+    member = create(:user)
+    [ owner, member, create_talk(kind: "group", owner: owner.account, members: [ member.account ]) ]
   end
 
   it "persists a text message with a position, revision, and sender snapshot" do
@@ -168,5 +175,41 @@ RSpec.describe Messages::Send do
     conversation.conversation_memberships.reload
 
     expect(conversation.conversation_memberships.map(&:archived_at)).to all(be_nil)
+  end
+
+  it "forbids a member when send_messages, send_media, or create_polls is admin-only (NR-34)" do
+    _owner, member, conversation = group_setup
+    conversation.update!(member_permissions: {
+      "send_messages" => "admin", "send_media" => "admin", "create_polls" => "admin"
+    })
+
+    expect(send!(conversation, member.account, body: "Hi").error_code).to eq(:forbidden)
+    expect(send!(conversation, member.account, attachment_signed_ids: [ blob_signed_id ]).error_code)
+      .to eq(:forbidden)
+    expect(send!(conversation, member.account, poll: { question: "Q?", options: [ "A", "B" ] }).error_code)
+      .to eq(:forbidden)
+  end
+
+  it "forbids @everyone without mention_everyone and rate-limits a second special mention (NR-35)" do
+    _owner, member, conversation = group_setup
+    conversation.update!(member_permissions: { "mention_everyone" => "admin" })
+    expect(send!(conversation, member.account, body: "hi @everyone").error_code).to eq(:forbidden)
+
+    conversation.update!(member_permissions: {})
+    Rails.cache.clear
+    expect(send!(conversation, member.account, body: "hi @everyone")).to be_success
+    expect(send!(conversation, member.account, body: "hi @admins").error_code).to eq(:rate_limited)
+  end
+
+  it "blocks a member on slow mode using persisted last_message_at and exempts the owner (NR-36, S-18)" do
+    freeze_time do
+      owner, member, conversation = group_setup
+      conversation.update!(slow_mode_seconds: 10)
+      expect(send!(conversation, member.account, body: "First")).to be_success
+      blocked = send!(conversation, member.account, body: "Second")
+      expect(blocked.error_code).to eq(:rate_limited)
+      expect(blocked.error_details[:retry_after]).to eq(10)
+      expect(send!(conversation, owner.account, body: "Admin")).to be_success
+    end
   end
 end

@@ -41,4 +41,11 @@ RSpec.describe MessagePolicy do
     expect(described_class.new(user.account, Message)).to be_bulk_unsend.and be_bulk_forward.and be_bulk_save
     expect(described_class.new(nil, Message)).not_to be_bulk_unsend
   end
+
+  it "denies forward when the conversation restricts forwarding (NR-37)" do
+    user, message = setup
+    message.conversation.update!(restrict_forwarding: true)
+
+    expect(described_class.new(user.account, message)).not_to be_forward
+  end
 end

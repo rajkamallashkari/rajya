@@ -389,6 +389,27 @@
     "pin": "Pin",
     "unpin": "Unpin",
     "open": "Open conversation",
+    "permissions": {
+      "add_members": "Add members",
+      "admin": "Admins",
+      "create_invites": "Create invites",
+      "create_polls": "Create polls",
+      "edit_info": "Edit info",
+      "member": "Members",
+      "mention_everyone": "@everyone and @admins",
+      "owner": "Owner",
+      "pin_messages": "Pin messages",
+      "send_media": "Send media",
+      "send_messages": "Send messages",
+      "title": "Permissions"
+    },
+    "restrict_forwarding": "Restrict forwarding and copy",
+    "slow_mode": {
+      "hint": "Slow mode: one message every {{seconds}}s",
+      "off": "Off",
+      "seconds": "{{count}}s",
+      "title": "Slow mode"
+    },
     "media": {
       "image": "Photo",
       "video": "Video",

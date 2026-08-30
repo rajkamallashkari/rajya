@@ -17,7 +17,13 @@ import { ProfilePanel } from "./profile-panel";
 import { AppProviders } from "@/app/providers";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { ADA_DEMO } from "@/features/conversations/model/demo";
-import { attachPoll, findConversation, findMessage, messagingStore, seedPositions } from "@/shared/lib/api/msw/messaging-store";
+import {
+  attachPoll,
+  findConversation,
+  findMessage,
+  messagingStore,
+  seedPositions,
+} from "@/shared/lib/api/msw/messaging-store";
 import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
@@ -420,6 +426,22 @@ describe("conversation layers", () => {
     expect(screen.getByText("Solo")).toBeInTheDocument();
   });
 
+  it("shows a slow-mode hint above the composer", async () => {
+    setAccessSession(testSession());
+    const row = findConversation(1);
+    if (row) {
+      row.slow_mode_seconds = 10;
+    }
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    expect(
+      await screen.findByText(en.conversations.slow_mode.hint.replace("{{seconds}}", "10")),
+    ).toBeInTheDocument();
+  });
+
   it("builds an empty menu when the message is missing", () => {
     expect(
       buildMessageMenuActions({
@@ -467,6 +489,35 @@ describe("conversation layers", () => {
     });
     expect(actions.onCopy).toBeUndefined();
     expect(actions.onEdit).toBeUndefined();
+    const restricted = buildMessageMenuActions({
+      message: {
+        id: 2,
+        conversation_id: 1,
+        position: 2,
+        revision: 1,
+        kind: "text",
+        body: "Hi",
+        deleted: false,
+        silent: false,
+        created_at: "2026-01-01T12:00:00.000Z",
+      },
+      onCopy: () => undefined,
+      onEdit: () => undefined,
+      onInfo: () => undefined,
+      onPin: () => undefined,
+      onReact: () => undefined,
+      onReactions: () => undefined,
+      onRemind: () => undefined,
+      onSave: () => undefined,
+      onSelect: () => undefined,
+      onUnsend: () => undefined,
+      pinned: [],
+      restrictForwarding: true,
+      saved: [],
+      viewerId: 1,
+    });
+    expect(restricted.onCopy).toBeUndefined();
+    expect(restricted.hasText).toBe(false);
     expect(nextInfoId(true, 4)).toBe(4);
     expect(nextInfoId(false, 4)).toBeNull();
     const numeric = vi.fn();
@@ -477,9 +528,9 @@ describe("conversation layers", () => {
       { body: "On my way", id: "1", shortcut: "/omw" },
     ]);
     expect(reactionDetailViews(undefined)).toEqual([]);
-    expect(
-      reactionDetailViews([{ account: { display_name: "Ada", id: 1 }, emoji: "👍" }]),
-    ).toEqual([{ accountId: "1", emoji: "👍", name: "Ada" }]);
+    expect(reactionDetailViews([{ account: { display_name: "Ada", id: 1 }, emoji: "👍" }])).toEqual(
+      [{ accountId: "1", emoji: "👍", name: "Ada" }],
+    );
     expect(pollVotePayload([], 1, ["2"])).toBeNull();
     expect(pollResultsId([], 1)).toBeNull();
     const mutate = vi.fn();
@@ -536,7 +587,10 @@ describe("conversation layers", () => {
         <ConversationThread conversationId="1" />
       </AppProviders>,
     );
-    expect(await screen.findByText("Grace left")).toHaveAttribute("data-system-message", "member_left");
+    expect(await screen.findByText("Grace left")).toHaveAttribute(
+      "data-system-message",
+      "member_left",
+    );
     await user.type(screen.getByRole("textbox"), "tick-body");
     await user.keyboard("{Enter}");
     const sent = await screen.findByText("tick-body");
@@ -548,9 +602,8 @@ describe("conversation layers", () => {
       activity: "uploading_media",
       display_name: "Priya",
     });
-    expect(await screen.findByRole("status", { name: en.messages.activity.uploading_media })).toHaveAttribute(
-      "data-activity",
-      "uploading_media",
-    );
+    expect(
+      await screen.findByRole("status", { name: en.messages.activity.uploading_media }),
+    ).toHaveAttribute("data-activity", "uploading_media");
   });
 });

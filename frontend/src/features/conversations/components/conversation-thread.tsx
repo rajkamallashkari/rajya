@@ -297,6 +297,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
             setSelectedIds([]);
           }}
           onSelectAll={() => setSelectedIds(messages.map((row) => row.id))}
+          restrictForwarding={Boolean(conversation.restrict_forwarding)}
         />
       ) : null}
       <div
@@ -326,6 +327,14 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           viewerId={viewerId}
         />
       </div>
+      {conversation.slow_mode_seconds > 0 ? (
+        <p
+          className="px-[var(--space-list-x)] py-[var(--space-2)] text-[var(--text-secondary)]"
+          data-slow-mode-hint=""
+        >
+          {t("conversations.slow_mode.hint", { seconds: conversation.slow_mode_seconds })}
+        </p>
+      ) : null}
       <Composer
         editing={editingId !== null}
         onChange={(value) => {
@@ -374,9 +383,11 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
             onReactions: setReactionsId,
             onRemind: setRemindId,
             onSave: (id) => save.mutate(id),
-            onSelect: (id) => setSelectedIds((current) => (current.includes(id) ? current : [...current, id])),
+            onSelect: (id) =>
+              setSelectedIds((current) => (current.includes(id) ? current : [...current, id])),
             onUnsend: (id) => unsend.mutate(id),
             pinned: pinned.data,
+            restrictForwarding: Boolean(conversation.restrict_forwarding),
             saved: saved.data,
             viewerId,
           })}
@@ -601,6 +612,7 @@ export function buildMessageMenuActions({
   onSelect,
   onUnsend,
   pinned,
+  restrictForwarding = false,
   saved,
   viewerId,
 }: {
@@ -616,6 +628,7 @@ export function buildMessageMenuActions({
   onSelect: (id: number) => void;
   onUnsend: (id: number) => void;
   pinned: number[];
+  restrictForwarding?: boolean;
   saved: number[];
   viewerId: number;
 }): MessageMenuActions {
@@ -623,13 +636,14 @@ export function buildMessageMenuActions({
     return {};
   }
   const isMine = message.sender?.id === viewerId;
+  const canCopy = Boolean(message.body) && !restrictForwarding;
   return {
     canEdit: isMine && !message.deleted && Boolean(message.body),
-    hasText: Boolean(message.body),
+    hasText: canCopy,
     isMine,
     isPinned: pinned.includes(message.id),
     isSaved: saved.includes(message.id),
-    onCopy: message.body ? () => onCopy(message.body as string) : undefined,
+    onCopy: canCopy ? () => onCopy(message.body as string) : undefined,
     onEdit: message.body ? () => onEdit(message.id, message.body as string) : undefined,
     onInfo: () => onInfo(message.id),
     onPin: () => onPin(message.id),

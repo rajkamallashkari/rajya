@@ -9,3 +9,11 @@ export function profileUrl(origin: string, username: string): string {
 export function canManageInvites(kind: string | null | undefined, role: string | null | undefined): boolean {
   return kind !== "direct" && (role === "admin" || role === "owner");
 }
+
+export function canEditInfo(
+  kind: string | null | undefined,
+  role: string | null | undefined,
+  editInfo = true,
+): boolean {
+  return canManageInvites(kind, role) && editInfo;
+}

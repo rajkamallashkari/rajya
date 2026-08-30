@@ -37,6 +37,7 @@ import {
   unmuteConversation,
   unpinConversation,
   unsendMessage,
+  updateConversation,
   updateFolder,
   votePoll,
   type Conversation,
@@ -716,6 +717,30 @@ export function useMuteConversation() {
       queryClient.setQueryData(conversationKeys.archived(), context?.previousArchived);
     },
     onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
+    },
+  });
+}
+
+export function useUpdateConversation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...body
+    }: {
+      description?: string;
+      id: number;
+      member_permissions?: { [key: string]: string };
+      restrict_forwarding?: boolean;
+      slow_mode_seconds?: number;
+      title?: string;
+    }) => updateConversation(id, body),
+    onSuccess: (data) => {
+      queryClient.setQueryData(conversationKeys.detail(data.id), data);
+    },
+    onSettled: (_data, _error, input) => {
+      void queryClient.invalidateQueries({ queryKey: conversationKeys.detail(input.id) });
       void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
     },
   });

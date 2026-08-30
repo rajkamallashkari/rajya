@@ -43,4 +43,67 @@ RSpec.describe Conversations::Update do
 
     expect(conversation.reload.messages.where(system_event: "title_changed")).not_to exist
   end
+
+  it "writes permission, slow-mode, and forwarding system events (NR-34, NR-36, NR-37)" do
+    owner = create(:user)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ create(:account) ])
+    described_class.call(
+      account: owner.account, conversation: conversation,
+      member_permissions: { "send_messages" => "admin" }, slow_mode_seconds: 10, restrict_forwarding: true
+    )
+    conversation.reload
+
+    expect(conversation).to have_attributes(
+      member_permissions: { "send_messages" => "admin" }, slow_mode_seconds: 10, restrict_forwarding: true
+    )
+    expect(conversation.messages.where(kind: "system").order(:position).pluck(:system_event))
+      .to eq(%w[permissions_changed slow_mode_changed forwarding_restricted])
+  end
+
+  it "writes forwarding_unrestricted when the restriction is lifted" do
+    owner = create(:user)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ create(:account) ])
+    conversation.update!(restrict_forwarding: true)
+    described_class.call(account: owner.account, conversation: conversation, restrict_forwarding: false)
+
+    expect(conversation.reload.messages.where(system_event: "forwarding_unrestricted")).to exist
+  end
+
+  it "rejects an unknown permission key and a slow-mode interval that is not a preset" do
+    owner = create(:user)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ create(:account) ])
+
+    expect(described_class.call(account: owner.account, conversation: conversation,
+                                member_permissions: { "remove_members" => "admin" }).error_code)
+      .to eq(:validation_failed)
+    expect(described_class.call(account: owner.account, conversation: conversation, member_permissions: []).error_code)
+      .to eq(:validation_failed)
+    expect(described_class.call(account: owner.account, conversation: conversation, slow_mode_seconds: 7).error_code)
+      .to eq(:validation_failed)
+  end
+
+  it "omits permission overrides when the key is absent and accepts an empty document" do
+    owner = create(:user)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ create(:account) ])
+    conversation.update!(member_permissions: { "send_messages" => "admin" })
+    described_class.call(account: owner.account, conversation: conversation, title: "Keep perms")
+    expect(conversation.reload.member_permissions).to eq("send_messages" => "admin")
+
+    described_class.call(account: owner.account, conversation: conversation, member_permissions: {})
+    expect(conversation.reload.member_permissions).to eq({})
+  end
+
+  it "forbids a member and an admin whose edit_info is owner-only" do
+    member = create(:user)
+    admin = create(:user)
+    conversation = create_talk(
+      kind: "group", owner: create(:user).account, admins: [ admin.account ], members: [ member.account ]
+    )
+    conversation.update!(member_permissions: { "edit_info" => "owner" })
+
+    expect(described_class.call(account: member.account, conversation: conversation, title: "Nope").error_code)
+      .to eq(:forbidden)
+    expect(described_class.call(account: admin.account, conversation: conversation, title: "Nope").error_code)
+      .to eq(:forbidden)
+  end
 end
