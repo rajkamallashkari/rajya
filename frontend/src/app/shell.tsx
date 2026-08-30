@@ -10,6 +10,7 @@ import { LayerHost } from "@/app/navigation/layer-host";
 import { ConversationList } from "@/features/conversations/components/conversation-list";
 import { ConversationThread } from "@/features/conversations/components/conversation-thread";
 import { ProfilePanel } from "@/features/conversations/components/profile-panel";
+import { MediaGalleryPanel } from "@/features/media";
 import { useAccountChannel } from "@/features/conversations/hooks/use-account-channel";
 import { getMessage } from "@/features/conversations/api/http";
 import { useConversations } from "@/features/conversations/api/queries";
@@ -111,13 +112,15 @@ export function AppShell() {
         <ListErrorBoundary>
           <LayerHost
             base={<ConversationList searchRef={searchRef} />}
-            renderLayer={(layer) =>
-              layer.kind === "conversation" ? (
-                <ConversationThread conversationId={layer.conversationId} />
-              ) : (
-                <ProfilePanel conversationId={layer.conversationId} />
-              )
-            }
+            renderLayer={(layer) => {
+              if (layer.kind === "conversation") {
+                return <ConversationThread conversationId={layer.conversationId} />;
+              }
+              if (layer.kind === "gallery") {
+                return <MediaGalleryPanel conversationId={layer.conversationId} />;
+              }
+              return <ProfilePanel conversationId={layer.conversationId} />;
+            }}
           />
         </ListErrorBoundary>
       </div>

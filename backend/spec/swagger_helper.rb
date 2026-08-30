@@ -206,6 +206,62 @@ RSpec.configure do |config|
                 filename: { type: :string, nullable: true }
               }
             },
+            GalleryAttachment: {
+              type: :object,
+              required: %w[id kind content_type byte_size processing_status message_id],
+              properties: {
+                id: { type: :integer },
+                kind: { type: :string, enum: %w[image video audio voice file] },
+                content_type: { type: :string },
+                byte_size: { type: :integer },
+                width: { type: :integer, nullable: true },
+                height: { type: :integer, nullable: true },
+                duration_ms: { type: :integer, nullable: true },
+                blurhash: { type: :string, nullable: true },
+                waveform: { type: :array, items: { type: :number }, nullable: true },
+                processing_status: { type: :string, enum: %w[pending ready failed] },
+                processing_error: { type: :string, nullable: true },
+                filename: { type: :string, nullable: true },
+                message_id: { type: :integer }
+              }
+            },
+            GalleryLink: {
+              type: :object,
+              required: %w[url],
+              properties: {
+                url: { type: :string },
+                title: { type: :string, nullable: true },
+                description: { type: :string, nullable: true },
+                site_name: { type: :string, nullable: true }
+              }
+            },
+            GalleryItem: {
+              type: :object,
+              required: %w[item_kind],
+              properties: {
+                item_kind: { type: :string, enum: %w[attachment link] },
+                attachment: { "$ref" => "#/components/schemas/GalleryAttachment", nullable: true },
+                link: { "$ref" => "#/components/schemas/GalleryLink", nullable: true }
+              }
+            },
+            GalleryPageMeta: {
+              type: :object,
+              required: %w[page per_page total has_more],
+              properties: {
+                page: { type: :integer },
+                per_page: { type: :integer },
+                total: { type: :integer },
+                has_more: { type: :boolean }
+              }
+            },
+            GalleryPage: {
+              type: :object,
+              required: %w[items meta],
+              properties: {
+                items: { type: :array, items: { "$ref" => "#/components/schemas/GalleryItem" } },
+                meta: { "$ref" => "#/components/schemas/GalleryPageMeta" }
+              }
+            },
             Session: {
               type: :object,
               required: %w[token account user],

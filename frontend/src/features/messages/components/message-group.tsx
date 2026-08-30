@@ -1,4 +1,5 @@
 import { MessageBubble } from "@/features/messages/components/message-bubble";
+import type { Attachment } from "@/features/media/model/constants";
 import type { ContactView } from "@/features/messages/components/contact-card";
 import type { LocationView } from "@/features/messages/components/location-card";
 import type { BubbleRole, MessageSide, TickStatus } from "@/features/messages/model/constants";
@@ -8,6 +9,7 @@ import { cn } from "@/shared/lib/cn";
 import { Avatar } from "@/shared/ui";
 
 export interface GroupMessage {
+  attachments?: Attachment[];
   body: string;
   contacts?: ContactView[];
   createdAt?: string;
@@ -63,6 +65,7 @@ export function MessageGroup({
           const role: BubbleRole = bubbleRole(index, count);
           return (
             <MessageBubble
+              attachments={message.attachments}
               body={message.body}
               contacts={message.contacts}
               createdAt={message.createdAt}

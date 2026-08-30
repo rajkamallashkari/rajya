@@ -11,6 +11,12 @@ module Api
         render_media(:thumb)
       end
 
+      def retry
+        attachment = Attachment.find(params[:id])
+        authorize attachment, :retry?
+        render_result(Attachments::Retry.call(attachment: attachment), serializer: AttachmentResource)
+      end
+
       private
 
       def render_media(variant)

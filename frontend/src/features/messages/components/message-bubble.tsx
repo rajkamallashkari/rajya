@@ -10,6 +10,8 @@ import { showsTimestampByDefault } from "@/features/messages/model/grouping";
 import { getJumboInfo } from "@/features/messages/model/jumbo-emoji";
 import { useLongPress } from "@/shared/hooks/use-long-press";
 import { cn } from "@/shared/lib/cn";
+import { AttachmentBody } from "@/features/media";
+import type { Attachment } from "@/features/media/model/constants";
 import { Avatar } from "@/shared/ui";
 
 const RADIUS = {
@@ -42,6 +44,7 @@ export function formatMessageTime(iso: string, locale: string): string {
 }
 
 export function MessageBubble({
+  attachments = [],
   body,
   createdAt,
   id,
@@ -63,6 +66,7 @@ export function MessageBubble({
   side,
   status,
 }: {
+  attachments?: Attachment[];
   body: string;
   id?: string;
   createdAt?: string;
@@ -141,6 +145,9 @@ export function MessageBubble({
           data-side={side}
         >
           {body ? <MessageContent body={body} onMentionClick={onMentionClick} /> : null}
+          {attachments.length > 0 && id ? (
+            <AttachmentBody attachments={attachments} messageId={id} />
+          ) : null}
           {poll ? (
             <PollCard onOpenResults={onOpenPollResults} onVote={onVote} poll={poll} />
           ) : null}

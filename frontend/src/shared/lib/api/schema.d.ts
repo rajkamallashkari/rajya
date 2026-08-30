@@ -164,10 +164,66 @@ export interface paths {
                         "application/json": components["schemas"]["MediaUrl"];
                     };
                 };
+                /** @description non-member refused (BR-94) */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
             };
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attachments/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry failed attachment processing */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description requeued */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Attachment"];
+                    };
+                };
+                /** @description non-member refused */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -626,6 +682,65 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List shared media, files, or links */
+        get: {
+            parameters: {
+                query?: {
+                    kind?: string;
+                    page?: number;
+                };
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description gallery page */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GalleryPage"];
+                    };
+                };
+                /** @description non-member refused */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description invalid kind */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -4720,6 +4835,45 @@ export interface components {
             processing_status: "pending" | "ready" | "failed";
             processing_error?: string | null;
             filename?: string | null;
+        };
+        GalleryAttachment: {
+            id: number;
+            /** @enum {string} */
+            kind: "image" | "video" | "audio" | "voice" | "file";
+            content_type: string;
+            byte_size: number;
+            width?: number | null;
+            height?: number | null;
+            duration_ms?: number | null;
+            blurhash?: string | null;
+            waveform?: number[] | null;
+            /** @enum {string} */
+            processing_status: "pending" | "ready" | "failed";
+            processing_error?: string | null;
+            filename?: string | null;
+            message_id: number;
+        };
+        GalleryLink: {
+            url: string;
+            title?: string | null;
+            description?: string | null;
+            site_name?: string | null;
+        };
+        GalleryItem: {
+            /** @enum {string} */
+            item_kind: "attachment" | "link";
+            attachment?: components["schemas"]["GalleryAttachment"];
+            link?: components["schemas"]["GalleryLink"];
+        };
+        GalleryPageMeta: {
+            page: number;
+            per_page: number;
+            total: number;
+            has_more: boolean;
+        };
+        GalleryPage: {
+            items: components["schemas"]["GalleryItem"][];
+            meta: components["schemas"]["GalleryPageMeta"];
         };
         Session: {
             token: string;

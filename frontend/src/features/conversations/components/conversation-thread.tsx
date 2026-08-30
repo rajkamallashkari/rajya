@@ -520,6 +520,7 @@ function ThreadMessages({
             {divider}
             <MessageGroup
               messages={run.messages.map((item) => ({
+                attachments: item.message.attachments,
                 body: item.message.deleted ? deleted : (item.message.body ?? ""),
                 contacts: (item.message.contacts ?? []).map(contactViewFromApi),
                 createdAt: item.message.created_at,

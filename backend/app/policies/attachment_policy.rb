@@ -3,6 +3,10 @@ class AttachmentPolicy < ApplicationPolicy
     record.is_a?(Attachment) && conversation_policy.show?
   end
 
+  def retry?
+    show?
+  end
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       return scope.none unless account

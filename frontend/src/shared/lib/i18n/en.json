@@ -203,7 +203,11 @@
       "onboarding": "Onboarding",
       "phone_verify": "Phone verification",
       "account_switcher": "Account switcher",
-      "blocked_profile": "Blocked profile"
+      "blocked_profile": "Blocked profile",
+      "album_grid": "Album grid",
+      "voice_note": "Voice note",
+      "media_lightbox": "Media lightbox",
+      "upload_preview": "Upload preview"
     },
     "button": {
       "primary": "Primary",
@@ -451,6 +455,47 @@
     "title": "Invite",
     "unlimited": "Unlimited uses",
     "uses": "{{used}} of {{max}} uses"
+  },
+  "media": {
+    "counter": "{{current}} / {{total}}",
+    "download": "Download file",
+    "failed": "Processing failed",
+    "file_kind": {
+      "archive": "Archive",
+      "code": "Code",
+      "file": "File",
+      "pdf": "PDF",
+      "sheet": "Spreadsheet",
+      "slides": "Slides",
+      "word": "Document"
+    },
+    "gallery_empty": "Nothing shared yet",
+    "gallery_empty_description": "Photos, files, and links from this chat will show up here.",
+    "gallery_title": "Media, files and links",
+    "lightbox": "Media viewer",
+    "load_more": "Load more",
+    "more": "+{{count}}",
+    "next": "Next",
+    "pause": "Pause",
+    "photo": "Photo",
+    "play": "Play",
+    "play_video": "Play video",
+    "previous": "Previous",
+    "processing": "Processing media",
+    "retry": "Retry",
+    "seek": "Seek voice note",
+    "size": {
+      "b": "{{value}} B",
+      "kb": "{{value}} KB",
+      "mb": "{{value}} MB"
+    },
+    "speed": "Playback speed {{rate}}",
+    "tabs": {
+      "files": "Files",
+      "images": "Media",
+      "links": "Links"
+    },
+    "video_thumb": "Video thumbnail"
   },
   "messages": {
     "ticks": {

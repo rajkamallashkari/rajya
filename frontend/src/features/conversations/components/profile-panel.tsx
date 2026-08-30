@@ -12,6 +12,7 @@ import { canEditInfo, canManageInvites, profileUrl } from "@/features/conversati
 import { conversationTitle } from "@/features/conversations/model/title";
 import { copyText } from "@/features/messages/model/copy-text";
 import { LayerHeader } from "@/app/navigation/layer-header";
+import { useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { Avatar } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
 import { ListView } from "@/shared/ui/list-view";
@@ -30,7 +31,7 @@ function DemoProfile({ conversationId }: { conversationId: string }): ReactNode 
   if (!conversation) {
     return null;
   }
-  return <ProfileBody name={conversation.name} subtitle={t("shell.profile_subtitle")} />;
+  return <ProfileBody conversationId={conversationId} name={conversation.name} subtitle={t("shell.profile_subtitle")} />;
 }
 
 function LiveProfile({ conversationId }: { conversationId: number }): ReactNode {
@@ -55,6 +56,7 @@ function LiveProfile({ conversationId }: { conversationId: number }): ReactNode 
       : { subjectId: conversationId, subjectType: "conversation" as const };
   return (
     <ProfileBody
+      conversationId={String(conversationId)}
       name={conversationTitle(query.data, t("conversations.untitled"))}
       subtitle={t("shell.profile_subtitle")}
     >
@@ -109,13 +111,17 @@ function LiveProfile({ conversationId }: { conversationId: number }): ReactNode 
 
 function ProfileBody({
   children,
+  conversationId,
   name,
   subtitle,
 }: {
   children?: ReactNode;
+  conversationId: string;
   name: string;
   subtitle: string;
 }) {
+  const { t } = useTranslation();
+  const pushLayer = useLayerStore((state) => state.pushLayer);
   return (
     <div className="flex h-full min-h-0 flex-col bg-[var(--surface-panel)]" data-profile-panel="">
       <LayerHeader title={name} />
@@ -123,6 +129,20 @@ function ProfileBody({
         <Avatar className="size-[var(--space-16)]" name={name} />
         <p className="[font-weight:var(--font-weight-emphasis)]">{name}</p>
         <p className="text-[var(--text-secondary)]">{subtitle}</p>
+        <Button
+          onClick={() =>
+            pushLayer({
+              conversationId,
+              id: `gallery:${conversationId}`,
+              kind: "gallery",
+              title: t("media.gallery_title"),
+            })
+          }
+          type="button"
+          variant="secondary"
+        >
+          {t("media.gallery_title")}
+        </Button>
       </div>
       {children}
     </div>

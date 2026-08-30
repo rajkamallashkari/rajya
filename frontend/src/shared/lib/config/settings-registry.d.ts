@@ -49,6 +49,7 @@ export type SettingKey =
   | "image_variant_dimensions"
   | "capacity_alert_threshold"
   | "export_artefact_ttl"
+  | "gallery_page_size"
   | "blocked_upload_extensions"
   | "blocked_mime_prefixes"
   | "blurhash_x_components"

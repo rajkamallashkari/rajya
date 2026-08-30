@@ -97,6 +97,38 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/MediaUrl"
+        '403':
+          description: non-member refused (BR-94)
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  "/api/v1/attachments/{id}/retry":
+    post:
+      summary: Retry failed attachment processing
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: requeued
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Attachment"
+        '403':
+          description: non-member refused
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
   "/api/v1/blocks":
     get:
       summary: List accounts the current account has blocked
@@ -379,6 +411,48 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/ConversationFolder"
+  "/api/v1/conversations/{id}/media":
+    get:
+      summary: List shared media, files, or links
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: kind
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: gallery page
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/GalleryPage"
+        '403':
+          description: non-member refused
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '422':
+          description: invalid kind
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
   "/api/v1/conversations/{conversation_id}/members":
     post:
       summary: Add members to a group or channel
@@ -3126,6 +3200,121 @@ components:
         filename:
           type: string
           nullable: true
+    GalleryAttachment:
+      type: object
+      required:
+      - id
+      - kind
+      - content_type
+      - byte_size
+      - processing_status
+      - message_id
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+          enum:
+          - image
+          - video
+          - audio
+          - voice
+          - file
+        content_type:
+          type: string
+        byte_size:
+          type: integer
+        width:
+          type: integer
+          nullable: true
+        height:
+          type: integer
+          nullable: true
+        duration_ms:
+          type: integer
+          nullable: true
+        blurhash:
+          type: string
+          nullable: true
+        waveform:
+          type: array
+          items:
+            type: number
+          nullable: true
+        processing_status:
+          type: string
+          enum:
+          - pending
+          - ready
+          - failed
+        processing_error:
+          type: string
+          nullable: true
+        filename:
+          type: string
+          nullable: true
+        message_id:
+          type: integer
+    GalleryLink:
+      type: object
+      required:
+      - url
+      properties:
+        url:
+          type: string
+        title:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        site_name:
+          type: string
+          nullable: true
+    GalleryItem:
+      type: object
+      required:
+      - item_kind
+      properties:
+        item_kind:
+          type: string
+          enum:
+          - attachment
+          - link
+        attachment:
+          "$ref": "#/components/schemas/GalleryAttachment"
+          nullable: true
+        link:
+          "$ref": "#/components/schemas/GalleryLink"
+          nullable: true
+    GalleryPageMeta:
+      type: object
+      required:
+      - page
+      - per_page
+      - total
+      - has_more
+      properties:
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        has_more:
+          type: boolean
+    GalleryPage:
+      type: object
+      required:
+      - items
+      - meta
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/GalleryItem"
+        meta:
+          "$ref": "#/components/schemas/GalleryPageMeta"
     Session:
       type: object
       required:

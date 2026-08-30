@@ -7,6 +7,7 @@ import { OfflineBanner } from "@/app/banners/offline-banner";
 import { LayerHost } from "@/app/navigation/layer-host";
 import { Composer, type VoiceRecorderResult } from "@/features/composer";
 import { ChatListItem, ConversationThread, ProfilePanel } from "@/features/conversations";
+import { MediaGalleryPanel } from "@/features/media";
 import { ADA_DEMO } from "@/features/conversations/model/demo";
 import {
   DateDivider,
@@ -150,6 +151,10 @@ export const GALLERY_SECTION_KEYS = [
   "phone_verify",
   "account_switcher",
   "blocked_profile",
+  "album_grid",
+  "voice_note",
+  "media_lightbox",
+  "upload_preview",
 ] as const;
 
 const THEME_CHOICES = ["light", "dark", "system"] as const;
@@ -789,13 +794,15 @@ function GalleryLayerDemo() {
             {t("layers.push_demo")}
           </Button>
         }
-        renderLayer={(layer) =>
-          layer.kind === "conversation" ? (
-            <ConversationThread conversationId={layer.conversationId} />
-          ) : (
-            <ProfilePanel conversationId={layer.conversationId} />
-          )
-        }
+        renderLayer={(layer) => {
+          if (layer.kind === "conversation") {
+            return <ConversationThread conversationId={layer.conversationId} />;
+          }
+          if (layer.kind === "gallery") {
+            return <MediaGalleryPanel conversationId={layer.conversationId} />;
+          }
+          return <ProfilePanel conversationId={layer.conversationId} />;
+        }}
       />
     </div>
   );

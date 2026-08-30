@@ -11,6 +11,11 @@ import {
   SelectionToolbar,
   TranscriptBlock,
 } from "@/features/messages";
+import {
+  AttachmentFailed,
+  ProgressiveImage,
+  UploadPreview,
+} from "@/features/media";
 import type { PollView } from "@/features/messages/model/poll";
 import { AppearancePanel, SessionListItem, WallpaperPicker } from "@/features/settings";
 import { AccountProfile, OnboardingWizard, PhoneVerifyPanel } from "@/features/auth";
@@ -300,6 +305,46 @@ export function GalleryFeatureSections({
 
       <Section sectionKey="blocked_profile">
         <AccountProfile accountId={0} />
+      </Section>
+
+      <Section sectionKey="album_grid">
+        <ProgressiveImage
+          alt={t("media.photo")}
+          blurhash="LKO2?U%2Tw=w]~RBVZRi};RPxuwH"
+          fullSrc="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+          height={3}
+          thumbSrc="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+          width={4}
+        />
+        <AttachmentFailed
+          attachment={{
+            byte_size: 1,
+            content_type: "image/png",
+            id: 1,
+            kind: "image",
+            processing_error: t("media.failed"),
+            processing_status: "failed",
+          }}
+          onRetry={galleryFeatureAction}
+        />
+      </Section>
+
+      <Section sectionKey="voice_note">
+        <p className="text-[length:var(--text-sm)] text-[var(--text-secondary)]">{t("media.play")}</p>
+      </Section>
+
+      <Section sectionKey="media_lightbox">
+        <p className="text-[length:var(--text-sm)] text-[var(--text-secondary)]">{t("media.lightbox")}</p>
+      </Section>
+
+      <Section sectionKey="upload_preview">
+        <UploadPreview
+          onCancel={galleryFeatureAction}
+          uploads={[
+            { id: "u1", name: t("gallery.composer.attachment"), progress: 40, status: "uploading" },
+            { id: "u2", name: t("gallery.composer.attachment"), progress: 0, status: "failed" },
+          ]}
+        />
       </Section>
     </>
   );

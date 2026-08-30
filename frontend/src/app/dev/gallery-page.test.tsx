@@ -86,6 +86,8 @@ describe("GalleryPage", () => {
       throw new Error("missing profile");
     }
     await user.click(profile);
+    await user.click(await screen.findByRole("button", { name: en.media.gallery_title }));
+    expect(document.querySelector("[data-media-gallery]")).not.toBeNull();
     await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
     await user.click(screen.getByRole("button", { name: en.lists.error_retry }));
   });

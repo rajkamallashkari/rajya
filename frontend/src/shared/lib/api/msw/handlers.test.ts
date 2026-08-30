@@ -7,6 +7,9 @@ const expectedPaths = [
   "/api/v1/accounts/username",
   "/api/v1/accounts/{id}",
   "/api/v1/admin/users/{user_id}/verify_phone",
+  "/api/v1/attachments/{id}/download",
+  "/api/v1/attachments/{id}/retry",
+  "/api/v1/attachments/{id}/thumbnail",
   "/api/v1/blocks",
   "/api/v1/blocks/{id}",
   "/api/v1/contact_nicknames",
@@ -33,10 +36,12 @@ const expectedPaths = [
   "/api/v1/conversations/{id}",
   "/api/v1/conversations/{id}/archive",
   "/api/v1/conversations/{id}/leave",
+  "/api/v1/conversations/{id}/media",
   "/api/v1/conversations/{id}/mute",
   "/api/v1/conversations/{id}/pin",
   "/api/v1/conversations/{id}/receipts",
   "/api/v1/conversations/{id}/unread",
+  "/api/v1/direct_uploads",
   "/api/v1/invites/{token}",
   "/api/v1/invites/{token}/join",
   "/api/v1/messages",
@@ -882,5 +887,19 @@ describe("MSW handlers", () => {
       { params: { path: { conversation_id: 2, id: 1 } } },
     );
     expect(rejected.data?.ok).toBe(true);
+    const presign = await client.POST("/api/v1/direct_uploads", {
+      body: { filename: "a.png", byte_size: 1, checksum: "abc", content_type: "image/png" },
+    });
+    expect(presign.data?.blob_signed_id).toBe("signed");
+    const media = await client.GET("/api/v1/conversations/{id}/media", {
+      params: { path: { id: 1 } },
+    });
+    expect(media.data?.meta.has_more).toBe(true);
+    const mediaPage = await client.GET("/api/v1/conversations/{id}/media", {
+      params: { path: { id: 1 }, query: { kind: "images", page: 2 } },
+    });
+    expect(mediaPage.data?.meta.has_more).toBe(false);
+    const retried = await client.POST("/api/v1/attachments/{id}/retry", { params: { path: { id: 1 } } });
+    expect(retried.data?.processing_status).toBe("pending");
   });
 });

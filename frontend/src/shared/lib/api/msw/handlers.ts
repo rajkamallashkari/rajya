@@ -296,6 +296,33 @@ export const handlerMap = {
   "/api/v1/accounts/{id}": http.get("*/api/v1/accounts/:id", () =>
     HttpResponse.json(session.account),
   ),
+  "/api/v1/attachments/{id}/download": http.get("*/api/v1/attachments/:id/download", () =>
+    HttpResponse.json({
+      expires_at: "2099-01-01T00:00:00.000Z",
+      url: "https://media.test/file",
+    }),
+  ),
+  "/api/v1/attachments/{id}/thumbnail": http.get("*/api/v1/attachments/:id/thumbnail", () =>
+    HttpResponse.json({
+      expires_at: "2099-01-01T00:00:00.000Z",
+      url: "https://media.test/thumb",
+    }),
+  ),
+  "/api/v1/attachments/{id}/retry": http.post("*/api/v1/attachments/:id/retry", () =>
+    HttpResponse.json({
+      byte_size: 1,
+      content_type: "image/png",
+      id: 1,
+      kind: "image",
+      processing_status: "pending",
+    }),
+  ),
+  "/api/v1/direct_uploads": http.post("*/api/v1/direct_uploads", () =>
+    HttpResponse.json({
+      blob_signed_id: "signed",
+      skip_upload: true,
+    }),
+  ),
   "/api/v1/blocks": http.all("*/api/v1/blocks", ({ request }) => {
     if (request.method === "POST") {
       return HttpResponse.json({ account: session.account }, { status: 201 });
@@ -417,6 +444,65 @@ export const handlerMap = {
       return jsonError(404);
     }
     return okResponse();
+  }),
+  "/api/v1/conversations/{id}/media": http.get("*/api/v1/conversations/:id/media", ({ params, request }) => {
+    if (String(params.id) === "998") {
+      return jsonError(500);
+    }
+    const url = new URL(request.url);
+    const kind = url.searchParams.get("kind") ?? "images";
+    const page = Number(url.searchParams.get("page") ?? "1");
+    if (kind === "links") {
+      return HttpResponse.json({
+        items: [
+          {
+            item_kind: "link" as const,
+            attachment: null,
+            link: {
+              url: "https://example.com",
+              title: "Example",
+              description: "Body",
+              site_name: "Ex",
+            },
+          },
+          {
+            item_kind: "link" as const,
+            attachment: null,
+            link: { url: "https://example.org/bare" },
+          },
+        ],
+        meta: { has_more: false, page: 1, per_page: 30, total: 2 },
+      });
+    }
+    const items =
+      kind === "images" && page > 1
+        ? []
+        : [
+            {
+              item_kind: "attachment" as const,
+              attachment: {
+                byte_size: 12,
+                content_type: kind === "files" ? "application/pdf" : "image/png",
+                filename: kind === "files" ? "notes.pdf" : undefined,
+                id: 9,
+                kind: kind === "files" ? ("file" as const) : ("image" as const),
+                message_id: 1,
+                processing_status: "ready" as const,
+                width: 16,
+                height: 9,
+              },
+              link: null,
+            },
+          ];
+    return HttpResponse.json({
+      items,
+      meta: {
+        has_more: kind === "images" && page === 1,
+        page,
+        per_page: 30,
+        total: kind === "images" ? 2 : items.length,
+      },
+    });
   }),
   "/api/v1/conversations/{id}/archive": http.all(
     "*/api/v1/conversations/:id/archive",

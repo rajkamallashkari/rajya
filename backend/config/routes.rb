@@ -36,6 +36,7 @@ Rails.application.routes.draw do
         member do
           get :download
           get :thumbnail
+          post :retry
         end
       end
       resources :passkeys, only: %i[index update destroy] do
@@ -87,6 +88,7 @@ Rails.application.routes.draw do
           delete :mute, to: "conversation_mutes#destroy"
           post :receipts, to: "conversation_receipts#create"
           post :leave, to: "conversation_leaves#create"
+          get :media, to: "conversation_galleries#show"
         end
         resources :members, only: %i[create destroy], controller: "conversation_members", param: :account_id do
           member do

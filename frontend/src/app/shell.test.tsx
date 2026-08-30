@@ -56,6 +56,10 @@ describe("AppShell", () => {
     expect(useLayerStore.getState().layers).toHaveLength(1);
     await user.click(screen.getByRole("button", { name: en.shell.open_profile }));
     expect(useLayerStore.getState().layers.some((layer) => layer.kind === "profile")).toBe(true);
+    await user.click(await screen.findByRole("button", { name: en.media.gallery_title }));
+    expect(useLayerStore.getState().layers.some((layer) => layer.kind === "gallery")).toBe(true);
+    expect(document.querySelector("[data-media-gallery]")).not.toBeNull();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
     window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
     expect(useLayerStore.getState().layers).toEqual([
       expect.objectContaining({ conversationId: "1", kind: "conversation" }),

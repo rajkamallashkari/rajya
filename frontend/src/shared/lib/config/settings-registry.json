@@ -433,6 +433,15 @@
     "max": 2592000,
     "allow_nil": false
   },
+  "gallery_page_size": {
+    "type": "integer",
+    "category": "media",
+    "default": 30,
+    "description": "Items per page in the per-conversation media/files/links gallery.",
+    "min": 1,
+    "max": 100,
+    "allow_nil": false
+  },
   "blocked_upload_extensions": {
     "type": "array",
     "category": "media",

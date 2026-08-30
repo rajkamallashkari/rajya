@@ -70,6 +70,8 @@ describe("GalleryFeatureSections", () => {
     await user.click(screen.getByRole("button", { name: en.report.submit }));
     await user.click(screen.getByRole("button", { name: en.ui.close }));
     await user.click(screen.getByRole("button", { name: en.sessions.revoke }));
+    await user.click(screen.getByRole("button", { name: en.media.retry }));
+    await user.click(screen.getAllByRole("button", { name: en.composer.remove_attachment.replace("{{name}}", en.gallery.composer.attachment) })[0]!);
     expect(screen.getByRole("heading", { name: "poll_card" })).toBeInTheDocument();
   });
 });

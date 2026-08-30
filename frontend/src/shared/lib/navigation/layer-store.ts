@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { abortAllLayers } from "@/shared/lib/navigation/layer-stack";
 
-export type LayerKind = "conversation" | "profile";
+export type LayerKind = "conversation" | "profile" | "gallery";
 
 export interface LayerEntry {
   conversationId: string;

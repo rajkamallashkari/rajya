@@ -195,6 +195,10 @@ module Settings
         type: :integer, category: :media, default: 86_400, min: 60, max: 2_592_000,
         description: "Seconds an export artefact remains downloadable (NR-32)."
       },
+      gallery_page_size: {
+        type: :integer, category: :media, default: 30, min: 1, max: 100,
+        description: "Items per page in the per-conversation media/files/links gallery."
+      },
       blocked_upload_extensions: {
         type: :array, category: :media,
         default: %w[
