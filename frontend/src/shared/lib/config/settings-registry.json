@@ -269,6 +269,15 @@
     "max": 100000,
     "allow_nil": false
   },
+  "invite_token_bytes": {
+    "type": "integer",
+    "category": "groups",
+    "default": 18,
+    "description": "SecureRandom.urlsafe_base64 byte length for invite tokens (BR-57).",
+    "min": 16,
+    "max": 32,
+    "allow_nil": false
+  },
   "join_request_expiry": {
     "type": "integer",
     "category": "groups",

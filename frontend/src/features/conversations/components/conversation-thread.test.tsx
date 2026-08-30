@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http, HttpResponse } from "msw";
+import { delay, http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import {
   bindNumericId,
@@ -17,7 +17,7 @@ import { ProfilePanel } from "./profile-panel";
 import { AppProviders } from "@/app/providers";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { ADA_DEMO } from "@/features/conversations/model/demo";
-import { attachPoll, findMessage, messagingStore, seedPositions } from "@/shared/lib/api/msw/messaging-store";
+import { attachPoll, findConversation, findMessage, messagingStore, seedPositions } from "@/shared/lib/api/msw/messaging-store";
 import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
@@ -321,6 +321,54 @@ describe("conversation layers", () => {
         <ProfilePanel conversationId="1" />
       </AppProviders>,
     );
+    expect(await screen.findByText(en.shell.profile_subtitle)).toBeInTheDocument();
+  });
+
+  it("shows invite management on a live group and a profile QR on a direct", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    const { rerender } = render(
+      <AppProviders>
+        <ProfilePanel conversationId="2" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText(en.invites.manage)).toBeInTheDocument();
+    rerender(
+      <AppProviders>
+        <ProfilePanel conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByRole("button", { name: en.invites.profile_qr })).toBeInTheDocument();
+    expect(screen.queryByText(en.invites.manage)).toBeNull();
+    await user.click(screen.getByRole("button", { name: en.invites.profile_qr }));
+    expect(document.querySelector("[data-qr-grid]")).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: en.qr.copy }));
+    expect(writeText).toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: en.ui.close }));
+    await waitFor(() => {
+      expect(document.querySelector("[data-qr-grid]")).toBeNull();
+    });
+  });
+
+  it("shows a loading profile while the conversation is in flight", async () => {
+    setAccessSession(testSession());
+    server.use(
+      http.get("*/api/v1/conversations/:id", async () => {
+        await delay(80);
+        return HttpResponse.json(findConversation(1));
+      }),
+    );
+    render(
+      <AppProviders>
+        <ProfilePanel conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByRole("status")).toBeInTheDocument();
     expect(await screen.findByText(en.shell.profile_subtitle)).toBeInTheDocument();
   });
 

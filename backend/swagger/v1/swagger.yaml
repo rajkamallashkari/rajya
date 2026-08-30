@@ -704,6 +704,192 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Ok"
+  "/api/v1/conversations/{conversation_id}/invites":
+    get:
+      summary: List group invites
+      tags:
+      - Invites
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/GroupInviteList"
+    post:
+      summary: Create a group invite
+      tags:
+      - Invites
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/GroupInvite"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                requires_approval:
+                  type: boolean
+                max_uses:
+                  type: integer
+                  nullable: true
+                expires_in_seconds:
+                  type: integer
+                  nullable: true
+  "/api/v1/conversations/{conversation_id}/invites/{id}":
+    delete:
+      summary: Revoke a group invite
+      tags:
+      - Invites
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: revoked
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+  "/api/v1/invites/{token}":
+    get:
+      summary: Public invite preview
+      tags:
+      - Invites
+      parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: preview without auth (BR-59)
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/InvitePreview"
+  "/api/v1/invites/{token}/join":
+    post:
+      summary: Join via invite token
+      tags:
+      - Invites
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: joined
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/InviteJoin"
+  "/api/v1/conversations/{conversation_id}/join_requests":
+    get:
+      summary: List pending join requests
+      tags:
+      - Invites
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/JoinRequestList"
+  "/api/v1/conversations/{conversation_id}/join_requests/{id}/approve":
+    post:
+      summary: Approve a join request
+      tags:
+      - Invites
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: approved
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+  "/api/v1/conversations/{conversation_id}/join_requests/{id}/reject":
+    post:
+      summary: Reject a join request
+      tags:
+      - Invites
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: rejected
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
   "/api/v1/message_reminders":
     get:
       summary: List pending message reminders
@@ -3011,6 +3197,117 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/Passkey"
+    GroupInvite:
+      type: object
+      required:
+      - id
+      - token
+      - requires_approval
+      - uses_count
+      - usable
+      - created_at
+      properties:
+        id:
+          type: integer
+        token:
+          type: string
+        requires_approval:
+          type: boolean
+        max_uses:
+          type: integer
+          nullable: true
+        uses_count:
+          type: integer
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        usable:
+          type: boolean
+    GroupInviteList:
+      type: object
+      required:
+      - invites
+      properties:
+        invites:
+          type: array
+          items:
+            "$ref": "#/components/schemas/GroupInvite"
+    InvitePreview:
+      type: object
+      required:
+      - title
+      - member_count
+      - kind
+      - usable
+      - requires_approval
+      - already_member
+      - pending_request
+      properties:
+        title:
+          type: string
+          nullable: true
+        avatar_url:
+          type: string
+          nullable: true
+        member_count:
+          type: integer
+        kind:
+          type: string
+        usable:
+          type: boolean
+        requires_approval:
+          type: boolean
+        already_member:
+          type: boolean
+        pending_request:
+          type: boolean
+        conversation_id:
+          type: integer
+          nullable: true
+    InviteJoin:
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          enum:
+          - joined
+          - pending_approval
+          - already_member
+        conversation:
+          "$ref": "#/components/schemas/Conversation"
+          nullable: true
+    JoinRequestItem:
+      type: object
+      required:
+      - id
+      - status
+      - created_at
+      - account
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        account:
+          "$ref": "#/components/schemas/Account"
+    JoinRequestList:
+      type: object
+      required:
+      - join_requests
+      properties:
+        join_requests:
+          type: array
+          items:
+            "$ref": "#/components/schemas/JoinRequestItem"
     WebauthnCredential:
       type: object
       additionalProperties: true

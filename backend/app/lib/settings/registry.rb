@@ -128,6 +128,10 @@ module Settings
         type: :integer, category: :groups, default: 100, min: 1, max: 100_000,
         description: "Upper bound an admin may set for invite max-uses."
       },
+      invite_token_bytes: {
+        type: :integer, category: :groups, default: 18, min: 16, max: 32,
+        description: "SecureRandom.urlsafe_base64 byte length for invite tokens (BR-57)."
+      },
       join_request_expiry: {
         type: :integer, category: :groups, default: 604_800, min: 60, max: 31_536_000,
         description: "Seconds before a pending join request expires."

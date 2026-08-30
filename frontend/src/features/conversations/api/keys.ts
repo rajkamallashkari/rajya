@@ -4,6 +4,12 @@ export const conversationKeys = {
   detail: (id: number) => [...conversationKeys.all, "detail", id] as const,
 };
 
+export const inviteKeys = {
+  preview: (token: string) => ["invite-preview", token] as const,
+  list: (conversationId: number) => ["invites", conversationId] as const,
+  joinRequests: (conversationId: number) => ["join-requests", conversationId] as const,
+};
+
 export const savedReplyKeys = {
   all: ["saved-replies"] as const,
   list: () => [...savedReplyKeys.all, "list"] as const,

@@ -178,4 +178,49 @@ RSpec.describe "Session 3.1 conversation authorization 403s", type: :request do
           headers: auth_headers_for(user)
     expect(response).to have_http_status(:forbidden)
   end
+
+  it "returns 403 on invite create when the policy denies (F-1)" do
+    user = create(:user)
+    conversation = create_talk(kind: "group", owner: user.account, members: [ create(:account) ])
+    stub_deny(ConversationPolicy, :create_invite?)
+    post "/api/v1/conversations/#{conversation.id}/invites", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on invite destroy when the policy denies (F-1)" do
+    user = create(:user)
+    conversation = create_talk(kind: "group", owner: user.account, members: [ create(:account) ])
+    invite = create(:group_invite, conversation: conversation, created_by_account: user.account)
+    stub_deny(ConversationPolicy, :create_invite?)
+    delete "/api/v1/conversations/#{conversation.id}/invites/#{invite.id}", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on join-request reject when the policy denies (F-1)" do
+    user = create(:user)
+    conversation = create_talk(kind: "group", owner: user.account, members: [ create(:account) ])
+    request_row = create(:join_request, conversation: conversation, account: create(:account))
+    stub_deny(ConversationPolicy, :approve_join?)
+    post "/api/v1/conversations/#{conversation.id}/join_requests/#{request_row.id}/reject",
+         headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on join-request index when the policy denies (F-1)" do
+    user = create(:user)
+    conversation = create_talk(kind: "group", owner: user.account, members: [ create(:account) ])
+    stub_deny(ConversationPolicy, :approve_join?)
+    get "/api/v1/conversations/#{conversation.id}/join_requests", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on invite join when the policy denies (F-1)" do
+    user = create(:user)
+    owner = create(:user)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ create(:account) ])
+    invite = create(:group_invite, conversation: conversation, created_by_account: owner.account)
+    stub_deny(GroupInvitePolicy, :join?)
+    post "/api/v1/invites/#{invite.token}/join", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
 end

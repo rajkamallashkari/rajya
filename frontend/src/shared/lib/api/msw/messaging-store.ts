@@ -8,6 +8,8 @@ import {
 
 type Account = components["schemas"]["Account"];
 type Conversation = components["schemas"]["Conversation"];
+type GroupInvite = components["schemas"]["GroupInvite"];
+type JoinRequestItem = components["schemas"]["JoinRequestItem"];
 type Message = components["schemas"]["Message"];
 type MessagePage = components["schemas"]["MessagePage"];
 type MessageInfo = components["schemas"]["MessageInfo"];
@@ -98,8 +100,59 @@ export function createMessagingStore(): MessagingStore {
 
 let store = createMessagingStore();
 
+export interface InviteStore {
+  invites: GroupInvite[];
+  nextInviteId: number;
+  pendingTokens: Set<string>;
+  requests: JoinRequestItem[];
+}
+
+function createInviteStore(): InviteStore {
+  return {
+    invites: [
+      {
+        created_at: MESSAGE_STAMP,
+        expires_at: null,
+        id: 1,
+        max_uses: 10,
+        requires_approval: true,
+        token: "lim",
+        usable: true,
+        uses_count: 2,
+      },
+      {
+        created_at: MESSAGE_STAMP,
+        expires_at: null,
+        id: 2,
+        max_uses: null,
+        requires_approval: false,
+        token: "unlim",
+        usable: true,
+        uses_count: 0,
+      },
+    ],
+    nextInviteId: 3,
+    pendingTokens: new Set<string>(),
+    requests: [
+      {
+        account: peerAccount(9, "Joiner"),
+        created_at: MESSAGE_STAMP,
+        id: 1,
+        status: "pending",
+      },
+    ],
+  };
+}
+
+let inviteStore = createInviteStore();
+
 export function resetMessagingStore(): void {
   store = createMessagingStore();
+  inviteStore = createInviteStore();
+}
+
+export function inviteRecords(): InviteStore {
+  return inviteStore;
 }
 
 export function messagingStore(): MessagingStore {

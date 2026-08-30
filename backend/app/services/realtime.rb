@@ -6,6 +6,7 @@ module Realtime
   CONVERSATION_STREAM = /\Aconversation:(\d+)\z/
   BUFFER_KEY = :rajya_realtime_buffer
   EVENTS = %w[
+    join_request
     message_created
     message_deleted
     message_edited

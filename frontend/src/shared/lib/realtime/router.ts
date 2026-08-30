@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { getAccessSession } from "@/features/auth/model/access-session";
-import { conversationKeys, messageKeys } from "@/features/conversations/api/keys";
+import { conversationKeys, inviteKeys, messageKeys } from "@/features/conversations/api/keys";
 import { getMessage, type Message } from "@/features/conversations/api/http";
 import { applyReceiptTick, upsertMessages, type MessagePages } from "@/features/conversations/api/cache";
 import { persistRealtimeMessage } from "@/features/conversations/api/persist";
@@ -57,6 +57,15 @@ export async function routeRealtimeEvent(
       await deps.cache.invalidateQueries({
         queryKey: conversationKeys.detail(event.conversation_id),
       });
+      return;
+    case "join_request":
+      await deps.cache.invalidateQueries({ queryKey: inviteKeys.joinRequests(event.conversation_id) });
+      await deps.cache.invalidateQueries({ queryKey: conversationKeys.list() });
+      if (event.status === "approved") {
+        await deps.cache.invalidateQueries({
+          queryKey: conversationKeys.detail(event.conversation_id),
+        });
+      }
       return;
     case "presence":
       deps.cache.setQueryData(realtimeKeys.presence(event.account_id), event.online);

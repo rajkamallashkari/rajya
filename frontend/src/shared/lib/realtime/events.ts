@@ -12,6 +12,7 @@ export interface RealtimePayloads {
   presence: { account_id: number; online: boolean };
   receipts_updated: { conversation_id: number; account_id: number; kind: string; position: number };
   sidebar_update: { conversation_id: number };
+  join_request: { conversation_id: number; join_request_id?: number; status: string };
   typing: {
     conversation_id: number;
     account_id: number;
@@ -34,6 +35,7 @@ export const REALTIME_EVENT_TYPES = [
   "presence",
   "receipts_updated",
   "sidebar_update",
+  "join_request",
   "typing",
 ] as const satisfies ReadonlyArray<keyof RealtimePayloads>;
 
@@ -124,6 +126,12 @@ const PARSERS: { [Type in ListedType]: (data: Record<string, unknown>) => Realti
   sidebar_update: (data) => ({
     type: "sidebar_update",
     conversation_id: requireNumber(data, "conversation_id"),
+  }),
+  join_request: (data) => ({
+    type: "join_request",
+    conversation_id: requireNumber(data, "conversation_id"),
+    join_request_id: optionalNumber(data, "join_request_id"),
+    status: optionalString(data, "status") ?? "",
   }),
   typing: (data) => ({
     type: "typing",

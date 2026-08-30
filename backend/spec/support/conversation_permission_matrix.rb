@@ -82,7 +82,9 @@ module ConversationPermissionMatrix
       method: :patch,
       suffix: ->(conversation) { "/members/#{member_account_id(conversation)}/transfer" }
     },
-    leave?: { method: :post, suffix: "/leave" }
+    leave?: { method: :post, suffix: "/leave" },
+    create_invite?: { method: :post, suffix: "/invites", body: {} },
+    approve_join?: { method: :post, suffix: "/join_requests/0/approve" }
   }.freeze
 
   def self.member_account_id(conversation)

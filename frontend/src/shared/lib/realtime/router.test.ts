@@ -72,6 +72,14 @@ describe("routeRealtimeEvent", () => {
     await routeRealtimeEvent({ type: "message_pinned", conversation_id: 1, message_id: 1 }, deps);
     await routeRealtimeEvent({ type: "message_unpinned", conversation_id: 1, message_id: 1 }, deps);
     await routeRealtimeEvent({ type: "sidebar_update", conversation_id: 1 }, deps);
+    await routeRealtimeEvent(
+      { type: "join_request", conversation_id: 1, status: "pending" },
+      deps,
+    );
+    await routeRealtimeEvent(
+      { type: "join_request", conversation_id: 1, join_request_id: 4, status: "approved" },
+      deps,
+    );
     await routeRealtimeEvent({ type: "presence", account_id: 8, online: false }, deps);
     await routeRealtimeEvent(
       { type: "receipts_updated", conversation_id: 1, account_id: 2, kind: "read", position: 1 },

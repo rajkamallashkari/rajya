@@ -28,32 +28,18 @@ module Conversations
     end
 
     def over_cap?(conversation, ids)
-      max = Settings.fetch(:max_members)
-      return false if max.blank?
-
       inactive = conversation.conversation_memberships.where(account_id: ids).where.not(status: "active").count
-      new_rows = ids.size - inactive
-      conversation.conversation_memberships.active.count + new_rows > max
+      MembershipSupport.over_member_cap?(conversation, ids.size - inactive)
     end
 
     def persist!(actor, conversation, ids)
       Conversation.transaction do
-        ids.each { |account_id| upsert_member!(actor, conversation, account_id) }
+        ids.each do |account_id|
+          MembershipSupport.activate!(
+            conversation, Account.find(account_id), invited_by: actor, event: "member_added", actor: actor
+          )
+        end
       end
-    end
-
-    def upsert_member!(actor, conversation, account_id)
-      row = conversation.conversation_memberships.find_or_initialize_by(account_id: account_id)
-      rejoining = row.persisted?
-      row.assign_attributes(
-        role: "member", status: "active", invited_by_account: actor, joined_at: Time.current
-      )
-      row.save!
-      Receipts::ReconcileUnreads.call(membership: row) if rejoining
-      SystemEvents::Write.call(
-        conversation: conversation, event: "member_added", actor: actor,
-        payload: { name: row.account.display_name }
-      )
     end
   end
 end

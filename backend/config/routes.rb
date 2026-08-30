@@ -76,6 +76,13 @@ Rails.application.routes.draw do
             patch :transfer
           end
         end
+        resources :invites, only: %i[index create destroy], controller: "conversation_invites"
+        resources :join_requests, only: :index do
+          member do
+            post :approve
+            post :reject
+          end
+        end
         resources :pins, only: %i[create destroy], param: :message_id
         resources :messages, only: :index, controller: "conversation_messages"
       end
@@ -102,6 +109,9 @@ Rails.application.routes.draw do
       resources :message_reminders, only: %i[index create update destroy]
       resources :scheduled_messages, only: %i[index create update destroy] do
         member { post :send_now }
+      end
+      resources :invites, only: :show, param: :token do
+        member { post :join }
       end
       resources :contact_nicknames, only: %i[index update destroy], param: :account_id
       namespace :admin do

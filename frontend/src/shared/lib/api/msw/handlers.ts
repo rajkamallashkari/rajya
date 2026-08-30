@@ -4,6 +4,7 @@ import {
   appendSent,
   findConversation,
   findMessage,
+  inviteRecords,
   infoFor,
   MESSAGE_STAMP,
   messagingStore,
@@ -185,6 +186,44 @@ const messageReminder = {
   completed_at: null,
   created_at: MESSAGE_STAMP,
 };
+
+function invitePreview(token: string) {
+  if (token === "gone") {
+    return null;
+  }
+  const pending = inviteRecords().pendingTokens.has(token) || token === "pending";
+  return {
+    already_member: token === "member" || token === "member-bare",
+    avatar_url: null,
+    conversation_id: token === "member-bare" || token === "orphan" ? null : 2,
+    kind: token === "channel" ? "channel" : "group",
+    member_count: 3,
+    pending_request: pending,
+    requires_approval: token === "approval" || token === "pending",
+    title: token === "untitled" ? null : token === "channel" ? "News" : "Team",
+    usable: token !== "spent",
+  };
+}
+
+function inviteJoin(token: string) {
+  if (token === "gone") {
+    return jsonError(404);
+  }
+  if (token === "fail") {
+    return jsonError(409);
+  }
+  if (token === "approval" || token === "pending") {
+    inviteRecords().pendingTokens.add(token);
+    return HttpResponse.json({ status: "pending_approval" });
+  }
+  if (token === "bare" || token === "orphan") {
+    return HttpResponse.json({ status: "joined" });
+  }
+  if (token === "member-bare") {
+    return HttpResponse.json({ status: "already_member" });
+  }
+  return HttpResponse.json({ conversation: findConversation(2), status: "joined" });
+}
 
 export const handlerMap = {
   "/health": http.get("*/health", () => HttpResponse.json(readyHealth)),
@@ -613,6 +652,70 @@ export const handlerMap = {
     const poll = findPoll(Number(params.id));
     return poll ? HttpResponse.json(poll) : jsonError(404);
   }),
+  "/api/v1/conversations/{conversation_id}/invites": http.all(
+    "*/api/v1/conversations/:conversation_id/invites",
+    async ({ request }) => {
+      const records = inviteRecords();
+      if (request.method === "POST") {
+        const body = (await request.json()) as {
+          expires_in_seconds?: number | null;
+          max_uses?: number | null;
+          requires_approval?: boolean;
+        };
+        const created = {
+          created_at: MESSAGE_STAMP,
+          expires_at: null,
+          id: records.nextInviteId,
+          max_uses: body.max_uses ?? null,
+          requires_approval: body.requires_approval ?? false,
+          token: `tok-${String(records.nextInviteId)}`,
+          usable: true,
+          uses_count: 0,
+        };
+        records.nextInviteId += 1;
+        records.invites.push(created);
+        return HttpResponse.json(created, { status: 201 });
+      }
+      return HttpResponse.json({ invites: records.invites });
+    },
+  ),
+  "/api/v1/conversations/{conversation_id}/invites/{id}": http.delete(
+    "*/api/v1/conversations/:conversation_id/invites/:id",
+    ({ params }) => {
+      const records = inviteRecords();
+      records.invites = records.invites.filter((invite) => invite.id !== Number(params.id));
+      return HttpResponse.json(ok);
+    },
+  ),
+  "/api/v1/invites/{token}": http.get("*/api/v1/invites/:token", ({ params }) => {
+    const preview = invitePreview(String(params.token));
+    return preview ? HttpResponse.json(preview) : jsonError(404);
+  }),
+  "/api/v1/invites/{token}/join": http.post("*/api/v1/invites/:token/join", ({ params }) => {
+    return inviteJoin(String(params.token));
+  }),
+  "/api/v1/conversations/{conversation_id}/join_requests": http.get(
+    "*/api/v1/conversations/:conversation_id/join_requests",
+    () => HttpResponse.json({ join_requests: inviteRecords().requests }),
+  ),
+  "/api/v1/conversations/{conversation_id}/join_requests/{id}/approve": http.post(
+    "*/api/v1/conversations/:conversation_id/join_requests/:id/approve",
+    ({ params }) => {
+      const records = inviteRecords();
+      const id = Number(params.id);
+      records.requests = records.requests.filter((request) => request.id !== id);
+      const conversation = findConversation(Number(params.conversation_id));
+      return conversation ? HttpResponse.json(conversation) : jsonError(404);
+    },
+  ),
+  "/api/v1/conversations/{conversation_id}/join_requests/{id}/reject": http.post(
+    "*/api/v1/conversations/:conversation_id/join_requests/:id/reject",
+    ({ params }) => {
+      const records = inviteRecords();
+      records.requests = records.requests.filter((request) => request.id !== Number(params.id));
+      return HttpResponse.json(ok);
+    },
+  ),
 } satisfies HandlerMap;
 
 export const handlers: HttpHandler[] = Object.values(handlerMap);

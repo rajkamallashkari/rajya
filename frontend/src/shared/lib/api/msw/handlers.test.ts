@@ -12,6 +12,11 @@ const expectedPaths = [
   "/api/v1/contact_nicknames",
   "/api/v1/contact_nicknames/{account_id}",
   "/api/v1/conversations",
+  "/api/v1/conversations/{conversation_id}/invites",
+  "/api/v1/conversations/{conversation_id}/invites/{id}",
+  "/api/v1/conversations/{conversation_id}/join_requests",
+  "/api/v1/conversations/{conversation_id}/join_requests/{id}/approve",
+  "/api/v1/conversations/{conversation_id}/join_requests/{id}/reject",
   "/api/v1/conversations/{conversation_id}/members",
   "/api/v1/conversations/{conversation_id}/members/{account_id}",
   "/api/v1/conversations/{conversation_id}/members/{account_id}/demote",
@@ -25,6 +30,8 @@ const expectedPaths = [
   "/api/v1/conversations/{id}/pin",
   "/api/v1/conversations/{id}/receipts",
   "/api/v1/conversations/{id}/unread",
+  "/api/v1/invites/{token}",
+  "/api/v1/invites/{token}/join",
   "/api/v1/messages",
   "/api/v1/messages/bulk_forward",
   "/api/v1/messages/bulk_save",
@@ -637,5 +644,76 @@ describe("MSW handlers", () => {
     expect(missingClose.response.status).toBe(404);
     const missingPoll = await client.GET("/api/v1/polls/{id}", { params: { path: { id: 0 } } });
     expect(missingPoll.response.status).toBe(404);
+    const listedInvites = await client.GET("/api/v1/conversations/{conversation_id}/invites", {
+      params: { path: { conversation_id: 2 } },
+    });
+    expect(listedInvites.data?.invites).toHaveLength(2);
+    const createdInvite = await client.POST("/api/v1/conversations/{conversation_id}/invites", {
+      params: { path: { conversation_id: 2 } },
+      body: {},
+    });
+    expect(createdInvite.response.status).toBe(201);
+    const limitedInvite = await client.POST("/api/v1/conversations/{conversation_id}/invites", {
+      params: { path: { conversation_id: 2 } },
+      body: { requires_approval: true, max_uses: 3 },
+    });
+    expect(limitedInvite.data?.requires_approval).toBe(true);
+    const revokedInvite = await client.DELETE("/api/v1/conversations/{conversation_id}/invites/{id}", {
+      params: { path: { conversation_id: 2, id: limitedInvite.data?.id ?? 0 } },
+    });
+    expect(revokedInvite.data?.ok).toBe(true);
+    const preview = await client.GET("/api/v1/invites/{token}", { params: { path: { token: "open" } } });
+    expect(preview.data?.member_count).toBe(3);
+    const missingPreview = await client.GET("/api/v1/invites/{token}", {
+      params: { path: { token: "gone" } },
+    });
+    expect(missingPreview.response.status).toBe(404);
+    const joined = await client.POST("/api/v1/invites/{token}/join", {
+      params: { path: { token: "open" } },
+    });
+    expect(joined.data?.status).toBe("joined");
+    const pendingJoin = await client.POST("/api/v1/invites/{token}/join", {
+      params: { path: { token: "approval" } },
+    });
+    expect(pendingJoin.data?.status).toBe("pending_approval");
+    const failedJoin = await client.POST("/api/v1/invites/{token}/join", {
+      params: { path: { token: "fail" } },
+    });
+    expect(failedJoin.response.status).toBe(409);
+    const missingJoin = await client.POST("/api/v1/invites/{token}/join", {
+      params: { path: { token: "gone" } },
+    });
+    expect(missingJoin.response.status).toBe(404);
+    const bareJoin = await client.POST("/api/v1/invites/{token}/join", {
+      params: { path: { token: "bare" } },
+    });
+    expect(bareJoin.data?.status).toBe("joined");
+    const memberBareJoin = await client.POST("/api/v1/invites/{token}/join", {
+      params: { path: { token: "member-bare" } },
+    });
+    expect(memberBareJoin.data?.status).toBe("already_member");
+    const channelPreview = await client.GET("/api/v1/invites/{token}", {
+      params: { path: { token: "channel" } },
+    });
+    expect(channelPreview.data?.kind).toBe("channel");
+    const requests = await client.GET("/api/v1/conversations/{conversation_id}/join_requests", {
+      params: { path: { conversation_id: 2 } },
+    });
+    expect(requests.data?.join_requests).toHaveLength(1);
+    const approved = await client.POST(
+      "/api/v1/conversations/{conversation_id}/join_requests/{id}/approve",
+      { params: { path: { conversation_id: 2, id: 1 } } },
+    );
+    expect(approved.data?.id).toBe(2);
+    const missingApprove = await client.POST(
+      "/api/v1/conversations/{conversation_id}/join_requests/{id}/approve",
+      { params: { path: { conversation_id: 999, id: 1 } } },
+    );
+    expect(missingApprove.response.status).toBe(404);
+    const rejected = await client.POST(
+      "/api/v1/conversations/{conversation_id}/join_requests/{id}/reject",
+      { params: { path: { conversation_id: 2, id: 1 } } },
+    );
+    expect(rejected.data?.ok).toBe(true);
   });
 });

@@ -279,3 +279,92 @@ export async function postReceipts(
     "receipts_failed",
   );
 }
+
+export type InvitePreview = components["schemas"]["InvitePreview"];
+export type GroupInvite = components["schemas"]["GroupInvite"];
+export type InviteJoin = components["schemas"]["InviteJoin"];
+export type JoinRequestItem = components["schemas"]["JoinRequestItem"];
+
+export async function getInvitePreview(token: string) {
+  return unwrap(
+    await apiClient().GET("/api/v1/invites/{token}", {
+      headers: bearerHeaders(),
+      params: { path: { token } },
+    }),
+    "invite_preview_failed",
+  );
+}
+
+export async function joinViaInvite(token: string) {
+  return unwrap(
+    await apiClient().POST("/api/v1/invites/{token}/join", {
+      headers: bearerHeaders(),
+      params: { path: { token } },
+    }),
+    "invite_join_failed",
+  );
+}
+
+export async function listInvites(conversationId: number) {
+  return unwrap(
+    await apiClient().GET("/api/v1/conversations/{conversation_id}/invites", {
+      headers: bearerHeaders(),
+      params: { path: { conversation_id: conversationId } },
+    }),
+    "invites_failed",
+  );
+}
+
+export async function createInvite(
+  conversationId: number,
+  body?: { expires_in_seconds?: number; max_uses?: number | null; requires_approval?: boolean },
+) {
+  return unwrap(
+    await apiClient().POST("/api/v1/conversations/{conversation_id}/invites", {
+      headers: bearerHeaders(),
+      params: { path: { conversation_id: conversationId } },
+      body: body ?? {},
+    }),
+    "invite_create_failed",
+  );
+}
+
+export async function revokeInvite(conversationId: number, id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/conversations/{conversation_id}/invites/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { conversation_id: conversationId, id } },
+    }),
+    "invite_revoke_failed",
+  );
+}
+
+export async function listJoinRequests(conversationId: number) {
+  return unwrap(
+    await apiClient().GET("/api/v1/conversations/{conversation_id}/join_requests", {
+      headers: bearerHeaders(),
+      params: { path: { conversation_id: conversationId } },
+    }),
+    "join_requests_failed",
+  );
+}
+
+export async function approveJoinRequest(conversationId: number, id: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/conversations/{conversation_id}/join_requests/{id}/approve", {
+      headers: bearerHeaders(),
+      params: { path: { conversation_id: conversationId, id } },
+    }),
+    "join_approve_failed",
+  );
+}
+
+export async function rejectJoinRequest(conversationId: number, id: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/conversations/{conversation_id}/join_requests/{id}/reject", {
+      headers: bearerHeaders(),
+      params: { path: { conversation_id: conversationId, id } },
+    }),
+    "join_reject_failed",
+  );
+}

@@ -24,5 +24,28 @@ module Conversations
       ).delete_all
       ScheduledMessage.where(conversation_id: conversation.id, sender_account_id: account.id).delete_all
     end
+
+    def over_member_cap?(conversation, new_rows)
+      max = Settings.fetch(:max_members)
+      return false if max.blank?
+
+      conversation.conversation_memberships.active.count + new_rows > max
+    end
+
+    # Rejoin flips the unique row back to active and keeps watermarks (BR-50).
+    def activate!(conversation, account, invited_by:, event:, actor:)
+      row = conversation.conversation_memberships.find_or_initialize_by(account_id: account.id)
+      rejoining = row.persisted?
+      row.assign_attributes(
+        role: "member", status: "active", invited_by_account: invited_by, joined_at: Time.current
+      )
+      row.save!
+      Receipts::ReconcileUnreads.call(membership: row) if rejoining
+      SystemEvents::Write.call(
+        conversation: conversation, event: event, actor: actor,
+        payload: { name: account.display_name }
+      )
+      row
+    end
   end
 end

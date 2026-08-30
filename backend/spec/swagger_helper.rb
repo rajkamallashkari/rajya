@@ -487,6 +487,67 @@ RSpec.configure do |config|
                 passkeys: { type: :array, items: { "$ref" => "#/components/schemas/Passkey" } }
               }
             },
+            GroupInvite: {
+              type: :object,
+              required: %w[id token requires_approval uses_count usable created_at],
+              properties: {
+                id: { type: :integer },
+                token: { type: :string },
+                requires_approval: { type: :boolean },
+                max_uses: { type: :integer, nullable: true },
+                uses_count: { type: :integer },
+                expires_at: { type: :string, format: :"date-time", nullable: true },
+                created_at: { type: :string, format: :"date-time" },
+                usable: { type: :boolean }
+              }
+            },
+            GroupInviteList: {
+              type: :object,
+              required: %w[invites],
+              properties: {
+                invites: { type: :array, items: { "$ref" => "#/components/schemas/GroupInvite" } }
+              }
+            },
+            InvitePreview: {
+              type: :object,
+              required: %w[title member_count kind usable requires_approval already_member pending_request],
+              properties: {
+                title: { type: :string, nullable: true },
+                avatar_url: { type: :string, nullable: true },
+                member_count: { type: :integer },
+                kind: { type: :string },
+                usable: { type: :boolean },
+                requires_approval: { type: :boolean },
+                already_member: { type: :boolean },
+                pending_request: { type: :boolean },
+                conversation_id: { type: :integer, nullable: true }
+              }
+            },
+            InviteJoin: {
+              type: :object,
+              required: %w[status],
+              properties: {
+                status: { type: :string, enum: %w[joined pending_approval already_member] },
+                conversation: { "$ref" => "#/components/schemas/Conversation", nullable: true }
+              }
+            },
+            JoinRequestItem: {
+              type: :object,
+              required: %w[id status created_at account],
+              properties: {
+                id: { type: :integer },
+                status: { type: :string },
+                created_at: { type: :string, format: :"date-time" },
+                account: { "$ref" => "#/components/schemas/Account" }
+              }
+            },
+            JoinRequestList: {
+              type: :object,
+              required: %w[join_requests],
+              properties: {
+                join_requests: { type: :array, items: { "$ref" => "#/components/schemas/JoinRequestItem" } }
+              }
+            },
             WebauthnCredential: {
               type: :object,
               additionalProperties: true

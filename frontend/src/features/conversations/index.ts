@@ -2,6 +2,7 @@ export { ChatListItem, type ChatListItemProps } from "./components/chat-list-ite
 export { ConversationList } from "./components/conversation-list";
 export { ConversationThread } from "./components/conversation-thread";
 export { ProfilePanel } from "./components/profile-panel";
+export { InvitePage } from "./components/invite-page";
 export { ConversationMenu } from "./components/conversation-menu";
 export { QrSheet } from "./components/qr-sheet";
 export { ReportSheet } from "./components/report-sheet";

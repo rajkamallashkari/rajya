@@ -33,6 +33,7 @@ export type SettingKey =
   | "max_members"
   | "invite_token_ttl"
   | "invite_max_uses_ceiling"
+  | "invite_token_bytes"
   | "join_request_expiry"
   | "slow_mode_presets"
   | "file_caps"

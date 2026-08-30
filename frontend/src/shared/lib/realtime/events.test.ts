@@ -55,6 +55,24 @@ describe("realtime events", () => {
       kind: "",
       position: 3,
     });
+    expect(
+      parseRealtimeEvent({
+        type: "join_request",
+        conversation_id: 4,
+        join_request_id: 5,
+        status: "pending",
+      }),
+    ).toEqual({
+      type: "join_request",
+      conversation_id: 4,
+      join_request_id: 5,
+      status: "pending",
+    });
+    expect(parseRealtimeEvent({ type: "join_request", conversation_id: 4 })).toEqual({
+      type: "join_request",
+      conversation_id: 4,
+      status: "",
+    });
     expect(parseRealtimeEvent({ type: "phone_verified", account_id: 5, phone: "+1" })).toEqual({
       type: "phone_verified",
       account_id: 5,
