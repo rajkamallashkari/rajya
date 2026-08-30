@@ -51,6 +51,7 @@ export function MessageBubble({
   lifted = false,
   locale = "en",
   onMentionClick,
+  onOpenContactProfile,
   onOpenMenu,
   onOpenPollResults,
   onRetry,
@@ -73,6 +74,7 @@ export function MessageBubble({
   lifted?: boolean;
   locale?: string;
   onMentionClick?: (handle: string) => void;
+  onOpenContactProfile?: (accountId: string, name: string) => void;
   onOpenMenu?: (point: { clientX: number; clientY: number }) => void;
   onOpenPollResults?: () => void;
   onRetry?: () => void;
@@ -153,7 +155,15 @@ export function MessageBubble({
           ) : null}
           {location ? <LocationCard location={location} /> : null}
           {contacts.map((contact) => (
-            <ContactCard contact={contact} key={`${contact.displayName}-${contact.phone ?? ""}`} />
+            <ContactCard
+              contact={contact}
+              key={`${contact.displayName}-${contact.phone ?? ""}`}
+              onOpenProfile={
+                contact.contactAccountId && onOpenContactProfile
+                  ? () => onOpenContactProfile(contact.contactAccountId as string, contact.displayName)
+                  : undefined
+              }
+            />
           ))}
           {showTime || showTicks ? (
             <div

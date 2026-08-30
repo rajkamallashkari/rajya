@@ -7,6 +7,10 @@ class AttachmentPolicy < ApplicationPolicy
     show?
   end
 
+  def transcribe?
+    show?
+  end
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       return scope.none unless account

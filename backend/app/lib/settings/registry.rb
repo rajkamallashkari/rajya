@@ -192,8 +192,8 @@ module Settings
         description: "Percent of bucket capacity that triggers an admin alert (S-5)."
       },
       export_artefact_ttl: {
-        type: :integer, category: :media, default: 86_400, min: 60, max: 2_592_000,
-        description: "Seconds an export artefact remains downloadable (NR-32)."
+        type: :integer, category: :media, default: 604_800, min: 60, max: 2_592_000,
+        description: "Seconds an export artefact remains downloadable (NR-32, 7 days)."
       },
       gallery_page_size: {
         type: :integer, category: :media, default: 30, min: 1, max: 100,
@@ -202,6 +202,22 @@ module Settings
       gif_search_limit: {
         type: :integer, category: :media, default: 16, min: 1, max: 50,
         description: "Maximum Tenor GIF search results returned by the proxy (NR-29)."
+      },
+      location_tile_request_cap: {
+        type: :integer, category: :media, default: 8, min: 1, max: 32,
+        description: "Maximum OpenStreetMap tile requests a client may make (NR-30)."
+      },
+      osm_tile_host: {
+        type: :string, category: :media, default: "tile.openstreetmap.org",
+        description: "OpenStreetMap tile host for static location cards (NR-30)."
+      },
+      osm_tile_size: {
+        type: :integer, category: :media, default: 256, min: 64, max: 512,
+        description: "Pixel size of one OpenStreetMap tile (NR-30)."
+      },
+      osm_tile_zoom: {
+        type: :integer, category: :media, default: 15, min: 1, max: 19,
+        description: "Zoom level for static location-card tiles (NR-30)."
       },
       gif_search_min_query_length: {
         type: :integer, category: :media, default: 2, min: 1, max: 10,
@@ -347,6 +363,26 @@ module Settings
       ai_fallback_attempt_cap: {
         type: :integer, category: :ai, default: 2, min: 0, max: 10,
         description: "Fallback provider attempts after the primary fails."
+      },
+      ai_transcribe_models: {
+        type: :array, category: :ai, default: [ "groq/whisper-large-v3" ],
+        description: "Ordered transcribe models (provider/model) for voice notes (NR-33)."
+      },
+      groq_api_key: {
+        type: :string, category: :ai, default: "",
+        description: "Groq API key for whisper transcription; blank fails visibly (NR-33)."
+      },
+      groq_host: {
+        type: :string, category: :ai, default: "api.groq.com",
+        description: "Groq API host for whisper transcription (NR-33)."
+      },
+      groq_transcribe_path: {
+        type: :string, category: :ai, default: "/openai/v1/audio/transcriptions",
+        description: "Groq whisper transcription path (NR-33)."
+      },
+      transcribe_retry_attempts: {
+        type: :integer, category: :ai, default: 2, min: 1, max: 10,
+        description: "Retries for unexpected transcription job errors before a visible fail (NR-33)."
       },
 
       # --- notifications (BR-103) ---

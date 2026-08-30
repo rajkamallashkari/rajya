@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 7.3 |
-| **Next session** | 7.4 |
-| **Phase** | P7 — Media |
-| **Sessions remaining in phase** | 1 (7.4) |
+| **Last completed** | 7.4 |
+| **Next session** | 8.1 |
+| **Phase** | P8 — Search |
+| **Sessions remaining in phase** | 2 (8.1, 8.2) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 7.4 — Voice transcription (NR-33) via Groq whisper through the AI registry, low-priority queue, flag-gated (default on) and failing visibly; location and contact rendering (NR-30, NR-31); export jobs (NR-32)**
+**Session 8.1 — FTS, global and in-chat search, jump navigation, discoverability gates**
 
-Deliverable: **Voice transcription (NR-33)** via Groq whisper through the AI registry, low-priority queue, flag-gated (default on) and failing visibly; location and contact rendering (NR-30, NR-31); **export jobs (NR-32)**
+Deliverable: FTS, global and in-chat search, jump navigation, discoverability gates
 
-Docs: SCHEMA §12.4, §12.13, §12.16, S-23; TARGET §6.3, §8
+Docs: SCHEMA §4 (`search_vector`); GAP §2; AUDIT §1.2, §2.4 (BR-45, BR-46), §5 (F-15)
 
-Legacy to read: `cognify/app/jobs/process_attachment_job.rb` — the pipeline transcription hangs off, and the swallowed-rescue mistake not to repeat
+Legacy to read: `cognify/app/controllers/api/v1/search_controller.rb`, `botverse/src/components/chat/ChatSearchBar.tsx`, `SearchResultsPanel.tsx`
 
 ---
 
@@ -66,6 +66,7 @@ Legacy to read: `cognify/app/jobs/process_attachment_job.rb` — the pipeline tr
 | 7.1 | Upload, buckets, quotas, processing pipeline, MIME sniffing, authorization | Presign + Marcel sniff (BR-89), per-type caps (BR-88), checksum reuse (BR-90), lowest-priority bucket routing (BR-91), membership-checked 5-min URLs (BR-94, F-16). Quota charges on first blob use only; unsend does not decrement (BR-92); reconcile repairs unique owned blobs (F-5). Processing failures set `processing_status=failed` with catalog copy (F-17); `thumbnail_blob_id` is gone (F-18). Lightbox, galleries, and failed-state UI wait for 7.2. |
 | 7.2 | Progressive rendering, album grid, lightbox, galleries, voice playback | Blurhash → thumb → full without layout shift; Telegram mosaic album; lightbox zoom/prev/next; per-chat Media/files/links gallery (`gallery_page_size`); one global voice player with speed and seek; failed attachments retry. Composer still uses chips (DS-13). Stickers/GIFs wait for 7.3. Playwright send-photo/voice/file waits for phase DoD. |
 | 7.3 | Sticker packs and custom emoji (NR-28), GIF proxy (NR-29) | Packs with S-19 quota attribution (system packs charge the global bucket; first sticker add charges, send reuses the blob). GIF search via Tenor behind `gif_search` (default off; flag-off 404). Composer opens the picker from `/sticker` and `/gif` only (DS-13). Admin pack UI waits for 12.6. Playwright send-sticker/GIF waits for phase DoD. |
+| 7.4 | Voice transcription (NR-33), location/contact rendering (NR-30, NR-31), export jobs (NR-32) | Groq `whisper-large-v3` via a thin AI registry, low-priority queue, `voice_transcription` default on; quota/provider errors set `transcript_status=failed` with UI retry (F-17). OSM tiles with attribution and a client request cap; in-app contacts open the profile layer. `export_jobs` API/job charges requester quota, TTL 7 days, honours `restrict_forwarding`, excludes left memberships. Export UI waits for 12.3; import is not built (S-23 / NR-F8). Playwright send-photo/voice/file/sticker/GIF/location waits for phase DoD. |
 
 ---
 

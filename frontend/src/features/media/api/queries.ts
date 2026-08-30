@@ -1,10 +1,12 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { conversationKeys, messageKeys } from "@/features/conversations/api/keys";
 import {
   getAttachmentDownload,
   getAttachmentThumbnail,
   listConversationMedia,
   listStickerPacks,
   retryAttachment,
+  retryTranscript,
   searchGifs,
 } from "@/features/media/api/http";
 import { mediaKeys } from "@/features/media/api/keys";
@@ -58,6 +60,18 @@ export function useRetryAttachment() {
     mutationFn: retryAttachment,
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: mediaKeys.all });
+    },
+  });
+}
+
+export function useRetryTranscript() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: retryTranscript,
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: mediaKeys.all });
+      void client.invalidateQueries({ queryKey: messageKeys.all });
+      void client.invalidateQueries({ queryKey: conversationKeys.all });
     },
   });
 }

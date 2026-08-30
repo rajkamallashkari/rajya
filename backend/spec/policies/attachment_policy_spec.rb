@@ -8,6 +8,7 @@ RSpec.describe AttachmentPolicy do
 
     expect(described_class.new(user.account, attachment)).to be_show
     expect(described_class.new(user.account, attachment)).to be_retry
+    expect(described_class.new(user.account, attachment)).to be_transcribe
   end
 
   it "denies a stranger download and retry (BR-94)" do
@@ -18,6 +19,7 @@ RSpec.describe AttachmentPolicy do
 
     expect(described_class.new(stranger.account, attachment)).not_to be_show
     expect(described_class.new(stranger.account, attachment)).not_to be_retry
+    expect(described_class.new(stranger.account, attachment)).not_to be_transcribe
     expect(described_class.new(nil, attachment)).not_to be_show
   end
 

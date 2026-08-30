@@ -9,10 +9,19 @@ RSpec.describe Attachment do
   end
 
   it "identifies voice notes and PDFs" do
-    voice = described_class.new(kind: "voice", content_type: "audio/ogg", byte_size: 1, processing_status: "pending")
-    pdf = described_class.new(kind: "file", content_type: "application/pdf", byte_size: 1, processing_status: "pending")
+    voice = build(:attachment, kind: "voice", content_type: "audio/ogg")
+    pdf = build(:attachment, kind: "file", content_type: "application/pdf")
 
     expect(voice).to be_voice
     expect(pdf).to be_pdf
+  end
+
+  it "accepts pending transcripts and rejects unknown statuses" do
+    voice = build(:attachment, kind: "voice", content_type: "audio/ogg")
+    expect(voice).to be_valid
+    voice.transcript_status = "pending"
+    expect(voice).to be_valid
+    voice.transcript_status = "nope"
+    expect(voice).not_to be_valid
   end
 end

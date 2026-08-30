@@ -1,10 +1,15 @@
 import { type ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { AppProviders } from "@/app/providers";
 import { GalleryFeatureSections, galleryFeatureAction } from "@/app/dev/gallery-features";
+import { resetOsmTileBudget } from "@/features/messages/model/osm-tiles";
 import { en } from "@/shared/lib/i18n/catalog";
+
+afterEach(() => {
+  resetOsmTileBudget();
+});
 
 function Section({ sectionKey, children }: { sectionKey: string; children: ReactNode }) {
   return (
@@ -58,6 +63,7 @@ describe("GalleryFeatureSections", () => {
     );
     await user.click(screen.getByRole("button", { name: en.ui.close }));
     await user.click(screen.getByRole("button", { name: en.location.open }));
+    await user.click(screen.getByRole("button", { name: en.transcript.retry }));
     await user.click(screen.getByRole("button", { name: en.contact.open_profile }));
     await user.click(screen.getByRole("button", { name: en.contact.message }));
     await user.click(screen.getByRole("option", { name: /search/i }));

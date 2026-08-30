@@ -17,7 +17,7 @@ import {
   isImageAttachment,
   isVisualAttachment,
 } from "@/features/media/model/constants";
-import { getAttachmentDownload, listConversationMedia, listStickerPacks, searchGifs } from "@/features/media/api/http";
+import { getAttachmentDownload, listConversationMedia, listStickerPacks, retryAttachment, retryTranscript, searchGifs } from "@/features/media/api/http";
 import { mediaKeys } from "@/features/media/api/keys";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { testSession } from "@/test/access-session";
@@ -336,6 +336,8 @@ describe("media http", () => {
   it("unwraps download and gallery pages", async () => {
     setAccessSession(testSession());
     await expect(getAttachmentDownload(1)).resolves.toMatchObject({ url: "https://media.test/file" });
+    await expect(retryAttachment(1)).resolves.toMatchObject({ processing_status: "pending" });
+    await expect(retryTranscript(1)).resolves.toMatchObject({ transcript_status: "pending" });
     await expect(listConversationMedia(1, "images", 1)).resolves.toMatchObject({
       meta: { has_more: true },
     });

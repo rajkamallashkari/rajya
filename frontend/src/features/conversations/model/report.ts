@@ -17,6 +17,4 @@ export interface SessionView {
   userAgent: string | null;
 }
 
-export const LOCATION_REQUEST_CAP = 8;
-
 export type TranscriptStatus = "pending" | "ready" | "failed";

@@ -32,6 +32,7 @@ class Account < ApplicationRecord
                                     inverse_of: :created_by_account, dependent: :destroy
   has_many :join_requests, dependent: :destroy
   has_many :reports, foreign_key: :reporter_account_id, inverse_of: :reporter_account, dependent: :destroy
+  has_many :export_jobs, dependent: :destroy
   has_many :sticker_packs, foreign_key: :owner_account_id, inverse_of: :owner_account, dependent: :destroy
   has_many :requested_bots, class_name: "BotRequest", foreign_key: :requester_account_id,
                              inverse_of: :requester_account, dependent: :destroy

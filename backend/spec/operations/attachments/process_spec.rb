@@ -84,9 +84,21 @@ RSpec.describe Attachments::Process do
     attachment = attach_blob(content_type: "audio/ogg", filename: "v.ogg", io: StringIO.new("ogg"))
     attachment.update!(kind: "voice", duration_ms: 1_000, waveform: [ 0.1, 0.2 ])
 
-    described_class.call(attachment: attachment)
+    expect { described_class.call(attachment: attachment) }
+      .to have_enqueued_job(Attachments::TranscribeJob).with(attachment.id)
 
     expect(attachment.reload.processing_status).to eq("ready")
+    expect(attachment.transcript_status).to eq("pending")
+  end
+
+  it "does not enqueue transcription when the flag is off" do
+    create(:feature_flag, key: "voice_transcription",
+                          description: FeatureFlagRegistry.description_for(:voice_transcription), enabled: false)
+    attachment = attach_blob(content_type: "audio/ogg", filename: "v.ogg", io: StringIO.new("ogg"))
+    attachment.update!(kind: "voice", duration_ms: 1_000, waveform: [ 0.1, 0.2 ])
+
+    expect { described_class.call(attachment: attachment) }.not_to have_enqueued_job(Attachments::TranscribeJob)
+    expect(attachment.reload.transcript_status).to be_nil
   end
 
   it "probes audio duration when ffmpeg is present" do

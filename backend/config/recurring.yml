@@ -29,6 +29,10 @@ production:
     class: StorageQuotas::OrphanedBlobCleanupJob
     queue: background
     schedule: every day at 4:10am
+  purge_expired_exports:
+    class: ExportJobs::PurgeExpiredJob
+    queue: background
+    schedule: every day at 4:25am
   check_storage_bucket_health:
     class: StorageBuckets::HealthJob
     queue: background

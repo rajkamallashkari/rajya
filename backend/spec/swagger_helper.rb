@@ -203,7 +203,10 @@ RSpec.configure do |config|
                 },
                 processing_status: { type: :string, enum: %w[pending ready failed] },
                 processing_error: { type: :string, nullable: true },
-                filename: { type: :string, nullable: true }
+                filename: { type: :string, nullable: true },
+                transcript: { type: :string, nullable: true },
+                transcript_status: { type: :string, enum: %w[pending ready failed], nullable: true },
+                transcript_language: { type: :string, nullable: true }
               }
             },
             GalleryAttachment: {
@@ -283,6 +286,27 @@ RSpec.configure do |config|
               required: %w[ok],
               properties: {
                 ok: { type: :boolean }
+              }
+            },
+            ExportJob: {
+              type: :object,
+              required: %w[id format include_media status expires_at created_at],
+              properties: {
+                id: { type: :integer },
+                conversation_id: { type: :integer, nullable: true },
+                format: { type: :string, enum: %w[json txt html] },
+                include_media: { type: :boolean },
+                status: { type: :string, enum: %w[pending processing ready failed] },
+                error_message: { type: :string, nullable: true },
+                expires_at: { type: :string, format: :"date-time" },
+                created_at: { type: :string, format: :"date-time" }
+              }
+            },
+            ExportJobList: {
+              type: :object,
+              required: %w[export_jobs],
+              properties: {
+                export_jobs: { type: :array, items: { "$ref" => "#/components/schemas/ExportJob" } }
               }
             },
             MessagePreview: {

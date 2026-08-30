@@ -145,5 +145,59 @@ RSpec.describe "Attachment retry", type: :request do
     end
   end
 end
+
+RSpec.describe "Attachment transcribe", type: :request do
+  path "/api/v1/attachments/{id}/transcribe" do
+    post "Retry a failed voice-note transcript" do
+      tags "Media"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+
+      response "200", "requeued" do
+        schema "$ref" => "#/components/schemas/Attachment"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:attachment) do
+          create(
+            :attachment,
+            message: create(:message, conversation: conversation, sender_account: user.account),
+            kind: "voice",
+            content_type: "audio/ogg",
+            transcript_status: "failed"
+          )
+        end
+        let(:id) { attachment.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("transcript_status")).to eq("pending")
+        end
+      end
+
+      response "403", "non-member refused" do
+        schema "$ref" => "#/components/schemas/Error"
+        let(:owner) { create(:user) }
+        let(:stranger) { create(:user) }
+        let(:conversation) { create_direct_between(owner.account, create(:account)) }
+        let(:attachment) do
+          create(
+            :attachment,
+            message: create(:message, conversation: conversation, sender_account: owner.account),
+            kind: "voice",
+            content_type: "audio/ogg",
+            transcript_status: "failed"
+          )
+        end
+        let(:id) { attachment.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(stranger)}" }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).dig("error", "code")).to eq("forbidden")
+        end
+      end
+    end
+  end
+end
 # rubocop:enable RSpec/EmptyExampleGroup, RSpec/MultipleDescribes, RSpec/MultipleMemoizedHelpers
 # rubocop:enable RSpec/VariableName

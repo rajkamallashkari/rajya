@@ -17,6 +17,12 @@ module Api
         render_result(Attachments::Retry.call(attachment: attachment), serializer: AttachmentResource)
       end
 
+      def transcribe
+        attachment = Attachment.find(params[:id])
+        authorize attachment, :transcribe?
+        render_result(Attachments::RetryTranscript.call(attachment: attachment), serializer: AttachmentResource)
+      end
+
       private
 
       def render_media(variant)

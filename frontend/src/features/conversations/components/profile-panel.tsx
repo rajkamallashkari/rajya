@@ -17,12 +17,34 @@ import { Avatar } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
 import { ListView } from "@/shared/ui/list-view";
 
-export function ProfilePanel({ conversationId }: { conversationId: string }): ReactNode {
+export function ProfilePanel({
+  accountId,
+  conversationId,
+}: {
+  accountId?: string;
+  conversationId: string;
+}): ReactNode {
+  if (accountId) {
+    return <AccountContactProfile accountId={accountId} />;
+  }
   const liveId = parseConversationId(conversationId);
   if (liveId == null) {
     return <DemoProfile conversationId={conversationId} />;
   }
   return <LiveProfile conversationId={liveId} />;
+}
+
+function AccountContactProfile({ accountId }: { accountId: string }): ReactNode {
+  const { t } = useTranslation();
+  const id = Number(accountId);
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-[var(--surface-panel)]" data-profile-panel="">
+      <LayerHeader title={t("contact.open_profile")} />
+      <div className="px-[var(--space-list-x)] py-[var(--space-4)]">
+        {Number.isFinite(id) ? <AccountProfile accountId={id} /> : null}
+      </div>
+    </div>
+  );
 }
 
 function DemoProfile({ conversationId }: { conversationId: string }): ReactNode {

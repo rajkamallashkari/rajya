@@ -4,6 +4,7 @@ import { abortAllLayers } from "@/shared/lib/navigation/layer-stack";
 export type LayerKind = "conversation" | "profile" | "gallery";
 
 export interface LayerEntry {
+  accountId?: string;
   conversationId: string;
   focusMessageId?: string;
   id: string;

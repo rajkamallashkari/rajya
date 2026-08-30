@@ -427,8 +427,8 @@
   "export_artefact_ttl": {
     "type": "integer",
     "category": "media",
-    "default": 86400,
-    "description": "Seconds an export artefact remains downloadable (NR-32).",
+    "default": 604800,
+    "description": "Seconds an export artefact remains downloadable (NR-32, 7 days).",
     "min": 60,
     "max": 2592000,
     "allow_nil": false
@@ -449,6 +449,42 @@
     "description": "Maximum Tenor GIF search results returned by the proxy (NR-29).",
     "min": 1,
     "max": 50,
+    "allow_nil": false
+  },
+  "location_tile_request_cap": {
+    "type": "integer",
+    "category": "media",
+    "default": 8,
+    "description": "Maximum OpenStreetMap tile requests a client may make (NR-30).",
+    "min": 1,
+    "max": 32,
+    "allow_nil": false
+  },
+  "osm_tile_host": {
+    "type": "string",
+    "category": "media",
+    "default": "tile.openstreetmap.org",
+    "description": "OpenStreetMap tile host for static location cards (NR-30).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "osm_tile_size": {
+    "type": "integer",
+    "category": "media",
+    "default": 256,
+    "description": "Pixel size of one OpenStreetMap tile (NR-30).",
+    "min": 64,
+    "max": 512,
+    "allow_nil": false
+  },
+  "osm_tile_zoom": {
+    "type": "integer",
+    "category": "media",
+    "default": 15,
+    "description": "Zoom level for static location-card tiles (NR-30).",
+    "min": 1,
+    "max": 19,
     "allow_nil": false
   },
   "gif_search_min_query_length": {
@@ -771,6 +807,53 @@
     "default": 2,
     "description": "Fallback provider attempts after the primary fails.",
     "min": 0,
+    "max": 10,
+    "allow_nil": false
+  },
+  "ai_transcribe_models": {
+    "type": "array",
+    "category": "ai",
+    "default": [
+      "groq/whisper-large-v3"
+    ],
+    "description": "Ordered transcribe models (provider/model) for voice notes (NR-33).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "groq_api_key": {
+    "type": "string",
+    "category": "ai",
+    "default": "",
+    "description": "Groq API key for whisper transcription; blank fails visibly (NR-33).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "groq_host": {
+    "type": "string",
+    "category": "ai",
+    "default": "api.groq.com",
+    "description": "Groq API host for whisper transcription (NR-33).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "groq_transcribe_path": {
+    "type": "string",
+    "category": "ai",
+    "default": "/openai/v1/audio/transcriptions",
+    "description": "Groq whisper transcription path (NR-33).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "transcribe_retry_attempts": {
+    "type": "integer",
+    "category": "ai",
+    "default": 2,
+    "description": "Retries for unexpected transcription job errors before a visible fail (NR-33).",
+    "min": 1,
     "max": 10,
     "allow_nil": false
   },

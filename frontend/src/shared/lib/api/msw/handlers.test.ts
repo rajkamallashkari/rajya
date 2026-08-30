@@ -10,6 +10,7 @@ const expectedPaths = [
   "/api/v1/attachments/{id}/download",
   "/api/v1/attachments/{id}/retry",
   "/api/v1/attachments/{id}/thumbnail",
+  "/api/v1/attachments/{id}/transcribe",
   "/api/v1/blocks",
   "/api/v1/blocks/{id}",
   "/api/v1/contact_nicknames",
@@ -42,6 +43,9 @@ const expectedPaths = [
   "/api/v1/conversations/{id}/receipts",
   "/api/v1/conversations/{id}/unread",
   "/api/v1/direct_uploads",
+  "/api/v1/export_jobs",
+  "/api/v1/export_jobs/{id}",
+  "/api/v1/export_jobs/{id}/download",
   "/api/v1/gifs",
   "/api/v1/invites/{token}",
   "/api/v1/invites/{token}/join",
@@ -937,5 +941,19 @@ describe("MSW handlers", () => {
     expect(mediaPage.data?.meta.has_more).toBe(false);
     const retried = await client.POST("/api/v1/attachments/{id}/retry", { params: { path: { id: 1 } } });
     expect(retried.data?.processing_status).toBe("pending");
+    const transcribed = await client.POST("/api/v1/attachments/{id}/transcribe", {
+      params: { path: { id: 1 } },
+    });
+    expect(transcribed.data?.transcript_status).toBe("pending");
+    const exportsListed = await client.GET("/api/v1/export_jobs");
+    expect(exportsListed.data?.export_jobs).toHaveLength(1);
+    const exportCreated = await client.POST("/api/v1/export_jobs", { body: { format: "json" } });
+    expect(exportCreated.response.status).toBe(201);
+    const exportShown = await client.GET("/api/v1/export_jobs/{id}", { params: { path: { id: 1 } } });
+    expect(exportShown.data?.id).toBe(1);
+    const exportUrl = await client.GET("/api/v1/export_jobs/{id}/download", {
+      params: { path: { id: 1 } },
+    });
+    expect(exportUrl.data?.url).toContain("export");
   });
 });

@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetOsmTileBudget } from "@/features/messages/model/osm-tiles";
 import {
   bindNumericId,
   ConversationThread,
@@ -26,11 +27,16 @@ import {
 } from "@/shared/lib/api/msw/messaging-store";
 import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
-import { useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { resetLayerStore, useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { testSession } from "@/test/access-session";
 import { testCable } from "@/test/fake-cable";
 import { server } from "@/test/msw";
 import { THREAD_LOAD_OLDER_PX } from "@/features/conversations/model/constants";
+
+afterEach(() => {
+  resetOsmTileBudget();
+  resetLayerStore();
+});
 
 describe("conversation layers", () => {
   it("sends, edits the last message, and opens the profile on the demo path", async () => {
@@ -222,6 +228,12 @@ describe("conversation layers", () => {
     expect(await screen.findByText("Gate?")).toBeInTheDocument();
     expect(document.querySelector("[data-location-card]")).not.toBeNull();
     expect(document.querySelector("[data-contact-card]")).not.toBeNull();
+    const contactCard = document.querySelector("[data-contact-card]");
+    if (!contactCard) {
+      throw new Error("missing contact card");
+    }
+    await user.click(within(contactCard as HTMLElement).getByRole("button", { name: en.contact.open_profile }));
+    expect(useLayerStore.getState().layers.some((layer) => layer.id === "account:2")).toBe(true);
     await user.click(screen.getByRole("button", { name: "Yes" }));
     await user.click(screen.getByRole("button", { name: en.polls.results }));
     expect(await screen.findByText(en.polls.results_title)).toBeInTheDocument();
@@ -335,6 +347,19 @@ describe("conversation layers", () => {
       </AppProviders>,
     );
     expect(await screen.findByText(en.shell.profile_subtitle)).toBeInTheDocument();
+    setAccessSession(testSession());
+    render(
+      <AppProviders>
+        <ProfilePanel accountId="1" conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText(en.contact.open_profile)).toBeInTheDocument();
+    render(
+      <AppProviders>
+        <ProfilePanel accountId="nope" conversationId="1" />
+      </AppProviders>,
+    );
+    expect(document.querySelector("[data-profile-panel]")).not.toBeNull();
   });
 
   it("shows invite management on a live group and a profile QR on a direct", async () => {

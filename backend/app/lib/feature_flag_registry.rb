@@ -24,6 +24,7 @@ module FeatureFlagRegistry
     phone_auth
     unified_identity
     voice_notes
+    voice_transcription
   ].freeze
 
   DESCRIPTIONS = {
@@ -55,7 +56,8 @@ module FeatureFlagRegistry
     ai_smart_reply: "On-demand reply suggestions.",
     ai_translate: "Per-message translation.",
     webrtc_calls: "P2P audio/video via Cable signaling.",
-    gif_search: "Server-side Tenor GIF search proxy (NR-29)."
+    gif_search: "Server-side Tenor GIF search proxy (NR-29).",
+    voice_transcription: "Voice-note transcription via Groq whisper (NR-33)."
   }.freeze
 
   DEFINITIONS = DESCRIPTIONS.keys.index_with do |key|

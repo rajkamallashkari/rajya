@@ -17,6 +17,8 @@ RSpec.describe AttachmentResource do
 
     expect(json.fetch("processing_error")).to be_nil
     expect(json.fetch("filename")).to be_nil
+    expect(json.fetch("transcript")).to be_nil
+    expect(json.fetch("transcript_status")).to be_nil
   end
 
   it "exposes the attached filename" do

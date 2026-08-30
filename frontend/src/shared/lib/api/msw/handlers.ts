@@ -341,10 +341,50 @@ export const handlerMap = {
       processing_status: "pending",
     }),
   ),
+  "/api/v1/attachments/{id}/transcribe": http.post("*/api/v1/attachments/:id/transcribe", () =>
+    HttpResponse.json({
+      byte_size: 1,
+      content_type: "audio/ogg",
+      id: 1,
+      kind: "voice",
+      processing_status: "ready",
+      transcript_status: "pending",
+    }),
+  ),
   "/api/v1/direct_uploads": http.post("*/api/v1/direct_uploads", () =>
     HttpResponse.json({
       blob_signed_id: "signed",
       skip_upload: true,
+    }),
+  ),
+  "/api/v1/export_jobs": http.all("*/api/v1/export_jobs", ({ request }) => {
+    const job = {
+      created_at: MESSAGE_STAMP,
+      expires_at: "2099-01-01T00:00:00.000Z",
+      format: "json" as const,
+      id: 1,
+      include_media: false,
+      status: "pending" as const,
+    };
+    if (request.method === "POST") {
+      return HttpResponse.json(job, { status: 201 });
+    }
+    return HttpResponse.json({ export_jobs: [job] });
+  }),
+  "/api/v1/export_jobs/{id}": http.get("*/api/v1/export_jobs/:id", () =>
+    HttpResponse.json({
+      created_at: MESSAGE_STAMP,
+      expires_at: "2099-01-01T00:00:00.000Z",
+      format: "json",
+      id: 1,
+      include_media: false,
+      status: "pending",
+    }),
+  ),
+  "/api/v1/export_jobs/{id}/download": http.get("*/api/v1/export_jobs/:id/download", () =>
+    HttpResponse.json({
+      expires_at: "2099-01-01T00:00:00.000Z",
+      url: "https://media.test/export",
     }),
   ),
   "/api/v1/gifs": http.get("*/api/v1/gifs", ({ request }) => {

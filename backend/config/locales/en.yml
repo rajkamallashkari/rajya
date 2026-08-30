@@ -149,6 +149,12 @@ en:
         body: "Hi %{name}, open the link below to set a new password. It expires in %{minutes} minutes and can only be used once."
         footer: "If you didn't request a password reset, you can safely ignore this email. Your password will not be changed."
 
+  export:
+    errors:
+      expired: "This export has expired."
+      quota_exceeded: "Not enough storage for this export."
+      unreadable: "This export could not be built."
+
   health:
     redis_unexpected: "Redis did not answer PONG."
     solid_queue_stale: "No Solid Queue process has heartbeated recently."

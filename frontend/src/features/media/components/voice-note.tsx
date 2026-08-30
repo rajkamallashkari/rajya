@@ -4,7 +4,8 @@ import { Pause, Play } from "lucide-react";
 import { formatVoiceDuration } from "@/features/composer/model/waveform";
 import { drawWaveform } from "@/features/composer/model/waveform";
 import { displayPeaks } from "@/features/composer/model/waveform";
-import { useMediaUrl } from "@/features/media/api/queries";
+import { TranscriptBlock } from "@/features/messages/components/transcript-block";
+import { useMediaUrl, useRetryTranscript } from "@/features/media/api/queries";
 import { VOICE_MAX_WIDTH_PX, VOICE_MIN_WIDTH_PX, type Attachment } from "@/features/media/model/constants";
 import { playbackRateLabel, seekFraction, voiceProgress } from "@/features/media/model/voice";
 import { useVoicePlayerStore } from "@/features/media/store/voice-player";
@@ -19,6 +20,7 @@ export function VoiceNote({
   messageId: string;
 }) {
   const { t } = useTranslation();
+  const retryTranscript = useRetryTranscript();
   const url = useMediaUrl(attachment.id, "original", attachment.processing_status === "ready");
   const activeId = useVoicePlayerStore((state) => state.activeId);
   const cycleSpeed = useVoicePlayerStore((state) => state.cycleSpeed);
@@ -98,6 +100,18 @@ export function VoiceNote({
           </Button>
           <span>{formatVoiceDuration(totalSec * 1000)}</span>
         </div>
+        {attachment.transcript_status ? (
+          <TranscriptBlock
+            language={attachment.transcript_language ?? null}
+            onRetry={
+              attachment.transcript_status === "failed"
+                ? () => retryTranscript.mutate(attachment.id)
+                : undefined
+            }
+            status={attachment.transcript_status}
+            text={attachment.transcript ?? null}
+          />
+        ) : null}
       </div>
     </div>
   );

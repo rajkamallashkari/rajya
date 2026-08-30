@@ -1,6 +1,6 @@
 class AttachmentResource < ApplicationResource
   attributes :id, :kind, :content_type, :byte_size, :width, :height, :duration_ms, :blurhash, :waveform,
-             :processing_status
+             :processing_status, :transcript, :transcript_status, :transcript_language
 
   attribute :processing_error do
     next if object.processing_error.blank?

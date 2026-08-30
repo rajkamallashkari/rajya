@@ -13,6 +13,7 @@ class Conversation < ApplicationRecord
   has_many :scheduled_messages, dependent: :destroy
   has_many :group_invites, dependent: :destroy
   has_many :join_requests, dependent: :destroy
+  has_many :export_jobs, dependent: :destroy
 
   validates :kind, presence: true, inclusion: { in: KINDS }
   validates :last_activity_at, presence: true

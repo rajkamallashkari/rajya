@@ -285,8 +285,12 @@ CREATE TABLE public.attachments (
     storage_bucket_id bigint,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    transcript text,
+    transcript_status character varying,
+    transcript_language character varying,
     CONSTRAINT ck_attachments_kind CHECK (((kind)::text = ANY ((ARRAY['image'::character varying, 'video'::character varying, 'audio'::character varying, 'voice'::character varying, 'file'::character varying])::text[]))),
-    CONSTRAINT ck_attachments_processing_status CHECK (((processing_status)::text = ANY ((ARRAY['pending'::character varying, 'ready'::character varying, 'failed'::character varying])::text[])))
+    CONSTRAINT ck_attachments_processing_status CHECK (((processing_status)::text = ANY ((ARRAY['pending'::character varying, 'ready'::character varying, 'failed'::character varying])::text[]))),
+    CONSTRAINT ck_attachments_transcript_status CHECK (((transcript_status IS NULL) OR ((transcript_status)::text = ANY ((ARRAY['pending'::character varying, 'ready'::character varying, 'failed'::character varying])::text[]))))
 );
 
 
@@ -753,6 +757,46 @@ CREATE SEQUENCE public.conversations_id_seq
 --
 
 ALTER SEQUENCE public.conversations_id_seq OWNED BY public.conversations.id;
+
+
+--
+-- Name: export_jobs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.export_jobs (
+    id bigint NOT NULL,
+    account_id bigint NOT NULL,
+    conversation_id bigint,
+    format character varying NOT NULL,
+    include_media boolean DEFAULT false NOT NULL,
+    status character varying DEFAULT 'pending'::character varying NOT NULL,
+    blob_id bigint,
+    error_message character varying,
+    expires_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT ck_export_jobs_format CHECK (((format)::text = ANY ((ARRAY['json'::character varying, 'txt'::character varying, 'html'::character varying])::text[]))),
+    CONSTRAINT ck_export_jobs_status CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'processing'::character varying, 'ready'::character varying, 'failed'::character varying])::text[])))
+);
+
+
+--
+-- Name: export_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.export_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: export_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.export_jobs_id_seq OWNED BY public.export_jobs.id;
 
 
 --
@@ -2550,6 +2594,13 @@ ALTER TABLE ONLY public.conversations ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: export_jobs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.export_jobs ALTER COLUMN id SET DEFAULT nextval('public.export_jobs_id_seq'::regclass);
+
+
+--
 -- Name: feature_flags id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3029,6 +3080,14 @@ ALTER TABLE ONLY public.conversation_memberships
 
 ALTER TABLE ONLY public.conversations
     ADD CONSTRAINT conversations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: export_jobs export_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.export_jobs
+    ADD CONSTRAINT export_jobs_pkey PRIMARY KEY (id);
 
 
 --
@@ -3887,6 +3946,34 @@ CREATE INDEX index_conversations_on_last_activity_at ON public.conversations USI
 
 
 --
+-- Name: index_export_jobs_on_account_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_export_jobs_on_account_id ON public.export_jobs USING btree (account_id);
+
+
+--
+-- Name: index_export_jobs_on_blob_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_export_jobs_on_blob_id ON public.export_jobs USING btree (blob_id);
+
+
+--
+-- Name: index_export_jobs_on_conversation_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_export_jobs_on_conversation_id ON public.export_jobs USING btree (conversation_id);
+
+
+--
+-- Name: index_export_jobs_on_expires_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_export_jobs_on_expires_at ON public.export_jobs USING btree (expires_at);
+
+
+--
 -- Name: index_feature_flags_on_key; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4722,6 +4809,30 @@ ALTER TABLE ONLY public.conversations
 
 
 --
+-- Name: export_jobs fk_rails_export_jobs_account; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.export_jobs
+    ADD CONSTRAINT fk_rails_export_jobs_account FOREIGN KEY (account_id) REFERENCES public.accounts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: export_jobs fk_rails_export_jobs_blob; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.export_jobs
+    ADD CONSTRAINT fk_rails_export_jobs_blob FOREIGN KEY (blob_id) REFERENCES public.active_storage_blobs(id) ON DELETE SET NULL;
+
+
+--
+-- Name: export_jobs fk_rails_export_jobs_conversation; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.export_jobs
+    ADD CONSTRAINT fk_rails_export_jobs_conversation FOREIGN KEY (conversation_id) REFERENCES public.conversations(id) ON DELETE CASCADE;
+
+
+--
 -- Name: solid_queue_ready_executions fk_rails_81fcbd66af; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5104,6 +5215,7 @@ ALTER TABLE ONLY public.message_link_previews
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260830235000'),
 ('20260830223100'),
 ('20260830203400'),
 ('20260830193700'),

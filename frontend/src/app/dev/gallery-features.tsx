@@ -203,7 +203,7 @@ export function GalleryFeatureSections({
         <div className="flex flex-col gap-[var(--space-3)]">
           <TranscriptBlock language={null} status="pending" text={null} />
           <TranscriptBlock language="en" status="ready" text={t("gallery.messages.body")} />
-          <TranscriptBlock language={null} status="failed" text={null} />
+          <TranscriptBlock language={null} onRetry={galleryFeatureAction} status="failed" text={null} />
         </div>
       </Section>
 

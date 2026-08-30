@@ -119,7 +119,12 @@ export function AppShell() {
               if (layer.kind === "gallery") {
                 return <MediaGalleryPanel conversationId={layer.conversationId} />;
               }
-              return <ProfilePanel conversationId={layer.conversationId} />;
+              return (
+                <ProfilePanel
+                  accountId={layer.accountId}
+                  conversationId={layer.conversationId}
+                />
+              );
             }}
           />
         </ListErrorBoundary>

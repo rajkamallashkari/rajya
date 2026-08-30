@@ -34,6 +34,16 @@ export async function retryAttachment(id: number) {
   );
 }
 
+export async function retryTranscript(id: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/attachments/{id}/transcribe", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "transcript_retry_failed",
+  );
+}
+
 export async function listConversationMedia(
   conversationId: number,
   kind: GalleryKind,

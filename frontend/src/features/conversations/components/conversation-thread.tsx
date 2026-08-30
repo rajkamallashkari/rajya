@@ -329,6 +329,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         ref={scroller}
       >
         <ThreadMessages
+          conversationId={conversationId}
           locale={i18n.language}
           messages={messages}
           onOpenMenu={(id, point) => setMenu({ id, x: point.clientX, y: point.clientY })}
@@ -473,6 +474,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
 }
 
 function ThreadMessages({
+  conversationId,
   locale,
   messages,
   onOpenMenu,
@@ -482,6 +484,7 @@ function ThreadMessages({
   untitled,
   viewerId,
 }: {
+  conversationId: number;
   locale: string;
   messages: Message[];
   onOpenMenu: (id: number, point: { clientX: number; clientY: number }) => void;
@@ -492,6 +495,7 @@ function ThreadMessages({
   viewerId: number;
 }): ReactNode {
   const { t } = useTranslation();
+  const pushLayer = useLayerStore((state) => state.pushLayer);
   const deleted = t("messages.deleted");
   const runs = useMemo(() => {
     const groupable: Array<GroupableMessage & { message: Message }> = messages.map((message) => ({
@@ -552,6 +556,15 @@ function ThreadMessages({
                 poll: item.message.poll ? pollViewFromApi(item.message.poll) : undefined,
                 status: tickStatus(item.message),
               }))}
+              onOpenContactProfile={(accountId, name) =>
+                pushLayer({
+                  accountId,
+                  conversationId: String(conversationId),
+                  id: `account:${accountId}`,
+                  kind: "profile",
+                  title: name,
+                })
+              }
               onOpenMenu={bindNumericId(onOpenMenu)}
               onOpenPollResults={bindNumericId(onOpenPollResults)}
               onVote={bindNumericId(onVote)}

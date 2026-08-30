@@ -1,12 +1,18 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReactionDetailsSheet } from "./reaction-details-sheet";
 import { SelectionToolbar } from "./selection-toolbar";
 import { LocationCard } from "./location-card";
 import { ContactCard } from "./contact-card";
 import { TranscriptBlock } from "./transcript-block";
+import { remainingOsmTileBudget, resetOsmTileBudget, tilesForLocation } from "@/features/messages/model/osm-tiles";
 import { en } from "@/shared/lib/i18n/catalog";
+
+afterEach(() => {
+  resetOsmTileBudget();
+  vi.unstubAllGlobals();
+});
 
 describe("ReactionDetailsSheet", () => {
   it("groups reactions and falls back when the tab disappears", async () => {
@@ -82,6 +88,16 @@ describe("cards", () => {
       <LocationCard location={{ accuracyM: null, label: null, latitude: 0, longitude: 0 }} />,
     );
     expect(screen.getByText(en.location.attribution)).toBeInTheDocument();
+    const open = vi.fn();
+    vi.stubGlobal("open", open);
+    await user.click(screen.getByRole("button", { name: en.location.open }));
+    expect(open).toHaveBeenCalled();
+
+    tilesForLocation(40, 40, remainingOsmTileBudget());
+    rerender(
+      <LocationCard location={{ accuracyM: null, label: null, latitude: -40, longitude: -40 }} />,
+    );
+    expect(document.querySelector("[data-tile-count='0']")).not.toBeNull();
 
     const onMessage = vi.fn();
     const onProfile = vi.fn();
@@ -99,6 +115,8 @@ describe("cards", () => {
     );
     await user.click(screen.getByRole("button", { name: en.contact.open_profile }));
     await user.click(screen.getByRole("button", { name: en.contact.message }));
+    expect(onProfile).toHaveBeenCalled();
+    expect(onMessage).toHaveBeenCalled();
     rerender(
       <ContactCard
         contact={{ contactAccountId: null, displayName: "Ext", email: null, phone: null }}
@@ -114,7 +132,12 @@ describe("cards", () => {
     ).toBeInTheDocument();
     rerender(<TranscriptBlock language={null} status="ready" text={null} />);
     expect(screen.getByText(en.transcript.ready)).toBeInTheDocument();
-    rerender(<TranscriptBlock language={null} status="failed" text={null} />);
+    const onRetry = vi.fn();
+    rerender(<TranscriptBlock language={null} onRetry={onRetry} status="failed" text={null} />);
     expect(screen.getByText(en.transcript.failed)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.transcript.retry }));
+    expect(onRetry).toHaveBeenCalled();
+    rerender(<TranscriptBlock language={null} status="failed" text={null} />);
+    expect(screen.queryByRole("button", { name: en.transcript.retry })).toBeNull();
   });
 });

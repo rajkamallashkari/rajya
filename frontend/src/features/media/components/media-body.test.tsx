@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetOsmTileBudget } from "@/features/messages/model/osm-tiles";
 
 vi.mock("@/features/messages/model/highlight", () => ({
   highlightCode: vi.fn().mockResolvedValue(null),
@@ -19,6 +20,10 @@ import { en } from "@/shared/lib/i18n/catalog";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { testSession } from "@/test/access-session";
 import { resetVoicePlayer } from "@/features/media/store/voice-player";
+
+afterEach(() => {
+  resetOsmTileBudget();
+});
 
 const readyImage = (id: number): Attachment => ({
   byte_size: 12,
@@ -263,12 +268,27 @@ describe("standalone bubbles", () => {
             id: 10,
             kind: "voice",
             processing_status: "pending",
+            transcript_status: "failed",
           }}
           messageId="n"
+        />
+        <VoiceNote
+          attachment={{
+            byte_size: 1,
+            content_type: "audio/ogg",
+            id: 14,
+            kind: "voice",
+            processing_status: "ready",
+            transcript: "hello",
+            transcript_language: "en",
+            transcript_status: "ready",
+          }}
+          messageId="ready"
         />
       </AppProviders>,
     );
     expect(document.querySelector("[data-video-bubble]")).not.toBeNull();
+    await userEvent.setup().click(screen.getByRole("button", { name: en.transcript.retry }));
     await waitFor(() => {
       expect(document.querySelector("[data-progressive-stage] img")).not.toBeNull();
     });

@@ -129,6 +129,32 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Error"
+  "/api/v1/attachments/{id}/transcribe":
+    post:
+      summary: Retry a failed voice-note transcript
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: requeued
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Attachment"
+        '403':
+          description: non-member refused
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
   "/api/v1/blocks":
     get:
       summary: List accounts the current account has blocked
@@ -1137,6 +1163,109 @@ paths:
                   type: string
                 content_type:
                   type: string
+  "/api/v1/export_jobs":
+    get:
+      summary: List export jobs
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ExportJobList"
+    post:
+      summary: Create an export job
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: account-wide queued
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ExportJob"
+        '403':
+          description: non-member refused
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversation_id:
+                  type: integer
+                  nullable: true
+                format:
+                  type: string
+                  enum:
+                  - json
+                  - txt
+                  - html
+                include_media:
+                  type: boolean
+  "/api/v1/export_jobs/{id}":
+    get:
+      summary: Show an export job
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: shown
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ExportJob"
+        '403':
+          description: stranger refused
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  "/api/v1/export_jobs/{id}/download":
+    get:
+      summary: Issue a short-lived export URL
+      tags:
+      - Media
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: url issued
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MediaUrl"
+        '403':
+          description: stranger refused
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
   "/api/v1/gifs":
     get:
       summary: Search GIFs through the Tenor proxy
@@ -3376,6 +3505,19 @@ components:
         filename:
           type: string
           nullable: true
+        transcript:
+          type: string
+          nullable: true
+        transcript_status:
+          type: string
+          enum:
+          - pending
+          - ready
+          - failed
+          nullable: true
+        transcript_language:
+          type: string
+          nullable: true
     GalleryAttachment:
       type: object
       required:
@@ -3518,6 +3660,54 @@ components:
       properties:
         ok:
           type: boolean
+    ExportJob:
+      type: object
+      required:
+      - id
+      - format
+      - include_media
+      - status
+      - expires_at
+      - created_at
+      properties:
+        id:
+          type: integer
+        conversation_id:
+          type: integer
+          nullable: true
+        format:
+          type: string
+          enum:
+          - json
+          - txt
+          - html
+        include_media:
+          type: boolean
+        status:
+          type: string
+          enum:
+          - pending
+          - processing
+          - ready
+          - failed
+        error_message:
+          type: string
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+    ExportJobList:
+      type: object
+      required:
+      - export_jobs
+      properties:
+        export_jobs:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ExportJob"
     MessagePreview:
       type: object
       required:

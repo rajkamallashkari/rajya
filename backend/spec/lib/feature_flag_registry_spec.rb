@@ -10,12 +10,14 @@ RSpec.describe FeatureFlagRegistry do
       :notification_preferences, :link_previews, :media_attachments,
       :voice_notes, :edit_messages, :delete_for_everyone, :read_receipts,
       :saved_messages, :ai_rewrite, :ai_summarize, :ai_smart_reply,
-      :ai_translate, :webrtc_calls, :gif_search
+      :ai_translate, :webrtc_calls, :gif_search, :voice_transcription
     )
   end
 
   it "defaults production-live flags on and the rest off" do
     expect(described_class.default_for(:passwordless_auth)).to be(true)
     expect(described_class.default_for(:phone_auth)).to be(true)
+    expect(described_class.default_for(:voice_transcription)).to be(true)
+    expect(described_class.default_for(:gif_search)).to be(false)
   end
 end

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetOsmTileBudget } from "@/features/messages/model/osm-tiles";
 
 vi.mock("@/features/messages/model/highlight", () => ({
   highlightCode: vi.fn().mockResolvedValue(null),
@@ -14,6 +15,10 @@ import { DateDivider } from "./date-divider";
 import { UnreadDivider } from "./unread-divider";
 import { SystemMessage } from "./system-message";
 import { en } from "@/shared/lib/i18n/catalog";
+
+afterEach(() => {
+  resetOsmTileBudget();
+});
 
 describe("TickIndicator", () => {
   it("renders every status", async () => {
@@ -110,6 +115,17 @@ describe("MessageBubble", () => {
     expect(document.querySelector("[data-poll-card]")).not.toBeNull();
     expect(document.querySelector("[data-location-card]")).not.toBeNull();
     expect(document.querySelector("[data-contact-card]")).not.toBeNull();
+    const onOpenContactProfile = vi.fn();
+    rerender(
+      <MessageBubble
+        body=""
+        contacts={[{ contactAccountId: "9", displayName: "Ada", email: null, phone: null }]}
+        onOpenContactProfile={onOpenContactProfile}
+        side="received"
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: en.contact.open_profile }));
+    expect(onOpenContactProfile).toHaveBeenCalledWith("9", "Ada");
 
     rerender(<MessageBubble body="🎉" side="sent" status="read" />);
     expect(document.querySelector("[data-jumbo='true']")).not.toBeNull();

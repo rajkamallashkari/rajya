@@ -22,6 +22,7 @@ export interface GroupMessage {
 export function MessageGroup({
   messages,
   onMentionClick,
+  onOpenContactProfile,
   onOpenMenu,
   onOpenPollResults,
   onRetry,
@@ -32,6 +33,7 @@ export function MessageGroup({
 }: {
   messages: GroupMessage[];
   onMentionClick?: (handle: string) => void;
+  onOpenContactProfile?: (accountId: string, name: string) => void;
   onOpenMenu?: (id: string, point: { clientX: number; clientY: number }) => void;
   onOpenPollResults?: (id: string) => void;
   onRetry?: (id: string) => void;
@@ -73,6 +75,7 @@ export function MessageGroup({
               key={message.id}
               location={message.location}
               onMentionClick={onMentionClick}
+              onOpenContactProfile={onOpenContactProfile}
               onOpenMenu={
                 onOpenMenu ? (point) => onOpenMenu(message.id, point) : undefined
               }

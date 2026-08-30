@@ -37,6 +37,7 @@ Rails.application.routes.draw do
           get :download
           get :thumbnail
           post :retry
+          post :transcribe
         end
       end
       resources :passkeys, only: %i[index update destroy] do
@@ -129,6 +130,9 @@ Rails.application.routes.draw do
       resources :saved_replies, only: %i[index create update destroy]
       resources :sticker_packs, only: %i[index create update destroy] do
         resources :stickers, only: %i[create destroy], controller: "sticker_pack_stickers"
+      end
+      resources :export_jobs, only: %i[index create show] do
+        member { get :download }
       end
       resources :gifs, only: :index
       resources :message_reminders, only: %i[index create update destroy]

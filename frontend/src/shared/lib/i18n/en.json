@@ -640,7 +640,8 @@
     "failed": "Couldn't transcribe this voice note",
     "pending": "Transcribing voice note",
     "ready": "Transcript",
-    "ready_language": "Transcript · {{language}}"
+    "ready_language": "Transcript · {{language}}",
+    "retry": "Retry transcription"
   },
   "slash": {
     "empty": "No commands match",
