@@ -14,7 +14,8 @@ RSpec.describe Settings::Registry do
       :nickname_max_length, :session_last_seen_granularity,
       :search_min_query_length, :search_debounce,
       :poll_min_options, :contacts_per_message, :latitude_min,
-      :rrule_count_max, :rrule_interval_max, :multi_select_cap
+      :rrule_count_max, :rrule_interval_max, :multi_select_cap,
+      :reminder_note_max_length, :saved_reply_shortcut_max_length
     )
   end
 

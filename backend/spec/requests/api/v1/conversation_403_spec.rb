@@ -78,4 +78,36 @@ RSpec.describe "Session 3.1 conversation authorization 403s", type: :request do
       end
     end
   end
+
+  it "returns 403 on conversation pin when organize is denied" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    stub_deny(ConversationPolicy, :organize?)
+    post "/api/v1/conversations/#{conversation.id}/pin", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on conversation unpin when organize is denied" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    stub_deny(ConversationPolicy, :organize?)
+    delete "/api/v1/conversations/#{conversation.id}/pin", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on mark unread when organize is denied" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    stub_deny(ConversationPolicy, :organize?)
+    post "/api/v1/conversations/#{conversation.id}/unread", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 on clear unread when organize is denied" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    stub_deny(ConversationPolicy, :organize?)
+    delete "/api/v1/conversations/#{conversation.id}/unread", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
 end

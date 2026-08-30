@@ -65,6 +65,10 @@ class ConversationPolicy < ApplicationPolicy
     true
   end
 
+  def organize?
+    active_member?
+  end
+
   def start_call?
     active_member? && human? && !channel?
   end

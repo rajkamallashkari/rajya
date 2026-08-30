@@ -262,4 +262,19 @@ describe("Composer", () => {
     fireEvent.keyDown(screen.getByRole("textbox"), { key: "ArrowUp" });
     expect(onEditLast).toHaveBeenCalledTimes(1);
   });
+
+  it("expands a saved-reply shortcut and lists matching slash commands", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <Composer
+        onChange={onChange}
+        onSend={vi.fn()}
+        savedReplies={[{ body: "On my way", id: "1", shortcut: "/omw" }]}
+      />,
+    );
+    await user.type(screen.getByRole("textbox"), "/om");
+    await user.click(screen.getByRole("option"));
+    expect(onChange).toHaveBeenCalledWith("On my way ");
+  });
 });

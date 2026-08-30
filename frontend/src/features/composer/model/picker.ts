@@ -85,6 +85,33 @@ export function filterReplies(items: SavedReplyView[], query: string): SavedRepl
   );
 }
 
+export function expandSavedReplyShortcut(text: string, replies: SavedReplyView[]): string {
+  if (replies.length === 0 || (!text.endsWith(" ") && !text.endsWith("\n"))) {
+    return text;
+  }
+  const delimiter = text.slice(-1);
+  const before = text.slice(0, -1);
+  const parts = before.split(/(\s+)/);
+  const token = parts.at(-1);
+  if (!token) {
+    return text;
+  }
+  const reply = replies.find((item) => item.shortcut.toLowerCase() === token.toLowerCase());
+  if (!reply || token === reply.body) {
+    return text;
+  }
+  parts[parts.length - 1] = reply.body;
+  return `${parts.join("")}${delimiter}`;
+}
+
+export function savedRepliesAsCommands(replies: SavedReplyView[]): SlashCommand[] {
+  return replies.map((reply) => ({
+    description: reply.body,
+    name: reply.shortcut.replace(/^\//, ""),
+    source: "builtin",
+  }));
+}
+
 export interface SlashCommand {
   description: string;
   name: string;

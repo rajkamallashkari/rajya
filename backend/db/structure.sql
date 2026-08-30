@@ -2,6 +2,7 @@
 -- PostgreSQL database dump
 --
 
+
 -- Dumped from database version 17.10 (Debian 17.10-1.pgdg12+1)
 -- Dumped by pg_dump version 17.10 (Debian 17.10-1.pgdg12+1)
 
@@ -679,6 +680,8 @@ CREATE TABLE public.conversation_memberships (
     unread_count integer DEFAULT 0 NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    pinned_at timestamp(6) without time zone,
+    manually_unread_at timestamp(6) without time zone,
     CONSTRAINT ck_memberships_role CHECK (((role)::text = ANY ((ARRAY['member'::character varying, 'admin'::character varying, 'owner'::character varying])::text[]))),
     CONSTRAINT ck_memberships_seen_gte_read CHECK ((last_seen_position >= last_read_position)),
     CONSTRAINT ck_memberships_status CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'left'::character varying, 'removed'::character varying])::text[])))
@@ -1049,6 +1052,41 @@ ALTER SEQUENCE public.message_locations_id_seq OWNED BY public.message_locations
 
 
 --
+-- Name: message_reminders; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.message_reminders (
+    id bigint NOT NULL,
+    account_id bigint NOT NULL,
+    message_id bigint NOT NULL,
+    remind_at timestamp(6) without time zone NOT NULL,
+    note text,
+    completed_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: message_reminders_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.message_reminders_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: message_reminders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.message_reminders_id_seq OWNED BY public.message_reminders.id;
+
+
+--
 -- Name: message_revisions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1104,8 +1142,8 @@ CREATE TABLE public.messages (
     deleted_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    silent boolean DEFAULT false NOT NULL,
     search_vector tsvector GENERATED ALWAYS AS (to_tsvector('simple'::regconfig, COALESCE(body, ''::text))) STORED,
+    silent boolean DEFAULT false NOT NULL,
     CONSTRAINT ck_messages_kind CHECK (((kind)::text = ANY ((ARRAY['text'::character varying, 'system'::character varying, 'image'::character varying, 'video'::character varying, 'audio'::character varying, 'voice'::character varying, 'file'::character varying])::text[]))),
     CONSTRAINT ck_messages_sender_required_unless_system CHECK ((((kind)::text = 'system'::text) OR (sender_account_id IS NOT NULL) OR (sender_snapshot <> '{}'::jsonb))),
     CONSTRAINT ck_messages_system_event_iff_system CHECK ((((kind)::text = 'system'::text) = (system_event IS NOT NULL)))
@@ -1472,6 +1510,41 @@ CREATE SEQUENCE public.saved_messages_id_seq
 --
 
 ALTER SEQUENCE public.saved_messages_id_seq OWNED BY public.saved_messages.id;
+
+
+--
+-- Name: saved_replies; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.saved_replies (
+    id bigint NOT NULL,
+    account_id bigint NOT NULL,
+    shortcut public.citext NOT NULL,
+    body text NOT NULL,
+    "position" smallint DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT ck_saved_replies_position CHECK (("position" >= 0))
+);
+
+
+--
+-- Name: saved_replies_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.saved_replies_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: saved_replies_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.saved_replies_id_seq OWNED BY public.saved_replies.id;
 
 
 --
@@ -2416,6 +2489,13 @@ ALTER TABLE ONLY public.message_locations ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: message_reminders id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_reminders ALTER COLUMN id SET DEFAULT nextval('public.message_reminders_id_seq'::regclass);
+
+
+--
 -- Name: message_revisions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2497,6 +2577,13 @@ ALTER TABLE ONLY public.receipt_marks ALTER COLUMN id SET DEFAULT nextval('publi
 --
 
 ALTER TABLE ONLY public.saved_messages ALTER COLUMN id SET DEFAULT nextval('public.saved_messages_id_seq'::regclass);
+
+
+--
+-- Name: saved_replies id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.saved_replies ALTER COLUMN id SET DEFAULT nextval('public.saved_replies_id_seq'::regclass);
 
 
 --
@@ -2879,6 +2966,14 @@ ALTER TABLE ONLY public.message_locations
 
 
 --
+-- Name: message_reminders message_reminders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_reminders
+    ADD CONSTRAINT message_reminders_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: message_revisions message_revisions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2980,6 +3075,14 @@ ALTER TABLE ONLY public.receipt_marks
 
 ALTER TABLE ONLY public.saved_messages
     ADD CONSTRAINT saved_messages_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: saved_replies saved_replies_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.saved_replies
+    ADD CONSTRAINT saved_replies_pkey PRIMARY KEY (id);
 
 
 --
@@ -3272,6 +3375,13 @@ CREATE UNIQUE INDEX idx_memberships_conversation_account ON public.conversation_
 
 
 --
+-- Name: idx_memberships_pinned; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_memberships_pinned ON public.conversation_memberships USING btree (account_id, pinned_at DESC) WHERE (pinned_at IS NOT NULL);
+
+
+--
 -- Name: idx_message_contacts_position; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3286,6 +3396,20 @@ CREATE UNIQUE INDEX idx_message_link_previews_unique ON public.message_link_prev
 
 
 --
+-- Name: idx_message_reminders_due; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_reminders_due ON public.message_reminders USING btree (remind_at) WHERE (completed_at IS NULL);
+
+
+--
+-- Name: idx_message_reminders_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_message_reminders_unique ON public.message_reminders USING btree (account_id, message_id);
+
+
+--
 -- Name: idx_messages_client_nonce_unique; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3297,6 +3421,13 @@ CREATE UNIQUE INDEX idx_messages_client_nonce_unique ON public.messages USING bt
 --
 
 CREATE INDEX idx_messages_conversation_id_desc ON public.messages USING btree (conversation_id, id DESC);
+
+
+--
+-- Name: idx_messages_conversation_sender_position; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_messages_conversation_sender_position ON public.messages USING btree (conversation_id, sender_account_id, "position" DESC);
 
 
 --
@@ -3360,6 +3491,13 @@ CREATE UNIQUE INDEX idx_receipt_marks_unique ON public.receipt_marks USING btree
 --
 
 CREATE UNIQUE INDEX idx_saved_messages_unique ON public.saved_messages USING btree (account_id, message_id);
+
+
+--
+-- Name: idx_saved_replies_shortcut; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_saved_replies_shortcut ON public.saved_replies USING btree (account_id, shortcut);
 
 
 --
@@ -4075,6 +4213,14 @@ ALTER TABLE ONLY public.receipt_marks
 
 
 --
+-- Name: saved_replies fk_rails_0d50a1473c; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.saved_replies
+    ADD CONSTRAINT fk_rails_0d50a1473c FOREIGN KEY (account_id) REFERENCES public.accounts(id) ON DELETE CASCADE;
+
+
+--
 -- Name: conversation_memberships fk_rails_1735334e15; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4304,6 +4450,14 @@ ALTER TABLE ONLY public.join_requests
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT fk_rails_61ac11da2b FOREIGN KEY (account_id) REFERENCES public.accounts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_reminders fk_rails_64b334a761; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_reminders
+    ADD CONSTRAINT fk_rails_64b334a761 FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
 
 
 --
@@ -4683,6 +4837,14 @@ ALTER TABLE ONLY public.reactions
 
 
 --
+-- Name: message_reminders fk_rails_f5db81e968; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_reminders
+    ADD CONSTRAINT fk_rails_f5db81e968 FOREIGN KEY (account_id) REFERENCES public.accounts(id) ON DELETE CASCADE;
+
+
+--
 -- Name: bots fk_rails_fc2479a1d3; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4705,6 +4867,7 @@ ALTER TABLE ONLY public.message_link_previews
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260830085500'),
 ('20260830074100'),
 ('20260830052200'),
 ('20260830040900'),
@@ -4712,5 +4875,3 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260826143000'),
 ('20260812025731'),
 ('20260812025517');
-
-

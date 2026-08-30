@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { formatMessageTime } from "@/features/messages";
 import { ChatListItem } from "@/features/conversations/components/chat-list-item";
-import { useConversations } from "@/features/conversations/api/queries";
+import { useConversations, useMarkConversationUnread, usePinConversation } from "@/features/conversations/api/queries";
 import { lastActivityFromPreview } from "@/features/conversations/model/preview";
 import {
   conversationTitle,
@@ -31,6 +31,8 @@ export function ConversationList({
   const inputRef = searchRef ?? localRef;
   const selectedId = layers.find((layer) => layer.kind === "conversation")?.conversationId;
   const conversations = useConversations();
+  const pinConversation = usePinConversation();
+  const markUnread = useMarkConversationUnread();
   const filtered = useMemo(() => {
     const rows = conversations.data?.conversations ?? [];
     const needle = query.trim().toLowerCase();
@@ -98,9 +100,14 @@ export function ConversationList({
                   item.last_message,
                   t("conversations.last_message_deleted"),
                 )}
+                markedUnread={Boolean(item.manually_unread_at)}
                 muted={isMuted(item)}
                 name={name}
+                onMarkRead={() => markUnread.mutate({ id: item.id, unread: false })}
+                onMarkUnread={() => markUnread.mutate({ id: item.id, unread: true })}
                 onOpen={() => openConversation(conversationLayer(String(item.id), name))}
+                onPin={() => pinConversation.mutate({ id: item.id, pinned: !item.pinned_at })}
+                pinned={Boolean(item.pinned_at)}
                 selected={selectedId === String(item.id)}
                 timestampLabel={formatMessageTime(item.last_activity_at, i18n.language)}
                 unreadCount={item.unread_count}

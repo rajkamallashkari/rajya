@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAccessSession } from "@/features/auth/model/access-session";
-import { conversationKeys, messageKeys } from "@/features/conversations/api/keys";
+import { conversationKeys, messageKeys, savedReplyKeys } from "@/features/conversations/api/keys";
 import {
   bulkForwardMessages,
   bulkSaveMessages,
@@ -14,12 +14,19 @@ import {
   listConversations,
   listMessages,
   listReactions,
+  listSavedReplies,
+  markConversationRead,
+  markConversationUnread,
+  pinConversation,
   pinMessage,
   reactToMessage,
   saveMessage,
   sendMessage,
+  unpinConversation,
   unsendMessage,
   votePoll,
+  createMessageReminder,
+  type Conversation,
   type Message,
   type MessagePage,
 } from "@/features/conversations/api/http";
@@ -55,8 +62,13 @@ export function useConversations() {
 }
 
 export function useConversation(id: number) {
+  const queryClient = useQueryClient();
   return useQuery({
-    queryFn: () => getConversation(id),
+    queryFn: async () => {
+      const data = await getConversation(id);
+      void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
+      return data;
+    },
     queryKey: conversationKeys.detail(id),
   });
 }
@@ -462,4 +474,81 @@ export function useSavedIds() {
   });
 }
 
-export type { MessagePage };
+function patchConversationList(
+  current: { conversations: Conversation[] } | undefined,
+  id: number,
+  patch: Partial<Conversation>,
+): { conversations: Conversation[] } | undefined {
+  if (!current) {
+    return current;
+  }
+  return {
+    conversations: current.conversations.map((row) => (row.id === id ? { ...row, ...patch } : row)),
+  };
+}
+
+export function usePinConversation() {
+  const queryClient = useQueryClient();
+  const key = conversationKeys.list();
+  return useMutation({
+    mutationFn: ({ id, pinned }: { id: number; pinned: boolean }) =>
+      pinned ? pinConversation(id) : unpinConversation(id),
+    onMutate: async ({ id, pinned }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<{ conversations: Conversation[] }>(key);
+      queryClient.setQueryData(
+        key,
+        patchConversationList(previous, id, {
+          pinned_at: pinned ? new Date().toISOString() : null,
+        }),
+      );
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      queryClient.setQueryData(key, context?.previous);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+export function useMarkConversationUnread() {
+  const queryClient = useQueryClient();
+  const key = conversationKeys.list();
+  return useMutation({
+    mutationFn: ({ id, unread }: { id: number; unread: boolean }) =>
+      unread ? markConversationUnread(id) : markConversationRead(id),
+    onMutate: async ({ id, unread }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<{ conversations: Conversation[] }>(key);
+      queryClient.setQueryData(
+        key,
+        patchConversationList(previous, id, {
+          manually_unread_at: unread ? new Date().toISOString() : null,
+        }),
+      );
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      queryClient.setQueryData(key, context?.previous);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+export function useSavedReplies() {
+  return useQuery({
+    queryFn: listSavedReplies,
+    queryKey: savedReplyKeys.list(),
+  });
+}
+
+export function useCreateReminder() {
+  return useMutation({
+    mutationFn: ({ messageId, note, remindAt }: { messageId: number; note?: string; remindAt: string }) =>
+      createMessageReminder(messageId, remindAt, note),
+  });
+}

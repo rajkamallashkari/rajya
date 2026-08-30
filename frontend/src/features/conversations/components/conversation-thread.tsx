@@ -8,6 +8,7 @@ import {
   useBulkSave,
   useBulkUnsend,
   useConversation,
+  useCreateReminder,
   useEditMessage,
   useJumpToMessage,
   useMessageInfo,
@@ -19,11 +20,13 @@ import {
   useReactionDetails,
   useSaveMessage,
   useSavedIds,
+  useSavedReplies,
   useSendMessage,
   useUnsendMessage,
   useVotePoll,
 } from "@/features/conversations/api/queries";
 import { MessageInfoSheet } from "@/features/conversations/components/message-info-sheet";
+import { ReminderSheet } from "@/features/conversations/components/reminder-sheet";
 import { conversationById, type DemoMessage } from "@/features/conversations/model/demo";
 import { THREAD_LOAD_OLDER_PX } from "@/features/conversations/model/constants";
 import { formatThreadDate, sameCalendarDay } from "@/features/conversations/model/dates";
@@ -160,7 +163,10 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const vote = useVotePoll(conversationId);
   const pinned = usePinnedIds(conversationId);
   const saved = useSavedIds();
+  const savedReplies = useSavedReplies();
+  const remind = useCreateReminder();
   const [infoId, setInfoId] = useState<number | null>(null);
+  const [remindId, setRemindId] = useState<number | null>(null);
   const [resultsPollId, setResultsPollId] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [reactionsId, setReactionsId] = useState<number | null>(null);
@@ -327,6 +333,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           }
           setDraft("");
         }}
+        savedReplies={savedReplyViews(savedReplies.data?.saved_replies)}
         value={draft}
       />
       {menu ? (
@@ -344,6 +351,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
             onPin: (id) => pin.mutate(id),
             onReact: (id, emoji) => react.mutate({ emoji, id }),
             onReactions: setReactionsId,
+            onRemind: setRemindId,
             onSave: (id) => save.mutate(id),
             onSelect: (id) => setSelectedIds((current) => (current.includes(id) ? current : [...current, id])),
             onUnsend: (id) => unsend.mutate(id),
@@ -356,6 +364,19 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           y={menu.y}
         />
       ) : null}
+      <ReminderSheet
+        onOpenChange={(open) => {
+          if (!open) {
+            setRemindId(null);
+          }
+        }}
+        onSubmit={({ note, remindAt }) => {
+          if (remindId != null) {
+            remind.mutate({ messageId: remindId, note, remindAt });
+          }
+        }}
+        open={remindId != null}
+      />
       <MessageInfoSheet
         info={info.data}
         onOpenChange={(open) => setInfoId(nextInfoId(open, infoId))}
@@ -368,11 +389,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           }
         }}
         open={reactionsId != null}
-        reactions={(reactions.data?.reactions ?? []).map((row) => ({
-          accountId: String(row.account.id),
-          emoji: row.emoji,
-          name: row.account.display_name,
-        }))}
+        reactions={reactionDetailViews(reactions.data?.reactions)}
       />
       {results.data ? (
         <PollResultsSheet
@@ -466,9 +483,9 @@ function ThreadMessages({
                 poll: item.message.poll ? pollViewFromApi(item.message.poll) : undefined,
                 status: item.message.id < 0 ? "queued" : undefined,
               }))}
-              onOpenMenu={(id, point) => onOpenMenu(Number(id), point)}
-              onOpenPollResults={(id) => onOpenPollResults(Number(id))}
-              onVote={(id, optionIds) => onVote(Number(id), optionIds)}
+              onOpenMenu={bindNumericId(onOpenMenu)}
+              onOpenPollResults={bindNumericId(onOpenPollResults)}
+              onVote={bindNumericId(onVote)}
               senderName={first.sender?.display_name ?? untitled}
               side={side}
             />
@@ -477,6 +494,12 @@ function ThreadMessages({
       })}
     </>
   );
+}
+
+export function bindNumericId<T extends unknown[]>(
+  handler: (id: number, ...rest: T) => void,
+): (id: string, ...rest: T) => void {
+  return (id, ...rest) => handler(Number(id), ...rest);
 }
 
 export function pollResultsId(messages: Message[], id: number): number | null {
@@ -508,6 +531,26 @@ export function pollVotePayload(
   return { optionIds: optionIds.map(Number), pollId: poll.id };
 }
 
+export function reactionDetailViews(
+  rows: Array<{ account: { display_name: string; id: number }; emoji: string }> | undefined,
+): Array<{ accountId: string; emoji: string; name: string }> {
+  return (rows ?? []).map((row) => ({
+    accountId: String(row.account.id),
+    emoji: row.emoji,
+    name: row.account.display_name,
+  }));
+}
+
+export function savedReplyViews(
+  replies: Array<{ body: string; id: number; shortcut: string }> | undefined,
+): Array<{ body: string; id: string; shortcut: string }> {
+  return (replies ?? []).map((reply) => ({
+    body: reply.body,
+    id: String(reply.id),
+    shortcut: reply.shortcut,
+  }));
+}
+
 export function nextInfoId(open: boolean, current: number | null): number | null {
   if (!open) {
     return null;
@@ -523,6 +566,7 @@ export function buildMessageMenuActions({
   onPin,
   onReact,
   onReactions,
+  onRemind,
   onSave,
   onSelect,
   onUnsend,
@@ -537,6 +581,7 @@ export function buildMessageMenuActions({
   onPin: (id: number) => void;
   onReact: (id: number, emoji: string) => void;
   onReactions: (id: number) => void;
+  onRemind: (id: number) => void;
   onSave: (id: number) => void;
   onSelect: (id: number) => void;
   onUnsend: (id: number) => void;
@@ -560,6 +605,7 @@ export function buildMessageMenuActions({
     onPin: () => onPin(message.id),
     onReact: (emoji) => onReact(message.id, emoji),
     onReactions: () => onReactions(message.id),
+    onRemind: () => onRemind(message.id),
     onSave: () => onSave(message.id),
     onSelect: () => onSelect(message.id),
     onUnsend: () => onUnsend(message.id),

@@ -85,6 +85,13 @@ RSpec.describe ConversationPolicy do
     expect(described_class.new(human.account, conversation).start_call?).to be(true)
   end
 
+  it "lets a channel member pin the conversation in their sidebar (NR-21)" do
+    member = create(:user)
+    conversation = create_talk(kind: "channel", owner: create(:user).account, members: [ member.account ])
+    expect(described_class.new(member.account, conversation).organize?).to be(true)
+    expect(described_class.new(member.account, conversation).pin?).to be(false)
+  end
+
   it "treats a class-level record as having no conversation kind" do
     policy = described_class.new(create(:user).account, Conversation)
 

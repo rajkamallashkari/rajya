@@ -61,6 +61,12 @@ Rails.application.routes.draw do
         collection { delete :others }
       end
       resources :conversations, only: %i[index show create update] do
+        member do
+          post :pin, to: "conversation_pins#create"
+          delete :pin, to: "conversation_pins#destroy"
+          post :unread, to: "conversation_unreads#create"
+          delete :unread, to: "conversation_unreads#destroy"
+        end
         resources :pins, only: %i[create destroy], param: :message_id
         resources :messages, only: :index, controller: "conversation_messages"
       end
@@ -83,6 +89,8 @@ Rails.application.routes.draw do
         end
       end
       resources :saved_messages, only: %i[create destroy]
+      resources :saved_replies, only: %i[index create update destroy]
+      resources :message_reminders, only: %i[index create update destroy]
       resources :scheduled_messages, only: %i[index create update destroy] do
         member { post :send_now }
       end

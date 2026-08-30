@@ -253,5 +253,93 @@ RSpec.describe "Conversations update description only", type: :request do
     end
   end
 end
+
+RSpec.describe "Conversations pin", type: :request do
+  path "/api/v1/conversations/{id}/pin" do
+    post "Pin a conversation for the current account" do
+      tags "Conversations"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+
+      response "200", "pinned" do
+        schema "$ref" => "#/components/schemas/Conversation"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:id) { conversation.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("pinned_at")).to be_present
+        end
+      end
+    end
+
+    delete "Unpin a conversation for the current account" do
+      tags "Conversations"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+
+      response "200", "unpinned" do
+        schema "$ref" => "#/components/schemas/Conversation"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:id) { conversation.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        before { Conversations::Pin.call(account: user.account, conversation: conversation) }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("pinned_at")).to be_nil
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Conversations unread", type: :request do
+  path "/api/v1/conversations/{id}/unread" do
+    post "Mark a conversation unread" do
+      tags "Conversations"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+
+      response "200", "marked unread" do
+        schema "$ref" => "#/components/schemas/Conversation"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:id) { conversation.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("manually_unread_at")).to be_present
+        end
+      end
+    end
+
+    delete "Clear a manual unread mark" do
+      tags "Conversations"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+
+      response "200", "cleared" do
+        schema "$ref" => "#/components/schemas/Conversation"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:id) { conversation.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        before { Conversations::MarkUnread.call(account: user.account, conversation: conversation) }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("manually_unread_at")).to be_nil
+        end
+      end
+    end
+  end
+end
 # rubocop:enable RSpec/EmptyExampleGroup, RSpec/MultipleDescribes
 # rubocop:enable RSpec/VariableName

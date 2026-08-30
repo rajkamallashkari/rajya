@@ -192,6 +192,63 @@ export async function closePoll(pollId: number) {
   );
 }
 
+export async function pinConversation(id: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/conversations/{id}/pin", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "pin_conversation_failed",
+  );
+}
+
+export async function unpinConversation(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/conversations/{id}/pin", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "unpin_conversation_failed",
+  );
+}
+
+export async function markConversationUnread(id: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/conversations/{id}/unread", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "mark_unread_failed",
+  );
+}
+
+export async function markConversationRead(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/conversations/{id}/unread", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "mark_read_failed",
+  );
+}
+
+export async function listSavedReplies() {
+  return unwrap(
+    await apiClient().GET("/api/v1/saved_replies", { headers: bearerHeaders() }),
+    "saved_replies_failed",
+  );
+}
+
+export async function createMessageReminder(messageId: number, remindAt: string, note?: string) {
+  return unwrap(
+    await apiClient().POST("/api/v1/message_reminders", {
+      headers: bearerHeaders(),
+      body: { message_id: messageId, remind_at: remindAt, note },
+    }),
+    "reminder_failed",
+  );
+}
+
 export async function getPoll(pollId: number) {
   return unwrap(
     await apiClient().GET("/api/v1/polls/{id}", {

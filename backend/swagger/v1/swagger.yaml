@@ -332,6 +332,84 @@ paths:
               properties:
                 description:
                   type: string
+  "/api/v1/conversations/{id}/pin":
+    post:
+      summary: Pin a conversation for the current account
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: pinned
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+    delete:
+      summary: Unpin a conversation for the current account
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: unpinned
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+  "/api/v1/conversations/{id}/unread":
+    post:
+      summary: Mark a conversation unread
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: marked unread
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+    delete:
+      summary: Clear a manual unread mark
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: cleared
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
   "/api/v1/users/me/password":
     patch:
       summary: Set or change the current user's password
@@ -425,6 +503,97 @@ paths:
       responses:
         '200':
           description: removed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+  "/api/v1/message_reminders":
+    get:
+      summary: List pending message reminders
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MessageReminderList"
+    post:
+      summary: Create a message reminder
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MessageReminder"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message_id:
+                  type: integer
+                remind_at:
+                  type: string
+                  format: date-time
+                note:
+                  type: string
+  "/api/v1/message_reminders/{id}":
+    patch:
+      summary: Update a message reminder
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: updated time without a note key
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MessageReminder"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                remind_at:
+                  type: string
+                  format: date-time
+                note:
+                  type: string
+    delete:
+      summary: Cancel a message reminder
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: cancelled
           content:
             application/json:
               schema:
@@ -963,6 +1132,97 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Message"
+  "/api/v1/saved_replies":
+    get:
+      summary: List saved replies
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SavedReplyList"
+    post:
+      summary: Create a saved reply
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SavedReply"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                shortcut:
+                  type: string
+                body:
+                  type: string
+                position:
+                  type: integer
+  "/api/v1/saved_replies/{id}":
+    patch:
+      summary: Update a saved reply
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SavedReply"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                shortcut:
+                  type: string
+                body:
+                  type: string
+                position:
+                  type: integer
+    delete:
+      summary: Delete a saved reply
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: deleted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
   "/api/v1/scheduled_messages":
     get:
       summary: List pending scheduled messages
@@ -2076,6 +2336,14 @@ components:
         role:
           type: string
           nullable: true
+        pinned_at:
+          type: string
+          format: date-time
+          nullable: true
+        manually_unread_at:
+          type: string
+          format: date-time
+          nullable: true
         peer:
           "$ref": "#/components/schemas/Account"
           nullable: true
@@ -2442,6 +2710,71 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/ScheduledMessage"
+    MessageReminder:
+      type: object
+      required:
+      - id
+      - message_id
+      - remind_at
+      - created_at
+      properties:
+        id:
+          type: integer
+        message_id:
+          type: integer
+        remind_at:
+          type: string
+          format: date-time
+        note:
+          type: string
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    MessageReminderList:
+      type: object
+      required:
+      - message_reminders
+      properties:
+        message_reminders:
+          type: array
+          items:
+            "$ref": "#/components/schemas/MessageReminder"
+    SavedReply:
+      type: object
+      required:
+      - id
+      - shortcut
+      - body
+      - position
+      properties:
+        id:
+          type: integer
+        shortcut:
+          type: string
+        body:
+          type: string
+        position:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    SavedReplyList:
+      type: object
+      required:
+      - saved_replies
+      properties:
+        saved_replies:
+          type: array
+          items:
+            "$ref": "#/components/schemas/SavedReply"
     Passkey:
       type: object
       required:

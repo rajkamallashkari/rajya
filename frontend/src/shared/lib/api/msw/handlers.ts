@@ -161,6 +161,22 @@ const scheduled = {
   recurrence_rule: "FREQ=DAILY",
   next_run_at: MESSAGE_STAMP,
 };
+const savedReply = {
+  id: 1,
+  shortcut: "/omw",
+  body: "On my way",
+  position: 0,
+  created_at: MESSAGE_STAMP,
+  updated_at: MESSAGE_STAMP,
+};
+const messageReminder = {
+  id: 1,
+  message_id: 101,
+  remind_at: MESSAGE_STAMP,
+  note: "Ping",
+  completed_at: null,
+  created_at: MESSAGE_STAMP,
+};
 
 export const handlerMap = {
   "/health": http.get("*/health", () => HttpResponse.json(readyHealth)),
@@ -272,8 +288,28 @@ export const handlerMap = {
     if (!conversation) {
       return jsonError(404);
     }
+    conversation.manually_unread_at = null;
     return HttpResponse.json(conversation);
   }),
+  "/api/v1/conversations/{id}/pin": http.all("*/api/v1/conversations/:id/pin", ({ params, request }) => {
+    const conversation = findConversation(Number(params.id));
+    if (!conversation) {
+      return jsonError(404);
+    }
+    conversation.pinned_at = request.method === "DELETE" ? null : MESSAGE_STAMP;
+    return HttpResponse.json(conversation);
+  }),
+  "/api/v1/conversations/{id}/unread": http.all(
+    "*/api/v1/conversations/:id/unread",
+    ({ params, request }) => {
+      const conversation = findConversation(Number(params.id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      conversation.manually_unread_at = request.method === "DELETE" ? null : MESSAGE_STAMP;
+      return HttpResponse.json(conversation);
+    },
+  ),
   "/api/v1/conversations/{conversation_id}/messages": http.get(
     "*/api/v1/conversations/:conversation_id/messages",
     ({ params, request }) => {
@@ -388,8 +424,8 @@ export const handlerMap = {
         }));
         return HttpResponse.json({ reactions });
       }
-      const next = reactStoredMessage(Number(params.message_id));
-      return next ? HttpResponse.json(next, { status: 201 }) : jsonError(404);
+      reactStoredMessage(Number(params.message_id));
+      return HttpResponse.json(message, { status: 201 });
     },
   ),
   "/api/v1/conversations/{conversation_id}/pins/{message_id}": http.delete(
@@ -416,6 +452,30 @@ export const handlerMap = {
       );
     },
   ),
+  "/api/v1/saved_replies/{id}": http.all("*/api/v1/saved_replies/:id", ({ request }) => {
+    if (request.method === "PATCH") {
+      return HttpResponse.json(savedReply);
+    }
+    return HttpResponse.json(ok);
+  }),
+  "/api/v1/saved_replies": http.all("*/api/v1/saved_replies", ({ request }) => {
+    if (request.method === "POST") {
+      return HttpResponse.json(savedReply, { status: 201 });
+    }
+    return HttpResponse.json({ saved_replies: [savedReply] });
+  }),
+  "/api/v1/message_reminders/{id}": http.all("*/api/v1/message_reminders/:id", ({ request }) => {
+    if (request.method === "PATCH") {
+      return HttpResponse.json(messageReminder);
+    }
+    return HttpResponse.json(ok);
+  }),
+  "/api/v1/message_reminders": http.all("*/api/v1/message_reminders", ({ request }) => {
+    if (request.method === "POST") {
+      return HttpResponse.json(messageReminder, { status: 201 });
+    }
+    return HttpResponse.json({ message_reminders: [messageReminder] });
+  }),
   "/api/v1/saved_messages/{id}": http.delete("*/api/v1/saved_messages/:id", okResponse),
   "/api/v1/saved_messages": http.post("*/api/v1/saved_messages", async ({ request }) => {
     const body = (await request.json()) as { message_id?: number };

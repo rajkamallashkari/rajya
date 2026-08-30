@@ -219,6 +219,8 @@ RSpec.configure do |config|
                 unread_count: { type: :integer },
                 muted_until: { type: :string, format: :"date-time", nullable: true },
                 role: { type: :string, nullable: true },
+                pinned_at: { type: :string, format: :"date-time", nullable: true },
+                manually_unread_at: { type: :string, format: :"date-time", nullable: true },
                 peer: { "$ref" => "#/components/schemas/Account", nullable: true },
                 last_message: { "$ref" => "#/components/schemas/MessagePreview", nullable: true },
                 members: { type: :array, items: { "$ref" => "#/components/schemas/ConversationMember" } }
@@ -426,6 +428,44 @@ RSpec.configure do |config|
               required: %w[scheduled_messages],
               properties: {
                 scheduled_messages: { type: :array, items: { "$ref" => "#/components/schemas/ScheduledMessage" } }
+              }
+            },
+            MessageReminder: {
+              type: :object,
+              required: %w[id message_id remind_at created_at],
+              properties: {
+                id: { type: :integer },
+                message_id: { type: :integer },
+                remind_at: { type: :string, format: :"date-time" },
+                note: { type: :string, nullable: true },
+                completed_at: { type: :string, format: :"date-time", nullable: true },
+                created_at: { type: :string, format: :"date-time" }
+              }
+            },
+            MessageReminderList: {
+              type: :object,
+              required: %w[message_reminders],
+              properties: {
+                message_reminders: { type: :array, items: { "$ref" => "#/components/schemas/MessageReminder" } }
+              }
+            },
+            SavedReply: {
+              type: :object,
+              required: %w[id shortcut body position],
+              properties: {
+                id: { type: :integer },
+                shortcut: { type: :string },
+                body: { type: :string },
+                position: { type: :integer },
+                created_at: { type: :string, format: :"date-time" },
+                updated_at: { type: :string, format: :"date-time" }
+              }
+            },
+            SavedReplyList: {
+              type: :object,
+              required: %w[saved_replies],
+              properties: {
+                saved_replies: { type: :array, items: { "$ref" => "#/components/schemas/SavedReply" } }
               }
             },
             Passkey: {

@@ -31,6 +31,14 @@ class ConversationResource < ApplicationResource
     object.membership&.role
   end
 
+  attribute :pinned_at do
+    object.membership&.pinned_at
+  end
+
+  attribute :manually_unread_at do
+    object.membership&.manually_unread_at
+  end
+
   attribute :peer do
     peer = peer_account
     peer && AccountResource.new(peer).to_h

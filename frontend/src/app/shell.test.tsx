@@ -88,6 +88,40 @@ describe("AppShell", () => {
     });
   });
 
+  it("resolves a message permalink without a conversation id", async () => {
+    render(
+      <AppProviders>
+        <MemoryRouter initialEntries={["/m/101"]}>
+          <Routes>
+            <Route element={<AppShell />} path="/m/:messageId" />
+            <Route element={<AppShell />} path="/c/:conversationId/m/:messageId" />
+          </Routes>
+        </MemoryRouter>
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(useLayerStore.getState().layers[0]).toEqual(
+        expect.objectContaining({ conversationId: "1", focusMessageId: "101" }),
+      );
+    });
+  });
+
+  it("ignores a missing message permalink", async () => {
+    render(
+      <AppProviders>
+        <MemoryRouter initialEntries={["/m/0"]}>
+          <Routes>
+            <Route element={<AppShell />} path="/m/:messageId" />
+          </Routes>
+        </MemoryRouter>
+      </AppProviders>,
+    );
+    expect(await screen.findByText(en.shell.chats)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(useLayerStore.getState().layers).toEqual([]);
+    });
+  });
+
   it("shows onboarding when the active account is not onboarded", () => {
     useAccountsStore.getState().upsertAccount({
       displayName: "Ada",

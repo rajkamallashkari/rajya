@@ -229,4 +229,66 @@ RSpec.describe "Session 3.2 message authorization 403s", type: :request do
          params: { message_ids: [ message.id ] }, as: :json
     expect(response).to have_http_status(:forbidden)
   end
+
+  it "returns 403 when reminder index is denied" do
+    user, _conversation, _message = member_setup
+    stub_deny(MessageReminderPolicy, :index?)
+    get "/api/v1/message_reminders", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when reminder create is denied" do
+    user, _conversation, message = member_setup
+    stub_deny(MessageReminderPolicy, :create?)
+    post "/api/v1/message_reminders", headers: auth_headers_for(user),
+         params: { message_id: message.id, remind_at: 1.hour.from_now }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when reminder update is denied" do
+    user, _conversation, message = member_setup
+    row = MessageReminders::Create.call(account: user.account, message: message, remind_at: 1.hour.from_now).value
+    stub_deny(MessageReminderPolicy, :update?)
+    patch "/api/v1/message_reminders/#{row.id}", headers: auth_headers_for(user), params: { note: "X" }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when reminder destroy is denied" do
+    user, _conversation, message = member_setup
+    row = MessageReminders::Create.call(account: user.account, message: message, remind_at: 1.hour.from_now).value
+    stub_deny(MessageReminderPolicy, :destroy?)
+    delete "/api/v1/message_reminders/#{row.id}", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when saved reply index is denied" do
+    user, _conversation, _message = member_setup
+    stub_deny(SavedReplyPolicy, :index?)
+    get "/api/v1/saved_replies", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when saved reply create is denied" do
+    user, _conversation, _message = member_setup
+    stub_deny(SavedReplyPolicy, :create?)
+    post "/api/v1/saved_replies", headers: auth_headers_for(user),
+         params: { shortcut: "/omw", body: "Hi" }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when saved reply update is denied" do
+    user, _conversation, _message = member_setup
+    row = SavedReplies::Create.call(account: user.account, shortcut: "/omw", body: "Hi").value
+    stub_deny(SavedReplyPolicy, :update?)
+    patch "/api/v1/saved_replies/#{row.id}", headers: auth_headers_for(user), params: { body: "X" }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "returns 403 when saved reply destroy is denied" do
+    user, _conversation, _message = member_setup
+    row = SavedReplies::Create.call(account: user.account, shortcut: "/omw", body: "Hi").value
+    stub_deny(SavedReplyPolicy, :destroy?)
+    delete "/api/v1/saved_replies/#{row.id}", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
 end

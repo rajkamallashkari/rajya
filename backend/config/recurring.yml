@@ -17,3 +17,7 @@ production:
     class: Conversations::ReconcileSidebarJob
     queue: background
     schedule: every hour at minute 17
+  dispatch_message_reminders:
+    class: MessageReminders::DispatchDueJob
+    queue: default
+    schedule: every minute

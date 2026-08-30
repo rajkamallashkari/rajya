@@ -4,6 +4,11 @@ export const conversationKeys = {
   detail: (id: number) => [...conversationKeys.all, "detail", id] as const,
 };
 
+export const savedReplyKeys = {
+  all: ["saved-replies"] as const,
+  list: () => [...savedReplyKeys.all, "list"] as const,
+};
+
 export const messageKeys = {
   all: ["messages"] as const,
   page: (conversationId: number) => [...messageKeys.all, "page", conversationId] as const,

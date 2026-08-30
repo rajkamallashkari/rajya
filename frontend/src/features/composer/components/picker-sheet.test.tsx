@@ -10,6 +10,8 @@ import {
   filterGifs,
   filterReplies,
   rememberEmoji,
+  expandSavedReplyShortcut,
+  savedRepliesAsCommands,
 } from "@/features/composer/model/picker";
 import { en } from "@/shared/lib/i18n/catalog";
 
@@ -38,6 +40,19 @@ describe("picker model", () => {
     expect(
       filterCommands([{ description: "Find chats", name: "help", source: "bot" }], "chat"),
     ).toHaveLength(1);
+    expect(expandSavedReplyShortcut("/omw ", [{ body: "On my way", id: "1", shortcut: "/omw" }])).toBe(
+      "On my way ",
+    );
+    expect(expandSavedReplyShortcut("/omw\n", [{ body: "On my way", id: "1", shortcut: "/omw" }])).toBe(
+      "On my way\n",
+    );
+    expect(expandSavedReplyShortcut("/omw", [{ body: "On my way", id: "1", shortcut: "/omw" }])).toBe(
+      "/omw",
+    );
+    expect(expandSavedReplyShortcut("hi ", [])).toBe("hi ");
+    expect(expandSavedReplyShortcut(" ", [{ body: "Hi", id: "1", shortcut: "/omw" }])).toBe(" ");
+    expect(expandSavedReplyShortcut("hi ", [{ body: "hi", id: "1", shortcut: "hi" }])).toBe("hi ");
+    expect(savedRepliesAsCommands([{ body: "Hi", id: "1", shortcut: "/omw" }])[0]?.name).toBe("omw");
     expect(
       filterCommands([{ description: "Find", name: "search", source: "builtin" }], "/zz"),
     ).toHaveLength(0);

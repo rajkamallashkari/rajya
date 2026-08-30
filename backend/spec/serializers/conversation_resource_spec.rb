@@ -83,8 +83,12 @@ RSpec.describe ConversationResource do
     conversation = create(:conversation)
     json = described_class.new(Conversations::View.for(conversation, create(:user).account)).to_h
 
-    expect(json.fetch("unread_count")).to eq(0)
-    expect(json.fetch("role")).to be_nil
-    expect(json.fetch("last_message")).to be_nil
+    expect(json).to include(
+      "unread_count" => 0,
+      "role" => nil,
+      "last_message" => nil,
+      "pinned_at" => nil,
+      "manually_unread_at" => nil
+    )
   end
 end

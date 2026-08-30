@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { MemoryRouter } from "react-router";
@@ -49,6 +49,27 @@ describe("ConversationList", () => {
     await user.type(screen.getByLabelText(en.search.label), "zzz");
     expect(screen.getByText(en.lists.empty_title)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.lists.empty_action }));
+  });
+
+  it("pins and marks a conversation unread from the row menu", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    render(
+      <AppProviders>
+        <MemoryRouter>
+          <ConversationList />
+        </MemoryRouter>
+      </AppProviders>,
+    );
+    const row = (await screen.findByText("Team")).closest("[data-chat-list-item]") as HTMLElement;
+    const surface = row.querySelector("[style]") as HTMLElement;
+    fireEvent.contextMenu(surface);
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.pin }));
+    const rowAfter = (await screen.findByText("Team")).closest("[data-chat-list-item]") as HTMLElement;
+    fireEvent.contextMenu(rowAfter.querySelector("[style]") as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.mark_unread }));
+    const ada = (await screen.findByText(ADA_DEMO.name)).closest("[data-chat-list-item]") as HTMLElement;
+    fireEvent.contextMenu(ada.querySelector("[style]") as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.mark_read }));
   });
 
   it("renders loading then error with retry", async () => {

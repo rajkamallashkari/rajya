@@ -10,23 +10,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 3.5 |
-| **Next session** | 3.6 |
-| **Phase** | P3 — Conversations & messaging core |
-| **Sessions remaining in phase** | 1 (3.6) |
+| **Last completed** | 3.6 |
+| **Next session** | 4.1 |
+| **Phase** | P4 — Realtime & offline sync |
+| **Sessions remaining in phase** | 3 (4.1–4.3) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 3.6 — Personal organization: pinned conversations (NR-21), mark-as-unread (NR-22), reminders (NR-24), saved replies (NR-25), and the P8 filter indexes (NR-43)**
+**Session 4.1 — Channels, `Realtime.publish`, `after_commit` flush, batched fanout**
 
-Deliverable: **Personal organization**: pinned conversations (NR-21), mark-as-unread (NR-22), reminders (NR-24), saved replies (NR-25), and the P8 filter indexes (NR-43)
+Deliverable: **Channels, `Realtime.publish`, `after_commit` flush, batched fanout**
 
-Docs: `SCHEMA §12.6, §12.9`
+Docs: `TARGET §3 (all), §1 (adapter config); GAP §8; AUDIT §5 (F-19)`
 
 Legacy to read:
-- `botverse/src/components/chat/ScheduledDrawer.tsx`, `StarredDrawer.tsx` — the drawer pattern reminders and saved replies reuse
+- `cognify/app/channels/chat_channel.rb`, `user_channel.rb`, `presence_channel.rb`, `app/services/sidebar_broadcaster.rb`
 
 ---
 
@@ -53,6 +53,7 @@ Legacy to read:
 | 3.3 | Cursor pagination, message queries, TanStack Query layer replacing mocks | Position cursors (`before`/`after`) plus jump (`around_id`/`around_at`). Page size 50, jump window 60 (BR-108); client cache 200 newest (BR-107). TanStack Query owns server state with optimistic send/edit/react/pin/save/unsend rollback. Message info from watermarks (shape only). Catch-up/IndexedDB wait for P4; exact ticks wait for P5. |
 | 3.4 | Polls (NR-15), static location and contact message children (NR-30, NR-31) | Polls are message children: unsend tombstones the parent and omits poll/location from JSON (BR-7). Single-choice is a locked `Polls::Vote` transaction (S-12); anonymity is serializer-only (S-13). Locations are static points (S-16). Vote follows react; close is author or group admin/owner. Composer poll/location pickers wait so DS-13 stays intact; Playwright poll create/vote waits for that attach UI. |
 | 3.5 | Permalinks (NR-19), bulk actions (NR-20), silent send (NR-23), recurring schedules (NR-26), reaction details (NR-27) | Permalinks resolve through membership (`GET /messages/:id` 404s for non-members). Bulk unsend/forward/save is all-or-nothing (BR-1 tombstones). Silent persists on send and still advances delivered. Recurring uses the documented RRULE subset in the account timezone. Reaction details query existing `reactions`. Composer schedule/recurrence picker, conversation-picker for bulk forward, push suppression, and Playwright bulk-forward wait for later (P10.2 / phase DoD / DS-13). |
+| 3.6 | Personal organization: pinned conversations (NR-21), mark-as-unread (NR-22), reminders (NR-24), saved replies (NR-25), P8 filter indexes (NR-43) | Pins and unread live on the viewer's membership only. Reminders upsert per account+message and dispatch on a one-minute job (no Web Push yet). Saved replies expand from the composer slash menu. Sender filter index exists for P8; EXPLAIN waits for P8.2. Wallpaper (NR-42), reminder push (P10.2), saved-reply settings UI (P12.3), and full reminder/saved-reply drawers wait. |
 
 ---
 

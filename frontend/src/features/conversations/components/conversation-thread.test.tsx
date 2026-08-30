@@ -3,11 +3,14 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import {
+  bindNumericId,
   ConversationThread,
   buildMessageMenuActions,
   nextInfoId,
   pollResultsId,
   pollVotePayload,
+  reactionDetailViews,
+  savedReplyViews,
   voteFromThread,
 } from "./conversation-thread";
 import { ProfilePanel } from "./profile-panel";
@@ -110,6 +113,9 @@ describe("conversation layers", () => {
     );
     expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
     const field = screen.getByRole("textbox");
+    await user.type(field, "/om");
+    expect(await screen.findByRole("option")).toBeInTheDocument();
+    await user.clear(field);
     await user.type(field, "live-hello");
     await user.keyboard("{Enter}");
     expect(await screen.findByText("live-hello")).toBeInTheDocument();
@@ -140,7 +146,38 @@ describe("conversation layers", () => {
     expect(await screen.findByText(en.messages.info.title)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.ui.close }));
     fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.remind }));
+    expect(await screen.findByText(en.reminders.title)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(en.reminders.when), {
+      target: { value: "2099-01-15T09:00" },
+    });
+    await user.type(screen.getByLabelText(en.reminders.note), "Ping");
+    await user.click(screen.getByRole("button", { name: en.reminders.save }));
+    fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.reactions }));
+    expect(await screen.findByText(en.reactions.title)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.ui.close }));
+    fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.unsend }));
+    expect(await screen.findByText(en.messages.deleted)).toBeInTheDocument();
+    const remaining = document.querySelectorAll("[data-message-bubble]");
+    fireEvent.contextMenu(remaining[remaining.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.select }));
+    expect(document.querySelector("[data-selection-toolbar]")).not.toBeNull();
+    fireEvent.contextMenu(remaining[remaining.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.select }));
+    await user.click(screen.getByRole("button", { name: en.selection.select_all }));
+    await user.click(screen.getByRole("button", { name: en.selection.copy }));
+    await user.click(screen.getByRole("button", { name: en.selection.clear }));
+    fireEvent.contextMenu(remaining[remaining.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.select }));
+    await user.click(screen.getByRole("button", { name: en.selection.forward }));
+    fireEvent.contextMenu(remaining[remaining.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.select }));
+    await user.click(screen.getByRole("button", { name: en.selection.save }));
+    fireEvent.contextMenu(remaining[remaining.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.select }));
+    await user.click(screen.getByRole("button", { name: en.selection.delete }));
     expect(await screen.findByText(en.messages.deleted)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.shell.open_profile }));
     expect(useLayerStore.getState().layers.some((layer) => layer.kind === "profile")).toBe(true);
@@ -243,6 +280,24 @@ describe("conversation layers", () => {
     fireEvent.scroll(scroller);
   });
 
+  it("jumps to a focused message outside the newest page", async () => {
+    setAccessSession(testSession());
+    seedPositions(1, 60);
+    useLayerStore.getState().openConversation({
+      conversationId: "1",
+      focusMessageId: "1",
+      id: "conversation:1",
+      kind: "conversation",
+      title: "Ada",
+    });
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("m1")).toBeInTheDocument();
+  });
+
   it("renders nothing for a missing live conversation", async () => {
     render(
       <AppProviders>
@@ -326,6 +381,7 @@ describe("conversation layers", () => {
         onPin: () => undefined,
         onReact: () => undefined,
         onReactions: () => undefined,
+        onRemind: () => undefined,
         onSave: () => undefined,
         onSelect: () => undefined,
         onUnsend: () => undefined,
@@ -352,6 +408,7 @@ describe("conversation layers", () => {
       onPin: () => undefined,
       onReact: () => undefined,
       onReactions: () => undefined,
+      onRemind: () => undefined,
       onSave: () => undefined,
       onSelect: () => undefined,
       onUnsend: () => undefined,
@@ -363,6 +420,17 @@ describe("conversation layers", () => {
     expect(actions.onEdit).toBeUndefined();
     expect(nextInfoId(true, 4)).toBe(4);
     expect(nextInfoId(false, 4)).toBeNull();
+    const numeric = vi.fn();
+    bindNumericId(numeric)("12", ["2"]);
+    expect(numeric).toHaveBeenCalledWith(12, ["2"]);
+    expect(savedReplyViews(undefined)).toEqual([]);
+    expect(savedReplyViews([{ body: "On my way", id: 1, shortcut: "/omw" }])).toEqual([
+      { body: "On my way", id: "1", shortcut: "/omw" },
+    ]);
+    expect(reactionDetailViews(undefined)).toEqual([]);
+    expect(
+      reactionDetailViews([{ account: { display_name: "Ada", id: 1 }, emoji: "👍" }]),
+    ).toEqual([{ accountId: "1", emoji: "👍", name: "Ada" }]);
     expect(pollVotePayload([], 1, ["2"])).toBeNull();
     expect(pollResultsId([], 1)).toBeNull();
     const mutate = vi.fn();

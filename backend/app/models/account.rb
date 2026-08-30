@@ -15,6 +15,8 @@ class Account < ApplicationRecord
                             dependent: :nullify
   has_many :reactions, dependent: :destroy
   has_many :saved_messages, dependent: :destroy
+  has_many :saved_replies, dependent: :destroy
+  has_many :message_reminders, dependent: :destroy
   has_many :pinned_messages, foreign_key: :pinned_by_account_id, inverse_of: :pinned_by_account, dependent: :destroy
   has_many :blocks_initiated, class_name: "Block", foreign_key: :blocker_account_id, inverse_of: :blocker_account,
                                dependent: :destroy

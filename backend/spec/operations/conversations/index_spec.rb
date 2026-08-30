@@ -12,4 +12,16 @@ RSpec.describe Conversations::Index do
     expect(result.value.conversations.map(&:id)).to eq([ newer.id, older.id ])
     expect(result.value.viewer).to eq(user.account)
   end
+
+  it "lists pinned conversations before recency (NR-21)" do
+    user = create(:user)
+    older = create_talk(kind: "group", owner: user.account, members: [ create(:account) ])
+    older.update!(last_activity_at: 1.day.ago)
+    newer = create_talk(kind: "group", owner: user.account, members: [ create(:account) ])
+    newer.update!(last_activity_at: Time.current)
+    Conversations::Pin.call(account: user.account, conversation: older)
+    result = described_class.call(account: user.account, conversations: Conversation.where(id: [ older.id, newer.id ]))
+
+    expect(result.value.conversations.map(&:id)).to eq([ older.id, newer.id ])
+  end
 end

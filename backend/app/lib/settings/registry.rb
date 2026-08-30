@@ -58,6 +58,14 @@ module Settings
         type: :integer, category: :messaging, default: 10, min: 1, max: 100,
         description: "Maximum conversations a member may pin (NR-21)."
       },
+      reminder_note_max_length: {
+        type: :integer, category: :messaging, default: 280, min: 1, max: 4_096,
+        description: "Maximum characters in a message-reminder note (NR-24)."
+      },
+      saved_reply_shortcut_max_length: {
+        type: :integer, category: :messaging, default: 32, min: 1, max: 64,
+        description: "Maximum characters in a saved-reply shortcut (NR-25)."
+      },
       multi_select_cap: {
         type: :integer, category: :messaging, default: 100, min: 1, max: 500,
         description: "Maximum messages in one multi-select bulk action (NR-20)."

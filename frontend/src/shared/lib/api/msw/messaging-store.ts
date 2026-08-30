@@ -53,6 +53,8 @@ export function buildConversations(): Conversation[] {
       peer: group ? undefined : peerAccount(id + 1, demo.name),
       last_message: preview(last.text, last.kind === "system" ? "system" : "text"),
       members: [],
+      pinned_at: null,
+      manually_unread_at: null,
     };
   });
 }
@@ -250,7 +252,11 @@ export function tombstoneMessage(id: number): Message | null {
 }
 
 export function reactStoredMessage(id: number): Message | null {
-  return replaceMessage(id, (message) => ({ ...message, revision: message.revision + 1 }));
+  return replaceMessage(id, (message) => ({
+    ...message,
+    revision: message.revision + 1,
+    reaction_summary: { ...message.reaction_summary, "👍": 1 },
+  }));
 }
 
 export function voteStoredPoll(pollId: number, optionIds: number[]): Message | null {

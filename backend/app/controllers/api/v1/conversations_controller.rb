@@ -13,7 +13,7 @@ module Api
         conversation = policy_scope(Conversation).find(params[:id])
         authorize conversation
         render_result(
-          Conversations::Show.call(account: current_account, conversation: conversation),
+          Conversations::Show.call(account: current_account, conversation: conversation, clear_unread: true),
           serializer: ConversationResource
         )
       end

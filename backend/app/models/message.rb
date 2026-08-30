@@ -11,6 +11,7 @@ class Message < ApplicationRecord
   has_many :reactions, dependent: :destroy
   has_many :message_revisions, dependent: :destroy
   has_many :saved_messages, dependent: :destroy
+  has_many :message_reminders, dependent: :destroy
   has_many :pinned_messages, dependent: :destroy
   has_many :attachments, dependent: :destroy
   has_one :poll, dependent: :destroy

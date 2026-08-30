@@ -12,16 +12,20 @@ import {
   useBulkSave,
   useBulkUnsend,
   useClosePoll,
+  useCreateReminder,
   useEditMessage,
   useJumpToMessage,
+  useMarkConversationUnread,
   useMessageInfo,
   useMessagePage,
   useMessagePermalink,
+  usePinConversation,
   usePinMessage,
   usePollResults,
   useReactMessage,
   useReactionDetails,
   useSaveMessage,
+  useSavedReplies,
   useSendMessage,
   useUnsendMessage,
   useVotePoll,
@@ -342,6 +346,7 @@ describe("message queries", () => {
     );
 
     function BulkHarness() {
+      const page = useMessagePage(1);
       const permalink = useMessagePermalink(101);
       const reactions = useReactionDetails(101);
       const idlePermalink = useMessagePermalink(null);
@@ -351,6 +356,7 @@ describe("message queries", () => {
       const forward = useBulkForward(1);
       return (
         <div>
+          <p data-page-count={page.messages.length}>{page.messages.length}</p>
           <p data-permalink={permalink.isSuccess ? "yes" : "no"}>{permalink.data?.id}</p>
           <p data-reactions={reactions.isSuccess ? "yes" : "no"} />
           <p data-idle-permalink={idlePermalink.fetchStatus} />
@@ -374,6 +380,7 @@ describe("message queries", () => {
       </AppProviders>,
     );
     await waitFor(() => {
+      expect(document.querySelector("[data-page-count]")?.textContent).not.toBe("0");
       expect(screen.getByText("101")).toBeInTheDocument();
     });
     await user.click(screen.getByRole("button", { name: "bulk-unsend" }));
@@ -382,5 +389,68 @@ describe("message queries", () => {
     await waitFor(() => {
       expect(screen.getByText("101")).toBeInTheDocument();
     });
+  });
+
+  it("rolls pin and unread conversation mutations back when they fail", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    server.use(
+      http.post("*/api/v1/conversations/:id/pin", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+      http.post("*/api/v1/conversations/:id/unread", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+    );
+
+    function OrgHarness() {
+      const pin = usePinConversation();
+      const unread = useMarkConversationUnread();
+      const replies = useSavedReplies();
+      const remind = useCreateReminder();
+      return (
+        <div>
+          <p>{replies.data?.saved_replies.length ?? 0}</p>
+          <Button onClick={() => pin.mutate({ id: 1, pinned: true })} type="button">
+            pin-chat
+          </Button>
+          <Button onClick={() => pin.mutate({ id: 1, pinned: false })} type="button">
+            unpin-chat
+          </Button>
+          <Button onClick={() => unread.mutate({ id: 1, unread: true })} type="button">
+            unread-chat
+          </Button>
+          <Button onClick={() => unread.mutate({ id: 1, unread: false })} type="button">
+            read-chat
+          </Button>
+          <Button
+            onClick={() => remind.mutate({ messageId: 101, remindAt: "2099-01-01T09:00:00.000Z" })}
+            type="button"
+          >
+            remind
+          </Button>
+        </div>
+      );
+    }
+
+    render(
+      <AppProviders>
+        <OrgHarness />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText("1")).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: "pin-chat" }));
+    await user.click(screen.getByRole("button", { name: "unpin-chat" }));
+    await user.click(screen.getByRole("button", { name: "unread-chat" }));
+    await user.click(screen.getByRole("button", { name: "read-chat" }));
+    await user.click(screen.getByRole("button", { name: "remind" }));
   });
 });

@@ -14,11 +14,18 @@ import {
   type ComposerAttachment,
 } from "@/features/composer/components/composer-extras";
 import { ComposerStrip, type ComposerReply } from "@/features/composer/components/composer-strip";
+import { SlashCommandMenu } from "@/features/composer/components/slash-command-menu";
 import { VoiceRecorder } from "@/features/composer/components/voice-recorder";
 import {
   useVoiceRecorder,
   type VoiceRecorderResult,
 } from "@/features/composer/hooks/use-voice-recorder";
+import {
+  expandSavedReplyShortcut,
+  filterCommands,
+  savedRepliesAsCommands,
+  type SavedReplyView,
+} from "@/features/composer/model/picker";
 import { selectVoicePeaks } from "@/features/composer/model/waveform";
 import { usePressHold } from "@/shared/hooks/use-press-hold";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
@@ -58,6 +65,7 @@ export function Composer({
   onVoiceSend,
   placeholder,
   replyTo,
+  savedReplies = [],
   scheduledLabel,
   value,
   voice,
@@ -79,6 +87,7 @@ export function Composer({
   onVoiceSend?: (payload: ComposerVoicePayload) => void;
   placeholder?: string;
   replyTo?: ComposerReply | null;
+  savedReplies?: SavedReplyView[];
   scheduledLabel?: string | null;
   value?: string;
   voice?: VoiceRecorderResult;
@@ -93,12 +102,13 @@ export function Composer({
   const text = controlled ? value : uncontrolled;
   const setText = useCallback(
     (next: string) => {
+      const expanded = expandSavedReplyShortcut(next, savedReplies);
       if (!controlled) {
-        setUncontrolled(next);
+        setUncontrolled(expanded);
       }
-      onChange?.(next);
+      onChange?.(expanded);
     },
-    [controlled, onChange],
+    [controlled, onChange, savedReplies],
   );
   const voiceActive = recorder.state !== "idle";
   const fieldLabel =
@@ -237,6 +247,9 @@ export function Composer({
     },
   ].filter((item) => !item.hidden);
 
+  const replyCommands = savedRepliesAsCommands(savedReplies);
+  const slashMatches = text.startsWith("/") ? filterCommands(replyCommands, text) : [];
+
   return (
     <div
       className="relative border-t border-[var(--border-subtle)] bg-[var(--surface-panel)]"
@@ -256,6 +269,15 @@ export function Composer({
         />
       ) : null}
       <ComposerAttachmentChips attachments={attachments} onRemove={onRemoveAttachment} />
+      {slashMatches.length > 0 ? (
+        <div className="px-[var(--space-3)] pb-[var(--space-2)]">
+          <SlashCommandMenu
+            commands={replyCommands}
+            onSelect={(command) => setText(`${command.description} `)}
+            query={text}
+          />
+        </div>
+      ) : null}
       <form
         className="flex items-end gap-[var(--control-gap-tight)] px-[var(--space-3)] py-[var(--space-2)]"
         onSubmit={onSubmit}

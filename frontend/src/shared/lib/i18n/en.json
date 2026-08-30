@@ -413,7 +413,8 @@
       "unsend": "Unsend",
       "react": "React with {{emoji}}",
       "select": "Select",
-      "reactions": "Reactions"
+      "reactions": "Reactions",
+      "remind": "Remind me"
     },
     "system": {
       "member_joined": "{{name}} joined",
@@ -445,6 +446,12 @@
     "count": "{{emoji}} {{count}}",
     "empty": "No reactions yet",
     "title": "Reactions"
+  },
+  "reminders": {
+    "note": "Note",
+    "save": "Save reminder",
+    "title": "Remind me",
+    "when": "Remind at"
   },
   "selection": {
     "clear": "Clear selection",

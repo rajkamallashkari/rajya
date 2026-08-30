@@ -1,4 +1,5 @@
 import {
+  Clock,
   Copy,
   Forward,
   Info,
@@ -45,6 +46,7 @@ export interface MessageMenuActions {
   onSave?: () => void;
   onSelect?: () => void;
   onReactions?: () => void;
+  onRemind?: () => void;
   onUnsend?: () => void;
   quickReactions?: string[];
 }
@@ -120,6 +122,11 @@ export function MessageContextMenu({
       key: "reactions",
       label: t("messages.menu.reactions"),
       onClick: persisted ? actions.onReactions : undefined,
+    },
+    {
+      key: "remind",
+      label: t("messages.menu.remind"),
+      onClick: persisted ? actions.onRemind : undefined,
     },
     {
       key: "unsend",
@@ -214,6 +221,9 @@ function MenuIcon({ name, pinned, saved }: { name: string; pinned?: boolean; sav
   }
   if (name === "reactions") {
     return <Smile className={className} />;
+  }
+  if (name === "remind") {
+    return <Clock className={className} />;
   }
   return <Trash2 className={className} />;
 }
