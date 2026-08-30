@@ -255,6 +255,7 @@ RSpec.configure do |config|
                 edited_at: { type: :string, format: :"date-time", nullable: true },
                 created_at: { type: :string, format: :"date-time" },
                 sender: { "$ref" => "#/components/schemas/Account", nullable: true },
+                tick: { type: :string, enum: %w[sent delivered read], nullable: true },
                 reply_to: { type: :object, nullable: true },
                 attachments: { type: :array, items: { type: :object } },
                 poll: { "$ref" => "#/components/schemas/Poll", nullable: true },

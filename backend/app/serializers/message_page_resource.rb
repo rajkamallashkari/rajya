@@ -1,6 +1,9 @@
 class MessagePageResource < ApplicationResource
   attribute :messages do
-    object.messages.map { |message| MessageResource.new(message, params: params).to_h }
+    snapshot = tick_snapshot
+    object.messages.map do |message|
+      MessageResource.new(message, params: params.to_h.merge(tick_snapshot: snapshot)).to_h
+    end
   end
 
   attribute :meta do
@@ -11,5 +14,14 @@ class MessagePageResource < ApplicationResource
       "newest_position" => object.newest_position,
       "pivot_id" => object.pivot_id
     }
+  end
+
+  private
+
+  def tick_snapshot
+    message = object.messages.first
+    return if message.nil? || params[:current_account].blank?
+
+    Messages::Ticks.snapshot_for(message.conversation)
   end
 end

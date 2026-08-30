@@ -72,6 +72,10 @@ class Account < ApplicationRecord
     privacy_flag("last_active")
   end
 
+  def read_receipts?
+    privacy_flag("read_receipts")
+  end
+
   def discoverable_by_username?
     privacy_flag("discoverable_by_username")
   end

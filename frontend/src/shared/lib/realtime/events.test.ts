@@ -26,6 +26,35 @@ describe("realtime events", () => {
       account_id: 4,
       online: true,
     });
+    expect(
+      parseRealtimeEvent({
+        type: "receipts_updated",
+        conversation_id: 1,
+        account_id: 2,
+        kind: "read",
+        position: 3,
+      }),
+    ).toEqual({
+      type: "receipts_updated",
+      conversation_id: 1,
+      account_id: 2,
+      kind: "read",
+      position: 3,
+    });
+    expect(
+      parseRealtimeEvent({
+        type: "receipts_updated",
+        conversation_id: 1,
+        account_id: 2,
+        position: 3,
+      }),
+    ).toEqual({
+      type: "receipts_updated",
+      conversation_id: 1,
+      account_id: 2,
+      kind: "",
+      position: 3,
+    });
     expect(parseRealtimeEvent({ type: "phone_verified", account_id: 5, phone: "+1" })).toEqual({
       type: "phone_verified",
       account_id: 5,

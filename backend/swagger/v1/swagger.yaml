@@ -415,6 +415,48 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Conversation"
+  "/api/v1/conversations/{id}/receipts":
+    post:
+      summary: Advance delivery or view watermarks
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: watermark advanced
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+        '422':
+          description: invalid kind
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - kind
+              - position
+              properties:
+                kind:
+                  type: string
+                  enum:
+                  - delivered
+                  - viewed
+                position:
+                  type: integer
   "/api/v1/users/me/password":
     patch:
       summary: Set or change the current user's password
@@ -2425,6 +2467,13 @@ components:
           format: date-time
         sender:
           "$ref": "#/components/schemas/Account"
+          nullable: true
+        tick:
+          type: string
+          enum:
+          - sent
+          - delivered
+          - read
           nullable: true
         reply_to:
           type: object

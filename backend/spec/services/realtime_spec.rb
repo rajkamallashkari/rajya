@@ -119,6 +119,27 @@ RSpec.describe Realtime do
     expect(conversation.messages.count).to eq(0)
   end
 
+  it "advances delivered for live conversation subscribers (SCHEMA §5)" do
+    sender = create(:user)
+    peer = create(:user)
+    conversation = create_direct_between(sender.account, peer.account)
+    Receipts::Subscribers.add(conversation.id, peer.account.id)
+    Receipts::Subscribers.add(conversation.id, sender.account.id)
+    message = Messages::Send.call(conversation: conversation, sender: sender.account, body: "Hi").value
+    membership = conversation.conversation_memberships.find_by!(account: peer.account)
+
+    expect(membership.last_delivered_position).to eq(message.position)
+  end
+
+  it "skips a live subscriber that no longer exists" do
+    sender = create(:user)
+    conversation = create_direct_between(sender.account, create(:account))
+    Receipts::Subscribers.add(conversation.id, 0)
+    expect(
+      Messages::Send.call(conversation: conversation, sender: sender.account, body: "Hi")
+    ).to be_success
+  end
+
   it "is a no-op when the buffer is empty" do
     described_class.flush!
 

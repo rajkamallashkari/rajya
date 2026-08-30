@@ -1,7 +1,8 @@
 module Messages
   class Index < ApplicationOperation
-    def call(scope:, before: nil, after: nil, around_id: nil, around_at: nil, after_revision: nil)
+    def call(scope:, account: nil, before: nil, after: nil, around_id: nil, around_at: nil, after_revision: nil)
       @scope = scope
+      @account = account
       @before = parse_cursor(before)
       @after = parse_cursor(after)
       @after_revision = parse_cursor(after_revision)
@@ -10,15 +11,37 @@ module Messages
       return failure(:validation_failed) if catch_up_conflict?(around_id, around_at)
       return failure(:validation_failed) if @after_revision.present? && @after_revision.negative?
 
-      return success(CatchUp.call(scope: @scope, after: @after_revision)) if @after_revision.present?
-
-      around_id.present? || around_at.present? ? jump(around_id, around_at) : page
+      result = if @after_revision.present?
+        success(CatchUp.call(scope: @scope, after: @after_revision))
+      elsif around_id.present? || around_at.present?
+        jump(around_id, around_at)
+      else
+        page
+      end
+      ack_delivered!(result)
+      result
     end
 
     private
 
     def page
       success(Page.call(scope: @scope, before: @before, after: @after))
+    end
+
+    def ack_delivered!(result)
+      return unless result.success?
+      return if @account.blank?
+
+      page_result = result.value
+      newest = page_result.newest_position
+      return if newest.blank?
+
+      message = page_result.messages.max_by(&:position)
+      return if message.nil?
+
+      Receipts::Advance.call(
+        account: @account, conversation: message.conversation, position: newest, kind: "delivered"
+      )
     end
 
     def jump(around_id, around_at)

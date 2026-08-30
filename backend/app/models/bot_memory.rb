@@ -1,6 +1,5 @@
-# `embedding` is `vector(768)` (pgvector) — ActiveRecord type registration and
-# nearest-neighbor query helpers land with the AI memory-recall feature, not
-# this schema-skeleton session.
+# `embedding` is `vector(768)` (pgvector). The OID is registered as text in
+# `config/initializers/pgvector.rb` so SELECTs stay quiet. Neighbor recall is P9.3.
 class BotMemory < ApplicationRecord
   belongs_to :bot
   belongs_to :source_account, class_name: "Account", optional: true

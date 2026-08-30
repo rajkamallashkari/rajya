@@ -9,5 +9,13 @@ class ConversationChannel < ApplicationCable::Channel
     end
 
     stream_from Realtime.conversation_stream(conversation.id)
+    Receipts::Subscribers.add(conversation.id, current_account.id)
+    @tracking_conversation_id = conversation.id
+  end
+
+  def unsubscribed
+    return if @tracking_conversation_id.blank?
+
+    Receipts::Subscribers.remove(@tracking_conversation_id, current_account.id)
   end
 end

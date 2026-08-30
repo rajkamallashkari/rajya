@@ -76,6 +76,35 @@ RSpec.describe Messages::Index do
       .to eq(:validation_failed)
   end
 
+  it "acknowledges delivery after a fetch or catch-up (SCHEMA §5)" do
+    user = create(:user)
+    peer = create(:user)
+    conversation = create_direct_between(user.account, peer.account)
+    message = Messages::Send.call(conversation: conversation, sender: peer.account, body: "Hi").value
+    described_class.call(scope: conversation.messages, account: user.account)
+    membership = conversation.conversation_memberships.find_by!(account: user.account)
+
+    expect(membership.last_delivered_position).to eq(message.position)
+  end
+
+  it "does not ack when the page reports a newest position without messages" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    fake = instance_double(Messages::PageResult, newest_position: 1, messages: [])
+    allow(Messages::Page).to receive(:call).and_return(fake)
+    described_class.call(scope: conversation.messages, account: user.account)
+
+    expect(conversation.conversation_memberships.find_by!(account: user.account).last_delivered_position).to eq(0)
+  end
+
+  it "does not ack an empty page" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    described_class.call(scope: conversation.messages, account: user.account)
+
+    expect(conversation.conversation_memberships.find_by!(account: user.account).last_delivered_position).to eq(0)
+  end
+
   it "picks the last message before around_at when none are on or after it" do
     scope, message = setup
     future = (message.created_at + 1.day).iso8601

@@ -17,6 +17,7 @@ module Realtime
     poll_closed
     poll_voted
     presence
+    receipts_updated
     sidebar_update
   ].freeze
 
@@ -49,6 +50,7 @@ module Realtime
       recipient_ids = recipient_map(items)
       items.each { |item| broadcast(item) }
       fanout(items, recipient_ids)
+      deliver_live(items)
     end
 
     def discard!
@@ -152,6 +154,25 @@ module Realtime
 
     def enqueue_push(item, recipient_account_ids)
       Push::FanoutJob.perform_later(item.event.to_s, item.data, recipient_account_ids)
+    end
+
+    def deliver_live(items)
+      items.select { |item| item.event.to_s == "message_created" && item.conversation_id }.each do |item|
+        message = Message.find_by(id: item.data["message_id"])
+        next if message.nil?
+
+        live_ids = Receipts::Subscribers.account_ids(item.conversation_id)
+        live_ids.each do |account_id|
+          next if account_id == message.sender_account_id
+
+          account = Account.find_by(id: account_id)
+          next if account.nil?
+
+          Receipts::Advance.call(
+            account: account, conversation: message.conversation, position: message.position, kind: "delivered"
+          )
+        end
+      end
     end
 
     def event_hash(event, data)

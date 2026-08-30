@@ -1,15 +1,19 @@
 require "rails_helper"
 
 RSpec.describe ScheduledMessages::Dispatch do
+  def due_recurring(conversation, sender, **attrs)
+    create(:preference, account: sender, data: { "locale" => { "timezone" => "UTC" } })
+    row = ScheduledMessages::Create.call(
+      conversation: conversation, sender: sender, body: "Daily",
+      scheduled_at: 1.hour.from_now, recurrence_rule: "FREQ=DAILY;COUNT=3", **attrs
+    ).value
+    row.tap { |r| r.update_columns(scheduled_at: 1.minute.ago, next_run_at: 1.minute.ago) }
+  end
+
   it "keeps a recurring row and advances next_run_at" do
     user = create(:user)
     conversation = create_direct_between(user.account, create(:account))
-    create(:preference, account: user.account, data: { "locale" => { "timezone" => "UTC" } })
-    row = ScheduledMessages::Create.call(
-      conversation: conversation, sender: user.account, body: "Daily",
-      scheduled_at: 1.hour.from_now, recurrence_rule: "FREQ=DAILY;COUNT=3"
-    ).value
-    row.update_columns(scheduled_at: 1.minute.ago, next_run_at: 1.minute.ago)
+    row = due_recurring(conversation, user.account)
     result = described_class.call(scheduled_message: row.reload)
 
     expect(result.value.body).to eq("Daily")
@@ -20,19 +24,13 @@ RSpec.describe ScheduledMessages::Dispatch do
   it "omits client_nonce after the first recurring send" do
     user = create(:user)
     conversation = create_direct_between(user.account, create(:account))
-    create(:preference, account: user.account, data: { "locale" => { "timezone" => "UTC" } })
-    row = ScheduledMessages::Create.call(
-      conversation: conversation, sender: user.account, body: "Daily",
-      scheduled_at: 1.hour.from_now, recurrence_rule: "FREQ=DAILY;COUNT=3",
-      client_nonce: "11111111-1111-1111-1111-111111111111"
-    ).value
-    row.update_columns(scheduled_at: 1.minute.ago, next_run_at: 1.minute.ago)
+    nonce = "11111111-1111-1111-1111-111111111111"
+    row = due_recurring(conversation, user.account, client_nonce: nonce)
     described_class.call(scheduled_message: row.reload)
     row.update_columns(next_run_at: 1.minute.ago)
     described_class.call(scheduled_message: row.reload)
 
-    expect(row.reload.occurrences_sent).to eq(2)
-    expect(conversation.messages.count).to eq(2)
+    expect(conversation.messages.order(:position).pluck(:client_nonce)).to eq([ nonce, nil ])
   end
 
   it "destroys a COUNT=1 series after the first send" do

@@ -71,6 +71,10 @@ describe("routeRealtimeEvent", () => {
     await routeRealtimeEvent({ type: "message_unpinned", conversation_id: 1, message_id: 1 }, deps);
     await routeRealtimeEvent({ type: "sidebar_update", conversation_id: 1 }, deps);
     await routeRealtimeEvent({ type: "presence", account_id: 8, online: false }, deps);
+    await routeRealtimeEvent(
+      { type: "receipts_updated", conversation_id: 1, account_id: 2, kind: "read", position: 1 },
+      deps,
+    );
     await routeRealtimeEvent({ type: "phone_verified", phone: "+1" }, deps);
     await routeRealtimeEvent({ type: "message_reminder", id: 4 }, deps);
 

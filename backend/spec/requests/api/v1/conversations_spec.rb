@@ -343,3 +343,56 @@ RSpec.describe "Conversations unread", type: :request do
 end
 # rubocop:enable RSpec/EmptyExampleGroup, RSpec/MultipleDescribes
 # rubocop:enable RSpec/VariableName
+
+RSpec.describe "Conversation receipts", type: :request do
+  # rubocop:disable RSpec/VariableName, RSpec/EmptyExampleGroup, RSpec/MultipleMemoizedHelpers
+  path "/api/v1/conversations/{id}/receipts" do
+    post "Advance delivery or view watermarks" do
+      tags "Conversations"
+      consumes "application/json"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+      parameter name: :payload, in: :body, schema: {
+        type: :object,
+        required: %w[kind position],
+        properties: {
+          kind: { type: :string, enum: %w[delivered viewed] },
+          position: { type: :integer }
+        }
+      }
+
+      response "200", "watermark advanced" do
+        schema "$ref" => "#/components/schemas/Conversation"
+        let(:user) { create(:user) }
+        let(:peer) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, peer.account) }
+        let(:message) { Messages::Send.call(conversation: conversation, sender: peer.account, body: "Hi").value }
+        let(:id) { conversation.id }
+        let(:payload) { { kind: "viewed", position: message.position } }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("unread_count")).to eq(0)
+          expect(conversation.conversation_memberships.find_by!(account: user.account).last_read_position)
+            .to eq(message.position)
+        end
+      end
+
+      response "422", "invalid kind" do
+        schema "$ref" => "#/components/schemas/Error"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:id) { conversation.id }
+        let(:payload) { { kind: "nope", position: 1 } }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).dig("error", "code")).to eq("validation_failed")
+        end
+      end
+    end
+  end
+end
+# rubocop:enable RSpec/EmptyExampleGroup, RSpec/MultipleMemoizedHelpers
+# rubocop:enable RSpec/VariableName

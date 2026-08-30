@@ -126,7 +126,7 @@ RSpec.describe Messages::Send do
 
   it "skips watermark writes when the sender membership has disappeared" do
     user, conversation = setup
-    allow(conversation.conversation_memberships).to receive(:active).and_return(ConversationMembership.none)
+    allow(Conversations::View).to receive(:membership_for).and_return(nil)
     expect(send!(conversation, user.account, body: "Hi")).to be_success
   end
 

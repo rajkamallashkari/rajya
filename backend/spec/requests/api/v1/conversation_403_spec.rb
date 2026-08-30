@@ -110,4 +110,13 @@ RSpec.describe "Session 3.1 conversation authorization 403s", type: :request do
     delete "/api/v1/conversations/#{conversation.id}/unread", headers: auth_headers_for(user)
     expect(response).to have_http_status(:forbidden)
   end
+
+  it "returns 403 on receipt advance when show is denied" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    stub_deny(ConversationPolicy, :show?)
+    post "/api/v1/conversations/#{conversation.id}/receipts", headers: auth_headers_for(user),
+         params: { kind: "viewed", position: 1 }, as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
 end

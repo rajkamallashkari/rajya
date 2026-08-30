@@ -15,13 +15,16 @@ RSpec.describe Recurrence::Rrule do
     expect(parsed("FREQ=YEARLY;UNTIL=20261231T090000Z").until_at).to be_utc
   end
 
-  it "rejects unsupported fields and COUNT plus UNTIL" do
+  it "rejects unsupported fields" do
     expect(parsed("FREQ=HOURLY")).to eq(:invalid)
     expect(parsed("COUNT=2")).to eq(:invalid)
     expect(parsed("FREQ=DAILY;INTERVAL=1.5")).to eq(:invalid)
+    expect(parsed("")).to be_nil
+  end
+
+  it "rejects COUNT plus UNTIL and an invalid BYDAY" do
     expect(parsed("FREQ=DAILY;COUNT=2;UNTIL=20261231T090000Z")).to eq(:invalid)
     expect(parsed("FREQ=DAILY;BYDAY=XX")).to eq(:invalid)
-    expect(parsed("")).to be_nil
   end
 
   it "advances monthly and yearly stamps" do

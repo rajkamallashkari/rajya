@@ -34,7 +34,7 @@ module Messages
       message = persist
       return failure(:validation_failed) if message.nil?
 
-      mark_sender_read!(message)
+      Receipts::OnSend.call(conversation: @conversation, sender: @sender, position: message.position)
       touch_sidebar!(message)
       publish!(message)
       success(message)
@@ -150,19 +150,6 @@ module Messages
 
     def voice?
       @voice_duration_ms.present?
-    end
-
-    def mark_sender_read!(message)
-      membership = @conversation.conversation_memberships.active.find_by(account_id: @sender.id)
-      return if membership.nil?
-
-      position = message.position
-      membership.update_columns(
-        unread_count: 0,
-        last_read_position: [ membership.last_read_position, position ].max,
-        last_seen_position: [ membership.last_seen_position, position ].max,
-        last_delivered_position: [ membership.last_delivered_position, position ].max
-      )
     end
 
     def touch_sidebar!(message)

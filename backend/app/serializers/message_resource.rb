@@ -14,6 +14,14 @@ class MessageResource < ApplicationResource
   attribute :silent, &:silent
   attribute :edited_at, &:edited_at
   attribute :created_at, &:created_at
+  attribute :tick do
+    viewer = params[:current_account]
+    next if viewer.blank?
+    next unless object.sender_account_id == viewer.id
+
+    snapshot = params[:tick_snapshot] || Messages::Ticks.snapshot_for(object.conversation)
+    Messages::Ticks.call(message: object, viewer: viewer, snapshot: snapshot)
+  end
 
   attribute :body do
     object.deleted? ? nil : object.body

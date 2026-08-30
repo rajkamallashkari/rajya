@@ -1458,6 +1458,8 @@ CREATE TABLE public.receipt_marks (
     kind character varying NOT NULL,
     "position" bigint NOT NULL,
     occurred_at timestamp(6) without time zone NOT NULL,
+    from_position bigint DEFAULT 0 NOT NULL,
+    CONSTRAINT ck_receipt_marks_from_position CHECK ((from_position >= 0)),
     CONSTRAINT ck_receipt_marks_kind CHECK (((kind)::text = ANY ((ARRAY['delivered'::character varying, 'read'::character varying])::text[])))
 );
 
@@ -4867,6 +4869,7 @@ ALTER TABLE ONLY public.message_link_previews
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260830100000'),
 ('20260830085500'),
 ('20260830074100'),
 ('20260830052200'),

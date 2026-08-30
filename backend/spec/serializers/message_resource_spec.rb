@@ -53,4 +53,23 @@ RSpec.describe MessageResource do
     expect(json.fetch("location")).to include("label" => "Cafe", "accuracy_m" => 5)
     expect(json.fetch("contacts").first).to include("display_name" => "Ada", "email" => "ada@example.com")
   end
+
+  it "includes tick state for the sender" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    message = send_from(user, conversation, body: "Hi")
+    json = described_class.new(message, params: { current_account: user.account }).to_h
+
+    expect(json.fetch("tick")).to eq("sent")
+  end
+
+  it "omits tick state on an incoming message" do
+    sender = create(:user)
+    peer = create(:user)
+    conversation = create_direct_between(sender.account, peer.account)
+    message = send_from(sender, conversation, body: "Hi")
+    json = described_class.new(message, params: { current_account: peer.account }).to_h
+
+    expect(json.fetch("tick")).to be_nil
+  end
 end

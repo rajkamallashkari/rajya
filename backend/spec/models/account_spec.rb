@@ -101,5 +101,13 @@ RSpec.describe Account do
 
       expect(account.reload).not_to be_discoverable_by_username
     end
+
+    it "defaults read_receipts on and honors a stored override" do
+      account = create(:account)
+      expect(account).to be_read_receipts
+
+      create(:preference, account: account, data: { "privacy" => { "read_receipts" => false } })
+      expect(account.reload).not_to be_read_receipts
+    end
   end
 end

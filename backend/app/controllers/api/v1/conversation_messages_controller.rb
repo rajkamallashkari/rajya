@@ -5,7 +5,10 @@ module Api
         conversation = policy_scope(Conversation).find(params[:conversation_id])
         authorize conversation, :show?
         render_result(
-          Messages::Index.call(scope: policy_scope(Message).where(conversation_id: conversation.id), **cursors),
+          Messages::Index.call(
+            scope: policy_scope(Message).where(conversation_id: conversation.id),
+            account: current_account, **cursors
+          ),
           serializer: MessagePageResource
         )
       end

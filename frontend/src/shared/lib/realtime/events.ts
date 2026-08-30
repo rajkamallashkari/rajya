@@ -10,6 +10,7 @@ export interface RealtimePayloads {
   poll_closed: { conversation_id: number; message_id: number };
   poll_voted: { conversation_id: number; message_id: number };
   presence: { account_id: number; online: boolean };
+  receipts_updated: { conversation_id: number; account_id: number; kind: string; position: number };
   sidebar_update: { conversation_id: number };
 }
 
@@ -25,6 +26,7 @@ export const REALTIME_EVENT_TYPES = [
   "poll_closed",
   "poll_voted",
   "presence",
+  "receipts_updated",
   "sidebar_update",
 ] as const satisfies ReadonlyArray<keyof RealtimePayloads>;
 
@@ -105,6 +107,13 @@ const PARSERS: { [Type in ListedType]: (data: Record<string, unknown>) => Realti
       online: data.online,
     };
   },
+  receipts_updated: (data) => ({
+    type: "receipts_updated",
+    conversation_id: requireNumber(data, "conversation_id"),
+    account_id: requireNumber(data, "account_id"),
+    kind: optionalString(data, "kind") ?? "",
+    position: requireNumber(data, "position"),
+  }),
   sidebar_update: (data) => ({
     type: "sidebar_update",
     conversation_id: requireNumber(data, "conversation_id"),

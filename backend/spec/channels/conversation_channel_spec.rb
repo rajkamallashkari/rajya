@@ -25,4 +25,21 @@ RSpec.describe ConversationChannel, type: :channel do
 
     expect(subscription).to be_rejected
   end
+
+  it "untracks the subscriber when the socket closes" do
+    conversation = create_direct_between(user.account, create(:account))
+    subscribe conversation_id: conversation.id
+    expect(Receipts::Subscribers.account_ids(conversation.id)).to eq([ user.account.id ])
+
+    unsubscribe
+    expect(Receipts::Subscribers.account_ids(conversation.id)).to eq([])
+  end
+
+  it "does not remove subscribers when tracking was never set" do
+    conversation = create_direct_between(user.account, create(:account))
+    subscribe conversation_id: conversation.id
+    subscription.instance_variable_set(:@tracking_conversation_id, nil)
+    unsubscribe
+    expect(Receipts::Subscribers.account_ids(conversation.id)).to eq([ user.account.id ])
+  end
 end

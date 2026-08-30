@@ -10,7 +10,7 @@ module Api
       def info
         message = policy_scope(Message).find(params[:id])
         authorize message, :show?
-        render_result(Messages::Info.call(message: message), serializer: MessageInfoResource)
+        render_result(Messages::Info.call(message: message, viewer: current_account), serializer: MessageInfoResource)
       end
 
       def create

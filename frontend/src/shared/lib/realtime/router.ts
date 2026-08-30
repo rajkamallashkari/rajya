@@ -53,6 +53,9 @@ export async function routeRealtimeEvent(
     case "presence":
       deps.cache.setQueryData(realtimeKeys.presence(event.account_id), event.online);
       return;
+    case "receipts_updated":
+      await deps.cache.invalidateQueries({ queryKey: messageKeys.page(event.conversation_id) });
+      return;
     case "phone_verified":
       await deps.cache.invalidateQueries({ queryKey: realtimeKeys.me });
       return;

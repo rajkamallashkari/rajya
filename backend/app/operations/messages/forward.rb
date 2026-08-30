@@ -6,6 +6,7 @@ module Messages
       return failure(:not_found) if message.deleted?
 
       copy = persist!(message, actor, target)
+      Receipts::OnSend.call(conversation: target, sender: actor, position: copy.position)
       Realtime.publish("conversation:#{target.id}", :message_created, "message_id" => copy.id)
       success(copy)
     end
