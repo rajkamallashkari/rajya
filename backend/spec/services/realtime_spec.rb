@@ -1,7 +1,130 @@
 require "rails_helper"
 
 RSpec.describe Realtime do
-  it "accepts a publish call as a no-op seam for P4.1" do
-    expect(described_class.publish("account:1", :phone_verified, { phone: "1" })).to be_nil
+  include ActiveJob::TestHelper
+
+  def captured
+    @captured ||= []
+  end
+
+  def capture_broadcasts!
+    allow(ActionCable.server).to receive(:broadcast) do |stream, payload|
+      captured << { stream: stream, payload: payload }
+    end
+  end
+
+  before { capture_broadcasts! }
+
+  it "broadcasts immediately when no joinable transaction is open" do
+    described_class.publish("account:1", :phone_verified, "phone" => "1")
+
+    expect(captured).to contain_exactly(
+      stream: "account:1", payload: { "type" => "phone_verified", "phone" => "1" }
+    )
+  end
+
+  it "does not broadcast events from rolled-back data" do
+    ActiveRecord::Base.transaction(requires_new: true) do
+      described_class.publish("conversation:1", :message_created, "message_id" => 1)
+      raise ActiveRecord::Rollback
+    end
+
+    expect(captured).to eq([])
+  end
+
+  it "flushes after the wrapping transaction commits" do
+    ActiveRecord::Base.transaction(requires_new: true) do
+      described_class.publish("account:1", :phone_verified, "phone" => "1")
+      described_class.publish("account:1", :phone_verified, "phone" => "2")
+      expect(captured).to eq([])
+    end
+
+    expect(captured.size).to eq(2)
+  end
+
+  it "resolves conversation recipients once and broadcasts once per stream (F-19)" do
+    owner = create(:user)
+    members = create_list(:account, 2)
+    conversation = create_talk(kind: "group", owner: owner.account, members: members)
+
+    described_class.publish(conversation, :message_created, "message_id" => 9)
+
+    streams = captured.map { |row| row.fetch(:stream) }
+    expect(streams).to include(described_class.conversation_stream(conversation.id))
+    expect(streams).to include(described_class.account_stream(owner.account.id))
+    expect(streams.uniq.size).to eq(streams.size)
+  end
+
+  it "enqueues one push job carrying the full recipient list (F-19)" do
+    owner = create(:user)
+    member = create(:account)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ member ])
+
+    expect { described_class.publish(conversation, :message_created, "message_id" => 9) }
+      .to have_enqueued_job(Push::FanoutJob).once.with(
+        "message_created",
+        hash_including("message_id" => 9, "conversation_id" => conversation.id),
+        contain_exactly(owner.account.id, member.id)
+      )
+  end
+
+  it "does not fan out sidebar or push for an account stream" do
+    expect { described_class.publish("account:4", :message_reminder, "id" => 1) }
+      .not_to have_enqueued_job(Push::FanoutJob)
+
+    expect(captured.map { |row| row.fetch(:stream) }).to eq([ "account:4" ])
+  end
+
+  it "accepts a Message as payload and a Conversation as the target" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    message = create(:message, conversation: conversation)
+
+    described_class.publish(conversation, :message_created, message)
+
+    expect(captured.first.fetch(:payload)).to include(
+      "type" => "message_created",
+      "message_id" => message.id,
+      "conversation_id" => conversation.id
+    )
+  end
+
+  it "rejects a target that is not a conversation, account, or stream name" do
+    expect { described_class.publish(1, :noop) }.to raise_error(ArgumentError)
+  end
+
+  it "publishes to an Account stream and treats a blank payload as empty data" do
+    account = create(:account)
+    described_class.publish(account, :phone_verified)
+    described_class.publish("account:1", :noop, nil)
+
+    expect(captured.first.fetch(:stream)).to eq(described_class.account_stream(account.id))
+    expect(captured.last.fetch(:payload)).to eq("type" => "noop")
+  end
+
+  it "does not broadcast when a messaging operation is rolled back" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+
+    ActiveRecord::Base.transaction(requires_new: true) do
+      Messages::Send.call(conversation: conversation, sender: user.account, body: "Hi")
+      raise ActiveRecord::Rollback
+    end
+
+    expect(captured).to eq([])
+    expect(conversation.messages.count).to eq(0)
+  end
+
+  it "is a no-op when the buffer is empty" do
+    described_class.flush!
+
+    expect(captured).to eq([])
+  end
+
+  it "flushes when the connection has no open transaction" do
+    allow(ActiveRecord::Base.connection).to receive(:transaction_open?).and_return(false)
+    described_class.publish("account:1", :noop)
+
+    expect(captured.size).to eq(1)
   end
 end

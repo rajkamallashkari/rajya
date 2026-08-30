@@ -272,6 +272,14 @@ module Settings
         type: :integer, category: :realtime, default: 300, min: 15, max: 3_600,
         description: "Seconds before presence expires without a heartbeat."
       },
+      last_active_debounce: {
+        type: :integer, category: :realtime, default: 30, min: 1, max: 3_600,
+        description: "Seconds between persisted last_active_at writes while still online."
+      },
+      presence_offline_grace: {
+        type: :integer, category: :realtime, default: 5, min: 1, max: 60,
+        description: "Seconds after the last disconnect before presence goes offline (BR-44)."
+      },
       reconnect_delay: {
         type: :integer, category: :realtime, default: 800, min: 50, max: 30_000,
         description: "Milliseconds before a client reconnects to Cable (BR-110)."

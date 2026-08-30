@@ -88,7 +88,10 @@ RSpec.configure do |config|
   config.include ConversationHelpers
   config.include MessageHelpers
 
-  config.before { Rails.cache.clear }
+  config.before do
+    Rails.cache.clear
+    Realtime.reset!
+  end
 
   config.around(:each, :concurrent) do |example|
     previous = config.use_transactional_fixtures
