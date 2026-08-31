@@ -403,6 +403,10 @@ describe("MSW handlers", () => {
       params: { path: { id: 1 }, query: {} },
     });
     expect(emptyChatSearch.data?.query).toBe("");
+    const filteredChatSearch = await client.GET("/api/v1/conversations/{id}/search", {
+      params: { path: { id: 1 }, query: { has_link: true, kind: "text", q: "See" } },
+    });
+    expect(filteredChatSearch.response.status).toBe(200);
     const peopleSearch = await client.GET("/api/v1/accounts/search", {
       params: { query: { q: "Adele" } },
     });
@@ -433,6 +437,22 @@ describe("MSW handlers", () => {
       silent: false,
     });
     expect(messageSearchHits("ghost", 1)[0]?.sender_name).toBeNull();
+    const rows = messagingStore().messages[1] ?? [];
+    const firstSearchRow = rows[0];
+    if (firstSearchRow) {
+      firstSearchRow.deleted = true;
+      expect(messageSearchHits(firstSearchRow.body ?? "", 1).map((row) => row.message_id)).not.toContain(
+        firstSearchRow.id,
+      );
+      firstSearchRow.deleted = false;
+    }
+    expect(messageSearchHits("", 1, { createdAfter: "2027-01-01T00:00:00.000Z" })).toEqual([]);
+    expect(messageSearchHits("", 1, { createdBefore: "2025-01-01T00:00:00.000Z" })).toEqual([]);
+    const ghost = rows.find((row) => row.id === 999001);
+    if (ghost) {
+      ghost.body = null;
+    }
+    expect(messageSearchHits("", 1, { hasLink: true })).toEqual([]);
     const after = await client.GET("/api/v1/conversations/{conversation_id}/messages", {
       params: { path: { conversation_id: 1 }, query: { after: 0 } },
     });

@@ -62,7 +62,10 @@ export function buildConversations(): Conversation[] {
       ...conversationPermissionDefaults(),
       peer: group ? undefined : peerAccount(id + 1, demo.name),
       last_message: preview(last.text, last.kind === "system" ? "system" : "text"),
-      members: [],
+      members: [
+        { account: VIEWER, role: "member" },
+        ...(group ? [] : [{ account: peerAccount(id + 1, demo.name), role: "member" as const }]),
+      ],
       pinned_at: null,
       manually_unread_at: null,
     };
@@ -284,18 +287,60 @@ export function pageFor(
   return wrapPage(rows.slice(Math.max(0, rows.length - MESSAGE_PAGE_SIZE)), rows);
 }
 
-export function messageSearchHits(query: string, conversationId?: number) {
+export function messageSearchHits(
+  query: string,
+  conversationId?: number,
+  filters: {
+    createdAfter?: string | null;
+    createdBefore?: string | null;
+    hasAttachment?: boolean | null;
+    hasLink?: boolean | null;
+    kind?: string | null;
+    senderAccountId?: number | null;
+  } = {},
+) {
   const needle = query.trim().toLowerCase();
-  if (needle.length < 2) {
+  const filteredOnly =
+    Boolean(filters.kind) ||
+    Boolean(filters.createdAfter) ||
+    Boolean(filters.createdBefore) ||
+    filters.hasAttachment === true ||
+    filters.hasLink === true ||
+    filters.senderAccountId != null;
+  if (needle.length < 2 && !filteredOnly) {
     return [];
   }
   const rows =
     conversationId != null
       ? (store.messages[conversationId] ?? [])
       : Object.values(store.messages).flat();
-  const matched = rows.filter(
-    (row) => !row.deleted && row.body != null && row.body.toLowerCase().includes(needle),
-  );
+  const matched = rows.filter((row) => {
+    if (row.deleted) {
+      return false;
+    }
+    if (needle.length >= 2 && (row.body == null || !row.body.toLowerCase().includes(needle))) {
+      return false;
+    }
+    if (filters.kind && row.kind !== filters.kind) {
+      return false;
+    }
+    if (filters.senderAccountId != null && row.sender?.id !== filters.senderAccountId) {
+      return false;
+    }
+    if (filters.createdAfter && row.created_at < filters.createdAfter) {
+      return false;
+    }
+    if (filters.createdBefore && row.created_at > filters.createdBefore) {
+      return false;
+    }
+    if (filters.hasAttachment === true && (row.attachment_count ?? 0) < 1) {
+      return false;
+    }
+    if (filters.hasLink === true && !/https?:\/\//i.test(row.body ?? "")) {
+      return false;
+    }
+    return true;
+  });
   const unique =
     conversationId != null
       ? matched
@@ -308,6 +353,19 @@ export function messageSearchHits(query: string, conversationId?: number) {
     sender_name: row.sender?.display_name ?? null,
     snippet: row.body as string,
   }));
+}
+
+export function searchFiltersFromRequest(url: string) {
+  const params = new URL(url).searchParams;
+  const sender = params.get("sender_account_id");
+  return {
+    createdAfter: params.get("created_after"),
+    createdBefore: params.get("created_before"),
+    hasAttachment: params.has("has_attachment") ? params.get("has_attachment") === "true" : null,
+    hasLink: params.has("has_link") ? params.get("has_link") === "true" : null,
+    kind: params.get("kind"),
+    senderAccountId: sender ? Number(sender) : null,
+  };
 }
 
 export function conversationHitTitle(row: Conversation): string {

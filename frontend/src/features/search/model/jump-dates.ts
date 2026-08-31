@@ -17,3 +17,11 @@ export function startOfDayIso(value: string): string | null {
   }
   return new Date(parsed).toISOString();
 }
+
+export function endOfDayIso(value: string): string | null {
+  const start = startOfDayIso(value);
+  if (!start) {
+    return null;
+  }
+  return new Date(Date.parse(start) + MS_PER_DAY - 1).toISOString();
+}

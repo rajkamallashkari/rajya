@@ -1,6 +1,6 @@
 require "rails_helper"
 
-# Index existence is the Session 3.6 deliverable; planner EXPLAIN waits for P8.2.
+# Index existence is asserted with EXPLAIN in spec/queries/search/filter_indexes_spec.rb (P8.2).
 # rubocop:disable RSpec/DescribeClass, RSpec/SpecFilePathFormat
 RSpec.describe "idx_messages_conversation_sender_position" do
   it "adds the conversation+sender+position index search will use (NR-43)" do

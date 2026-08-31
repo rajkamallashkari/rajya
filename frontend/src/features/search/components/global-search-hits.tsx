@@ -3,7 +3,9 @@ import { useTranslation } from "react-i18next";
 import { useGlobalSearch } from "@/features/search/api/queries";
 import { useDebouncedValue } from "@/features/search/hooks/use-debounced-value";
 import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_QUERY_LENGTH } from "@/features/search/model/constants";
+import { filtersActive } from "@/features/search/model/filters";
 import { meetsMinQueryLength } from "@/features/search/model/highlight";
+import { useSearchStore } from "@/features/search/store/search-store";
 import { Button } from "@/shared/ui/button";
 
 export function GlobalSearchHits({
@@ -18,9 +20,13 @@ export function GlobalSearchHits({
   query: string;
 }): ReactNode {
   const { t } = useTranslation();
+  const filters = useSearchStore((state) => state.filters);
   const debounced = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
-  const search = useGlobalSearch(debounced);
-  if (!meetsMinQueryLength(debounced, SEARCH_MIN_QUERY_LENGTH)) {
+  const search = useGlobalSearch(debounced, filters);
+  if (
+    !meetsMinQueryLength(debounced, SEARCH_MIN_QUERY_LENGTH) &&
+    !filtersActive(filters)
+  ) {
     return null;
   }
   const accounts = search.data?.accounts ?? [];

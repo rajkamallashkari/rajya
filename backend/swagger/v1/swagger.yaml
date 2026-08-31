@@ -2380,6 +2380,38 @@ paths:
         in: query
         schema:
           type: string
+      - name: sender_account_id
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: created_after
+        in: query
+        format: date-time
+        required: false
+        schema:
+          type: string
+      - name: created_before
+        in: query
+        format: date-time
+        required: false
+        schema:
+          type: string
+      - name: kind
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: has_attachment
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: has_link
+        in: query
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
           description: results
@@ -2404,6 +2436,38 @@ paths:
         in: query
         schema:
           type: string
+      - name: sender_account_id
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: created_after
+        in: query
+        format: date-time
+        required: false
+        schema:
+          type: string
+      - name: created_before
+        in: query
+        format: date-time
+        required: false
+        schema:
+          type: string
+      - name: kind
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: has_attachment
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: has_link
+        in: query
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
           description: results
@@ -2411,6 +2475,12 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/ConversationSearch"
+        '422':
+          description: invalid filter
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
   "/api/v1/accounts/search":
     get:
       summary: Search discoverable accounts

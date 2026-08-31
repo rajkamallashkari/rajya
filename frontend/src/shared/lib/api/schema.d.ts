@@ -3689,6 +3689,14 @@ export interface paths {
             parameters: {
                 query?: {
                     q?: string;
+                    sender_account_id?: number;
+                    /** Format: date-time */
+                    created_after?: string;
+                    /** Format: date-time */
+                    created_before?: string;
+                    kind?: string;
+                    has_attachment?: boolean;
+                    has_link?: boolean;
                 };
                 header?: never;
                 path?: never;
@@ -3727,6 +3735,14 @@ export interface paths {
             parameters: {
                 query?: {
                     q?: string;
+                    sender_account_id?: number;
+                    /** Format: date-time */
+                    created_after?: string;
+                    /** Format: date-time */
+                    created_before?: string;
+                    kind?: string;
+                    has_attachment?: boolean;
+                    has_link?: boolean;
                 };
                 header?: never;
                 path: {
@@ -3743,6 +3759,15 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["ConversationSearch"];
+                    };
+                };
+                /** @description invalid filter */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
                     };
                 };
             };

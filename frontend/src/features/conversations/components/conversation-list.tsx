@@ -1,3 +1,4 @@
+import { Filter } from "lucide-react";
 import { useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
@@ -31,8 +32,10 @@ import {
   isMuted,
 } from "@/features/conversations/model/title";
 import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
-import { GlobalSearchHits } from "@/features/search";
+import { GlobalSearchHits, SearchFilterSheet } from "@/features/search";
+import { useSearchStore } from "@/features/search/store/search-store";
 import { Button } from "@/shared/ui/button";
+import { IconButton } from "@/shared/ui/icon-button";
 import { Input } from "@/shared/ui/input";
 import { ListView, type ListViewStatus } from "@/shared/ui/list-view";
 import { Logo } from "@/shared/ui/logo";
@@ -51,6 +54,7 @@ export function ConversationList({
   const pushLayer = useLayerStore((state) => state.pushLayer);
   const layers = useLayerStore((state) => state.layers);
   const [query, setQuery] = useState("");
+  const setFiltersOpen = useSearchStore((state) => state.setFiltersOpen);
   const [tab, setTab] = useState("all");
   const localRef = useRef<HTMLInputElement>(null);
   const inputRef = searchRef ?? localRef;
@@ -112,7 +116,7 @@ export function ConversationList({
           <Link to="/dev/accounts">{t("app.accounts")}</Link>
         </Button>
       </header>
-      <div className="px-[var(--space-list-x)] pb-[var(--space-list-y)]">
+      <div className="flex items-center gap-[var(--control-gap)] px-[var(--space-list-x)] pb-[var(--space-list-y)]">
         <Input
           aria-label={t("search.label")}
           onChange={(event) => setQuery(event.target.value)}
@@ -120,7 +124,11 @@ export function ConversationList({
           ref={inputRef}
           value={query}
         />
+        <IconButton aria-label={t("search.filters")} onClick={() => setFiltersOpen(true)} type="button">
+          <Filter className="h-[var(--icon-size)] w-[var(--icon-size)]" />
+        </IconButton>
       </div>
+      <SearchFilterSheet />
       <FolderStrip
         archivedUnread={archivedUnreadCount(archived.data?.conversations ?? [])}
         folders={folderRows}

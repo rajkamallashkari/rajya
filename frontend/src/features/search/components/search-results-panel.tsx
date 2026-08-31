@@ -4,6 +4,7 @@ import type { SearchMessageHit } from "@/features/search/api/http";
 import { useConversationSearch } from "@/features/search/api/queries";
 import { useDebouncedValue } from "@/features/search/hooks/use-debounced-value";
 import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_QUERY_LENGTH } from "@/features/search/model/constants";
+import { filtersActive } from "@/features/search/model/filters";
 import { splitHighlight, meetsMinQueryLength } from "@/features/search/model/highlight";
 import { useSearchStore } from "@/features/search/store/search-store";
 import { Button } from "@/shared/ui/button";
@@ -18,12 +19,16 @@ export function SearchResultsPanel({
   const { t } = useTranslation();
   const query = useSearchStore((state) => state.query);
   const mode = useSearchStore((state) => state.mode);
+  const filters = useSearchStore((state) => state.filters);
   const debounced = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
-  const search = useConversationSearch(conversationId, debounced);
+  const search = useConversationSearch(conversationId, debounced, filters);
   if (mode !== "list") {
     return null;
   }
-  if (!meetsMinQueryLength(debounced, SEARCH_MIN_QUERY_LENGTH)) {
+  if (
+    !meetsMinQueryLength(debounced, SEARCH_MIN_QUERY_LENGTH) &&
+    !filtersActive(filters)
+  ) {
     return (
       <p className="px-[var(--space-list-x)] py-[var(--space-list-y)] text-[length:var(--text-sm)] text-[var(--text-secondary)]">
         {t("search.type_to_search")}

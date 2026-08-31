@@ -3645,10 +3645,38 @@ CREATE INDEX idx_messages_conversation_id_desc ON public.messages USING btree (c
 
 
 --
+-- Name: idx_messages_conversation_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_messages_conversation_created ON public.messages USING btree (conversation_id, created_at);
+
+
+--
+-- Name: idx_messages_conversation_kind_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_messages_conversation_kind_created ON public.messages USING btree (conversation_id, kind, created_at DESC);
+
+
+--
 -- Name: idx_messages_conversation_sender_position; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_messages_conversation_sender_position ON public.messages USING btree (conversation_id, sender_account_id, "position" DESC);
+
+
+--
+-- Name: idx_messages_has_attachment; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_messages_has_attachment ON public.messages USING btree (conversation_id, created_at DESC) WHERE (attachment_count > 0);
+
+
+--
+-- Name: idx_messages_has_link; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_messages_has_link ON public.messages USING btree (conversation_id, created_at DESC) WHERE (body ~* 'https?://'::text);
 
 
 --
@@ -5215,6 +5243,7 @@ ALTER TABLE ONLY public.message_link_previews
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260831053000'),
 ('20260830235000'),
 ('20260830223100'),
 ('20260830203400'),

@@ -20,7 +20,15 @@ import {
   splitHighlight,
   wrapMatchIndex,
 } from "@/features/search/model/highlight";
-import { jumpDateIso, startOfDayIso } from "@/features/search/model/jump-dates";
+import { jumpDateIso, startOfDayIso, endOfDayIso } from "@/features/search/model/jump-dates";
+import {
+  dateInputValue,
+  EMPTY_SEARCH_FILTERS,
+  filtersActive,
+  serializeFilters,
+  toSearchQueryParams,
+} from "@/features/search/model/filters";
+import { SearchFilterSheet } from "@/features/search/components/search-filter-sheet";
 import { resetSearchStore, useSearchStore } from "@/features/search/store/search-store";
 import { MESSAGE_STAMP } from "@/shared/lib/api/msw/messaging-store";
 import { en } from "@/shared/lib/i18n/catalog";
@@ -67,6 +75,25 @@ describe("search models", () => {
       "2026-08-24T12:00:00.000Z",
     );
     expect(startOfDayIso("2026-01-02")).toBe("2026-01-02T00:00:00.000Z");
+    expect(endOfDayIso("2026-01-02")).toBe("2026-01-02T23:59:59.999Z");
+    expect(endOfDayIso("nope")).toBeNull();
+    expect(filtersActive(EMPTY_SEARCH_FILTERS)).toBe(false);
+    expect(filtersActive({ hasLink: true, kind: "image", senderAccountId: 2 })).toBe(true);
+    expect(serializeFilters({ kind: "voice", hasAttachment: true })).toBe("|||voice|1|");
+    expect(toSearchQueryParams({ createdAfter: "a", createdBefore: "b", hasAttachment: true })).toEqual({
+      created_after: "a",
+      created_before: "b",
+      has_attachment: true,
+    });
+    expect(filtersActive({ createdAfter: "a" })).toBe(true);
+    expect(filtersActive({ createdBefore: "b" })).toBe(true);
+    expect(dateInputValue()).toBe("");
+    expect(dateInputValue("2026-01-02T00:00:00.000Z")).toBe("2026-01-02");
+    expect(toSearchQueryParams({ kind: "file", hasLink: true, senderAccountId: 4 })).toEqual({
+      has_link: true,
+      kind: "file",
+      sender_account_id: 4,
+    });
     expect(startOfDayIso("nope")).toBeNull();
     expect(startOfDayIso("2026-13-40")).toBeNull();
     const { rerender } = render(
@@ -99,6 +126,15 @@ describe("search store", () => {
     expect(useSearchStore.getState().handleBack()).toEqual({ conversationId: "15", scrollTop: 40 });
     expect(useSearchStore.getState().handleBack()).toBe("closed");
     expect(useSearchStore.getState().handleBack()).toBeNull();
+    useSearchStore.getState().patchFilters({ kind: "image", hasAttachment: true });
+    expect(useSearchStore.getState().filters.kind).toBe("image");
+    useSearchStore.getState().resetFilters();
+    expect(useSearchStore.getState().filters).toEqual(EMPTY_SEARCH_FILTERS);
+    useSearchStore.getState().openChatSearch();
+    useSearchStore.getState().setDateOpen(false);
+    expect(useSearchStore.getState().chatOpen).toBe(true);
+    useSearchStore.getState().setDateOpen(true);
+    expect(useSearchStore.getState().chatOpen).toBe(false);
   });
 });
 
@@ -257,5 +293,59 @@ describe("search UI", () => {
     await user.click(screen.getByRole("button", { name: en.search.jump_yesterday }));
     await user.click(screen.getByRole("button", { name: en.search.jump_week }));
     expect(onJump).toHaveBeenCalled();
+  });
+
+  it("applies advanced filters from the sheet", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    useSearchStore.getState().openChatSearch();
+    useSearchStore.getState().setMode("list");
+    useSearchStore.getState().setMembers([
+      { account: { display_name: "Ada", id: 1, kind: "human", username: "ada" }, role: "member" },
+    ]);
+    render(
+      <AppProviders>
+        <ChatSearchBar conversationId={15} matchIndex={0} onCycle={vi.fn()} />
+        <SearchFilterSheet />
+        <SearchResultsPanel conversationId={15} onJump={vi.fn()} />
+      </AppProviders>,
+    );
+    await user.click(screen.getByRole("button", { name: en.search.filters }));
+    await user.click(screen.getByLabelText(en.search.filters_kind));
+    await user.click(screen.getByRole("option", { name: en.search.kind.image }));
+    await user.click(screen.getByLabelText(en.search.filters_attachment));
+    await user.click(screen.getByLabelText(en.search.filters_link));
+    await user.click(screen.getByLabelText(en.search.filters_sender));
+    await user.click(screen.getByRole("option", { name: "Ada" }));
+    await user.type(screen.getByLabelText(en.search.filters_from), "2026-01-01");
+    await user.type(screen.getByLabelText(en.search.filters_to), "2026-01-02");
+    expect(useSearchStore.getState().filters.kind).toBe("image");
+    expect(useSearchStore.getState().filters.hasAttachment).toBe(true);
+    expect(useSearchStore.getState().filters.hasLink).toBe(true);
+    expect(useSearchStore.getState().filters.senderAccountId).toBe(1);
+    expect(await screen.findByText(en.search.no_results)).toBeInTheDocument();
+    await user.clear(screen.getByLabelText(en.search.filters_from));
+    await user.clear(screen.getByLabelText(en.search.filters_to));
+    expect(useSearchStore.getState().filters.createdAfter).toBeUndefined();
+    expect(useSearchStore.getState().filters.createdBefore).toBeUndefined();
+    await user.click(screen.getByLabelText(en.search.filters_kind));
+    await user.click(screen.getByRole("option", { name: en.search.filters_kind_any }));
+    await user.click(screen.getByLabelText(en.search.filters_sender));
+    await user.click(screen.getByRole("option", { name: en.search.filters_sender_any }));
+    await user.click(screen.getByLabelText(en.search.filters_attachment));
+    await user.click(screen.getByLabelText(en.search.filters_link));
+    expect(useSearchStore.getState().filters.kind).toBeUndefined();
+    expect(useSearchStore.getState().filters.senderAccountId).toBeUndefined();
+    await user.click(screen.getByRole("button", { name: en.search.filters_clear }));
+    expect(useSearchStore.getState().filters).toEqual(EMPTY_SEARCH_FILTERS);
+  });
+
+  it("hides the sender filter when there are no members", () => {
+    useSearchStore.getState().setFiltersOpen(true);
+    render(
+      <AppProviders>
+        <SearchFilterSheet />
+      </AppProviders>,
+    );
+    expect(screen.queryByLabelText(en.search.filters_sender)).not.toBeInTheDocument();
   });
 });

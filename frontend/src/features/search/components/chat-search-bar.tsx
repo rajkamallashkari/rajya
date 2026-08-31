@@ -1,9 +1,10 @@
-import { AlignJustify, ArrowUpDown, X } from "lucide-react";
+import { AlignJustify, ArrowUpDown, Filter, X } from "lucide-react";
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useConversationSearch } from "@/features/search/api/queries";
 import { useDebouncedValue } from "@/features/search/hooks/use-debounced-value";
 import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_QUERY_LENGTH } from "@/features/search/model/constants";
+import { filtersActive } from "@/features/search/model/filters";
 import { meetsMinQueryLength } from "@/features/search/model/highlight";
 import { useSearchStore } from "@/features/search/store/search-store";
 import { IconButton } from "@/shared/ui/icon-button";
@@ -24,11 +25,14 @@ export function ChatSearchBar({
   const mode = useSearchStore((state) => state.mode);
   const toggleMode = useSearchStore((state) => state.toggleMode);
   const closeChatSearch = useSearchStore((state) => state.closeChatSearch);
+  const filters = useSearchStore((state) => state.filters);
+  const setFiltersOpen = useSearchStore((state) => state.setFiltersOpen);
   const debounced = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
-  const search = useConversationSearch(conversationId, debounced);
+  const search = useConversationSearch(conversationId, debounced, filters);
   const inputRef = useRef<HTMLInputElement>(null);
   const total = search.data?.messages.length ?? 0;
-  const ready = meetsMinQueryLength(debounced, SEARCH_MIN_QUERY_LENGTH);
+  const ready =
+    meetsMinQueryLength(debounced, SEARCH_MIN_QUERY_LENGTH) || filtersActive(filters);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -73,6 +77,9 @@ export function ChatSearchBar({
           <X className="h-[var(--icon-size)] w-[var(--icon-size)]" />
         </IconButton>
       ) : null}
+      <IconButton aria-label={t("search.filters")} onClick={() => setFiltersOpen(true)} type="button">
+        <Filter className="h-[var(--icon-size)] w-[var(--icon-size)]" />
+      </IconButton>
       {ready ? (
         <span className="w-[var(--space-10)] text-center text-[length:var(--text-xs)] text-[var(--text-secondary)] tabular-nums">
           {mode === "list"

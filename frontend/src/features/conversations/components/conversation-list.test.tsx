@@ -51,6 +51,9 @@ describe("ConversationList", () => {
       </AppProviders>,
     );
     expect(screen.getByText(en.shell.chats)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.search.filters }));
+    expect(screen.getByText(en.search.filters_clear)).toBeInTheDocument();
+    await user.keyboard("{Escape}");
     await user.click(await screen.findByText(ADA_DEMO.name));
     expect(useLayerStore.getState().layers[0]).toEqual(
       expect.objectContaining({ conversationId: "1", kind: "conversation" }),

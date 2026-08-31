@@ -13,6 +13,7 @@ import {
   messagingStore,
   pageFor,
   messageSearchHits,
+  searchFiltersFromRequest,
   accountSearchHits,
   conversationSearchHits,
   patchMessage,
@@ -584,10 +585,11 @@ export const handlerMap = {
   }),
   "/api/v1/search": http.get("*/api/v1/search", ({ request }) => {
     const q = new URL(request.url).searchParams.get("q") ?? "";
+    const filters = searchFiltersFromRequest(request.url);
     return HttpResponse.json({
       accounts: accountSearchHits(q),
       conversations: conversationSearchHits(q),
-      messages: messageSearchHits(q),
+      messages: messageSearchHits(q, undefined, filters),
       query: q,
     });
   }),
@@ -596,7 +598,7 @@ export const handlerMap = {
     ({ params, request }) => {
       const q = new URL(request.url).searchParams.get("q") ?? "";
       return HttpResponse.json({
-        messages: messageSearchHits(q, Number(params.id)),
+        messages: messageSearchHits(q, Number(params.id), searchFiltersFromRequest(request.url)),
         query: q,
       });
     },

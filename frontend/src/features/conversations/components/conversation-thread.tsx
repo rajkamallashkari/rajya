@@ -74,6 +74,7 @@ import {
 import { useConversationSearch } from "@/features/search/api/queries";
 import { useDebouncedValue } from "@/features/search/hooks/use-debounced-value";
 import { SEARCH_DEBOUNCE_MS } from "@/features/search/model/constants";
+import { serializeFilters } from "@/features/search/model/filters";
 import { wrapMatchIndex } from "@/features/search/model/highlight";
 import { resetSearchStore, useSearchStore } from "@/features/search/store/search-store";
 import { IconButton } from "@/shared/ui/icon-button";
@@ -221,9 +222,10 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const setDateOpen = useSearchStore((state) => state.setDateOpen);
   const searchQuery = useSearchStore((state) => state.query);
   const searchMode = useSearchStore((state) => state.mode);
+  const searchFilters = useSearchStore((state) => state.filters);
   const [matchIndex, setMatchIndex] = useState(0);
   const debouncedSearch = useDebouncedValue(searchQuery, SEARCH_DEBOUNCE_MS);
-  const conversationSearch = useConversationSearch(conversationId, debouncedSearch);
+  const conversationSearch = useConversationSearch(conversationId, debouncedSearch, searchFilters);
   const jumpedQuery = useRef("");
   const mobile = useMobileViewport();
   const [draft, setDraft] = useState("");
@@ -251,6 +253,10 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
     jumpedQuery.current = "";
     resetSearchStore();
   }, [conversationId]);
+
+  useEffect(() => {
+    useSearchStore.getState().setMembers(conversation?.members ?? []);
+  }, [conversation]);
 
   useEffect(() => {
     stuck.current = false;
@@ -289,10 +295,11 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
 
   useEffect(() => {
     const first = searchHits[0];
-    if (!chatOpen || searchMode !== "navigate" || !first || jumpedQuery.current === debouncedSearch) {
+    const jumpKey = `${debouncedSearch}|${serializeFilters(searchFilters)}`;
+    if (!chatOpen || searchMode !== "navigate" || !first || jumpedQuery.current === jumpKey) {
       return;
     }
-    jumpedQuery.current = debouncedSearch;
+    jumpedQuery.current = jumpKey;
     setMatchIndex(0);
     if (scroller.current) {
       useSearchStore.getState().pushJump({
@@ -301,7 +308,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
       });
     }
     openConversation(conversationLayer(String(conversationId), title, String(first.message_id)));
-  }, [chatOpen, conversationId, debouncedSearch, openConversation, searchHits, searchMode, title]);
+  }, [chatOpen, conversationId, debouncedSearch, openConversation, searchFilters, searchHits, searchMode, title]);
 
   const onThreadBack = (): void => {
     const restored = useSearchStore.getState().handleBack();
