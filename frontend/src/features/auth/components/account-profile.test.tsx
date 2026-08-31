@@ -40,6 +40,7 @@ describe("AccountProfile", () => {
     destroyBlock.mockResolvedValue({});
     render(<AccountProfile accountId={2} />);
     expect(await screen.findByText("Grace")).toBeInTheDocument();
+    expect(screen.queryByText(en.bots.memory_disclosure)).toBeNull();
     await user.click(screen.getByRole("button", { name: en.auth.profile.block }));
     expect(createBlock).toHaveBeenCalledWith(2);
     expect(screen.getByText(en.auth.profile.blocked)).toBeInTheDocument();
@@ -65,5 +66,21 @@ describe("AccountProfile", () => {
     destroyBlock.mockRejectedValue(new Error("nope"));
     await user.click(screen.getByRole("button", { name: en.auth.profile.unblock }));
     expect(screen.getByRole("button", { name: en.auth.profile.unblock })).toBeInTheDocument();
+  });
+
+  it("shows the shared-memory line on a bot profile (DS-1)", async () => {
+    fetchAccount.mockResolvedValue({
+      missing: false,
+      account: {
+        id: 9,
+        display_name: "Nimbus",
+        username: "nimbus",
+        kind: "bot",
+        shared_memory: true,
+      },
+    });
+    render(<AccountProfile accountId={9} />);
+    expect(await screen.findByText("Nimbus")).toBeInTheDocument();
+    expect(screen.getByText(en.bots.memory_disclosure)).toBeInTheDocument();
   });
 });

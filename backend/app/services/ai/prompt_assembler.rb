@@ -1,5 +1,5 @@
-# Builds the bot_reply message list: persona + template, rolling summary,
-# quoted reply-target (NR-12), and the last N turns (BR-74).
+# Builds the bot_reply message list: persona + template, shared memories (NR-11),
+# rolling summary, quoted reply-target (NR-12), and the last N turns (BR-74).
 module Ai
   class PromptAssembler
     HUMAN_ROLE = "user"
@@ -19,13 +19,25 @@ module Ai
     end
 
     def messages
-      [ system_message, summary_message, quote_message, *history_messages ].compact
+      [ system_message, memory_message, summary_message, quote_message, *history_messages ].compact
     end
 
     private
 
     def system_message
       { role: SYSTEM_ROLE, content: [ @bot.persona_prompt.to_s.strip, PromptTemplate.fetch(:bot_reply) ].join("\n\n") }
+    end
+
+    def memory_message
+      rows = Bots::RetrieveMemories.call(
+        bot: @bot, query: @triggered_by.body, account: @triggered_by.sender_account
+      ).value
+      return if rows.blank?
+
+      facts = rows.map(&:content).compact_blank
+      return if facts.empty?
+
+      { role: SYSTEM_ROLE, content: "#{PromptTemplate.fetch(:memory_context)}\n#{facts.join("\n")}" }
     end
 
     def summary_message

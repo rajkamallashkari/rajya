@@ -51,6 +51,131 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Error"
+  "/api/v1/messages/{id}/translate":
+    post:
+      summary: Translate a message (BR-86)
+      tags:
+      - AI
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: translated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Translation"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - target_language
+              properties:
+                target_language:
+                  type: string
+                source_language:
+                  type: string
+                  nullable: true
+  "/api/v1/conversations/{id}/suggest_replies":
+    post:
+      summary: Suggest reply chips
+      tags:
+      - AI
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: suggested
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SuggestReplies"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - message_id
+              properties:
+                message_id:
+                  type: integer
+  "/api/v1/conversations/{id}/summarize":
+    post:
+      summary: Summarize unread or recent messages
+      tags:
+      - AI
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: summarized
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Summary"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mode:
+                  type: string
+                  enum:
+                  - unread
+                  - recent
+  "/api/v1/ai/translate_text":
+    post:
+      summary: Translate arbitrary text
+      tags:
+      - AI
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: translated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Translation"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - text
+              - target_language
+              properties:
+                text:
+                  type: string
+                target_language:
+                  type: string
+                source_language:
+                  type: string
+                  nullable: true
   "/api/v1/attachments/{id}/download":
     get:
       summary: Issue a short-lived media URL
@@ -261,6 +386,283 @@ paths:
                   type: string
               required:
               - generation_id
+  "/api/v1/bots":
+    get:
+      summary: List active bots
+      tags:
+      - Bots
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BotList"
+  "/api/v1/bots/{id}":
+    get:
+      summary: Show an active bot
+      tags:
+      - Bots
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: visible
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Bot"
+    delete:
+      summary: Deactivate a bot (BR-81)
+      tags:
+      - Bots
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: deactivated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Bot"
+  "/api/v1/bot_requests":
+    post:
+      summary: Propose a bot
+      tags:
+      - Bots
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: filed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BotRequest"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+                target_bot_id:
+                  type: integer
+                  nullable: true
+                payload:
+                  type: object
+                  additionalProperties: true
+                  properties:
+                    bio:
+                      type: string
+                    name:
+                      type: string
+                    persona_prompt:
+                      type: string
+                    username:
+                      type: string
+    get:
+      summary: List the current account's bot proposals
+      tags:
+      - Bots
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BotRequestList"
+  "/api/v1/ai/rewrite":
+    post:
+      summary: Rewrite draft text
+      tags:
+      - AI
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: rewritten with conversation context
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Rewrite"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - text
+              properties:
+                text:
+                  type: string
+                tones:
+                  type: array
+                  items:
+                    type: string
+                instruction:
+                  type: string
+                conversation_id:
+                  type: integer
+                  nullable: true
+  "/api/v1/style_profile":
+    get:
+      summary: Show style-profile consent and blob
+      tags:
+      - AI
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: shown
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/StyleProfile"
+    patch:
+      summary: Set style-profile consent (F-11)
+      tags:
+      - AI
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/StyleProfile"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - enabled
+              properties:
+                enabled:
+                  type: boolean
+    post:
+      summary: Build the style profile after opt-in (F-11)
+      tags:
+      - AI
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: built
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/StyleProfile"
+        '403':
+          description: refused while consent is off
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  "/api/v1/bot_requests/{id}":
+    delete:
+      summary: Withdraw a pending proposal
+      tags:
+      - Bots
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: withdrawn
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+  "/api/v1/admin/bot_requests":
+    get:
+      summary: List bot proposals
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BotRequestList"
+  "/api/v1/admin/bot_requests/{id}/approve":
+    post:
+      summary: Approve a bot proposal
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: approved
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Bot"
+  "/api/v1/admin/bot_requests/{id}/decline":
+    post:
+      summary: Decline a bot proposal
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: declined
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BotRequest"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
   "/api/v1/contact_nicknames":
     get:
       summary: List the current account's contact nicknames
@@ -3464,6 +3866,8 @@ components:
         bio:
           type: string
           nullable: true
+        shared_memory:
+          type: boolean
     SessionUser:
       type: object
       required:
@@ -3545,6 +3949,87 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/Block"
+    Bot:
+      type: object
+      required:
+      - id
+      - account
+      - memory_enabled
+      properties:
+        id:
+          type: integer
+        account:
+          "$ref": "#/components/schemas/Account"
+        memory_enabled:
+          type: boolean
+        owner_account_id:
+          type: integer
+          nullable: true
+    BotList:
+      type: object
+      required:
+      - bots
+      properties:
+        bots:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Bot"
+    BotRequest:
+      type: object
+      required:
+      - id
+      - kind
+      - status
+      - payload
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+          enum:
+          - create
+          - edit
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - declined
+        payload:
+          type: object
+          additionalProperties: true
+          properties:
+            bio:
+              type: string
+            name:
+              type: string
+            persona_prompt:
+              type: string
+            username:
+              type: string
+        decline_reason:
+          type: string
+          nullable: true
+        target_bot_id:
+          type: integer
+          nullable: true
+        bot_id:
+          type: integer
+          nullable: true
+        requester_account_id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+    BotRequestList:
+      type: object
+      required:
+      - bot_requests
+      properties:
+        bot_requests:
+          type: array
+          items:
+            "$ref": "#/components/schemas/BotRequest"
     ContactNickname:
       type: object
       required:
@@ -4854,6 +5339,72 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/ReportReason"
+    Rewrite:
+      type: object
+      required:
+      - text
+      - suggested_chips
+      properties:
+        text:
+          type: string
+        suggested_chips:
+          type: array
+          items:
+            type: string
+    StyleProfile:
+      type: object
+      required:
+      - enabled
+      - message_count
+      properties:
+        enabled:
+          type: boolean
+        profile:
+          type: string
+          nullable: true
+        updated_at:
+          type: string
+          nullable: true
+        message_count:
+          type: integer
+    SuggestReplies:
+      type: object
+      required:
+      - suggestions
+      properties:
+        suggestions:
+          type: array
+          items:
+            type: string
+    Summary:
+      type: object
+      required:
+      - text
+      - mode
+      properties:
+        text:
+          type: string
+        mode:
+          type: string
+          enum:
+          - unread
+          - recent
+    Translation:
+      type: object
+      required:
+      - text
+      - source_language
+      - target_language
+      - cached
+      properties:
+        text:
+          type: string
+        source_language:
+          type: string
+        target_language:
+          type: string
+        cached:
+          type: boolean
     WebauthnCredential:
       type: object
       additionalProperties: true

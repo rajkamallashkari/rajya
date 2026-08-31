@@ -77,4 +77,10 @@ RSpec.describe MessagePolicy do
 
     expect(described_class.new(user.account, message)).not_to be_forward
   end
+
+  it "allows a human member to translate and denies a missing actor" do
+    user, message = setup
+    expect(described_class.new(user.account, message)).to be_translate
+    expect(described_class.new(nil, message)).not_to be_translate
+  end
 end

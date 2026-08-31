@@ -1,5 +1,5 @@
-# `embedding` is `vector(768)` (pgvector). The OID is registered as text in
-# `config/initializers/pgvector.rb` so SELECTs stay quiet. Neighbor recall is P9.3.
+# `embedding` is `vector(768)` (pgvector). ActiveRecord maps the OID as text;
+# cosine neighbor recall lives in Bots::RetrieveMemories (NR-11).
 class BotMemory < ApplicationRecord
   belongs_to :bot
   belongs_to :source_account, class_name: "Account", optional: true

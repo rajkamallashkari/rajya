@@ -15,7 +15,14 @@ module Ai
       summarize: "Summarize the conversation concisely for someone catching up.",
       suggest_replies: "Suggest short reply options the user might send.",
       translate: "Translate the message. Preserve formatting markers from the restricted set.",
-      style_profile: "Describe the writer's style from the supplied messages. Be concise."
+      style_profile: "Analyse these messages and describe the author's writing style in 2-3 sentences. " \
+                     "Cover: tone (formal/casual), typical sentence length, punctuation habits, " \
+                     "emoji/slang usage, capitalisation patterns. Output ONLY the style description.",
+      memory_extract: "Extract durable facts from this user message that a bot should remember for " \
+                      "future conversations with anyone. Return one fact per line. If there are no " \
+                      "facts, return NONE.",
+      memory_context: "Shared memories this bot has learned from anyone (not private to the current user). " \
+                       "Use them when relevant."
     }.freeze
 
     class << self

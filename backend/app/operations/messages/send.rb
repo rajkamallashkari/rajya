@@ -54,6 +54,7 @@ module Messages
       unarchive_on_activity!
       publish!(message)
       Bots::Dispatch.call(message: message)
+      Bots::ExtractMemory.enqueue(message)
       success(message)
     end
 

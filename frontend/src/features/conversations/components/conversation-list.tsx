@@ -1,10 +1,8 @@
-import { Filter } from "lucide-react";
+import { Bot, Filter } from "lucide-react";
 import { useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
-import { formatMessageTime } from "@/features/messages";
-import { ChatListItem } from "@/features/conversations/components/chat-list-item";
-import { FolderStrip } from "@/features/conversations/components/folder-strip";
+import { BotDirectorySheet } from "@/features/bots";
 import type { Conversation, ConversationFolder } from "@/features/conversations/api/http";
 import {
   useArchiveConversation,
@@ -18,6 +16,8 @@ import {
   usePinConversation,
   useReorderFolders,
 } from "@/features/conversations/api/queries";
+import { ChatListItem } from "@/features/conversations/components/chat-list-item";
+import { FolderStrip } from "@/features/conversations/components/folder-strip";
 import { lastActivityFromPreview } from "@/features/conversations/model/preview";
 import { useTypingIndicators } from "@/features/conversations/hooks/use-typing-indicators";
 import {
@@ -31,9 +31,10 @@ import {
   isGroupConversation,
   isMuted,
 } from "@/features/conversations/model/title";
-import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { formatMessageTime } from "@/features/messages";
 import { GlobalSearchHits, SearchFilterSheet } from "@/features/search";
 import { useSearchStore } from "@/features/search/store/search-store";
+import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { Button } from "@/shared/ui/button";
 import { IconButton } from "@/shared/ui/icon-button";
 import { Input } from "@/shared/ui/input";
@@ -54,6 +55,7 @@ export function ConversationList({
   const pushLayer = useLayerStore((state) => state.pushLayer);
   const layers = useLayerStore((state) => state.layers);
   const [query, setQuery] = useState("");
+  const [botsOpen, setBotsOpen] = useState(false);
   const setFiltersOpen = useSearchStore((state) => state.setFiltersOpen);
   const [tab, setTab] = useState("all");
   const localRef = useRef<HTMLInputElement>(null);
@@ -124,10 +126,14 @@ export function ConversationList({
           ref={inputRef}
           value={query}
         />
+        <IconButton aria-label={t("bots.directory")} onClick={() => setBotsOpen(true)} type="button">
+          <Bot className="h-[var(--icon-size)] w-[var(--icon-size)]" />
+        </IconButton>
         <IconButton aria-label={t("search.filters")} onClick={() => setFiltersOpen(true)} type="button">
           <Filter className="h-[var(--icon-size)] w-[var(--icon-size)]" />
         </IconButton>
       </div>
+      <BotDirectorySheet onOpenChange={setBotsOpen} open={botsOpen} />
       <SearchFilterSheet />
       <FolderStrip
         archivedUnread={archivedUnreadCount(archived.data?.conversations ?? [])}

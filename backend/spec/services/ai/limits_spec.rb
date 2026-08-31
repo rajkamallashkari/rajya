@@ -19,6 +19,20 @@ RSpec.describe Ai::Limits do
     expect(described_class.reply_retry_attempts).to eq(3)
   end
 
+  it "reads memory and helper limits from settings" do
+    expect(described_class.memory_top_k).to eq(8)
+    expect(described_class.memory_extract_max).to eq(5)
+    expect(described_class.rewrite_chip_count).to eq(3)
+    expect(described_class.suggest_replies_count).to eq(3)
+  end
+
+  it "reads style-profile sample limits from settings" do
+    expect(described_class.style_profile_max_length).to eq(300)
+    expect(described_class.style_profile_min_messages).to eq(10)
+    expect(described_class.style_profile_rebuild_threshold).to eq(50)
+    expect(described_class.style_profile_sample).to eq(80)
+  end
+
   it "picks up context window and summarization threshold without a restart" do
     stub_setting(:ai_context_window, 5, category: "ai")
     stub_setting(:ai_summarization_threshold, 7, category: "ai")

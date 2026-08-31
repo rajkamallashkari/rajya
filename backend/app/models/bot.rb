@@ -11,6 +11,17 @@ class Bot < ApplicationRecord
   validates :persona_prompt, presence: true
   validate :account_must_be_bot
 
+  scope :active, -> { joins(:account).merge(Account.active) }
+  scope :system, -> { where(owner_account_id: nil) }
+
+  def deactivate!
+    account.update!(deactivated_at: Time.current)
+  end
+
+  def deactivated?
+    account.deactivated?
+  end
+
   private
 
   def account_must_be_bot

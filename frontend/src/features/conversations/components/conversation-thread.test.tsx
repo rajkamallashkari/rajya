@@ -663,12 +663,16 @@ describe("conversation layers", () => {
       onRegenerate: () => undefined,
       onSave: () => undefined,
       onSelect: () => undefined,
+      onSuggestReply: () => undefined,
+      onTranslate: () => undefined,
       onUnsend: () => undefined,
       pinned: [],
       saved: [],
       viewerId: 1,
     });
     expect(bot.onRegenerate).toBeDefined();
+    expect(bot.onSuggestReply).toBeDefined();
+    expect(bot.onTranslate).toBeDefined();
     const otherPrompt = buildMessageMenuActions({
       message: {
         id: 5,
@@ -912,5 +916,50 @@ describe("conversation layers", () => {
     useSearchStore.setState({ jumpStack: [] });
     await user.click(screen.getByRole("button", { name: en.shell.back }));
     expect(useLayerStore.getState().layers).toHaveLength(0);
+  });
+
+  it("shows the first-message notice in a new bot DM (DS-1)", async () => {
+    setAccessSession(testSession());
+    const row = findConversation(1);
+    if (row?.peer) {
+      row.peer.kind = "bot";
+    }
+    messagingStore().messages[1] = [];
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText(en.bots.memory_notice)).toBeInTheDocument();
+  });
+
+  it("rewrites the draft, suggests a reply, translates, and summarizes unread", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.ai.summarize }));
+    expect(await screen.findByText("Ship Friday")).toBeInTheDocument();
+    fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
+    await user.click(screen.getByRole("menuitem", { name: en.composer.rewrite }));
+    const field = screen.getByRole("textbox");
+    await user.type(field, "hey");
+    fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
+    await user.click(screen.getByRole("menuitem", { name: en.composer.rewrite }));
+    expect(await screen.findByText(en.ai.provisional)).toBeInTheDocument();
+    expect(field).toHaveValue("Hello");
+    await user.click(screen.getByRole("button", { name: "casual" }));
+    expect(field).toHaveValue("casual");
+    const bubbles = document.querySelectorAll("[data-message-bubble]");
+    fireEvent.contextMenu(bubbles[0] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.suggest_reply }));
+    expect(await screen.findByRole("button", { name: "On my way" })).toBeInTheDocument();
+    fireEvent.contextMenu(bubbles[0] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.translate }));
+    expect(document.querySelector("[data-translation-card]")).not.toBeNull();
   });
 });

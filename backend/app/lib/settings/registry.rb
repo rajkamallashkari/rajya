@@ -361,6 +361,10 @@ module Settings
         type: :integer, category: :ai, default: 1_024, min: 16, max: 8_192,
         description: "Completion token cap sent to chat providers (BR-74)."
       },
+      ai_memory_extract_max: {
+        type: :integer, category: :ai, default: 5, min: 1, max: 20,
+        description: "Maximum facts extracted from one user message into bot memory (NR-11)."
+      },
       ai_memory_top_k: {
         type: :integer, category: :ai, default: 8, min: 1, max: 50,
         description: "Memories retrieved per bot reply (NR-11)."
@@ -409,6 +413,10 @@ module Settings
         type: :integer, category: :ai, default: 3, min: 1, max: 10,
         description: "Bot-reply job retries after an upstream failure (BR-78)."
       },
+      ai_rewrite_chip_count: {
+        type: :integer, category: :ai, default: 3, min: 1, max: 8,
+        description: "Follow-up tone chips returned with a rewrite."
+      },
       ai_rewrite_models: {
         type: :array, category: :ai, default: %w[groq/llama-3.1-8b-instant ollama/llama3.2],
         description: "Ordered rewrite models provider/model (NR-8)."
@@ -417,9 +425,29 @@ module Settings
         type: :integer, category: :ai, default: 60, min: 5, max: 300,
         description: "Seconds before an AI stream is aborted."
       },
+      ai_style_profile_max_length: {
+        type: :integer, category: :ai, default: 300, min: 40, max: 2_000,
+        description: "Maximum characters stored in a learned style-profile blob."
+      },
+      ai_style_profile_min_messages: {
+        type: :integer, category: :ai, default: 10, min: 1, max: 500,
+        description: "Minimum sent messages before a style profile can be built."
+      },
       ai_style_profile_models: {
         type: :array, category: :ai, default: %w[groq/llama-3.1-8b-instant ollama/llama3.2],
         description: "Ordered style_profile models provider/model (NR-8)."
+      },
+      ai_style_profile_rebuild_threshold: {
+        type: :integer, category: :ai, default: 50, min: 1, max: 10_000,
+        description: "New sent messages required before a style profile rebuild."
+      },
+      ai_style_profile_sample: {
+        type: :integer, category: :ai, default: 80, min: 1, max: 500,
+        description: "Messages sampled when building a style profile (F-11)."
+      },
+      ai_suggest_replies_count: {
+        type: :integer, category: :ai, default: 3, min: 1, max: 8,
+        description: "Smart-reply chips returned per request (BR-84)."
       },
       ai_suggest_replies_models: {
         type: :array, category: :ai, default: %w[groq/llama-3.1-8b-instant ollama/llama3.2],

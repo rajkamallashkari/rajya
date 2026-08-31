@@ -26,6 +26,16 @@ export async function getConversation(id: number) {
   );
 }
 
+export async function createConversation(body: { account_id?: number; kind?: string }) {
+  return unwrap(
+    await apiClient().POST("/api/v1/conversations", {
+      headers: bearerHeaders(),
+      body,
+    }),
+    "conversation_create_failed",
+  );
+}
+
 export async function listMessages(
   conversationId: number,
   query?: {

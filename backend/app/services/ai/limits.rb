@@ -38,6 +38,38 @@ module Ai
       def reply_retry_attempts
         Settings.fetch(:ai_reply_retry_attempts)
       end
+
+      def memory_top_k
+        Settings.fetch(:ai_memory_top_k)
+      end
+
+      def memory_extract_max
+        Settings.fetch(:ai_memory_extract_max)
+      end
+
+      def rewrite_chip_count
+        Settings.fetch(:ai_rewrite_chip_count)
+      end
+
+      def style_profile_max_length
+        Settings.fetch(:ai_style_profile_max_length)
+      end
+
+      def style_profile_min_messages
+        Settings.fetch(:ai_style_profile_min_messages)
+      end
+
+      def style_profile_rebuild_threshold
+        Settings.fetch(:ai_style_profile_rebuild_threshold)
+      end
+
+      def style_profile_sample
+        Settings.fetch(:ai_style_profile_sample)
+      end
+
+      def suggest_replies_count
+        Settings.fetch(:ai_suggest_replies_count)
+      end
     end
   end
 end

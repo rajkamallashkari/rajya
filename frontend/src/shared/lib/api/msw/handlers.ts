@@ -172,6 +172,38 @@ export function resetFiledReports() {
   filedReports.clear();
 }
 
+const nimbusBot = {
+  id: 1,
+  memory_enabled: true,
+  owner_account_id: null,
+  account: {
+    id: 99,
+    username: "nimbus",
+    display_name: "Nimbus",
+    kind: "bot",
+    bio: "Sky watcher",
+    shared_memory: true,
+  },
+};
+
+let styleProfileState = {
+  enabled: false,
+  profile: null as string | null,
+  updated_at: null as string | null,
+  message_count: 0,
+};
+
+export function resetAiHelpers() {
+  styleProfileState = { enabled: false, profile: null, updated_at: null, message_count: 0 };
+}
+
+const translationBody = {
+  text: "Hello",
+  source_language: "es",
+  target_language: "en",
+  cached: false,
+};
+
 const scheduled = {
   id: 1,
   conversation_id: 1,
@@ -1138,6 +1170,85 @@ export const handlerMap = {
         return HttpResponse.json(folder);
       },
     ),
+  "/api/v1/ai/rewrite": http.post("*/api/v1/ai/rewrite", () =>
+    HttpResponse.json({ suggested_chips: ["casual"], text: "Hello" }),
+  ),
+  "/api/v1/ai/translate_text": http.post("*/api/v1/ai/translate_text", () =>
+    HttpResponse.json(translationBody),
+  ),
+  "/api/v1/bots": http.get("*/api/v1/bots", () => HttpResponse.json({ bots: [nimbusBot] })),
+  "/api/v1/bots/{id}": http.get("*/api/v1/bots/:id", ({ params }) => {
+    if (Number(params.id) !== nimbusBot.id) {
+      return jsonError(404);
+    }
+    return HttpResponse.json(nimbusBot);
+  }),
+  "/api/v1/bot_requests": http.all("*/api/v1/bot_requests", async ({ request }) => {
+    if (request.method === "POST") {
+      return HttpResponse.json(
+        {
+          id: 1,
+          kind: "create",
+          status: "pending",
+          payload: { bio: "Sky", name: "Nimbus", persona_prompt: "A".repeat(80), username: "nimbus" },
+        },
+        { status: 201 },
+      );
+    }
+    return HttpResponse.json({ bot_requests: [] });
+  }),
+  "/api/v1/bot_requests/{id}": http.delete("*/api/v1/bot_requests/:id", () =>
+    HttpResponse.json({ ok: true }),
+  ),
+  "/api/v1/admin/bot_requests": http.get("*/api/v1/admin/bot_requests", () =>
+    HttpResponse.json({ bot_requests: [] }),
+  ),
+  "/api/v1/admin/bot_requests/{id}/approve": http.post("*/api/v1/admin/bot_requests/:id/approve", () =>
+    HttpResponse.json(nimbusBot),
+  ),
+  "/api/v1/admin/bot_requests/{id}/decline": http.post(
+    "*/api/v1/admin/bot_requests/:id/decline",
+    () =>
+      HttpResponse.json({
+        id: 1,
+        kind: "create",
+        status: "declined",
+        payload: {},
+      }),
+  ),
+  "/api/v1/style_profile": http.all("*/api/v1/style_profile", async ({ request }) => {
+    if (request.method === "PATCH") {
+      const body = (await request.json()) as { enabled?: boolean };
+      styleProfileState = { ...styleProfileState, enabled: Boolean(body.enabled) };
+      return HttpResponse.json(styleProfileState);
+    }
+    if (request.method === "POST") {
+      if (!styleProfileState.enabled) {
+        return HttpResponse.json(
+          { error: { code: "forbidden", message: "forbidden", details: {} } },
+          { status: 403 },
+        );
+      }
+      styleProfileState = {
+        ...styleProfileState,
+        profile: "Casual, short sentences.",
+        updated_at: MESSAGE_STAMP,
+        message_count: 12,
+      };
+      return HttpResponse.json(styleProfileState);
+    }
+    return HttpResponse.json(styleProfileState);
+  }),
+  "/api/v1/conversations/{id}/suggest_replies": http.post(
+    "*/api/v1/conversations/:id/suggest_replies",
+    () => HttpResponse.json({ suggestions: ["On my way"] }),
+  ),
+  "/api/v1/conversations/{id}/summarize": http.post("*/api/v1/conversations/:id/summarize", () =>
+    HttpResponse.json({ mode: "unread", text: "Ship Friday" }),
+  ),
+  "/api/v1/messages/{id}/translate": http.post("*/api/v1/messages/:id/translate", () =>
+    HttpResponse.json(translationBody),
+  ),
 } satisfies HandlerMap;
 
 export const handlers: HttpHandler[] = Object.values(handlerMap);

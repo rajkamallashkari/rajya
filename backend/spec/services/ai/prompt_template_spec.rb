@@ -42,6 +42,8 @@ RSpec.describe Ai::PromptTemplate do
       expect(described_class.fetch(:suggest_replies)).to include("reply")
       expect(described_class.fetch(:style_profile)).to include("style")
       expect(described_class.fetch(:conversation_summary)).to include("archiver")
+      expect(described_class.fetch(:memory_extract)).to include("NONE")
+      expect(described_class.fetch(:memory_context)).to include("Shared memories")
     end
   end
 end

@@ -19,6 +19,8 @@ export const MENU_ITEM_CLASS =
 export const MENU_ITEM_DANGER_CLASS =
   "text-[var(--status-danger)] data-[highlighted]:bg-[var(--status-danger-subtle)]";
 
+export const MENU_ITEM_AI_CLASS = "text-[var(--accent)]";
+
 export const OVERLAY_SCRIM = "fixed inset-0 bg-[var(--overlay-scrim)] ui-scrim";
 
 export const PAGE_INSET =

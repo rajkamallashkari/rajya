@@ -15,6 +15,7 @@ module Ai
       embedding: :ai_embedding_models,
       vision: :ai_vision_models,
       image_gen: :ai_image_gen_models,
+      memory_extract: :ai_rewrite_models,
       style_profile: :ai_style_profile_models
     }.freeze
 

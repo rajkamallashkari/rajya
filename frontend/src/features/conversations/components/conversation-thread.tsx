@@ -2,6 +2,13 @@ import { Calendar, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { getAccessSession } from "@/features/auth/model/access-session";
+import { isNewBotConversation, MemoryNotice, SmartReplyChips, SummarizeCard } from "@/features/bots";
+import {
+  useRewrite,
+  useSuggestReplies,
+  useSummarize,
+  useTranslateMessage,
+} from "@/features/bots/api/queries";
 import { Composer } from "@/features/composer";
 import {
   gifsFromList,
@@ -204,6 +211,10 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const [gifQuery, setGifQuery] = useState("");
   const gifs = useGifSearch(gifQuery);
   const remind = useCreateReminder();
+  const rewrite = useRewrite();
+  const translate = useTranslateMessage();
+  const suggest = useSuggestReplies(conversationId);
+  const summarize = useSummarize(conversationId);
   const [infoId, setInfoId] = useState<number | null>(null);
   const [remindId, setRemindId] = useState<number | null>(null);
   const [resultsPollId, setResultsPollId] = useState<number | null>(null);
@@ -237,6 +248,10 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const jumpedQuery = useRef("");
   const mobile = useMobileViewport();
   const [draft, setDraft] = useState("");
+  const [provisional, setProvisional] = useState(false);
+  const [replyChips, setReplyChips] = useState<string[]>([]);
+  const [translations, setTranslations] = useState<Record<number, string>>({});
+  const [summary, setSummary] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [menu, setMenu] = useState<{
     id: number;
@@ -481,6 +496,18 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         }}
         ref={scroller}
       >
+        {isNewBotConversation(conversation, messages) ? <MemoryNotice /> : null}
+        {conversation.unread_count > 1 ? (
+          <SummarizeCard
+            onSummarize={() => {
+              summarize.mutate("unread", {
+                onSuccess: (result) => setSummary(result.text),
+              });
+            }}
+            pending={summarize.isPending}
+            text={summary}
+          />
+        ) : null}
         <ThreadMessages
           conversationId={conversationId}
           generation={generation}
@@ -498,6 +525,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           onOpenMenu={(id, point) => setMenu({ id, x: point.clientX, y: point.clientY })}
           onOpenPollResults={(id) => setResultsPollId(pollResultsId(messages, id))}
           onVote={(id, optionIds) => voteFromThread(messages, id, optionIds, vote.mutate)}
+          translations={translations}
           typists={typists}
           untitled={t("conversations.untitled")}
           viewerId={viewerId}
@@ -511,6 +539,14 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           {t("conversations.slow_mode.hint", { seconds: conversation.slow_mode_seconds })}
         </p>
       ) : null}
+      <SmartReplyChips
+        onPick={(text) => {
+          setDraft(text);
+          setProvisional(true);
+          setReplyChips([]);
+        }}
+        suggestions={replyChips}
+      />
       <Composer
         editing={editingId !== null}
         onChange={(value) => {
@@ -522,6 +558,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         onDismissEdit={() => {
           setEditingId(null);
           setDraft("");
+          setProvisional(false);
         }}
         onEditLast={() => {
           if (!lastSent?.body) {
@@ -529,6 +566,26 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           }
           setEditingId(lastSent.id);
           setDraft(lastSent.body);
+          setProvisional(false);
+        }}
+        onRewrite={() => {
+          if (!draft.trim()) {
+            return;
+          }
+          rewrite.mutate(
+            {
+              conversation_id: conversationId,
+              instruction: t("ai.rewrite_instruction"),
+              text: draft,
+            },
+            {
+              onSuccess: (result) => {
+                setDraft(result.text);
+                setProvisional(true);
+                setReplyChips(result.suggested_chips);
+              },
+            },
+          );
         }}
         onSend={({ silent, text }) => {
           if (editingId) {
@@ -538,6 +595,8 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
             send.mutate({ body: text, client_nonce: newClientNonce(), silent });
           }
           setDraft("");
+          setProvisional(false);
+          setReplyChips([]);
         }}
         onGifQueryChange={setGifQuery}
         onPickGif={(gif: GifView) => {
@@ -551,6 +610,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         gifs={gifsFromList(gifs.data?.gifs)}
         savedReplies={savedReplyViews(savedReplies.data?.saved_replies)}
         stickers={stickerViewsFromPacks(packs.data?.sticker_packs)}
+        provisional={provisional}
         value={draft}
       />
       {menu ? (
@@ -574,6 +634,20 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
             onSave: (id) => save.mutate(id),
             onSelect: (id) =>
               setSelectedIds((current) => (current.includes(id) ? current : [...current, id])),
+            onSuggestReply: (id) => {
+              suggest.mutate(id, {
+                onSuccess: (result) => setReplyChips(result.suggestions),
+              });
+            },
+            onTranslate: (id) => {
+              translate.mutate(
+                { id, targetLanguage: i18n.language },
+                {
+                  onSuccess: (result) =>
+                    setTranslations((current) => ({ ...current, [id]: result.text })),
+                },
+              );
+            },
             onUnsend: (id) => unsend.mutate(id),
             pinned: pinned.data,
             restrictForwarding: Boolean(conversation.restrict_forwarding),
@@ -647,6 +721,7 @@ function ThreadMessages({
   onOpenMenu,
   onOpenPollResults,
   onVote,
+  translations = {},
   typists,
   untitled,
   viewerId,
@@ -660,6 +735,7 @@ function ThreadMessages({
   onOpenMenu: (id: number, point: { clientX: number; clientY: number }) => void;
   onOpenPollResults: (id: number) => void;
   onVote: (id: number, optionIds: string[]) => void;
+  translations?: Record<number, string>;
   typists: Array<{ accountId: number; activity: ActivityKind; displayName: string }>;
   untitled: string;
   viewerId: number;
@@ -725,6 +801,7 @@ function ThreadMessages({
                   : undefined,
                 poll: item.message.poll ? pollViewFromApi(item.message.poll) : undefined,
                 status: tickStatus(item.message),
+                translation: translations[item.message.id],
               }))}
               onOpenContactProfile={(accountId, name) =>
                 pushLayer({
@@ -842,6 +919,8 @@ export function buildMessageMenuActions({
   restrictForwarding = false,
   saved,
   viewerId,
+  onSuggestReply,
+  onTranslate,
 }: {
   message: Message | undefined;
   onCopy: (body: string) => void;
@@ -855,6 +934,8 @@ export function buildMessageMenuActions({
   onReport?: (id: number) => void;
   onSave: (id: number) => void;
   onSelect: (id: number) => void;
+  onSuggestReply?: (id: number) => void;
+  onTranslate?: (id: number) => void;
   onUnsend: (id: number) => void;
   pinned: number[];
   restrictForwarding?: boolean;
@@ -885,6 +966,9 @@ export function buildMessageMenuActions({
     onReport: canReport ? () => onReport?.(message.id) : undefined,
     onSave: () => onSave(message.id),
     onSelect: () => onSelect(message.id),
+    onSuggestReply:
+      Boolean(onSuggestReply) && canCopy ? () => onSuggestReply?.(message.id) : undefined,
+    onTranslate: Boolean(onTranslate) && canCopy ? () => onTranslate?.(message.id) : undefined,
     onUnsend: () => onUnsend(message.id),
   };
 }

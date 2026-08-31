@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TranslationCard } from "@/features/bots";
 import { ContactCard, type ContactView } from "@/features/messages/components/contact-card";
 import { LocationCard, type LocationView } from "@/features/messages/components/location-card";
 import { MessageContent } from "@/features/messages/components/message-content";
@@ -66,6 +67,7 @@ export function MessageBubble({
   showAvatar = false,
   side,
   status,
+  translation,
 }: {
   attachments?: Attachment[];
   body: string;
@@ -89,6 +91,7 @@ export function MessageBubble({
   showAvatar?: boolean;
   side: MessageSide;
   status?: TickStatus;
+  translation?: string;
 }) {
   const [hovered, setHovered] = useState(false);
   const jumbo = getJumboInfo(body) !== null;
@@ -184,6 +187,7 @@ export function MessageBubble({
             </div>
           ) : null}
         </div>
+        {translation ? <TranslationCard text={translation} /> : null}
       </div>
     </div>
   );

@@ -37,6 +37,10 @@ class MessagePolicy < ApplicationPolicy
     record.metadata["prompted_by_account_id"].to_i == account.id
   end
 
+  def translate?
+    human? && show?
+  end
+
   def bulk_unsend?
     account.present?
   end

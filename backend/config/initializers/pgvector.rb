@@ -1,6 +1,5 @@
-# bot_memories.embedding is vector(768). Neighbor recall is session 9.3; until
-# then treat the OID as text so ActiveRecord does not warn
-# "unknown OID … embedding" on the first SELECT of the column.
+# bot_memories.embedding is vector(768). ActiveRecord maps the OID as text so
+# SELECTs stay quiet; neighbor recall uses cosine distance in SQL (NR-11).
 module PgvectorOid
   def initialize_type_map(m = type_map)
     m.register_type "vector", ActiveRecord::Type::String.new

@@ -38,7 +38,7 @@ import { usePressHold } from "@/shared/hooks/use-press-hold";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { cn } from "@/shared/lib/cn";
 import { Button, DismissLayer, IconButton, Textarea } from "@/shared/ui";
-import { ICON_CLASS, MENU_CONTENT_CLASS, MENU_ITEM_CLASS } from "@/shared/ui/metrics";
+import { ICON_CLASS, MENU_CONTENT_CLASS, MENU_ITEM_AI_CLASS, MENU_ITEM_CLASS } from "@/shared/ui/metrics";
 
 export type { ComposerAttachment };
 
@@ -76,6 +76,7 @@ export function Composer({
   onSend,
   onVoiceSend,
   placeholder,
+  provisional = false,
   remoteGifs = false,
   replyTo,
   savedReplies = [],
@@ -105,6 +106,7 @@ export function Composer({
   onSend: (payload: ComposerSendPayload) => void;
   onVoiceSend?: (payload: ComposerVoicePayload) => void;
   placeholder?: string;
+  provisional?: boolean;
   remoteGifs?: boolean;
   replyTo?: ComposerReply | null;
   savedReplies?: SavedReplyView[];
@@ -318,6 +320,14 @@ export function Composer({
         />
       ) : null}
       <ComposerAttachmentChips attachments={attachments} onRemove={onRemoveAttachment} />
+      {provisional ? (
+        <p
+          className="px-[var(--space-3)] text-[length:var(--text-sm)] text-[var(--accent)]"
+          data-ai-provisional=""
+        >
+          {t("ai.provisional")}
+        </p>
+      ) : null}
       {slashMatches.length > 0 ? (
         <div className="px-[var(--space-3)] pb-[var(--space-2)]">
           <SlashCommandMenu
@@ -370,7 +380,11 @@ export function Composer({
                   >
                     {menuItems.map((item) => (
                       <Button
-                        className={cn(MENU_ITEM_CLASS, "w-full justify-start gap-[var(--space-2)]")}
+                        className={cn(
+                          MENU_ITEM_CLASS,
+                          "w-full justify-start gap-[var(--space-2)]",
+                          item.key === "rewrite" && MENU_ITEM_AI_CLASS,
+                        )}
                         key={item.key}
                         onClick={() => {
                           item.onClick();

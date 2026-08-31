@@ -120,6 +120,15 @@ describe("Composer", () => {
     fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
     await user.click(screen.getByRole("menuitem", { name: en.composer.rewrite }));
     expect(onRewrite).toHaveBeenCalled();
+    rerender(
+      <Composer
+        onRewrite={onRewrite}
+        onSend={onSend}
+        provisional
+        value="later"
+      />,
+    );
+    expect(screen.getByText(en.ai.provisional)).toBeInTheDocument();
     fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
     await user.click(screen.getByRole("menuitem", { name: en.composer.send_silent }));
     expect(onSend).toHaveBeenCalledWith({ silent: true, text: "later" });

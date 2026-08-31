@@ -87,4 +87,28 @@ RSpec.describe Ai::PromptAssembler do
     expect(contents).to include("new")
     expect(contents).not_to include("old")
   end
+
+  it "injects retrieved shared memories as a system turn (NR-11)" do
+    user, bot, conversation = bot_dm
+    trigger = send_text(conversation, user.account, "ask")
+    memory = instance_double(BotMemory, content: "The project codename is Orchid")
+    allow(Bots::RetrieveMemories).to receive(:call).and_return(Result.success([ memory ]))
+
+    systems = described_class.messages(conversation: conversation, bot: bot, triggered_by: trigger)
+                              .select { |turn| turn.fetch(:role) == "system" }.pluck(:content)
+
+    expect(systems.join).to include("Orchid")
+  end
+
+  it "skips a memory turn when retrieved rows have blank content" do
+    user, bot, conversation = bot_dm
+    trigger = send_text(conversation, user.account, "ask")
+    allow(Bots::RetrieveMemories).to receive(:call).and_return(
+      Result.success([ instance_double(BotMemory, content: "  ") ])
+    )
+
+    systems = described_class.messages(conversation: conversation, bot: bot, triggered_by: trigger)
+                             .select { |turn| turn.fetch(:role) == "system" }.pluck(:content)
+    expect(systems.join).not_to include("remember")
+  end
 end

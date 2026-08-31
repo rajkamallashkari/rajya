@@ -12,6 +12,7 @@ import { resetOutboxLocks } from "@/shared/lib/outbox/lock";
 import { resetOutboxProcessor } from "@/shared/lib/outbox/processor";
 import { resetCatchUpScheduler } from "@/shared/lib/realtime/catch-up";
 import { installTestCable } from "@/test/fake-cable";
+import { resetAiHelpers } from "@/shared/lib/api/msw/handlers";
 import { resetMessagingStore } from "@/shared/lib/api/msw/messaging-store";
 import { _testReset as resetLayerStack } from "@/shared/lib/navigation/layer-stack";
 import { resetLayerStore } from "@/shared/lib/navigation/layer-store";
@@ -41,6 +42,7 @@ afterEach(() => {
   installTestCable();
   server.resetHandlers();
   resetMessagingStore();
+  resetAiHelpers();
 });
 
 afterAll(() => {

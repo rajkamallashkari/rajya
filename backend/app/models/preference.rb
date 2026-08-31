@@ -19,10 +19,31 @@ class Preference < ApplicationRecord
   belongs_to :account, inverse_of: :preference
 
   DEFAULT_TIMEZONE = "UTC"
+  STYLE_PROFILE_ENABLED_DEFAULT = false
 
   def privacy(key)
     stored = data.is_a?(Hash) ? data.dig("privacy", key.to_s) : nil
     stored.nil? ? self.class.privacy_default(key) : stored
+  end
+
+  def style_profile_enabled?
+    stored = data.is_a?(Hash) ? data.dig("ai", "style_profile_enabled") : nil
+    stored.nil? ? STYLE_PROFILE_ENABLED_DEFAULT : ActiveModel::Type::Boolean.new.cast(stored)
+  end
+
+  def style_profile
+    data.is_a?(Hash) ? data.dig("ai", "style_profile") : nil
+  end
+
+  def style_profile_updated_at
+    data.is_a?(Hash) ? data.dig("ai", "style_profile_updated_at") : nil
+  end
+
+  def merge_ai!(attrs)
+    payload = data.is_a?(Hash) ? data.deep_dup : {}
+    payload["ai"] ||= {}
+    attrs.each { |key, value| payload["ai"][key.to_s] = value }
+    update!(data: payload)
   end
 
   def timezone

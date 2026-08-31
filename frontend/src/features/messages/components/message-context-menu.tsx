@@ -11,6 +11,7 @@ import {
   Reply,
   RotateCcw,
   Smile,
+  Sparkles,
   Star,
   StarOff,
   Trash2,
@@ -24,6 +25,7 @@ import { Button, DismissLayer } from "@/shared/ui";
 import {
   ICON_CLASS,
   MENU_CONTENT_CLASS,
+  MENU_ITEM_AI_CLASS,
   MENU_ITEM_CLASS,
   MENU_ITEM_DANGER_CLASS,
 } from "@/shared/ui/metrics";
@@ -47,6 +49,8 @@ export interface MessageMenuActions {
   onRetry?: () => void;
   onSave?: () => void;
   onSelect?: () => void;
+  onSuggestReply?: () => void;
+  onTranslate?: () => void;
   onReactions?: () => void;
   onRemind?: () => void;
   onRegenerate?: () => void;
@@ -75,7 +79,13 @@ export function MessageContextMenu({
     setPos(menuPosFromElement(menuRef.current, x, y, window.innerWidth, window.innerHeight));
   }, [x, y]);
 
-  const items: { danger?: boolean; key: string; label: string; onClick?: () => void }[] = [
+  const items: {
+    accent?: boolean;
+    danger?: boolean;
+    key: string;
+    label: string;
+    onClick?: () => void;
+  }[] = [
     {
       key: "retry",
       label: t("messages.menu.retry"),
@@ -105,6 +115,18 @@ export function MessageContextMenu({
       key: "copy",
       label: t("messages.menu.copy"),
       onClick: actions.hasText ? actions.onCopy : undefined,
+    },
+    {
+      accent: true,
+      key: "suggest_reply",
+      label: t("messages.menu.suggest_reply"),
+      onClick: persisted && actions.hasText ? actions.onSuggestReply : undefined,
+    },
+    {
+      accent: true,
+      key: "translate",
+      label: t("messages.menu.translate"),
+      onClick: persisted && actions.hasText ? actions.onTranslate : undefined,
     },
     {
       key: "pin",
@@ -185,6 +207,7 @@ export function MessageContextMenu({
                 MENU_ITEM_CLASS,
                 "w-full justify-start",
                 item.danger && MENU_ITEM_DANGER_CLASS,
+                item.accent && MENU_ITEM_AI_CLASS,
               )}
               key={item.key}
               onClick={() => {
@@ -219,6 +242,9 @@ function MenuIcon({ name, pinned, saved }: { name: string; pinned?: boolean; sav
   }
   if (name === "copy") {
     return <Copy className={className} />;
+  }
+  if (name === "suggest_reply" || name === "translate") {
+    return <Sparkles className={className} />;
   }
   if (name === "pin") {
     return pinned ? <PinOff className={className} /> : <Pin className={className} />;

@@ -78,6 +78,8 @@ en:
         rrule: "must use FREQ with optional INTERVAL, BYDAY, COUNT, or UNTIL"
       account:
         username_invalid: "must be %{min}–%{max} letters, numbers, underscores, or dots"
+      bot:
+        account_kind: "must be a bot account"
         username_taken: "has already been taken"
       block:
         self: "can't be the same as the blocking account"
@@ -110,8 +112,6 @@ en:
         phone_taken: "has already been taken"
       passkey:
         nickname_blank: "can't be blank"
-      bot:
-        account_kind: "must be a bot account"
       app_setting:
         below_min: "is below the registered minimum"
         above_max: "is above the registered maximum"

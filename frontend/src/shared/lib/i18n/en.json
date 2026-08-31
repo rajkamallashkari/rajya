@@ -8,6 +8,19 @@
     "gallery": "Gallery",
     "accounts": "Accounts"
   },
+  "ai": {
+    "build_style": "Build my style profile",
+    "consent": "Let helpers learn my writing style",
+    "consent_hint": "Off by default. Message history is never sent until you turn this on.",
+    "provisional": "AI draft — not sent yet",
+    "rewrite_failed": "Could not rewrite that.",
+    "rewrite_instruction": "Rewrite this draft",
+    "style_failed": "Could not build a style profile yet.",
+    "suggest_failed": "Could not suggest replies.",
+    "summarize": "Summarize unread",
+    "summarize_empty": "Nothing to summarize.",
+    "translate_failed": "Could not translate that."
+  },
   "auth": {
     "lock": {
       "aria": "App locked",
@@ -77,6 +90,22 @@
       "blocked": "Blocked",
       "report": "Report"
     }
+  },
+  "bots": {
+    "bio": "Bio",
+    "builder": "Propose a bot",
+    "builder_submit": "Submit for review",
+    "directory": "Bots",
+    "empty": "No bots yet",
+    "memory_disclosure": "Remembers what everyone tells it",
+    "memory_notice": "This bot remembers what everyone tells it — including people in other chats.",
+    "name": "Name",
+    "open": "Message {{name}}",
+    "persona_prompt": "Persona",
+    "prompt_too_short": "Persona must be at least {{count}} characters.",
+    "proposed": "Proposal submitted",
+    "style": "Writing style",
+    "username": "Username"
   },
   "errors": {
     "app": {
@@ -585,6 +614,8 @@
       "report": "Report",
       "react": "React with {{emoji}}",
       "select": "Select",
+      "suggest_reply": "Suggest a reply",
+      "translate": "Translate",
       "reactions": "Reactions",
       "remind": "Remind me"
     },

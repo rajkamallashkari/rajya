@@ -44,6 +44,8 @@ class Account < ApplicationRecord
   validates :display_name, presence: true
   validate :username_format
 
+  scope :active, -> { where(deactivated_at: nil) }
+
   def blocked_with?(other)
     return false if other.blank? || other.id == id
 

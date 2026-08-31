@@ -170,4 +170,14 @@ RSpec.describe ConversationPolicy do
       .to contain_exactly(visible, archived)
     expect(described_class::Scope.new(nil, Conversation.all).resolve).to be_empty
   end
+
+  it "lets a human member summarize and suggest replies and denies a bot member" do
+    user = create(:user)
+    bot = create(:bot)
+    conversation = create_direct_between(user.account, bot.account)
+
+    expect(described_class.new(user.account, conversation)).to be_summarize.and be_suggest_replies
+    expect(described_class.new(bot.account, conversation)).not_to be_summarize
+    expect(described_class.new(bot.account, conversation)).not_to be_suggest_replies
+  end
 end

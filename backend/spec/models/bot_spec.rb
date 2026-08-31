@@ -22,4 +22,11 @@ RSpec.describe Bot do
   it "allows a system bot with no owner" do
     expect(create(:bot).owner_account).to be_nil
   end
+
+  it "soft-deletes via the account timestamp (BR-81)" do
+    bot = create(:bot)
+    bot.deactivate!
+    expect(bot).to be_deactivated
+    expect(described_class.active.where(id: bot.id)).to be_empty
+  end
 end

@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 9.2 |
-| **Next session** | 9.3 |
+| **Last completed** | 9.3 |
+| **Next session** | 9.4 |
 | **Phase** | P9 — Bots & AI |
-| **Sessions remaining in phase** | 2 (9.3–9.4) |
+| **Sessions remaining in phase** | 1 (9.4) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 9.3 — Bot memory + pgvector, DS-1 disclosure, helpers, style profile consent, Bot Builder, personas**
+**Session 9.4 — Slash commands (NR-45): `bot_commands`, built-in commands, the `/` menu, and invocation as an ordinary message through the P3 send operation**
 
-Deliverable: Bot memory + pgvector, DS-1 disclosure, helpers, style profile consent, Bot Builder, personas
+Deliverable: **Slash commands (NR-45)**: `bot_commands`, built-in commands, the `/` menu, and invocation as an ordinary message through the P3 send operation
 
-Docs: SCHEMA §8 (`bot_memories`); TARGET §6.7; DESIGN_SYSTEM DS-1; AUDIT NR-11, NR-F1, §5 (F-11)
+Docs: SCHEMA §12.14; DESIGN_SYSTEM §4 (`SlashCommandMenu`)
 
-Legacy to read: `cognify/app/services/user_style_profile_service.rb`, `app/jobs/build_style_profile_job.rb`, `app/models/bot.rb`, `bot_request.rb`, `app/services/bot_importer.rb`, `botverse/src/components/chat/RewriteModal.tsx`, `SmartReplyChips.tsx`, `TranslationCard.tsx`, `SummarizeCard.tsx`
+Legacy to read: `cognify/app/services/mention_dispatcher.rb` — the closest existing parsing path
 
 ---
 
@@ -71,6 +71,7 @@ Legacy to read: `cognify/app/services/user_style_profile_service.rb`, `app/jobs/
 | 8.2 | Advanced filters (NR-43): sender, date range, kind, has-attachment, has-link | Each filter is an SQL predicate with a dedicated btree/partial index and EXPLAIN coverage. Filter-only search works without a text query. Client filter sheet composes the same params on global and in-chat search. |
 | 9.1 | Provider interface, model registry, runner, usage events, prompt templates | Groq-first chain with Ollama as the floor (D-3). Fallback on 402/404/429/timeout writes `fallback` usage events (BR-73, F-12). Bot replies are rate-limited and a cache error denies (BR-85 fail closed). Reply loop waits for 9.2. |
 | 9.2 | Bot reply loop, streaming, cancel, regenerate, summarization, mentions | Direct DMs always reply; groups only on `<@account_id>` of an active bot member; bot-authored messages never dispatch (BR-83). Stream over Cable with cancel (BR-77), idempotent nonce (BR-76), regenerate tombstone for the prompting account (BR-15), rolling summary (BR-75), NR-12 quoted target. Context window and summarization threshold from settings. Playwright stream/cancel/regenerate/rewrite/slash waits for later sessions. |
+| 9.3 | Bot memory + pgvector, DS-1 disclosure, helpers, style profile consent, Bot Builder, personas | Shared memory with provenance, unfiltered across accounts (NR-11). DS-1 profile line and first-message notice. Rewrite into the composer; suggest-reply and translate in the message menu; translations cached in metadata (BR-86). Style profile defaults off (F-11). Bot Builder propose/approve/decline; 30 fresh personas; `deactivated_at` hides from the directory (BR-81). NR-F1 replica bot is a seam only. Admin approve UI waits for P12.5. Slash commands wait for 9.4. Playwright stream/cancel/regenerate/rewrite/slash waits. |
 
 ---
 

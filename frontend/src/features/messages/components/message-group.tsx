@@ -17,6 +17,7 @@ export interface GroupMessage {
   location?: LocationView;
   poll?: PollView;
   status?: TickStatus;
+  translation?: string;
 }
 
 export function MessageGroup({
@@ -90,6 +91,7 @@ export function MessageGroup({
               showAvatar={false}
               side={side}
               status={message.status}
+              translation={message.translation}
             />
           );
         })}

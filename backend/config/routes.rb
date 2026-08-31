@@ -71,6 +71,11 @@ Rails.application.routes.draw do
       resources :reports, only: :create do
         collection { get :reasons }
       end
+      resources :bots, only: %i[index show destroy]
+      resources :bot_requests, only: %i[index create destroy]
+      post "ai/rewrite", to: "ai_rewrites#create"
+      post "ai/translate_text", to: "ai_text_translations#create"
+      resource :style_profile, only: %i[show create update], controller: "style_profiles"
       resources :sessions, only: %i[index destroy] do
         collection { delete :others }
       end
@@ -91,6 +96,8 @@ Rails.application.routes.draw do
           delete :mute, to: "conversation_mutes#destroy"
           post :receipts, to: "conversation_receipts#create"
           post "generations/cancel", to: "conversation_generations#create"
+          post :suggest_replies, to: "conversation_suggest_replies#create"
+          post :summarize, to: "conversation_summaries#create"
           post :leave, to: "conversation_leaves#create"
           get :media, to: "conversation_galleries#show"
           get :search, to: "conversation_searches#show"
@@ -121,6 +128,7 @@ Rails.application.routes.draw do
         member do
           post :forward
           post :regenerate, to: "message_regenerations#create"
+          post :translate, to: "message_translations#create"
           get :info
         end
         resources :reactions, only: %i[index create destroy], param: :emoji, constraints: { emoji: /.*/ }
@@ -150,6 +158,12 @@ Rails.application.routes.draw do
       resources :contact_nicknames, only: %i[index update destroy], param: :account_id
       namespace :admin do
         post "users/:user_id/verify_phone", to: "phone_verifications#create"
+        resources :bot_requests, only: :index do
+          member do
+            post :approve
+            post :decline
+          end
+        end
       end
     end
   end

@@ -71,7 +71,8 @@ RSpec.configure do |config|
                 username: { type: :string },
                 display_name: { type: :string },
                 kind: { type: :string },
-                bio: { type: :string, nullable: true }
+                bio: { type: :string, nullable: true },
+                shared_memory: { type: :boolean }
               }
             },
             SessionUser: {
@@ -126,6 +127,54 @@ RSpec.configure do |config|
               required: %w[blocks],
               properties: {
                 blocks: { type: :array, items: { "$ref" => "#/components/schemas/Block" } }
+              }
+            },
+            Bot: {
+              type: :object,
+              required: %w[id account memory_enabled],
+              properties: {
+                id: { type: :integer },
+                account: { "$ref" => "#/components/schemas/Account" },
+                memory_enabled: { type: :boolean },
+                owner_account_id: { type: :integer, nullable: true }
+              }
+            },
+            BotList: {
+              type: :object,
+              required: %w[bots],
+              properties: {
+                bots: { type: :array, items: { "$ref" => "#/components/schemas/Bot" } }
+              }
+            },
+            BotRequest: {
+              type: :object,
+              required: %w[id kind status payload],
+              properties: {
+                id: { type: :integer },
+                kind: { type: :string, enum: %w[create edit] },
+                status: { type: :string, enum: %w[pending approved declined] },
+                payload: {
+                  type: :object,
+                  additionalProperties: true,
+                  properties: {
+                    bio: { type: :string },
+                    name: { type: :string },
+                    persona_prompt: { type: :string },
+                    username: { type: :string }
+                  }
+                },
+                decline_reason: { type: :string, nullable: true },
+                target_bot_id: { type: :integer, nullable: true },
+                bot_id: { type: :integer, nullable: true },
+                requester_account_id: { type: :integer },
+                created_at: { type: :string, format: :"date-time" }
+              }
+            },
+            BotRequestList: {
+              type: :object,
+              required: %w[bot_requests],
+              properties: {
+                bot_requests: { type: :array, items: { "$ref" => "#/components/schemas/BotRequest" } }
               }
             },
             ContactNickname: {
@@ -842,6 +891,49 @@ RSpec.configure do |config|
               required: %w[reasons],
               properties: {
                 reasons: { type: :array, items: { "$ref" => "#/components/schemas/ReportReason" } }
+              }
+            },
+            Rewrite: {
+              type: :object,
+              required: %w[text suggested_chips],
+              properties: {
+                text: { type: :string },
+                suggested_chips: { type: :array, items: { type: :string } }
+              }
+            },
+            StyleProfile: {
+              type: :object,
+              required: %w[enabled message_count],
+              properties: {
+                enabled: { type: :boolean },
+                profile: { type: :string, nullable: true },
+                updated_at: { type: :string, nullable: true },
+                message_count: { type: :integer }
+              }
+            },
+            SuggestReplies: {
+              type: :object,
+              required: %w[suggestions],
+              properties: {
+                suggestions: { type: :array, items: { type: :string } }
+              }
+            },
+            Summary: {
+              type: :object,
+              required: %w[text mode],
+              properties: {
+                text: { type: :string },
+                mode: { type: :string, enum: %w[unread recent] }
+              }
+            },
+            Translation: {
+              type: :object,
+              required: %w[text source_language target_language cached],
+              properties: {
+                text: { type: :string },
+                source_language: { type: :string },
+                target_language: { type: :string },
+                cached: { type: :boolean }
               }
             },
             WebauthnCredential: {

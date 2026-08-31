@@ -4,6 +4,7 @@ module Ai
   class RateLimiter
     LIMIT_KEYS = {
       bot_reply: :ai_reply_rate_limit,
+      memory_extract: :ai_rate_limit_per_capability,
       rewrite: :ai_rate_limit_rewrite,
       suggest_replies: :ai_rate_limit_suggest_replies,
       translate: :ai_rate_limit_translate,

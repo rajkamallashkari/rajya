@@ -33,4 +33,35 @@ RSpec.describe Preference do
       expect(broken.timezone).to eq("UTC")
     end
   end
+
+  describe "style profile consent" do
+    it "defaults to disabled so history does not leave without opt-in (F-11)" do
+      preference = build(:preference, data: {})
+      expect(preference.style_profile_enabled?).to be(false)
+      expect(preference.style_profile).to be_nil
+    end
+
+    it "reads an enabled flag and merges the blob" do
+      preference = create(:preference, data: {})
+      preference.merge_ai!("style_profile_enabled" => true, "style_profile" => { "global" => "casual" })
+      expect(preference.reload.style_profile_enabled?).to be(true)
+      expect(preference.style_profile["global"]).to eq("casual")
+      expect(preference.style_profile_updated_at).to be_nil
+    end
+
+    it "falls back when data is not a hash" do
+      preference = build(:preference)
+      allow(preference).to receive(:data).and_return("x")
+      expect(preference.style_profile_enabled?).to be(false)
+      expect(preference.style_profile).to be_nil
+      expect(preference.style_profile_updated_at).to be_nil
+    end
+
+    it "starts an ai object when merging into non-hash data" do
+      preference = create(:preference, data: {})
+      preference.update_columns(data: "x")
+      preference.merge_ai!("style_profile_enabled" => true)
+      expect(preference.reload.style_profile_enabled?).to be(true)
+    end
+  end
 end

@@ -19,6 +19,14 @@ class ConversationPolicy < ApplicationPolicy
     show?
   end
 
+  def summarize?
+    human? && show?
+  end
+
+  def suggest_replies?
+    human? && show?
+  end
+
   def update?
     manage_group? && override_allows?("edit_info")
   end

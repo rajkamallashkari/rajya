@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../client";
-import { handlerMap, handlers, resetFiledReports } from "./handlers";
+import { handlerMap, handlers, resetAiHelpers, resetFiledReports } from "./handlers";
 import {
   MESSAGE_STAMP,
   messagingStore,
@@ -14,13 +14,22 @@ const expectedPaths = [
   "/api/v1/accounts/search",
   "/api/v1/accounts/username",
   "/api/v1/accounts/{id}",
+  "/api/v1/admin/bot_requests",
+  "/api/v1/admin/bot_requests/{id}/approve",
+  "/api/v1/admin/bot_requests/{id}/decline",
   "/api/v1/admin/users/{user_id}/verify_phone",
+  "/api/v1/ai/rewrite",
+  "/api/v1/ai/translate_text",
   "/api/v1/attachments/{id}/download",
   "/api/v1/attachments/{id}/retry",
   "/api/v1/attachments/{id}/thumbnail",
   "/api/v1/attachments/{id}/transcribe",
   "/api/v1/blocks",
   "/api/v1/blocks/{id}",
+  "/api/v1/bot_requests",
+  "/api/v1/bot_requests/{id}",
+  "/api/v1/bots",
+  "/api/v1/bots/{id}",
   "/api/v1/contact_nicknames",
   "/api/v1/contact_nicknames/{account_id}",
   "/api/v1/conversation_folders",
@@ -51,6 +60,8 @@ const expectedPaths = [
   "/api/v1/conversations/{id}/pin",
   "/api/v1/conversations/{id}/receipts",
   "/api/v1/conversations/{id}/search",
+  "/api/v1/conversations/{id}/suggest_replies",
+  "/api/v1/conversations/{id}/summarize",
   "/api/v1/conversations/{id}/unread",
   "/api/v1/direct_uploads",
   "/api/v1/export_jobs",
@@ -67,6 +78,7 @@ const expectedPaths = [
   "/api/v1/messages/{id}/forward",
   "/api/v1/messages/{id}/info",
   "/api/v1/messages/{id}/regenerate",
+  "/api/v1/messages/{id}/translate",
   "/api/v1/messages/{message_id}/reactions",
   "/api/v1/messages/{message_id}/reactions/{emoji}",
   "/api/v1/message_reminders",
@@ -97,6 +109,7 @@ const expectedPaths = [
   "/api/v1/sticker_packs/{id}",
   "/api/v1/sticker_packs/{sticker_pack_id}/stickers",
   "/api/v1/sticker_packs/{sticker_pack_id}/stickers/{id}",
+  "/api/v1/style_profile",
   "/api/v1/users/me",
   "/api/v1/users/me/complete_onboarding",
   "/api/v1/users/me/email",
@@ -126,6 +139,7 @@ describe("MSW handlers", () => {
   afterEach(() => {
     resetMessagingStore();
     resetFiledReports();
+    resetAiHelpers();
   });
 
   it("serves every generated path with typed bodies", async () => {
@@ -289,6 +303,71 @@ describe("MSW handlers", () => {
       body: { object: "whatsapp_business_account" },
     });
     expect(inbound.data?.ok).toBe(true);
+  });
+
+  it("serves bot directory, rewrite, helpers, and style-profile consent", async () => {
+    const client = createApiClient("http://rajya.test");
+    const bots = await client.GET("/api/v1/bots");
+    expect(bots.data?.bots[0]?.account.kind).toBe("bot");
+    const shown = await client.GET("/api/v1/bots/{id}", { params: { path: { id: 1 } } });
+    expect(shown.data?.account.username).toBe("nimbus");
+    const missingBot = await client.GET("/api/v1/bots/{id}", { params: { path: { id: 9 } } });
+    expect(missingBot.response.status).toBe(404);
+    const requests = await client.GET("/api/v1/bot_requests");
+    expect(requests.data?.bot_requests).toEqual([]);
+    const proposed = await client.POST("/api/v1/bot_requests", {
+      body: {
+        kind: "create",
+        payload: { bio: "Sky", name: "Nimbus", persona_prompt: "A".repeat(80), username: "nimbus" },
+      },
+    });
+    expect(proposed.data?.status).toBe("pending");
+    const withdrawn = await client.DELETE("/api/v1/bot_requests/{id}", {
+      params: { path: { id: 1 } },
+    });
+    expect(withdrawn.data?.ok).toBe(true);
+    const adminListed = await client.GET("/api/v1/admin/bot_requests");
+    expect(adminListed.data?.bot_requests).toEqual([]);
+    const approved = await client.POST("/api/v1/admin/bot_requests/{id}/approve", {
+      params: { path: { id: 1 } },
+    });
+    expect(approved.data?.account.username).toBe("nimbus");
+    const declined = await client.POST("/api/v1/admin/bot_requests/{id}/decline", {
+      params: { path: { id: 1 } },
+      body: { reason: "Too thin" },
+    });
+    expect(declined.data?.status).toBe("declined");
+    const rewrite = await client.POST("/api/v1/ai/rewrite", {
+      body: { instruction: "Rewrite this draft", text: "hey" },
+    });
+    expect(rewrite.data?.text).toBe("Hello");
+    const translated = await client.POST("/api/v1/messages/{id}/translate", {
+      params: { path: { id: 1 } },
+      body: { target_language: "en" },
+    });
+    expect(translated.data?.text).toBe("Hello");
+    const text = await client.POST("/api/v1/ai/translate_text", {
+      body: { target_language: "en", text: "Hola" },
+    });
+    expect(text.data?.text).toBe("Hello");
+    const chips = await client.POST("/api/v1/conversations/{id}/suggest_replies", {
+      params: { path: { id: 1 } },
+      body: { message_id: 1 },
+    });
+    expect(chips.data?.suggestions).toEqual(["On my way"]);
+    const summary = await client.POST("/api/v1/conversations/{id}/summarize", {
+      params: { path: { id: 1 } },
+      body: { mode: "unread" },
+    });
+    expect(summary.data?.text).toBe("Ship Friday");
+    const style = await client.GET("/api/v1/style_profile");
+    expect(style.data?.enabled).toBe(false);
+    const refused = await client.POST("/api/v1/style_profile");
+    expect(refused.response.status).toBe(403);
+    const opted = await client.PATCH("/api/v1/style_profile", { body: { enabled: true } });
+    expect(opted.data?.enabled).toBe(true);
+    const built = await client.POST("/api/v1/style_profile");
+    expect(built.data?.profile).toContain("Casual");
   });
 
   it("serves conversation and message routes from the in-memory store", async () => {
