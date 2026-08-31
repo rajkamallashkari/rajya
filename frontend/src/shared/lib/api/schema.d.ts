@@ -3677,6 +3677,122 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search messages, conversations, and people */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GlobalSearch"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/{id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search messages in a conversation */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                };
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConversationSearch"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search discoverable accounts */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountSearch"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions": {
         parameters: {
             query?: never;
@@ -5536,6 +5652,33 @@ export interface components {
         MessagePage: {
             messages: components["schemas"]["Message"][];
             meta: components["schemas"]["MessagePageMeta"];
+        };
+        SearchMessageHit: {
+            message_id: number;
+            conversation_id: number;
+            snippet: string;
+            sender_name?: string | null;
+            can_forward: boolean;
+            /** Format: date-time */
+            created_at: string;
+        };
+        SearchConversationHit: {
+            id: number;
+            title: string;
+            kind: string;
+        };
+        GlobalSearch: {
+            query: string;
+            messages: components["schemas"]["SearchMessageHit"][];
+            accounts: components["schemas"]["Account"][];
+            conversations: components["schemas"]["SearchConversationHit"][];
+        };
+        ConversationSearch: {
+            query: string;
+            messages: components["schemas"]["SearchMessageHit"][];
+        };
+        AccountSearch: {
+            accounts: components["schemas"]["Account"][];
         };
         MessageInfoReceipt: {
             account: components["schemas"]["Account"];

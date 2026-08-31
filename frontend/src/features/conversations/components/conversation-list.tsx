@@ -31,6 +31,7 @@ import {
   isMuted,
 } from "@/features/conversations/model/title";
 import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { GlobalSearchHits } from "@/features/search";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { ListView, type ListViewStatus } from "@/shared/ui/list-view";
@@ -47,6 +48,7 @@ export function ConversationList({
   const { t, i18n } = useTranslation();
   const resolvedTheme = useResolvedTheme();
   const openConversation = useLayerStore((state) => state.openConversation);
+  const pushLayer = useLayerStore((state) => state.pushLayer);
   const layers = useLayerStore((state) => state.layers);
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState("all");
@@ -165,6 +167,22 @@ export function ConversationList({
             />
           ))}
         </ListView>
+        <GlobalSearchHits
+          onAccount={(id, name) =>
+            pushLayer({
+              accountId: String(id),
+              conversationId: selectedId ?? "0",
+              id: `account:${String(id)}`,
+              kind: "profile",
+              title: name,
+            })
+          }
+          onConversation={(id, title) => openConversation(conversationLayer(String(id), title))}
+          onMessage={(conversationId, messageId, title) =>
+            openConversation(conversationLayer(String(conversationId), title, String(messageId)))
+          }
+          query={query}
+        />
       </div>
     </div>
   );

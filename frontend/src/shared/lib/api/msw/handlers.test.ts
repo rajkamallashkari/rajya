@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../client";
 import { handlerMap, handlers, resetFiledReports } from "./handlers";
-import { MESSAGE_STAMP, messagingStore, resetMessagingStore } from "./messaging-store";
+import { MESSAGE_STAMP, messagingStore, resetMessagingStore, messageSearchHits, conversationSearchHits, accountSearchHits } from "./messaging-store";
 
 const expectedPaths = [
+  "/api/v1/accounts/search",
   "/api/v1/accounts/username",
   "/api/v1/accounts/{id}",
   "/api/v1/admin/users/{user_id}/verify_phone",
@@ -41,6 +42,7 @@ const expectedPaths = [
   "/api/v1/conversations/{id}/mute",
   "/api/v1/conversations/{id}/pin",
   "/api/v1/conversations/{id}/receipts",
+  "/api/v1/conversations/{id}/search",
   "/api/v1/conversations/{id}/unread",
   "/api/v1/direct_uploads",
   "/api/v1/export_jobs",
@@ -78,6 +80,7 @@ const expectedPaths = [
   "/api/v1/scheduled_messages",
   "/api/v1/scheduled_messages/{id}",
   "/api/v1/scheduled_messages/{id}/send_now",
+  "/api/v1/search",
   "/api/v1/sessions",
   "/api/v1/sessions/others",
   "/api/v1/sessions/{id}",
@@ -388,6 +391,48 @@ describe("MSW handlers", () => {
       params: { path: { conversation_id: 1 }, query: { around_at: MESSAGE_STAMP } },
     });
     expect(aroundAt.data?.messages.length).toBeGreaterThan(0);
+    const globalSearch = await client.GET("/api/v1/search", { params: { query: { q: "Ping" } } });
+    expect(globalSearch.data?.query).toBe("Ping");
+    const emptySearch = await client.GET("/api/v1/search", { params: { query: {} } });
+    expect(emptySearch.data?.query).toBe("");
+    const chatSearch = await client.GET("/api/v1/conversations/{id}/search", {
+      params: { path: { id: 1 }, query: { q: "See" } },
+    });
+    expect(chatSearch.data?.messages.length).toBeGreaterThan(0);
+    const emptyChatSearch = await client.GET("/api/v1/conversations/{id}/search", {
+      params: { path: { id: 1 }, query: {} },
+    });
+    expect(emptyChatSearch.data?.query).toBe("");
+    const peopleSearch = await client.GET("/api/v1/accounts/search", {
+      params: { query: { q: "Adele" } },
+    });
+    expect(peopleSearch.response.status).toBe(200);
+    expect(peopleSearch.data?.accounts.some((row) => row.display_name === "Adele Goldberg")).toBe(
+      true,
+    );
+    const emptyPeople = await client.GET("/api/v1/accounts/search", { params: { query: {} } });
+    expect(emptyPeople.data?.accounts).toEqual([]);
+    expect(messageSearchHits("ab", 0)).toEqual([]);
+    expect(accountSearchHits("x")).toEqual([]);
+    expect(conversationSearchHits("x")).toEqual([]);
+    const notes = messagingStore().conversations.find((row) => row.id === 3);
+    if (notes) {
+      notes.title = null;
+      notes.peer = undefined;
+    }
+    expect(conversationSearchHits("zzzzzz")).toEqual([]);
+    messagingStore().messages[1]?.push({
+      body: "See ghost",
+      conversation_id: 1,
+      created_at: MESSAGE_STAMP,
+      deleted: false,
+      id: 999001,
+      kind: "text",
+      position: 999,
+      revision: 1,
+      silent: false,
+    });
+    expect(messageSearchHits("ghost", 1)[0]?.sender_name).toBeNull();
     const after = await client.GET("/api/v1/conversations/{conversation_id}/messages", {
       params: { path: { conversation_id: 1 }, query: { after: 0 } },
     });

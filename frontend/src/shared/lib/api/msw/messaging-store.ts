@@ -6,6 +6,10 @@ import {
   JUMP_WINDOW,
   MESSAGE_PAGE_SIZE,
 } from "@/features/conversations/model/settings";
+import {
+  SEARCH_FIXTURE_NEEDLE,
+  SEARCH_THREAD_FILLER_COUNT,
+} from "@/features/search/model/constants";
 
 type Account = components["schemas"]["Account"];
 type Conversation = components["schemas"]["Conversation"];
@@ -70,7 +74,18 @@ export function buildMessages(conversationId: number, demoIndex: number): Messag
   if (!demo) {
     return [];
   }
-  return demo.messages.map((item, index) => {
+  const items =
+    demo.name === "Adele Goldberg"
+      ? [
+          { body: `${SEARCH_FIXTURE_NEEDLE} unique`, id: "search-old", side: "received" as const },
+          ...Array.from({ length: SEARCH_THREAD_FILLER_COUNT }, (_, index) => ({
+            body: `Ping ${String(index)}`,
+            id: `search-fill-${String(index)}`,
+            side: "received" as const,
+          })),
+        ]
+      : demo.messages;
+  return items.map((item, index) => {
     const sent = item.side === "sent";
     return {
       id: conversationId * 100 + index + 1,
@@ -267,6 +282,60 @@ export function pageFor(
     return wrapPage(older.slice(Math.max(0, older.length - MESSAGE_PAGE_SIZE)), rows);
   }
   return wrapPage(rows.slice(Math.max(0, rows.length - MESSAGE_PAGE_SIZE)), rows);
+}
+
+export function messageSearchHits(query: string, conversationId?: number) {
+  const needle = query.trim().toLowerCase();
+  if (needle.length < 2) {
+    return [];
+  }
+  const rows =
+    conversationId != null
+      ? (store.messages[conversationId] ?? [])
+      : Object.values(store.messages).flat();
+  const matched = rows.filter(
+    (row) => !row.deleted && row.body != null && row.body.toLowerCase().includes(needle),
+  );
+  const unique =
+    conversationId != null
+      ? matched
+      : [...new Map(matched.map((row) => [row.conversation_id, row])).values()];
+  return unique.map((row) => ({
+    can_forward: true,
+    conversation_id: row.conversation_id,
+    created_at: row.created_at,
+    message_id: row.id,
+    sender_name: row.sender?.display_name ?? null,
+    snippet: row.body as string,
+  }));
+}
+
+export function conversationHitTitle(row: Conversation): string {
+  return row.title ?? row.peer?.display_name ?? "";
+}
+
+export function accountSearchHits(query: string) {
+  const needle = query.trim().toLowerCase();
+  if (needle.length < 2) {
+    return [];
+  }
+  return store.conversations
+    .map((row) => row.peer)
+    .filter((peer): peer is Account => Boolean(peer?.display_name?.toLowerCase().includes(needle)));
+}
+
+export function conversationSearchHits(query: string) {
+  const needle = query.trim().toLowerCase();
+  if (needle.length < 2) {
+    return [];
+  }
+  return store.conversations
+    .filter((row) => conversationHitTitle(row).toLowerCase().includes(needle))
+    .map((row) => ({
+      id: row.id,
+      kind: row.kind,
+      title: conversationHitTitle(row),
+    }));
 }
 
 export function appendSent(

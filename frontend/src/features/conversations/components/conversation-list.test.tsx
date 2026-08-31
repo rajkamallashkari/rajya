@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useQueryClient } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
@@ -178,6 +178,36 @@ describe("ConversationList", () => {
     expect(await screen.findByRole("tab", { name: en.conversations.folders.all })).toHaveAttribute(
       "aria-selected",
       "true",
+    );
+  });
+
+  it("opens people and message hits from global search", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    render(
+      <AppProviders>
+        <MemoryRouter>
+          <ConversationList />
+        </MemoryRouter>
+      </AppProviders>,
+    );
+    const field = screen.getByLabelText(en.search.label);
+    await user.type(field, "Adele");
+    expect(await screen.findByText(en.search.people)).toBeInTheDocument();
+    const people = screen.getByText(en.search.people).closest("section");
+    await user.click(within(people as HTMLElement).getByRole("button", { name: "Adele Goldberg" }));
+    expect(useLayerStore.getState().layers.some((layer) => layer.kind === "profile")).toBe(true);
+    const chats = screen.getByText(en.search.conversations).closest("section");
+    await user.click(within(chats as HTMLElement).getByRole("button", { name: "Adele Goldberg" }));
+    expect(useLayerStore.getState().layers[0]).toEqual(
+      expect.objectContaining({ conversationId: "15", kind: "conversation" }),
+    );
+    await user.click(within(people as HTMLElement).getByRole("button", { name: "Adele Goldberg" }));
+    await user.clear(field);
+    await user.type(field, "memento");
+    expect(await screen.findByText(en.search.messages)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /unique/i }));
+    expect(useLayerStore.getState().layers[0]).toEqual(
+      expect.objectContaining({ conversationId: "15", focusMessageId: expect.any(String) }),
     );
   });
 });

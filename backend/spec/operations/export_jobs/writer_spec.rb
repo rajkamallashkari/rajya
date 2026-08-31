@@ -11,6 +11,10 @@ RSpec.describe ExportJobs::Writer do
     create(:message_contact, message: message, display_name: "Priya")
     tombstone = create(:message, conversation: conversation, sender_account: user.account, body: "gone")
     tombstone.update!(deleted_at: Time.current)
+    create(
+      :message, conversation: conversation, sender_account: nil, kind: "system",
+                system_event: "member_added", body: "Ada joined"
+    )
     image = create(:attachment, message: message, kind: "image", content_type: "image/png")
     image.file.attach(io: StringIO.new("PNG"), filename: "p.png", content_type: "image/png")
     create(:attachment, message: message, kind: "file", content_type: "application/pdf")
@@ -25,15 +29,18 @@ RSpec.describe ExportJobs::Writer do
     expect(parsed.fetch("conversations").sole.fetch("title")).to eq("Cafe")
     expect(parsed.dig("conversations", 0, "messages").first).to include("body" => "Hi <there>")
     expect(parsed.dig("conversations", 0, "messages").first.fetch("location")).to include("label" => "Gate")
-    expect(parsed.dig("conversations", 0, "messages").last.fetch("deleted")).to be(true)
+    expect(parsed.dig("conversations", 0, "messages").any? { |row| row.fetch("deleted") }).to be(true)
+    expect(parsed.dig("conversations", 0, "messages").map { |row| row["sender"] }).to include(nil)
 
     txt_body, = described_class.call(job: populated_job(format: "txt"))
     expect(txt_body).to include("Cafe")
     expect(txt_body).to include("Hi <there>")
+    expect(txt_body).to include("system")
 
     html_body, = described_class.call(job: populated_job(format: "html"))
     expect(html_body).to include("Cafe")
     expect(html_body).to include("Hi &lt;there&gt;")
+    expect(html_body).to include("Ada joined")
   end
 
   it "embeds image bytes when include_media is set" do

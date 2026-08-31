@@ -101,6 +101,15 @@ RSpec.describe Attachments::Process do
     expect(attachment.reload.transcript_status).to be_nil
   end
 
+  it "uses the global transcription flag when the in-memory message is missing" do
+    attachment = attach_blob(content_type: "audio/ogg", filename: "v.ogg", io: StringIO.new("ogg"))
+    attachment.update!(kind: "voice", duration_ms: 1_000, waveform: [ 0.1, 0.2 ])
+    allow(attachment).to receive(:message).and_return(nil)
+
+    expect { described_class.call(attachment: attachment) }
+      .to have_enqueued_job(Attachments::TranscribeJob).with(attachment.id)
+  end
+
   it "probes audio duration when ffmpeg is present" do
     attachment = attach_blob(content_type: "audio/mpeg", filename: "a.mp3", io: StringIO.new("mp3"))
     allow(Storage::Mime).to receive_messages(sniff: "audio/mpeg", blocked?: false)

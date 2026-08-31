@@ -12,6 +12,9 @@ import {
   MESSAGE_STAMP,
   messagingStore,
   pageFor,
+  messageSearchHits,
+  accountSearchHits,
+  conversationSearchHits,
   patchMessage,
   reactStoredMessage,
   setConversationTicks,
@@ -317,6 +320,10 @@ export const handlerMap = {
   "/api/v1/accounts/username": http.get("*/api/v1/accounts/username", () =>
     HttpResponse.json({ available: true }),
   ),
+  "/api/v1/accounts/search": http.get("*/api/v1/accounts/search", ({ request }) => {
+    const q = new URL(request.url).searchParams.get("q") ?? "";
+    return HttpResponse.json({ accounts: accountSearchHits(q) });
+  }),
   "/api/v1/accounts/{id}": http.get("*/api/v1/accounts/:id", () =>
     HttpResponse.json(session.account),
   ),
@@ -575,6 +582,25 @@ export const handlerMap = {
       },
     });
   }),
+  "/api/v1/search": http.get("*/api/v1/search", ({ request }) => {
+    const q = new URL(request.url).searchParams.get("q") ?? "";
+    return HttpResponse.json({
+      accounts: accountSearchHits(q),
+      conversations: conversationSearchHits(q),
+      messages: messageSearchHits(q),
+      query: q,
+    });
+  }),
+  "/api/v1/conversations/{id}/search": http.get(
+    "*/api/v1/conversations/:id/search",
+    ({ params, request }) => {
+      const q = new URL(request.url).searchParams.get("q") ?? "";
+      return HttpResponse.json({
+        messages: messageSearchHits(q, Number(params.id)),
+        query: q,
+      });
+    },
+  ),
   "/api/v1/conversations/{id}/archive": http.all(
     "*/api/v1/conversations/:id/archive",
     ({ params, request }) => {

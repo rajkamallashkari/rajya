@@ -79,4 +79,19 @@ RSpec.describe Attachments::Transcribe do
   it "does not raise when fail_record! is given a missing row" do
     expect { described_class.new.fail_record!(nil) }.not_to raise_error
   end
+
+  it "uses the global flag when the attachment has no in-memory message" do
+    attachment = voice_attachment
+    allow(attachment).to receive(:message).and_return(nil)
+    allow(Ai::Runner).to receive(:transcribe).and_return(
+      Ai::Runner::Result.new(
+        transcript: Ai::Providers::Groq::Transcript.new(text: "solo", language: "en"),
+        status: "success", provider: "groq", model: "whisper-large-v3"
+      )
+    )
+
+    described_class.call(attachment: attachment)
+
+    expect(attachment.reload.transcript).to eq("solo")
+  end
 end

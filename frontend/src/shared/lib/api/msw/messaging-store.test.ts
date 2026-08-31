@@ -21,6 +21,10 @@ import {
   attachPoll,
   findPoll,
   VIEWER,
+  messageSearchHits,
+  conversationSearchHits,
+  conversationHitTitle,
+  accountSearchHits,
 } from "./messaging-store";
 
 describe("messaging store", () => {
@@ -30,6 +34,11 @@ describe("messaging store", () => {
     expect(findMessage(0)).toBeUndefined();
     expect(pageFor(1, { around_id: 0 })).toBeNull();
     expect(pageFor(99, { around_at: MESSAGE_STAMP })?.messages).toEqual([]);
+    expect(messageSearchHits("ab", 0)).toEqual([]);
+    expect(accountSearchHits("x")).toEqual([]);
+    expect(conversationSearchHits("x")).toEqual([]);
+    expect(conversationHitTitle({ title: null } as never)).toBe("");
+    expect(conversationHitTitle({ title: null, peer: { display_name: "Ada" } } as never)).toBe("Ada");
     seedPositions(9, 0);
     expect(pageFor(9)?.messages).toEqual([]);
     const sent = appendSent(1, "hi");

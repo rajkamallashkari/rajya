@@ -9,11 +9,13 @@ import { cn } from "@/shared/lib/cn";
 
 export function LayerHeader({
   children,
+  onBack,
   onTitleClick,
   showBack = true,
   title,
 }: {
   children?: ReactNode;
+  onBack?: () => void;
   onTitleClick?: () => void;
   showBack?: boolean;
   title: string;
@@ -23,7 +25,7 @@ export function LayerHeader({
   return (
     <header className="flex items-center gap-[var(--control-gap)] px-[var(--space-list-x)] py-[var(--space-list-y)]">
       {showBack ? (
-        <IconButton aria-label={t("shell.back")} onClick={() => popLayer()} type="button">
+        <IconButton aria-label={t("shell.back")} onClick={() => (onBack ?? popLayer)()} type="button">
           <ChevronLeft className="h-[var(--icon-size)] w-[var(--icon-size)]" />
         </IconButton>
       ) : null}

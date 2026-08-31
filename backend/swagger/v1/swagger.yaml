@@ -2368,6 +2368,68 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Message"
+  "/api/v1/search":
+    get:
+      summary: Search messages, conversations, and people
+      tags:
+      - Search
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: results
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/GlobalSearch"
+  "/api/v1/conversations/{id}/search":
+    get:
+      summary: Search messages in a conversation
+      tags:
+      - Search
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: q
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: results
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ConversationSearch"
+  "/api/v1/accounts/search":
+    get:
+      summary: Search discoverable accounts
+      tags:
+      - Search
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: results
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AccountSearch"
   "/api/v1/sessions":
     get:
       summary: List active devices for the current user
@@ -4115,6 +4177,85 @@ components:
             "$ref": "#/components/schemas/Message"
         meta:
           "$ref": "#/components/schemas/MessagePageMeta"
+    SearchMessageHit:
+      type: object
+      required:
+      - message_id
+      - conversation_id
+      - snippet
+      - can_forward
+      - created_at
+      properties:
+        message_id:
+          type: integer
+        conversation_id:
+          type: integer
+        snippet:
+          type: string
+        sender_name:
+          type: string
+          nullable: true
+        can_forward:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+    SearchConversationHit:
+      type: object
+      required:
+      - id
+      - title
+      - kind
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        kind:
+          type: string
+    GlobalSearch:
+      type: object
+      required:
+      - query
+      - messages
+      - accounts
+      - conversations
+      properties:
+        query:
+          type: string
+        messages:
+          type: array
+          items:
+            "$ref": "#/components/schemas/SearchMessageHit"
+        accounts:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Account"
+        conversations:
+          type: array
+          items:
+            "$ref": "#/components/schemas/SearchConversationHit"
+    ConversationSearch:
+      type: object
+      required:
+      - query
+      - messages
+      properties:
+        query:
+          type: string
+        messages:
+          type: array
+          items:
+            "$ref": "#/components/schemas/SearchMessageHit"
+    AccountSearch:
+      type: object
+      required:
+      - accounts
+      properties:
+        accounts:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Account"
     MessageInfoReceipt:
       type: object
       required:

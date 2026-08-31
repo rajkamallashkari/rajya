@@ -63,5 +63,24 @@ RSpec.describe Ai::Runner do
     )
     expect(empty.provider).to eq("none")
   end
+
+  it "skips rewind when the IO cannot rewind between provider attempts" do
+    first = Ai::ModelRegistry::Entry.new(provider: "groq", model: "a")
+    second = Ai::ModelRegistry::Entry.new(provider: "groq", model: "b")
+    groq = instance_double(Ai::Providers::Groq)
+    allow(groq).to receive(:transcribe).and_return(:quota_exhausted, :quota_exhausted)
+    allow(Ai::ModelRegistry).to receive(:chain_for).with(:transcribe).and_return([ first, second ])
+    allow(Ai::ModelRegistry).to receive(:provider_for).and_return(groq)
+    io = Class.new do
+      def read(*) = "ogg"
+    end.new
+
+    result = described_class.transcribe(
+      io: io, filename: "a.ogg", content_type: "audio/ogg",
+      account: create(:account), conversation: create(:conversation)
+    )
+
+    expect(result.status).to eq("failed")
+  end
 end
 # rubocop:enable RSpec/ExampleLength

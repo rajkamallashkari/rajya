@@ -28,6 +28,8 @@ import {
 import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { resetLayerStore, useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { resetSearchStore, useSearchStore } from "@/features/search/store/search-store";
+import { SEARCH_FIXTURE_NEEDLE } from "@/features/search/model/constants";
 import { testSession } from "@/test/access-session";
 import { testCable } from "@/test/fake-cable";
 import { server } from "@/test/msw";
@@ -36,6 +38,7 @@ import { THREAD_LOAD_OLDER_PX } from "@/features/conversations/model/constants";
 afterEach(() => {
   resetOsmTileBudget();
   resetLayerStore();
+  resetSearchStore();
 });
 
 describe("conversation layers", () => {
@@ -720,5 +723,71 @@ describe("conversation layers", () => {
     expect(
       await screen.findByRole("status", { name: en.messages.activity.uploading_media }),
     ).toHaveAttribute("data-activity", "uploading_media");
+  });
+
+  it("jumps from search and date, then restores scroll on back", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    window.dispatchEvent(new Event("resize"));
+    useLayerStore.getState().openConversation({
+      conversationId: "15",
+      id: "conversation:15",
+      kind: "conversation",
+      title: "Adele Goldberg",
+    });
+    const { rerender } = render(
+      <AppProviders>
+        <ConversationThread conversationId="15" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("Ping 79")).toBeInTheDocument();
+    rerender(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
+    rerender(
+      <AppProviders>
+        <ConversationThread conversationId="15" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("Ping 79")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.search.open }));
+    await user.click(screen.getByRole("button", { name: en.shell.back }));
+    expect(useSearchStore.getState().chatOpen).toBe(false);
+    const scroller = document.querySelector("[data-layer-scroll='15']") as HTMLDivElement;
+    Object.defineProperty(scroller, "scrollTop", { configurable: true, writable: true, value: 40 });
+    await user.click(screen.getByRole("button", { name: en.search.open }));
+    await user.type(screen.getByLabelText(en.search.in_chat), SEARCH_FIXTURE_NEEDLE);
+    await waitFor(() => {
+      expect(useLayerStore.getState().layers[0]?.focusMessageId).toBeTruthy();
+    });
+    expect(useSearchStore.getState().chatOpen).toBe(true);
+    useSearchStore.getState().pushJump({ conversationId: "15", scrollTop: 40 });
+    await user.click(screen.getByRole("button", { name: en.shell.back }));
+    await waitFor(() => {
+      expect(scroller.scrollTop).toBe(40);
+    });
+    await user.click(screen.getByLabelText(en.search.in_chat));
+    await user.keyboard("{Enter}");
+    await user.keyboard("{ArrowDown}");
+    await user.click(screen.getByRole("button", { name: en.search.mode_list }));
+    await user.click(await screen.findByRole("button", { name: /unique/i }));
+    useSearchStore.getState().closeChatSearch();
+    expect(await screen.findByRole("button", { name: en.search.jump_date })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.search.jump_date }));
+    await user.click(screen.getByRole("button", { name: en.search.jump_today }));
+    await waitFor(() => {
+      expect(useLayerStore.getState().layers[0]?.focusMessageId).toBeTruthy();
+    });
+    useSearchStore.setState({ jumpStack: [] });
+    await user.click(screen.getByRole("button", { name: en.shell.back }));
+    expect(useLayerStore.getState().layers).toHaveLength(0);
   });
 });

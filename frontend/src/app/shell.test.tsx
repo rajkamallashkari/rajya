@@ -10,6 +10,7 @@ import { ADA_DEMO } from "@/features/conversations/model/demo";
 import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { resetSearchStore, useSearchStore } from "@/features/search/store/search-store";
 
 function renderShell(): void {
   render(
@@ -25,6 +26,7 @@ describe("AppShell", () => {
   afterEach(() => {
     useLayerStore.getState().clearLayers();
     useShellStore.setState({ impersonatingName: null });
+    resetSearchStore();
   });
   it("renders the chat list, impersonation banner, shortcuts, and gallery link", async () => {
     const user = userEvent.setup();
@@ -155,5 +157,21 @@ describe("AppShell", () => {
     expect(useLayerStore.getState().layers).toHaveLength(1);
     window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
     expect(useLayerStore.getState().layers).toHaveLength(0);
+  });
+
+  it("lets Escape close in-chat search before popping a layer", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    renderShell();
+    await user.click(await screen.findByText(ADA_DEMO.name));
+    useSearchStore.getState().openChatSearch();
+    expect(useSearchStore.getState().chatOpen).toBe(true);
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
+    expect(useSearchStore.getState().chatOpen).toBe(false);
+    expect(useLayerStore.getState().layers).toHaveLength(1);
   });
 });

@@ -64,6 +64,8 @@ Rails.application.routes.draw do
       get "users/me/phone/verification", to: "phone_verifications#show"
       get "me", to: "users#show"
       get "accounts/username", to: "usernames#show"
+      get "accounts/search", to: "account_searches#index"
+      get "search", to: "searches#index"
       resources :accounts, only: %i[show]
       resources :blocks, only: %i[index create destroy]
       resources :reports, only: :create do
@@ -90,6 +92,7 @@ Rails.application.routes.draw do
           post :receipts, to: "conversation_receipts#create"
           post :leave, to: "conversation_leaves#create"
           get :media, to: "conversation_galleries#show"
+          get :search, to: "conversation_searches#show"
         end
         resources :members, only: %i[create destroy], controller: "conversation_members", param: :account_id do
           member do

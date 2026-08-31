@@ -28,4 +28,10 @@ RSpec.describe Attachments::RetryTranscript do
 
     expect(described_class.call(attachment: failed_voice).error_code).to eq(:not_found)
   end
+
+  it "uses the global flag when the attachment has no in-memory message" do
+    attachment = failed_voice
+    allow(attachment).to receive(:message).and_return(nil)
+    expect(described_class.call(attachment: attachment)).to be_success
+  end
 end

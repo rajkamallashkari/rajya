@@ -20,6 +20,7 @@ import { useShellStore } from "@/features/settings/store/shell-store";
 import { useMobileViewport } from "@/shared/hooks/use-mobile-viewport";
 import { useShortcuts } from "@/shared/hooks/use-shortcuts";
 import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { useSearchStore } from "@/features/search/store/search-store";
 
 export function AppShell() {
   const { t } = useTranslation();
@@ -88,6 +89,10 @@ export function AppShell() {
 
   useShortcuts({
     onPopLayer: () => {
+      const restored = useSearchStore.getState().handleBack();
+      if (restored !== null) {
+        return;
+      }
       const layers = useLayerStore.getState().layers;
       if (layers.length === 0) {
         return;

@@ -591,6 +591,10 @@ module Settings
       search_page_size: {
         type: :integer, category: :search, default: 25, min: 1, max: 100,
         description: "Search results per page."
+      },
+      search_snippet_radius: {
+        type: :integer, category: :search, default: 60, min: 1, max: 500,
+        description: "Characters of context around a search hit in the snippet."
       }
     }.freeze
 

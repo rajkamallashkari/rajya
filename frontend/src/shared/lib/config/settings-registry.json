@@ -1310,5 +1310,14 @@
     "min": 1,
     "max": 100,
     "allow_nil": false
+  },
+  "search_snippet_radius": {
+    "type": "integer",
+    "category": "search",
+    "default": 60,
+    "description": "Characters of context around a search hit in the snippet.",
+    "min": 1,
+    "max": 500,
+    "allow_nil": false
   }
 }

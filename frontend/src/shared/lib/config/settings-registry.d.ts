@@ -141,7 +141,8 @@ export type SettingKey =
   | "report_cooldown"
   | "search_min_query_length"
   | "search_debounce"
-  | "search_page_size";
+  | "search_page_size"
+  | "search_snippet_radius";
 
 export interface SettingsRegistryEntry {
   type: string;

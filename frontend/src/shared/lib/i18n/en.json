@@ -94,7 +94,25 @@
   },
   "search": {
     "label": "Search conversations",
-    "placeholder": "Search"
+    "placeholder": "Search",
+    "in_chat": "Search in conversation",
+    "in_chat_list": "Search all messages",
+    "clear": "Clear search",
+    "close": "Close search",
+    "open": "Search messages",
+    "mode_list": "Show results list",
+    "mode_navigate": "Navigate matches",
+    "no_results": "No matches found",
+    "type_to_search": "Type to search",
+    "people": "People",
+    "conversations": "Conversations",
+    "messages": "Messages",
+    "jump_date": "Jump to date",
+    "jump_today": "Today",
+    "jump_yesterday": "Yesterday",
+    "jump_week": "Last week",
+    "pick_date": "Pick a date",
+    "match_count": "{{current}}/{{total}}"
   },
   "shell": {
     "back": "Back",

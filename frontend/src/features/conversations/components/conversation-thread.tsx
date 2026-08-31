@@ -1,3 +1,4 @@
+import { Calendar, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { getAccessSession } from "@/features/auth/model/access-session";
@@ -8,7 +9,7 @@ import {
   type GifView,
   type StickerView,
 } from "@/features/composer/model/picker";
-import { postReceipts, type Message } from "@/features/conversations/api/http";
+import { postReceipts, listMessages, type Message } from "@/features/conversations/api/http";
 import {
   useBulkForward,
   useBulkSave,
@@ -64,7 +65,18 @@ import {
 } from "@/features/messages/model/poll";
 import { LayerHeader } from "@/app/navigation/layer-header";
 import { useMobileViewport } from "@/shared/hooks/use-mobile-viewport";
-import { useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
+import {
+  ChatSearchBar,
+  JumpDateSheet,
+  SearchResultsPanel,
+} from "@/features/search";
+import { useConversationSearch } from "@/features/search/api/queries";
+import { useDebouncedValue } from "@/features/search/hooks/use-debounced-value";
+import { SEARCH_DEBOUNCE_MS } from "@/features/search/model/constants";
+import { wrapMatchIndex } from "@/features/search/model/highlight";
+import { resetSearchStore, useSearchStore } from "@/features/search/store/search-store";
+import { IconButton } from "@/shared/ui/icon-button";
 import { ListView } from "@/shared/ui/list-view";
 
 export function ConversationThread({ conversationId }: { conversationId: string }): ReactNode {
@@ -202,6 +214,17 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
     focusMessageId ? { messageId: Number(focusMessageId) } : {},
   );
   const pushLayer = useLayerStore((state) => state.pushLayer);
+  const popLayer = useLayerStore((state) => state.popLayer);
+  const openConversation = useLayerStore((state) => state.openConversation);
+  const chatOpen = useSearchStore((state) => state.chatOpen);
+  const openChatSearch = useSearchStore((state) => state.openChatSearch);
+  const setDateOpen = useSearchStore((state) => state.setDateOpen);
+  const searchQuery = useSearchStore((state) => state.query);
+  const searchMode = useSearchStore((state) => state.mode);
+  const [matchIndex, setMatchIndex] = useState(0);
+  const debouncedSearch = useDebouncedValue(searchQuery, SEARCH_DEBOUNCE_MS);
+  const conversationSearch = useConversationSearch(conversationId, debouncedSearch);
+  const jumpedQuery = useRef("");
   const mobile = useMobileViewport();
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -223,6 +246,11 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
       : listed;
   const conversation = conversationQuery.data;
   const title = conversation ? conversationTitle(conversation, t("conversations.untitled")) : "";
+
+  useEffect(() => {
+    jumpedQuery.current = "";
+    resetSearchStore();
+  }, [conversationId]);
 
   useEffect(() => {
     stuck.current = false;
@@ -254,6 +282,55 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
     void postReceipts(conversationId, "viewed", newestPosition).catch(() => undefined);
   }, [conversationId, newestPosition]);
 
+  const searchHits = useMemo(
+    () => conversationSearch.data?.messages ?? [],
+    [conversationSearch.data?.messages],
+  );
+
+  useEffect(() => {
+    const first = searchHits[0];
+    if (!chatOpen || searchMode !== "navigate" || !first || jumpedQuery.current === debouncedSearch) {
+      return;
+    }
+    jumpedQuery.current = debouncedSearch;
+    setMatchIndex(0);
+    if (scroller.current) {
+      useSearchStore.getState().pushJump({
+        conversationId: String(conversationId),
+        scrollTop: scroller.current.scrollTop,
+      });
+    }
+    openConversation(conversationLayer(String(conversationId), title, String(first.message_id)));
+  }, [chatOpen, conversationId, debouncedSearch, openConversation, searchHits, searchMode, title]);
+
+  const onThreadBack = (): void => {
+    const restored = useSearchStore.getState().handleBack();
+    if (restored && restored !== "closed") {
+      openConversation(conversationLayer(String(conversationId), title));
+      requestAnimationFrame(() => {
+        if (scroller.current) {
+          scroller.current.scrollTop = restored.scrollTop;
+        }
+      });
+      return;
+    }
+    if (restored === "closed") {
+      return;
+    }
+    popLayer();
+  };
+
+  const jumpToHit = (messageId: number, index: number): void => {
+    setMatchIndex(index);
+    if (scroller.current) {
+      useSearchStore.getState().pushJump({
+        conversationId: String(conversationId),
+        scrollTop: scroller.current.scrollTop,
+      });
+    }
+    openConversation(conversationLayer(String(conversationId), title, String(messageId)));
+  };
+
   if (conversationQuery.isPending || page.isPending) {
     return (
       <div
@@ -274,6 +351,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
       data-conversation-thread=""
     >
       <LayerHeader
+        onBack={onThreadBack}
         onTitleClick={() =>
           pushLayer({
             conversationId: String(conversationId),
@@ -284,6 +362,53 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         }
         showBack={mobile}
         title={title}
+      >
+        {chatOpen ? (
+          <ChatSearchBar
+            conversationId={conversationId}
+            matchIndex={matchIndex}
+            onCycle={(delta) => {
+              const next = wrapMatchIndex(matchIndex, searchHits.length, delta);
+              const hit = searchHits[next];
+              if (hit) {
+                jumpToHit(hit.message_id, next);
+              }
+            }}
+          />
+        ) : (
+          <>
+            <IconButton aria-label={t("search.open")} onClick={openChatSearch} type="button">
+              <Search className="h-[var(--icon-size)] w-[var(--icon-size)]" />
+            </IconButton>
+            <IconButton aria-label={t("search.jump_date")} onClick={() => setDateOpen(true)} type="button">
+              <Calendar className="h-[var(--icon-size)] w-[var(--icon-size)]" />
+            </IconButton>
+          </>
+        )}
+      </LayerHeader>
+      {chatOpen ? (
+        <SearchResultsPanel
+          conversationId={conversationId}
+          onJump={(hit, index) => jumpToHit(hit.message_id, index)}
+        />
+      ) : null}
+      <JumpDateSheet
+        onJump={(iso) => {
+          setDateOpen(false);
+          if (scroller.current) {
+            useSearchStore.getState().pushJump({
+              conversationId: String(conversationId),
+              scrollTop: scroller.current.scrollTop,
+            });
+          }
+          openConversation(conversationLayer(String(conversationId), title));
+          void listMessages(conversationId, { around_at: iso }).then((page) => {
+            const pivot = page.meta.pivot_id;
+            if (pivot != null) {
+              openConversation(conversationLayer(String(conversationId), title, String(pivot)));
+            }
+          });
+        }}
       />
       {selectedIds.length > 0 ? (
         <SelectionToolbar

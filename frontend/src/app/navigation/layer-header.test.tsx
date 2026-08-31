@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { LayerHeader } from "./layer-header";
 import { AppProviders } from "@/app/providers";
 import { en } from "@/shared/lib/i18n/catalog";
@@ -24,6 +24,15 @@ describe("LayerHeader", () => {
     await user.click(screen.getByRole("button", { name: en.shell.back }));
     expect(useLayerStore.getState().layers).toHaveLength(0);
     unmount();
+    const onBack = vi.fn();
+    const second = render(
+      <AppProviders>
+        <LayerHeader onBack={onBack} title="Ada" />
+      </AppProviders>,
+    );
+    await user.click(screen.getByRole("button", { name: en.shell.back }));
+    expect(onBack).toHaveBeenCalled();
+    second.unmount();
     render(
       <AppProviders>
         <LayerHeader showBack={false} title="Ada" />

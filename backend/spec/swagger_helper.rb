@@ -528,6 +528,52 @@ RSpec.configure do |config|
                 meta: { "$ref" => "#/components/schemas/MessagePageMeta" }
               }
             },
+            SearchMessageHit: {
+              type: :object,
+              required: %w[message_id conversation_id snippet can_forward created_at],
+              properties: {
+                message_id: { type: :integer },
+                conversation_id: { type: :integer },
+                snippet: { type: :string },
+                sender_name: { type: :string, nullable: true },
+                can_forward: { type: :boolean },
+                created_at: { type: :string, format: :"date-time" }
+              }
+            },
+            SearchConversationHit: {
+              type: :object,
+              required: %w[id title kind],
+              properties: {
+                id: { type: :integer },
+                title: { type: :string },
+                kind: { type: :string }
+              }
+            },
+            GlobalSearch: {
+              type: :object,
+              required: %w[query messages accounts conversations],
+              properties: {
+                query: { type: :string },
+                messages: { type: :array, items: { "$ref" => "#/components/schemas/SearchMessageHit" } },
+                accounts: { type: :array, items: { "$ref" => "#/components/schemas/Account" } },
+                conversations: { type: :array, items: { "$ref" => "#/components/schemas/SearchConversationHit" } }
+              }
+            },
+            ConversationSearch: {
+              type: :object,
+              required: %w[query messages],
+              properties: {
+                query: { type: :string },
+                messages: { type: :array, items: { "$ref" => "#/components/schemas/SearchMessageHit" } }
+              }
+            },
+            AccountSearch: {
+              type: :object,
+              required: %w[accounts],
+              properties: {
+                accounts: { type: :array, items: { "$ref" => "#/components/schemas/Account" } }
+              }
+            },
             MessageInfoReceipt: {
               type: :object,
               required: %w[account],
