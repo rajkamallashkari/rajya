@@ -543,7 +543,21 @@ module Settings
         description: "Retries for unexpected transcription job errors before a visible fail (NR-33)."
       },
 
-      # --- notifications (BR-103) ---
+      # --- notifications (BR-98, BR-99, BR-103) ---
+      notification_cascade_defaults: {
+        type: :object, category: :notifications,
+        default: {
+          "level" => "all",
+          "show_preview" => true,
+          "sound" => true,
+          "vibration" => true,
+          "dnd_enabled" => false,
+          "dnd_start" => "22:00",
+          "dnd_end" => "07:00",
+          "dnd_days" => [ 0, 1, 2, 3, 4, 5, 6 ]
+        },
+        description: "Code-defined notification cascade defaults (BR-98, BR-99); never stored on the preferences row."
+      },
       push_ttl: {
         type: :integer, category: :notifications, default: 86_400, min: 60, max: 604_800,
         description: "Web Push TTL in seconds (BR-103, 24 h)."
