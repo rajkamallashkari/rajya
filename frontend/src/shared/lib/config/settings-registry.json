@@ -738,6 +738,15 @@
     "max": 60,
     "allow_nil": false
   },
+  "ice_restart_max_attempts": {
+    "type": "integer",
+    "category": "calls",
+    "default": 3,
+    "description": "ICE restarts per peer before the call is dropped (F-32).",
+    "min": 1,
+    "max": 10,
+    "allow_nil": false
+  },
   "stun_urls": {
     "type": "array",
     "category": "calls",

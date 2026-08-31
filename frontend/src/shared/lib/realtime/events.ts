@@ -50,6 +50,8 @@ export interface RealtimePayloads {
     conversation_id: number;
     kind: string;
     initiator_account_id: number;
+    initiator_display_name?: string;
+    initiator_username?: string;
   };
   mute_state: { call_id: number; account_id?: number; mic_on: boolean; cam_on: boolean };
   offer: { call_id: number; from_account_id?: number; payload?: unknown };
@@ -285,6 +287,8 @@ const PARSERS: { [Type in ListedType]: (data: Record<string, unknown>) => Realti
     conversation_id: requireNumber(data, "conversation_id"),
     kind: optionalString(data, "kind") ?? "audio",
     initiator_account_id: requireNumber(data, "initiator_account_id"),
+    initiator_display_name: optionalString(data, "initiator_display_name"),
+    initiator_username: optionalString(data, "initiator_username"),
   }),
   mute_state: (data) => ({
     type: "mute_state",

@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 11.1 |
-| **Next session** | 11.2 |
+| **Last completed** | 11.2 |
+| **Next session** | 11.3 |
 | **Phase** | P11 — Calls |
-| **Sessions remaining in phase** | 2 (11.2–11.3) |
+| **Sessions remaining in phase** | 1 (11.3) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 11.2 — WebRTC engine port with ICE restart**
+**Session 11.3 — Call UI: full screen, PiP, incoming banner, controls, screen share (NR-47)**
 
-Deliverable: WebRTC engine port with ICE restart
+Deliverable: Call UI: full screen, PiP, incoming banner, controls, screen share (NR-47)
 
-Docs: GAP §5; AUDIT §2.6 (BR-62, BR-69, BR-70, BR-111), §5 (F-32)
+Docs: DESIGN_SYSTEM §5.5, §2 (z-index scale); SCHEMA §12.16; AUDIT §1.5
 
-Legacy to read: `botverse/src/lib/webrtc/engine.ts` (**981 lines — read in full; this is the largest body of validated logic being carried across**), `botverse/src/lib/webrtc/index.ts`, `botverse/src/hooks/useWebRTCManager.ts`, `useSignalingChannel.ts`
+Legacy to read: `botverse/src/components/call/` (all 13 files), `botverse/src/hooks/useCornerSnap.ts`, `useDraggable.ts`, `useCallElapsed.ts`, `useCanFlipCamera.ts`, `botverse/src/lib/ringtone.ts`
 
 ---
 
@@ -76,6 +76,7 @@ Legacy to read: `botverse/src/lib/webrtc/engine.ts` (**981 lines — read in ful
 | 10.1 | Cascade resolver, timezone-aware DND, F-9 and F-21 fixes | Four-scope cascade over one `preferences` document (`defaults → global → kind:* → conversation:<id>`). `Notifications::Resolve(account:, conversation:, message:)` requires the message so mentions-only cannot silence a group (F-9). DND uses `locale.timezone` including overnight `dnd_days` (F-21). Mute is checked once inside the resolver (BR-101). Channels stay silent (BR-105). Web Push, fanout, silent send, and reminder delivery wait for 10.2. |
 | 10.2 | Web push delivery, batched fanout, subscription lifecycle, delivered-watermark wiring, silent send (NR-23) and reminders (NR-24) | `Push::DeliveryChannel` → `Push::WebPush` with VAPID. Subscribe/unsubscribe + public key. Fanout batches; visible push only when Resolve says notify and the message is not silent; muted/channel/silent/DND/none still advance delivered (Q-5, NR-23, BR-105). 410 destroys the subscription (BR-103). Shared chats prefix `[@username]` (BR-104). Reminders push after Cable. Client SW click deep-links with `?account=`. Locked-phone DoD is documented, not executed. |
 | 11.1 | Lifecycle operation, signaling authorization, timeouts, call system events | `webrtc_calls` default off (404). Ringing → active → ended/missed/declined including all four paths to `missed`. Busy via the live-participant unique index (BR-63). Timeout emits `call_missed` not `call_cancelled` (BR-65). `unsubscribed` cancels a still-ringing initiator (BR-66). One system message per call, edited in place (BR-67). SignalingChannel relays only between participants (BR-69). ICE: coturn HMAC first, Metered if unset, STUN fallback (BR-71). Client event union is typed with router no-ops. Engine/ICE restart waits for 11.2; UI/Playwright/screen share wait for 11.3. |
+| 11.2 | WebRTC engine port with ICE restart | Ported the mesh engine (SDP/ICE relay, polite glare, heartbeats, media controls). `iceconnectionstate = failed` restarts ICE up to `ice_restart_max_attempts` (default 3) then hangs up with catalog copy (F-32 / BR-70). Group video stays 640×480 @ 20 fps (BR-111). Signaling uses `to_account_id` / `ice_candidate`. Call UI/PiP/screen share wait for 11.3. |
 
 ---
 

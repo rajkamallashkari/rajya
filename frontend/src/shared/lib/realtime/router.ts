@@ -19,6 +19,7 @@ import {
   generationMatchesReply,
   type GenerationState,
 } from "@/features/conversations/model/generation";
+import { handleSignalingMessage } from "@/features/calls/lib";
 import { parseRealtimeEvent, type RealtimeEvent } from "@/shared/lib/realtime/events";
 import { realtimeKeys } from "@/shared/lib/realtime/keys";
 
@@ -134,6 +135,7 @@ export async function routeRealtimeEvent(
     case "offer":
     case "user_joined":
     case "user_left":
+      await handleSignalingMessage(event);
       return;
     default: {
       const exhaustive: never = event;

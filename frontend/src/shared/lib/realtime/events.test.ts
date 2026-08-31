@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { EVENT_UNION_IS_EXHAUSTIVE, REALTIME_EVENT_TYPES, parseRealtimeEvent } from "./events";
+import {
+  EVENT_UNION_IS_EXHAUSTIVE,
+  REALTIME_EVENT_TYPES,
+  parseRealtimeEvent,
+  type RealtimeEvent,
+} from "./events";
+
+function parseAs<T extends RealtimeEvent["type"]>(
+  raw: Record<string, unknown> & { type: T },
+): Extract<RealtimeEvent, { type: T }> {
+  return parseRealtimeEvent(raw) as Extract<RealtimeEvent, { type: T }>;
+}
 
 describe("realtime events", () => {
   it("keeps the router union exhaustive over every backend event", () => {
@@ -244,9 +255,11 @@ describe("realtime events", () => {
       conversation_id: 2,
       kind: "audio",
       initiator_account_id: 3,
+      initiator_display_name: undefined,
+      initiator_username: undefined,
     });
     expect(
-      parseRealtimeEvent({
+      parseAs({
         type: "incoming_call",
         call_id: 1,
         conversation_id: 2,
@@ -254,6 +267,17 @@ describe("realtime events", () => {
         initiator_account_id: 3,
       }).kind,
     ).toBe("video");
+    expect(
+      parseAs({
+        type: "incoming_call",
+        call_id: 1,
+        conversation_id: 2,
+        kind: "video",
+        initiator_account_id: 3,
+        initiator_display_name: "Ada",
+        initiator_username: "ada",
+      }).initiator_username,
+    ).toBe("ada");
     expect(parseRealtimeEvent({ type: "offer", call_id: 1, from_account_id: 2, payload: { sdp: "x" } })).toEqual(
       {
         type: "offer",
@@ -264,7 +288,7 @@ describe("realtime events", () => {
     );
     expect(parseRealtimeEvent({ type: "answer", call_id: 1 }).type).toBe("answer");
     expect(parseRealtimeEvent({ type: "ice_candidate", call_id: 1 }).type).toBe("ice_candidate");
-    expect(parseRealtimeEvent({ type: "busy", call_id: 1, account_id: 2 }).account_id).toBe(2);
+    expect(parseAs({ type: "busy", call_id: 1, account_id: 2 }).account_id).toBe(2);
     expect(parseRealtimeEvent({ type: "call_accepted", call_id: 1 }).type).toBe("call_accepted");
     expect(parseRealtimeEvent({ type: "call_cancelled", call_id: 1 }).type).toBe("call_cancelled");
     expect(parseRealtimeEvent({ type: "call_declined", call_id: 1 }).type).toBe("call_declined");
@@ -276,14 +300,14 @@ describe("realtime events", () => {
       call_id: 1,
       reason: "silenced",
     });
-    expect(parseRealtimeEvent({ type: "call_dismissed", call_id: 1 }).reason).toBeUndefined();
+    expect(parseAs({ type: "call_dismissed", call_id: 1 }).reason).toBeUndefined();
     expect(parseRealtimeEvent({ type: "mute_state", call_id: 1, mic_on: true, cam_on: false })).toEqual({
       type: "mute_state",
       call_id: 1,
       mic_on: true,
       cam_on: false,
     });
-    expect(parseRealtimeEvent({ type: "mute_state", call_id: 1 }).mic_on).toBe(false);
+    expect(parseAs({ type: "mute_state", call_id: 1 }).mic_on).toBe(false);
     expect(() => parseRealtimeEvent({ type: "incoming_call", call_id: 1 })).toThrow("conversation_id");
     expect(parseRealtimeEvent({ type: "phone_verified", account_id: "x", phone: 1 })).toEqual({
       type: "phone_verified",

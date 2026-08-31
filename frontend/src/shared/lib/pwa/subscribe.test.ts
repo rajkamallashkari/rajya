@@ -3,7 +3,8 @@ import { createPushSubscription } from "./subscribe";
 
 describe("createPushSubscription", () => {
   it("returns null when permission is denied or the public key is blank", async () => {
-    const registration = { pushManager: { subscribe: vi.fn() } };
+    const subscribe = vi.fn();
+    const registration = { pushManager: { subscribe } as unknown as PushManager };
     await expect(
       createPushSubscription(registration, "BAAA", {
         permission: "denied",
@@ -16,7 +17,7 @@ describe("createPushSubscription", () => {
         requestPermission: async () => "granted",
       }),
     ).resolves.toBeNull();
-    expect(registration.pushManager.subscribe).not.toHaveBeenCalled();
+    expect(subscribe).not.toHaveBeenCalled();
   });
 
   it("requests permission when default and subscribes", async () => {

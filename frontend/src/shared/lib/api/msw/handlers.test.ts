@@ -30,6 +30,14 @@ const expectedPaths = [
   "/api/v1/bot_requests/{id}",
   "/api/v1/bots",
   "/api/v1/bots/{id}",
+  "/api/v1/calls",
+  "/api/v1/calls/active",
+  "/api/v1/calls/ice_servers",
+  "/api/v1/calls/{id}",
+  "/api/v1/calls/{id}/accept",
+  "/api/v1/calls/{id}/cancel",
+  "/api/v1/calls/{id}/decline",
+  "/api/v1/calls/{id}/hangup",
   "/api/v1/contact_nicknames",
   "/api/v1/contact_nicknames/{account_id}",
   "/api/v1/conversation_folders",
@@ -371,6 +379,41 @@ describe("MSW handlers", () => {
     expect(opted.data?.enabled).toBe(true);
     const built = await client.POST("/api/v1/style_profile");
     expect(built.data?.profile).toContain("Casual");
+  });
+
+  it("serves the call lifecycle routes", async () => {
+    const client = createApiClient("http://rajya.test");
+    const started = await client.POST("/api/v1/calls", {
+      body: { conversation_id: 1, kind: "video" },
+    });
+    expect(started.response.status).toBe(201);
+    expect(started.data?.call?.kind).toBe("video");
+    expect(started.data?.call?.status).toBe("ringing");
+    expect(started.data?.call?.ended_at).toBeNull();
+    const audio = await client.POST("/api/v1/calls", { body: { conversation_id: 1 } });
+    expect(audio.data?.call?.kind).toBe("audio");
+    const active = await client.GET("/api/v1/calls/active");
+    expect(active.data?.call).toBeUndefined();
+    const ice = await client.GET("/api/v1/calls/ice_servers");
+    expect(ice.data?.ice_servers).toHaveLength(1);
+    const shown = await client.GET("/api/v1/calls/{id}", { params: { path: { id: 7 } } });
+    expect(shown.data?.call?.id).toBe(7);
+    expect(shown.data?.call?.participants[1]?.status).toBe("joined");
+    const accepted = await client.POST("/api/v1/calls/{id}/accept", {
+      params: { path: { id: 7 } },
+    });
+    expect(accepted.data?.call?.status).toBe("active");
+    const cancelled = await client.POST("/api/v1/calls/{id}/cancel", {
+      params: { path: { id: 7 } },
+    });
+    expect(cancelled.data?.call?.status).toBe("missed");
+    expect(cancelled.data?.call?.ended_at).toBe(MESSAGE_STAMP);
+    const declined = await client.POST("/api/v1/calls/{id}/decline", {
+      params: { path: { id: 7 } },
+    });
+    expect(declined.data?.call?.status).toBe("declined");
+    const ended = await client.POST("/api/v1/calls/{id}/hangup", { params: { path: { id: 7 } } });
+    expect(ended.data?.call?.status).toBe("ended");
   });
 
   it("serves conversation and message routes from the in-memory store", async () => {

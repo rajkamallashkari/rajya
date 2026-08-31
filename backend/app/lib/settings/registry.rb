@@ -330,6 +330,10 @@ module Settings
         type: :integer, category: :calls, default: 20, min: 1, max: 60,
         description: "Group-video frame-rate cap for mesh bandwidth (BR-111)."
       },
+      ice_restart_max_attempts: {
+        type: :integer, category: :calls, default: 3, min: 1, max: 10,
+        description: "ICE restarts per peer before the call is dropped (F-32)."
+      },
       stun_urls: {
         type: :array, category: :calls,
         default: %w[stun:stun.l.google.com:19302 stun:stun1.l.google.com:19302 stun:stun2.l.google.com:19302],

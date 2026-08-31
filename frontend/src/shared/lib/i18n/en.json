@@ -107,6 +107,23 @@
     "style": "Writing style",
     "username": "Username"
   },
+  "calls": {
+    "errors": {
+      "accept_failed": "Failed to accept call",
+      "already_in_call": "You're already on a call. End it before starting a new one.",
+      "dropped": "Call dropped",
+      "feature_disabled": "Calling is not available right now.",
+      "flip_camera": "Unable to flip camera",
+      "in_progress": "Already in a call",
+      "insufficient_participants": "Not enough people in this chat to start a call.",
+      "invalid_call_type": "Unsupported call type.",
+      "media": "Unable to access microphone/camera",
+      "permission": "Microphone/camera permission denied",
+      "start_failed": "Failed to start call",
+      "switch_mic": "Unable to switch microphone",
+      "too_many_participants": "Group calls support up to 4 people."
+    }
+  },
   "errors": {
     "app": {
       "title": "Something went wrong",

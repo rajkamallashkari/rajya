@@ -54,6 +54,14 @@ type WebauthnOptionsBody = NonNullable<
   paths["/api/v1/passkeys/lock_options"]["post"]["responses"][200]["content"]
 >["application/json"];
 
+type CallEnvelopeBody = NonNullable<
+  paths["/api/v1/calls"]["post"]["responses"][201]["content"]
+>["application/json"];
+
+type IceServersBody = NonNullable<
+  paths["/api/v1/calls/ice_servers"]["get"]["responses"][200]["content"]
+>["application/json"];
+
 type HandlerMap = { [Path in keyof paths]: HttpHandler };
 
 function actorIdFromRequest(request: Request): number {
@@ -254,6 +262,31 @@ const messageReminder = {
   completed_at: null,
   created_at: MESSAGE_STAMP,
 };
+
+const iceServersBody = {
+  ice_servers: [{ urls: "stun:stun.l.google.com:19302" }],
+} satisfies IceServersBody;
+
+function callEnvelope(id: number, status: string, kind = "audio"): CallEnvelopeBody {
+  const joined = status === "active";
+  return {
+    call: {
+      id,
+      conversation_id: 1,
+      initiator_account_id: VIEWER.id,
+      kind,
+      status,
+      created_at: MESSAGE_STAMP,
+      started_at: joined ? MESSAGE_STAMP : null,
+      ended_at: status === "ringing" || joined ? null : MESSAGE_STAMP,
+      participants: [
+        { id: 1, account_id: VIEWER.id, status: "joined", joined_at: MESSAGE_STAMP },
+        { id: 2, account_id: 2, status: joined ? "joined" : "ringing" },
+      ],
+    },
+    ice_servers: iceServersBody.ice_servers,
+  };
+}
 
 function invitePreview(token: string) {
   if (token === "gone") {
@@ -1262,6 +1295,29 @@ export const handlerMap = {
         status: "declined",
         payload: {},
       }),
+  ),
+  "/api/v1/calls": http.post("*/api/v1/calls", async ({ request }) => {
+    const body = (await request.json()) as { kind?: string };
+    return HttpResponse.json(callEnvelope(1, "ringing", body.kind ?? "audio"), { status: 201 });
+  }),
+  "/api/v1/calls/active": http.get("*/api/v1/calls/active", () => HttpResponse.json({})),
+  "/api/v1/calls/ice_servers": http.get("*/api/v1/calls/ice_servers", () =>
+    HttpResponse.json(iceServersBody),
+  ),
+  "/api/v1/calls/{id}": http.get("*/api/v1/calls/:id", ({ params }) =>
+    HttpResponse.json(callEnvelope(Number(params.id), "active")),
+  ),
+  "/api/v1/calls/{id}/accept": http.post("*/api/v1/calls/:id/accept", ({ params }) =>
+    HttpResponse.json(callEnvelope(Number(params.id), "active")),
+  ),
+  "/api/v1/calls/{id}/cancel": http.post("*/api/v1/calls/:id/cancel", ({ params }) =>
+    HttpResponse.json(callEnvelope(Number(params.id), "missed")),
+  ),
+  "/api/v1/calls/{id}/decline": http.post("*/api/v1/calls/:id/decline", ({ params }) =>
+    HttpResponse.json(callEnvelope(Number(params.id), "declined")),
+  ),
+  "/api/v1/calls/{id}/hangup": http.post("*/api/v1/calls/:id/hangup", ({ params }) =>
+    HttpResponse.json(callEnvelope(Number(params.id), "ended")),
   ),
   "/api/v1/style_profile": http.all("*/api/v1/style_profile", async ({ request }) => {
     if (request.method === "PATCH") {

@@ -80,6 +80,7 @@ export type SettingKey =
   | "mesh_participant_cap"
   | "group_video_resolution"
   | "group_video_frame_rate"
+  | "ice_restart_max_attempts"
   | "stun_urls"
   | "turn_port"
   | "turn_credential_ttl"

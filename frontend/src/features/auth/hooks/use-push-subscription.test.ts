@@ -2,6 +2,8 @@ import { renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetWebPushEndpoint, syncWebPush, usePushSubscription } from "./use-push-subscription";
 import { setAccessSession } from "@/features/auth/model/access-session";
+import { useAccountsStore } from "@/features/auth/store/accounts-store";
+import type { PushPermissionHost } from "@/shared/lib/pwa/subscribe";
 import { testSession } from "@/test/access-session";
 
 const fetchVapidPublicKey = vi.fn();
@@ -47,6 +49,31 @@ describe("syncWebPush", () => {
       requestPermission: async () => "granted",
     });
     expect(unregisterPushSubscription).toHaveBeenCalledWith("https://push.example/1");
+  });
+
+  it("forgets the endpoint after a successful unregister", async () => {
+    fetchVapidPublicKey.mockResolvedValue({ public_key: "YQ" });
+    createPushSubscription.mockResolvedValue({
+      endpoint: "https://push.example/2",
+      keys: { p256dh: "p", auth: "a" },
+    });
+    registerPushSubscription.mockResolvedValue({ id: 2, endpoint: "https://push.example/2" });
+    unregisterPushSubscription.mockResolvedValue(undefined);
+    await syncWebPush(1, { serviceWorker: { ready: Promise.resolve({}) } } as Navigator, {
+      permission: "granted",
+      requestPermission: async () => "granted",
+    });
+    await syncWebPush(null, undefined, {
+      permission: "granted",
+      requestPermission: async () => "granted",
+    });
+    expect(unregisterPushSubscription).toHaveBeenCalledWith("https://push.example/2");
+    unregisterPushSubscription.mockClear();
+    await syncWebPush(null, undefined, {
+      permission: "granted",
+      requestPermission: async () => "granted",
+    });
+    expect(unregisterPushSubscription).not.toHaveBeenCalled();
   });
 
   it("no-ops without a worker, vapid key, or complete subscription keys", async () => {
@@ -98,6 +125,24 @@ describe("syncWebPush", () => {
 
   it("runs from the hook without Notification", () => {
     renderHook(() => usePushSubscription());
+  });
+
+  it("passes a denied permission host to the hook when Notification is missing", async () => {
+    useAccountsStore.setState({ accounts: [], activeAccountId: 9 });
+    fetchVapidPublicKey.mockResolvedValue({ public_key: "YQ" });
+    const observed: NotificationPermission[] = [];
+    createPushSubscription.mockImplementation(
+      async (_registration: unknown, _key: unknown, notifications: PushPermissionHost) => {
+        observed.push(notifications.permission, await notifications.requestPermission());
+        return null;
+      },
+    );
+    vi.stubGlobal("navigator", { serviceWorker: { ready: Promise.resolve({}) } });
+    renderHook(() => usePushSubscription());
+    await vi.waitFor(() => {
+      expect(observed).toEqual(["denied", "denied"]);
+    });
+    vi.unstubAllGlobals();
   });
 
   it("runs from the hook when Notification exists", () => {

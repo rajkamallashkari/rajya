@@ -11,6 +11,7 @@ import { ConversationList } from "@/features/conversations/components/conversati
 import { ConversationThread } from "@/features/conversations/components/conversation-thread";
 import { ProfilePanel } from "@/features/conversations/components/profile-panel";
 import { MediaGalleryPanel } from "@/features/media";
+import { useSignalingChannel, useWebRTCManager } from "@/features/calls";
 import { useAccountChannel } from "@/features/conversations/hooks/use-account-channel";
 import { getMessage } from "@/features/conversations/api/http";
 import { useConversations } from "@/features/conversations/api/queries";
@@ -44,6 +45,8 @@ export function AppShell() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   useAccountChannel();
+  useSignalingChannel();
+  useWebRTCManager();
 
   useEffect(() => {
     hydrateAccounts();

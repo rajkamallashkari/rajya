@@ -1081,7 +1081,7 @@ literal in the current code and a row in `app_settings` in the target:
 | `messaging` | Edit window (`BR-2`, 15 min), pins per conversation (`BR-21`, 5), attachments per message (`BR-16`, 10), reply-quote length, page size (`BR-108`, 50), jump window (60), client cache size (`BR-107`, 200), unsend window, max message length, pinned conversations cap, multi-select cap |
 | `groups` | Minimum members (`BR-53`, 2), maximum members (uncapped — a null means uncapped), invite token TTL, invite max-uses ceiling, join-request expiry, slow-mode presets |
 | `media` | Per-file caps by type (`BR-88`), user quota (`BR-87`, 500 MB), global quota (9.5 GB), signed-URL TTL (5 min), voice-note maximum (`BR-18`, 5 min), waveform peak count (`BR-19`, 64), image variant dimensions, capacity alert threshold (80%), export artefact TTL |
-| `calls` | Ring timeout (`BR-64`, 45 s), heartbeat timeout (90 s), heartbeat interval (20 s), sweep interval (30 s), mesh participant cap (`BR-62`, 4), group video resolution and frame rate (`BR-111`) |
+| `calls` | Ring timeout (`BR-64`, 45 s), heartbeat timeout (90 s), heartbeat interval (20 s), sweep interval (30 s), mesh participant cap (`BR-62`, 4), group video resolution and frame rate (`BR-111`), ICE restart max attempts (`F-32`) |
 | `ai` | Context window (`BR-74`, 20), summarization threshold (`BR-75`, 40), prompt minimum length (`BR-80`, 80), per-capability rate limits (`BR-84`), reply rate limit, memory top-k, stream timeout, fallback attempt cap |
 | `notifications` | Push TTL (`BR-103`, 24 h), fanout batch size, retry policy, digest window |
 | `realtime` | Typing throttle (3 s), typing key TTL (5 s), presence TTL, reconnect delay (`BR-110`, 800 ms), receipt debounce (`BR-109`, 400 ms), poll intervals |
