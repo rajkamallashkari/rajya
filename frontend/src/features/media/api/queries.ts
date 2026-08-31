@@ -1,10 +1,14 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { conversationKeys, messageKeys } from "@/features/conversations/api/keys";
 import {
+  addStickerToPack,
+  createStickerPack,
+  destroyStickerPack,
   getAttachmentDownload,
   getAttachmentThumbnail,
   listConversationMedia,
   listStickerPacks,
+  removeStickerFromPack,
   retryAttachment,
   retryTranscript,
   searchGifs,
@@ -80,6 +84,55 @@ export function useStickerPacks() {
   return useQuery({
     queryFn: listStickerPacks,
     queryKey: mediaKeys.stickerPacks(),
+  });
+}
+
+export function useCreateStickerPack() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: createStickerPack,
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: mediaKeys.stickerPacks() });
+    },
+  });
+}
+
+export function useDestroyStickerPack() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: destroyStickerPack,
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: mediaKeys.stickerPacks() });
+    },
+  });
+}
+
+export function useAddStickerToPack() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      packId,
+      signedId,
+      shortcode,
+    }: {
+      packId: number;
+      signedId: string;
+      shortcode: string;
+    }) => addStickerToPack(packId, { signed_id: signedId, shortcode }),
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: mediaKeys.stickerPacks() });
+    },
+  });
+}
+
+export function useRemoveStickerFromPack() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ packId, id }: { packId: number; id: number }) =>
+      removeStickerFromPack(packId, id),
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: mediaKeys.stickerPacks() });
+    },
   });
 }
 

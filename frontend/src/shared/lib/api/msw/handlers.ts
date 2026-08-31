@@ -140,6 +140,16 @@ const deviceSessionList = {
       current: true,
       revoked: false,
     },
+    {
+      id: 2,
+      device_label: "Laptop",
+      user_agent: "Mozilla/5.0",
+      ip: "10.0.0.2",
+      last_seen_at: "2026-01-02T00:00:00Z",
+      expires_at: "2026-02-01T00:00:00Z",
+      current: false,
+      revoked: false,
+    },
   ],
 } satisfies DeviceSessionListBody;
 const contactNickname = {

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { AppProviders } from "@/app/providers";
+import { Button } from "@/shared/ui/button";
 import { AttachmentFailed } from "@/features/media/components/attachment-failed";
 import { AttachmentPending } from "@/features/media/components/attachment-pending";
 import { ProgressiveImage } from "@/features/media/components/progressive-image";
@@ -17,7 +18,7 @@ import {
   isImageAttachment,
   isVisualAttachment,
 } from "@/features/media/model/constants";
-import { getAttachmentDownload, listConversationMedia, listStickerPacks, retryAttachment, retryTranscript, searchGifs } from "@/features/media/api/http";
+import { getAttachmentDownload, listConversationMedia, listStickerPacks, retryAttachment, retryTranscript, searchGifs, createDirectUpload, createStickerPack, destroyStickerPack, addStickerToPack, removeStickerFromPack } from "@/features/media/api/http";
 import { mediaKeys } from "@/features/media/api/keys";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { testSession } from "@/test/access-session";
@@ -26,7 +27,7 @@ import { nextLightboxZoom, wrapLightboxIndex } from "@/features/media/model/ligh
 import { paintBlurhash, progressiveStage } from "@/features/media/model/progressive";
 import { isPreviewableName, uploadProgressWidth } from "@/features/media/model/upload";
 import { nextPlaybackRate, playbackRateLabel, seekFraction, voiceProgress } from "@/features/media/model/voice";
-import { mediaUrlStaleTime, useGifSearch, useStickerPacks } from "@/features/media/api/queries";
+import { mediaUrlStaleTime, useGifSearch, useStickerPacks, useCreateStickerPack, useDestroyStickerPack, useAddStickerToPack, useRemoveStickerFromPack } from "@/features/media/api/queries";
 import { resetVoicePlayer, useVoicePlayerStore } from "@/features/media/store/voice-player";
 import { en } from "@/shared/lib/i18n/catalog";
 
@@ -342,6 +343,15 @@ describe("media http", () => {
       meta: { has_more: true },
     });
     await expect(listStickerPacks()).resolves.toMatchObject({ sticker_packs: [{ id: 1 }] });
+    await expect(
+      createDirectUpload({ filename: "a.png", byte_size: 1, checksum: "abc", content_type: "image/png" }),
+    ).resolves.toMatchObject({ blob_signed_id: "signed" });
+    await expect(createStickerPack({ name: "Cats", kind: "emoji" })).resolves.toMatchObject({ id: 1 });
+    await expect(destroyStickerPack(1)).resolves.toMatchObject({ ok: true });
+    await expect(addStickerToPack(1, { signed_id: "signed", shortcode: "wave" })).resolves.toMatchObject({
+      id: 1,
+    });
+    await expect(removeStickerFromPack(1, 1)).resolves.toMatchObject({ ok: true });
     await expect(searchGifs("party")).resolves.toMatchObject({ gifs: [{ id: "tenor-1" }] });
     await expect(searchGifs("fail")).rejects.toThrow();
   });
@@ -351,17 +361,34 @@ function PickerQueryHarness() {
   const packs = useStickerPacks();
   const gifs = useGifSearch("party");
   const short = useGifSearch("p");
+  const create = useCreateStickerPack();
+  const destroy = useDestroyStickerPack();
+  const add = useAddStickerToPack();
+  const remove = useRemoveStickerFromPack();
   return (
     <div>
       <p data-packs={packs.isSuccess ? "yes" : "no"}>{packs.data?.sticker_packs.length ?? 0}</p>
       <p data-gifs={gifs.isSuccess ? "yes" : "no"}>{gifs.data?.gifs.length ?? 0}</p>
       <p data-short={short.fetchStatus} />
+      <Button onClick={() => create.mutate({ name: "Cats" })} type="button">
+        pack-add
+      </Button>
+      <Button onClick={() => destroy.mutate(1)} type="button">
+        pack-del
+      </Button>
+      <Button onClick={() => add.mutate({ packId: 1, signedId: "signed", shortcode: "wave" })} type="button">
+        sticker-add
+      </Button>
+      <Button onClick={() => remove.mutate({ packId: 1, id: 1 })} type="button">
+        sticker-del
+      </Button>
     </div>
   );
 }
 
 describe("sticker and gif queries", () => {
   it("loads packs and searches GIFs only after the minimum query length", async () => {
+    const user = userEvent.setup();
     setAccessSession(testSession());
     render(
       <AppProviders>
@@ -373,5 +400,9 @@ describe("sticker and gif queries", () => {
       expect(document.querySelector("[data-gifs]")?.textContent).toBe("1");
     });
     expect(document.querySelector("[data-short]")?.getAttribute("data-short")).toBe("idle");
+    await user.click(screen.getByRole("button", { name: "pack-add" }));
+    await user.click(screen.getByRole("button", { name: "pack-del" }));
+    await user.click(screen.getByRole("button", { name: "sticker-add" }));
+    await user.click(screen.getByRole("button", { name: "sticker-del" }));
   });
 });

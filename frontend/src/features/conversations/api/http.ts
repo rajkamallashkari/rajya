@@ -428,6 +428,40 @@ export async function listSavedReplies() {
   );
 }
 
+export async function createSavedReply(body: { shortcut: string; body: string; position?: number }) {
+  return unwrap(
+    await apiClient().POST("/api/v1/saved_replies", {
+      headers: bearerHeaders(),
+      body,
+    }),
+    "saved_reply_create_failed",
+  );
+}
+
+export async function updateSavedReply(
+  id: number,
+  body: { shortcut?: string; body?: string; position?: number },
+) {
+  return unwrap(
+    await apiClient().PATCH("/api/v1/saved_replies/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+      body,
+    }),
+    "saved_reply_update_failed",
+  );
+}
+
+export async function destroySavedReply(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/saved_replies/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "saved_reply_destroy_failed",
+  );
+}
+
 export async function listConversationCommands(conversationId: number) {
   return unwrap(
     await apiClient().GET("/api/v1/conversations/{id}/commands", {

@@ -11,6 +11,7 @@ import { resetAccountDatabases } from "@/shared/lib/db";
 import { resetOutboxLocks } from "@/shared/lib/outbox/lock";
 import { resetOutboxProcessor } from "@/shared/lib/outbox/processor";
 import { resetCallStore } from "@/features/calls/store/call-store";
+import { resetShellStore } from "@/features/settings/store/shell-store";
 import { resetCatchUpScheduler } from "@/shared/lib/realtime/catch-up";
 import { installTestCable } from "@/test/fake-cable";
 import { resetAiHelpers, resetPreferences } from "@/shared/lib/api/msw/handlers";
@@ -41,6 +42,7 @@ afterEach(() => {
   resetLayerStack();
   resetCatchUpScheduler();
   resetCallStore();
+  resetShellStore();
   installTestCable();
   server.resetHandlers();
   resetMessagingStore();

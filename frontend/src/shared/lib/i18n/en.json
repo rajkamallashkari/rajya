@@ -861,12 +861,72 @@
     "ip": "{{ip}}",
     "last_seen": "Last seen {{when}}",
     "revoke": "Sign out",
+    "revoke_others": "Sign out other devices",
     "unknown_device": "Unknown device"
   },
   "settings": {
     "appearance": "Appearance",
+    "chats": "Chats",
+    "devices": "Devices",
+    "export": {
+      "all_chats": "All chats",
+      "conversation": "Chat",
+      "create": "Start export",
+      "download": "Download",
+      "failed": "Export failed",
+      "format": {
+        "html": "HTML",
+        "json": "JSON",
+        "txt": "Text"
+      },
+      "format_label": "Format",
+      "include_media": "Include media",
+      "status": {
+        "failed": "Failed",
+        "pending": "Queued",
+        "processing": "Preparing",
+        "ready": "Ready"
+      },
+      "title": "Export chats"
+    },
+    "link_previews": "Link previews",
+    "nicknames": {
+      "add": "Save nickname",
+      "empty": "No nicknames yet",
+      "nickname": "Nickname",
+      "remove": "Remove nickname",
+      "search": "Search people",
+      "title": "Nicknames",
+      "update": "Update nickname"
+    },
     "quick_reaction_slot": "Quick reaction {{n}}",
     "quick_reactions": "Quick reactions",
-    "title": "Settings"
+    "saved_replies": {
+      "add": "Add saved reply",
+      "body": "Reply",
+      "delete": "Delete saved reply",
+      "empty": "No saved replies yet",
+      "shortcut": "Shortcut",
+      "title": "Saved replies",
+      "update": "Save reply"
+    },
+    "sticker_packs": {
+      "add": "Add sticker",
+      "create": "Create pack",
+      "delete": "Delete pack",
+      "empty": "No sticker packs yet",
+      "kind": "Kind",
+      "kind_emoji": "Emoji",
+      "kind_sticker": "Stickers",
+      "name": "Pack name",
+      "owned": "Yours",
+      "published": "Published",
+      "remove_sticker": "Remove sticker",
+      "shortcode": "Shortcode",
+      "title": "Stickers"
+    },
+    "stickers": "Stickers",
+    "title": "Settings",
+    "transcription": "Voice transcription"
   }
 }

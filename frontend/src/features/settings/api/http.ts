@@ -37,3 +37,86 @@ export async function listAccentConfigs() {
     "accent_configs_failed",
   );
 }
+
+export async function listDeviceSessions() {
+  return unwrap(
+    await apiClient().GET("/api/v1/sessions", { headers: bearerHeaders() }),
+    "sessions_failed",
+  );
+}
+
+export async function revokeDeviceSession(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/sessions/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "session_revoke_failed",
+  );
+}
+
+export async function revokeOtherDeviceSessions() {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/sessions/others", { headers: bearerHeaders() }),
+    "sessions_revoke_others_failed",
+  );
+}
+
+export async function listContactNicknames() {
+  return unwrap(
+    await apiClient().GET("/api/v1/contact_nicknames", { headers: bearerHeaders() }),
+    "nicknames_failed",
+  );
+}
+
+export async function upsertContactNickname(accountId: number, nickname: string) {
+  return unwrap(
+    await apiClient().PUT("/api/v1/contact_nicknames/{account_id}", {
+      headers: bearerHeaders(),
+      params: { path: { account_id: accountId } },
+      body: { nickname },
+    }),
+    "nickname_save_failed",
+  );
+}
+
+export async function destroyContactNickname(accountId: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/contact_nicknames/{account_id}", {
+      headers: bearerHeaders(),
+      params: { path: { account_id: accountId } },
+    }),
+    "nickname_destroy_failed",
+  );
+}
+
+export async function listExportJobs() {
+  return unwrap(
+    await apiClient().GET("/api/v1/export_jobs", { headers: bearerHeaders() }),
+    "export_jobs_failed",
+  );
+}
+
+export async function createExportJob(body: {
+  conversation_id?: number | null;
+  format?: "json" | "txt" | "html";
+  include_media?: boolean;
+}) {
+  return unwrap(
+    await apiClient().POST("/api/v1/export_jobs", {
+      headers: bearerHeaders(),
+      body,
+    }),
+    "export_create_failed",
+  );
+}
+
+export async function downloadExportJob(id: number) {
+  return unwrap(
+    await apiClient().GET("/api/v1/export_jobs/{id}/download", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "export_download_failed",
+  );
+}

@@ -10,3 +10,15 @@ export const fontConfigKeys = {
 export const accentConfigKeys = {
   list: () => ["accent-configs"] as const,
 };
+
+export const sessionKeys = {
+  list: () => ["device-sessions"] as const,
+};
+
+export const nicknameKeys = {
+  list: () => ["contact-nicknames"] as const,
+};
+
+export const exportJobKeys = {
+  list: () => ["export-jobs"] as const,
+};

@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 test("applies theme, wallpaper, and typography sliders live from settings", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByRole("button", { name: "Appearance" }).click();
   const panel = page.locator("[data-settings-panel]");
   await expect(panel).toBeVisible();
 

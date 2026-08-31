@@ -65,6 +65,70 @@ export async function listStickerPacks() {
   );
 }
 
+export async function createDirectUpload(body: {
+  filename: string;
+  byte_size: number;
+  checksum: string;
+  content_type: string;
+}) {
+  return unwrap(
+    await apiClient().POST("/api/v1/direct_uploads", {
+      headers: bearerHeaders(),
+      body,
+    }),
+    "direct_upload_failed",
+  );
+}
+
+export async function createStickerPack(body: {
+  name: string;
+  kind?: "sticker" | "emoji";
+  slug?: string;
+  position?: number;
+}) {
+  return unwrap(
+    await apiClient().POST("/api/v1/sticker_packs", {
+      headers: bearerHeaders(),
+      body,
+    }),
+    "sticker_pack_create_failed",
+  );
+}
+
+export async function destroyStickerPack(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/sticker_packs/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "sticker_pack_destroy_failed",
+  );
+}
+
+export async function addStickerToPack(
+  packId: number,
+  body: { signed_id: string; shortcode: string; position?: number },
+) {
+  return unwrap(
+    await apiClient().POST("/api/v1/sticker_packs/{sticker_pack_id}/stickers", {
+      headers: bearerHeaders(),
+      params: { path: { sticker_pack_id: packId } },
+      body,
+    }),
+    "sticker_add_failed",
+  );
+}
+
+export async function removeStickerFromPack(packId: number, id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/sticker_packs/{sticker_pack_id}/stickers/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { sticker_pack_id: packId, id } },
+    }),
+    "sticker_remove_failed",
+  );
+}
+
 export async function searchGifs(q: string) {
   return unwrap(
     await apiClient().GET("/api/v1/gifs", {

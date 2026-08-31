@@ -102,10 +102,20 @@ describe("AppearancePanel", () => {
 });
 
 describe("SettingsPanel", () => {
-  it("renders the appearance surface", async () => {
+  it("opens the appearance surface from the hub", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
     render(wrap(<SettingsPanel />));
     expect(document.querySelector("[data-settings-panel]")).not.toBeNull();
-    expect(await screen.findByText(en.settings.appearance)).toBeInTheDocument();
+    expect(document.querySelector("[data-settings-section]")?.getAttribute("data-settings-section")).toBe(
+      "hub",
+    );
+    await user.click(screen.getByRole("button", { name: en.settings.appearance }));
+    expect(await screen.findByRole("button", { name: en.appearance.theme_option.dark })).toBeInTheDocument();
+    expect(document.querySelector("[data-appearance-panel]")).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: en.shell.back }));
+    expect(document.querySelector("[data-settings-section]")?.getAttribute("data-settings-section")).toBe(
+      "hub",
+    );
   });
 
   it("hides catalogue pickers when the APIs return nothing", async () => {
@@ -143,6 +153,7 @@ describe("WallpaperPicker", () => {
   it("applies presets and rejects unreadable dim", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     render(wrap(<SettingsPanel />));
+    await user.click(screen.getByRole("button", { name: en.settings.appearance }));
     await screen.findByRole("button", { name: "Cyber Indigo" });
     await user.click(screen.getByRole("button", { name: en.appearance.theme_option.light }));
     await user.click(screen.getByRole("button", { name: en.wallpaper.presets.dusk }));

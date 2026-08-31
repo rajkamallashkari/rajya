@@ -35,6 +35,8 @@ export const LIGHTBOX_MAX_ZOOM = 3;
 export const LIGHTBOX_ZOOM_STEP = 1;
 export const GALLERY_FIRST_PAGE = 1;
 export const GIF_SEARCH_MIN_QUERY_LENGTH = registry.gif_search_min_query_length.default as number;
+export const FALLBACK_STICKER_TYPE = "image/png";
+export const FALLBACK_STICKER_NAME = "sticker.png";
 
 export const IMAGE_KINDS = new Set(["image"]);
 export const ALBUM_KINDS = new Set(["image"]);

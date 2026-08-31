@@ -42,6 +42,9 @@ import {
   useCreateReport,
   useSaveMessage,
   useSavedReplies,
+  useCreateSavedReply,
+  useUpdateSavedReply,
+  useDestroySavedReply,
   useSendMessage,
   useUnsendMessage,
   useUpdateConversation,
@@ -539,6 +542,9 @@ describe("message queries", () => {
       const unread = useMarkConversationUnread();
       const wallpaper = useUpdateConversationWallpaper();
       const replies = useSavedReplies();
+      const createReply = useCreateSavedReply();
+      const updateReply = useUpdateSavedReply();
+      const destroyReply = useDestroySavedReply();
       const commands = useConversationCommands(1);
       const remind = useCreateReminder();
       return (
@@ -577,6 +583,15 @@ describe("message queries", () => {
           >
             remind
           </Button>
+          <Button onClick={() => createReply.mutate({ shortcut: "/brb", body: "brb" })} type="button">
+            reply-add
+          </Button>
+          <Button onClick={() => updateReply.mutate({ id: 1, shortcut: "/omw", body: "later" })} type="button">
+            reply-edit
+          </Button>
+          <Button onClick={() => destroyReply.mutate(1)} type="button">
+            reply-del
+          </Button>
         </div>
       );
     }
@@ -596,6 +611,9 @@ describe("message queries", () => {
     await user.click(screen.getByRole("button", { name: "wallpaper-chat" }));
     await user.click(screen.getByRole("button", { name: "wallpaper-clear" }));
     await user.click(screen.getByRole("button", { name: "remind" }));
+    await user.click(screen.getByRole("button", { name: "reply-add" }));
+    await user.click(screen.getByRole("button", { name: "reply-edit" }));
+    await user.click(screen.getByRole("button", { name: "reply-del" }));
   });
 
   it("rolls archive, mute, and folder mutations back when they fail", async () => {

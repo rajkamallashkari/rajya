@@ -33,6 +33,9 @@ import {
   listReactions,
   listReportReasons,
   listSavedReplies,
+  createSavedReply,
+  updateSavedReply,
+  destroySavedReply,
   markConversationRead,
   markConversationUnread,
   muteConversation,
@@ -721,6 +724,44 @@ export function useSavedReplies() {
   return useQuery({
     queryFn: listSavedReplies,
     queryKey: savedReplyKeys.list(),
+  });
+}
+
+export function useCreateSavedReply() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createSavedReply,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: savedReplyKeys.list() });
+    },
+  });
+}
+
+export function useUpdateSavedReply() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...body
+    }: {
+      id: number;
+      shortcut?: string;
+      body?: string;
+      position?: number;
+    }) => updateSavedReply(id, body),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: savedReplyKeys.list() });
+    },
+  });
+}
+
+export function useDestroySavedReply() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: destroySavedReply,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: savedReplyKeys.list() });
+    },
   });
 }
 
