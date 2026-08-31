@@ -192,6 +192,7 @@ describe("realtime channel hooks", () => {
     renderHook(() => useAccountChannel(), { wrapper });
     const { publishMswRealtime } = await import("@/shared/lib/realtime/msw-bridge");
     publishMswRealtime({ type: "presence", account_id: 4, online: true });
+    publishMswRealtime({ type: "offer", call_id: 1, from_account_id: 1, payload: { sdp: "v=0" } });
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });

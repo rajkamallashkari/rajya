@@ -158,6 +158,7 @@ Rails.application.routes.draw do
           post :decline
           post :cancel
           post :hangup
+          post :screen_share
         end
       end
       resources :gifs, only: :index

@@ -1,4 +1,4 @@
-import { Calendar, Search } from "lucide-react";
+import { Calendar, Phone, Search, Video } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { getAccessSession } from "@/features/auth/model/access-session";
@@ -14,6 +14,7 @@ import {
   useSummarize,
   useTranslateMessage,
 } from "@/features/bots/api/queries";
+import { startCall } from "@/features/calls/lib";
 import { Composer } from "@/features/composer";
 import {
   gifsFromList,
@@ -424,6 +425,24 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           />
         ) : (
           <>
+            {conversation.kind !== "channel" && viewerId > 0 ? (
+              <>
+                <IconButton
+                  aria-label={t("calls.start_audio")}
+                  onClick={() => void startCall(conversationId, "audio", viewerId)}
+                  type="button"
+                >
+                  <Phone className="h-[var(--icon-size)] w-[var(--icon-size)]" />
+                </IconButton>
+                <IconButton
+                  aria-label={t("calls.start_video")}
+                  onClick={() => void startCall(conversationId, "video", viewerId)}
+                  type="button"
+                >
+                  <Video className="h-[var(--icon-size)] w-[var(--icon-size)]" />
+                </IconButton>
+              </>
+            ) : null}
             <IconButton aria-label={t("search.open")} onClick={openChatSearch} type="button">
               <Search className="h-[var(--icon-size)] w-[var(--icon-size)]" />
             </IconButton>

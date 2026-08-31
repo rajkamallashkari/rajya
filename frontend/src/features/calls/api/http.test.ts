@@ -33,6 +33,7 @@ describe("calls http", () => {
     await http.declineCallRequest(1);
     await http.cancelCallRequest(1);
     await http.hangupCallRequest(1);
+    await http.setScreenSharingRequest(1, true);
     await http.getActiveCall();
     expect(mockClient.POST).toHaveBeenCalled();
     expect(mockClient.GET).toHaveBeenCalled();

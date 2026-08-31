@@ -308,6 +308,13 @@ describe("realtime events", () => {
       cam_on: false,
     });
     expect(parseAs({ type: "mute_state", call_id: 1 }).mic_on).toBe(false);
+    expect(parseRealtimeEvent({ type: "screen_share", call_id: 1, account_id: 2, sharing: true })).toEqual({
+      type: "screen_share",
+      call_id: 1,
+      account_id: 2,
+      sharing: true,
+    });
+    expect(parseAs({ type: "screen_share", call_id: 1 }).sharing).toBe(false);
     expect(() => parseRealtimeEvent({ type: "incoming_call", call_id: 1 })).toThrow("conversation_id");
     expect(parseRealtimeEvent({ type: "phone_verified", account_id: "x", phone: 1 })).toEqual({
       type: "phone_verified",

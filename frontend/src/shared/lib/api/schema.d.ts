@@ -1456,6 +1456,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calls/{id}/screen_share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start or stop 1:1 screen share */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        sharing?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description sharing updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CallEnvelope"];
+                    };
+                };
+                /** @description stranger refused */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contact_nicknames": {
         parameters: {
             query?: never;
@@ -6597,6 +6652,7 @@ export interface components {
             joined_at?: string | null;
             /** Format: date-time */
             left_at?: string | null;
+            is_screen_sharing: boolean;
         };
         Call: {
             id: number;

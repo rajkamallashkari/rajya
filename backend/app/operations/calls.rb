@@ -15,6 +15,7 @@ module Calls
     incoming_call
     mute_state
     offer
+    screen_share
     user_joined
     user_left
   ].freeze

@@ -30,3 +30,18 @@ export function DropdownMenuItem({
 }: ComponentProps<typeof DropdownMenuPrimitive.Item>) {
   return <DropdownMenuPrimitive.Item className={cn(MENU_ITEM_CLASS, className)} {...props} />;
 }
+
+export function DropdownMenuLabel({
+  className,
+  ...props
+}: ComponentProps<typeof DropdownMenuPrimitive.Label>) {
+  return (
+    <DropdownMenuPrimitive.Label
+      className={cn(
+        "px-[var(--control-pad-x-sm)] py-[var(--space-1)] text-[length:var(--text-xs)] text-[var(--text-tertiary)]",
+        className,
+      )}
+      {...props}
+    />
+  );
+}

@@ -3,6 +3,7 @@ require "rails_helper"
 RSpec.describe CallParticipant do
   it "is valid as a ringing participant" do
     expect(build(:call_participant)).to be_valid
+    expect(build(:call_participant).is_screen_sharing).to be(false)
   end
 
   it "rejects an unknown status" do

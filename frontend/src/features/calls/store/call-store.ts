@@ -45,12 +45,14 @@ export interface CallData {
   initiatorId: number | null;
   initiatorName: string | null;
   initiatorUsername: string | null;
+  isScreenSharing: boolean;
   localStream: MediaStream | null;
   micOn: boolean;
   minimized: boolean;
   participants: CallParticipant[];
   pipSwapped: boolean;
   remoteMedia: Record<number, RemoteMediaState>;
+  remoteScreenStreams: Record<number, MediaStream>;
   remoteStreams: Record<number, MediaStream>;
   speakerOn: boolean;
   speakerVolume: number;
@@ -86,12 +88,15 @@ interface CallActions {
   }) => void;
   setPipSwapped: (swapped: boolean) => void;
   setRemoteMedia: (accountId: number, media: RemoteMediaState) => void;
+  setRemoteScreenStream: (accountId: number, stream: MediaStream | null) => void;
   setRemoteStream: (accountId: number, stream: MediaStream | null) => void;
+  setScreenSharing: (sharing: boolean) => void;
   setSpeakerOn: (on: boolean) => void;
   setSpeakerVolume: (volume: number) => void;
   setSpeakingIds: (ids: number[]) => void;
   setStuckCall: (call: StuckCallInfo | null) => void;
   updateParticipantStatus: (accountId: number, status: string) => void;
+  updateScreenSharing: (accountId: number, sharing: boolean) => void;
 }
 
 export type CallState = CallData & CallActions;
@@ -110,12 +115,14 @@ const INITIAL_DATA: CallData = {
   initiatorId: null,
   initiatorName: null,
   initiatorUsername: null,
+  isScreenSharing: false,
   localStream: null,
   micOn: true,
   minimized: false,
   participants: [],
   pipSwapped: false,
   remoteMedia: {},
+  remoteScreenStreams: {},
   remoteStreams: {},
   speakerOn: true,
   speakerVolume: 1,
@@ -138,6 +145,7 @@ export const useCallStore = create<CallState>((set) => ({
       ...INITIAL_DATA,
       error: state.error,
       remoteMedia: {},
+      remoteScreenStreams: {},
       remoteStreams: {},
       speakerOn: state.speakerOn,
       speakerVolume: state.speakerOn ? 1 : SPEAKER_EARPIECE_VOLUME,
@@ -205,6 +213,16 @@ export const useCallStore = create<CallState>((set) => ({
     set((state) => ({
       remoteMedia: { ...state.remoteMedia, [accountId]: media },
     })),
+  setRemoteScreenStream: (accountId, stream) =>
+    set((state) => {
+      const next = { ...state.remoteScreenStreams };
+      if (stream) {
+        next[accountId] = stream;
+      } else {
+        delete next[accountId];
+      }
+      return { remoteScreenStreams: next };
+    }),
   setRemoteStream: (accountId, stream) =>
     set((state) => {
       const next = { ...state.remoteStreams };
@@ -215,6 +233,7 @@ export const useCallStore = create<CallState>((set) => ({
       }
       return { remoteStreams: next };
     }),
+  setScreenSharing: (sharing) => set({ isScreenSharing: sharing }),
   setSpeakerOn: (on) => set({ speakerOn: on, speakerVolume: on ? 1 : SPEAKER_EARPIECE_VOLUME }),
   setSpeakerVolume: (volume) => set({ speakerVolume: Math.min(1, Math.max(0, volume)) }),
   setSpeakingIds: (ids) => set({ speakingIds: ids }),
@@ -225,8 +244,20 @@ export const useCallStore = create<CallState>((set) => ({
         row.account_id === accountId ? { ...row, status } : row,
       ),
     })),
+  updateScreenSharing: (accountId, sharing) =>
+    set((state) => ({
+      participants: state.participants.map((row) =>
+        row.account_id === accountId ? { ...row, is_screen_sharing: sharing } : row,
+      ),
+    })),
 }));
 
 export function resetCallStore(): void {
-  useCallStore.setState({ ...useCallStore.getState(), ...INITIAL_DATA, remoteMedia: {}, remoteStreams: {} });
+  useCallStore.setState({
+    ...useCallStore.getState(),
+    ...INITIAL_DATA,
+    remoteMedia: {},
+    remoteScreenStreams: {},
+    remoteStreams: {},
+  });
 }

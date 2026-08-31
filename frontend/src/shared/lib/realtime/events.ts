@@ -55,6 +55,7 @@ export interface RealtimePayloads {
   };
   mute_state: { call_id: number; account_id?: number; mic_on: boolean; cam_on: boolean };
   offer: { call_id: number; from_account_id?: number; payload?: unknown };
+  screen_share: { call_id: number; account_id?: number; sharing: boolean };
   user_joined: { call_id: number; account_id?: number };
   user_left: { call_id: number; account_id?: number };
 }
@@ -92,6 +93,7 @@ export const REALTIME_EVENT_TYPES = [
   "incoming_call",
   "mute_state",
   "offer",
+  "screen_share",
   "user_joined",
   "user_left",
 ] as const satisfies ReadonlyArray<keyof RealtimePayloads>;
@@ -298,6 +300,12 @@ const PARSERS: { [Type in ListedType]: (data: Record<string, unknown>) => Realti
     cam_on: data.cam_on === true,
   }),
   offer: (data) => parseRelay("offer", data),
+  screen_share: (data) => ({
+    type: "screen_share",
+    call_id: requireNumber(data, "call_id"),
+    account_id: optionalNumber(data, "account_id"),
+    sharing: data.sharing === true,
+  }),
   user_joined: (data) => parseCallId("user_joined", data),
   user_left: (data) => parseCallId("user_left", data),
 };

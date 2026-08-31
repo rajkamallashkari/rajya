@@ -10,6 +10,7 @@ const {
   mockDecline,
   mockGetActive,
   mockHangup,
+  mockScreenShare,
   mockUnload,
 } = vi.hoisted(() => ({
   mockAccept: vi.fn(),
@@ -18,6 +19,7 @@ const {
   mockDecline: vi.fn(),
   mockGetActive: vi.fn(),
   mockHangup: vi.fn(),
+  mockScreenShare: vi.fn(),
   mockUnload: vi.fn(),
 }));
 
@@ -29,6 +31,7 @@ vi.mock("@/features/calls/api/http", () => ({
   endCallOnUnload: mockUnload,
   getActiveCall: mockGetActive,
   hangupCallRequest: mockHangup,
+  setScreenSharingRequest: mockScreenShare,
 }));
 
 const volumeDescriptor = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "volume");
@@ -42,14 +45,22 @@ class FakePC {
   public remoteDescription: RTCSessionDescriptionInit | null = null;
   public signalingState: RTCSignalingState = "stable";
   public addIceCandidate = vi.fn(async () => undefined);
-  public addTrack = vi.fn();
+  public senders: Array<{ track: MediaStreamTrack | null }> = [];
+  public addTrack = vi.fn((track: MediaStreamTrack) => {
+    const sender = { track };
+    this.senders.push(sender);
+    return sender;
+  });
   public close = vi.fn();
   public createAnswer = vi.fn(async () => ({ type: "answer" as const, sdp: "v=0" }));
   public createOffer = vi.fn(async (opts?: RTCOfferOptions) => {
     FakePC.offers.push(opts);
     return { type: "offer" as const, sdp: "v=0" };
   });
-  public getSenders = vi.fn(() => [] as RTCRtpSender[]);
+  public getSenders = vi.fn(() => this.senders as RTCRtpSender[]);
+  public removeTrack = vi.fn((sender: { track: MediaStreamTrack | null }) => {
+    this.senders = this.senders.filter((row) => row !== sender);
+  });
   public onconnectionstatechange: (() => void) | null = null;
   public onicecandidate: ((ev: RTCPeerConnectionIceEvent) => void) | null = null;
   public oniceconnectionstatechange: (() => void) | null = null;
@@ -69,6 +80,7 @@ function fakeStream(kind: "audio" | "video" | "both" = "audio"): MediaStream {
   const video = { kind: "video", enabled: true, stop: vi.fn() } as unknown as MediaStreamTrack;
   const tracks = kind === "video" ? [video] : kind === "both" ? [audio, video] : [audio];
   return {
+    id: `${kind}-${String(Math.random())}`,
     addTrack: vi.fn(),
     getAudioTracks: () => (kind === "video" ? [] : [audio]),
     getTracks: () => tracks,
@@ -91,12 +103,14 @@ describe("webrtc engine", () => {
     mockDecline.mockReset();
     mockGetActive.mockReset();
     mockHangup.mockReset();
+    mockScreenShare.mockReset();
     mockUnload.mockReset();
     stubPeerConnection();
     Object.defineProperty(navigator, "mediaDevices", {
       configurable: true,
       value: {
         enumerateDevices: vi.fn(async () => []),
+        getDisplayMedia: vi.fn(async () => fakeStream("video")),
         getUserMedia: vi.fn(async () => fakeStream("both")),
       },
     });
@@ -264,9 +278,28 @@ describe("webrtc engine", () => {
   });
 
   it("handles signaling: incoming, busy, mute, join, leave, dismiss", async () => {
-    const { handleSignalingMessage, setSignalingSender, __test } = await import("./engine");
+    const { handleSignalingMessage, setLocalAccountId, setSignalingSender, __test } = await import("./engine");
     const sent: Array<[string, Record<string, unknown>]> = [];
     setSignalingSender((action, data) => sent.push([action, data]));
+    setLocalAccountId(1);
+    await handleSignalingMessage({
+      type: "incoming_call",
+      call_id: 4,
+      conversation_id: 2,
+      kind: "audio",
+      initiator_account_id: 1,
+    });
+    expect(useCallStore.getState().status).toBe("idle");
+    useCallStore.setState({ callId: 5 });
+    await handleSignalingMessage({
+      type: "incoming_call",
+      call_id: 5,
+      conversation_id: 2,
+      kind: "audio",
+      initiator_account_id: 9,
+    });
+    expect(useCallStore.getState().status).toBe("idle");
+    useCallStore.setState({ callId: null });
     await handleSignalingMessage({
       type: "incoming_call",
       call_id: 5,
@@ -1037,5 +1070,186 @@ describe("webrtc engine", () => {
     });
     mockDecline.mockResolvedValueOnce({});
     await acceptCall();
+  });
+
+  it("shares a screen in 1:1, refuses groups, and leaves the call healthy when stopped", async () => {
+    const {
+      __test,
+      handleSignalingMessage,
+      setLocalAccountId,
+      startScreenShare,
+      stopScreenShare,
+    } = await import("./engine");
+    setLocalAccountId(1);
+    mockScreenShare.mockResolvedValue({});
+    useCallStore.setState({
+      callId: 3,
+      iceServers: [{ urls: "stun:x" }],
+      isScreenSharing: false,
+      participants: [
+        { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+        { id: 2, account_id: 2, status: "joined", is_screen_sharing: false },
+      ],
+      status: "active",
+    });
+    __test.createPeerConnection(2);
+    const display = fakeStream("video");
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        enumerateDevices: vi.fn(async () => []),
+        getDisplayMedia: vi.fn(async () => display),
+        getUserMedia: vi.fn(async () => fakeStream("both")),
+      },
+    });
+    await startScreenShare();
+    expect(useCallStore.getState().isScreenSharing).toBe(true);
+    expect(mockScreenShare).toHaveBeenCalledWith(3, true);
+    const pc = __test.getPeerConnections()[2] as unknown as FakePC;
+    expect(pc.addTrack).toHaveBeenCalled();
+    await stopScreenShare();
+    expect(useCallStore.getState().isScreenSharing).toBe(false);
+    expect(useCallStore.getState().status).toBe("active");
+    expect(mockScreenShare).toHaveBeenCalledWith(3, false);
+
+    useCallStore.setState({ isScreenSharing: false });
+    await startScreenShare();
+    const video = display.getVideoTracks()[0] as MediaStreamTrack & { onended: (() => void) | null };
+    video.onended?.();
+    await Promise.resolve();
+    expect(useCallStore.getState().isScreenSharing).toBe(false);
+
+    await startScreenShare();
+    await startScreenShare();
+    await stopScreenShare();
+
+    useCallStore.setState({
+      callId: 3,
+      isScreenSharing: false,
+      participants: [
+        { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+        { id: 2, account_id: 2, status: "joined", is_screen_sharing: false },
+        { id: 3, account_id: 3, status: "joined", is_screen_sharing: false },
+      ],
+      status: "active",
+    });
+    await startScreenShare();
+    expect(useCallStore.getState().error).toBe(i18n.t("calls.errors.screen_share_group"));
+    expect(useCallStore.getState().status).toBe("active");
+
+    useCallStore.setState({
+      callId: 3,
+      error: null,
+      isScreenSharing: false,
+      participants: [
+        { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+        { id: 2, account_id: 2, status: "joined", is_screen_sharing: false },
+      ],
+      status: "active",
+    });
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getDisplayMedia: vi.fn(async () => {
+          throw new DOMException("denied", "NotAllowedError");
+        }),
+      },
+    });
+    await startScreenShare();
+    expect(useCallStore.getState().error).toBe(i18n.t("calls.errors.permission"));
+
+    useCallStore.setState({ error: null, isScreenSharing: false, status: "active" });
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getDisplayMedia: vi.fn(async () => {
+          throw new Error("fail");
+        }),
+      },
+    });
+    await startScreenShare();
+    expect(useCallStore.getState().error).toBe(i18n.t("calls.errors.screen_share"));
+
+    useCallStore.setState({ error: null, isScreenSharing: false, status: "active" });
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getDisplayMedia: vi.fn(async () => ({
+          getTracks: () => [],
+          getVideoTracks: () => [],
+        })),
+      },
+    });
+    await startScreenShare();
+    expect(useCallStore.getState().isScreenSharing).toBe(false);
+
+    useCallStore.setState({ callId: null, status: "idle" });
+    await startScreenShare();
+    await stopScreenShare();
+
+    mockScreenShare.mockRejectedValueOnce(new Error("offline"));
+    useCallStore.setState({
+      callId: 3,
+      isScreenSharing: false,
+      participants: [
+        { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+        { id: 2, account_id: 2, status: "joined", is_screen_sharing: false },
+      ],
+      status: "active",
+    });
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getDisplayMedia: vi.fn(async () => fakeStream("video")),
+      },
+    });
+    __test.createPeerConnection(2);
+    await startScreenShare();
+    mockScreenShare.mockRejectedValueOnce(new Error("offline"));
+    await stopScreenShare();
+    expect(useCallStore.getState().status).toBe("active");
+
+    useCallStore.setState({ callId: 9, status: "ringing-outgoing" });
+    await handleSignalingMessage({
+      type: "incoming_call",
+      call_id: 9,
+      conversation_id: 1,
+      kind: "audio",
+      initiator_account_id: 1,
+    });
+    expect(useCallStore.getState().status).toBe("ringing-outgoing");
+
+    const extra = fakeStream("video");
+    __test.setScreenStreamForTest(extra);
+    useCallStore.setState({ callId: 4, iceServers: [{ urls: "stun:x" }] });
+    const withScreen = __test.createPeerConnection(8) as unknown as FakePC;
+    expect(withScreen.addTrack).toHaveBeenCalled();
+    const first = fakeStream("video");
+    const second = fakeStream("video");
+    withScreen.ontrack?.({ streams: [first] } as RTCTrackEvent);
+    expect(useCallStore.getState().remoteStreams[8]).toBe(first);
+    withScreen.ontrack?.({ streams: [second] } as RTCTrackEvent);
+    expect(useCallStore.getState().remoteScreenStreams[8]).toBe(second);
+    withScreen.ontrack?.({ streams: [] } as RTCTrackEvent);
+    __test.setScreenStreamForTest(null);
+    __test.cleanupAllPeers();
+
+    setLocalAccountId(1);
+    useCallStore.setState({
+      callId: 3,
+      participants: [
+        { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+        { id: 2, account_id: 2, status: "joined", is_screen_sharing: false },
+      ],
+      status: "active",
+    });
+    await handleSignalingMessage({ type: "screen_share", call_id: 3, account_id: 2, sharing: true });
+    expect(useCallStore.getState().participants[1]?.is_screen_sharing).toBe(true);
+    await handleSignalingMessage({ type: "screen_share", call_id: 3, account_id: 2, sharing: false });
+    expect(useCallStore.getState().remoteScreenStreams[2]).toBeUndefined();
+    await handleSignalingMessage({ type: "screen_share", call_id: 99, account_id: 2, sharing: true });
+    await handleSignalingMessage({ type: "screen_share", call_id: 3, sharing: true });
+    await handleSignalingMessage({ type: "screen_share", call_id: 3, account_id: 1, sharing: true });
+    __test.cleanupAllPeers();
   });
 });

@@ -11,7 +11,7 @@ RSpec.describe CallPolicy do
   it "allows a human participant to show and respond" do
     user = create(:user)
     policy = described_class.new(user.account, ringing_call_for(user))
-    expect(%i[show? accept? decline? cancel? hangup?].map { |method| policy.public_send(method) }).to all(be true)
+    expect(%i[show? accept? decline? cancel? hangup? screen_share?].map { |method| policy.public_send(method) }).to all(be true)
   end
 
   it "denies a stranger and a bot" do

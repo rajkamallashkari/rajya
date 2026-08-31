@@ -536,6 +536,7 @@ CREATE TABLE public.call_participants (
     status character varying NOT NULL,
     joined_at timestamp(6) without time zone,
     left_at timestamp(6) without time zone,
+    is_screen_sharing boolean DEFAULT false NOT NULL,
     CONSTRAINT ck_call_participants_status CHECK (((status)::text = ANY ((ARRAY['invited'::character varying, 'ringing'::character varying, 'joined'::character varying, 'left'::character varying, 'declined'::character varying, 'missed'::character varying, 'busy'::character varying])::text[])))
 );
 
@@ -5314,6 +5315,7 @@ ALTER TABLE ONLY public.bot_commands
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260831183000'),
 ('20260831163000'),
 ('20260831140000'),
 ('20260831053000'),

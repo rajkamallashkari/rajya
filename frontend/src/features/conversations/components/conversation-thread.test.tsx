@@ -496,6 +496,7 @@ describe("conversation layers", () => {
     );
     expect(screen.getByText("solo")).toBeInTheDocument();
     expect(screen.getByText("Solo")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: en.calls.start_audio })).toBeNull();
   });
 
   it("shows a slow-mode hint above the composer", async () => {
@@ -970,5 +971,39 @@ describe("conversation layers", () => {
     fireEvent.contextMenu(bubbles[0] as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.translate }));
     expect(document.querySelector("[data-translation-card]")).not.toBeNull();
+  });
+
+  it("starts a call from the live header and hides call buttons on a channel", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    const calls = await import("@/features/calls/lib");
+    const spy = vi.spyOn(calls, "startCall").mockResolvedValue(undefined);
+    setAccessSession(testSession());
+    const { unmount } = render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.calls.start_audio }));
+    expect(spy).toHaveBeenCalledWith(1, "audio", 1);
+    await user.click(screen.getByRole("button", { name: en.calls.start_video }));
+    expect(spy).toHaveBeenCalledWith(1, "video", 1);
+    spy.mockRestore();
+    unmount();
+    const row = findConversation(1);
+    if (row) {
+      row.kind = "channel";
+    }
+    setAccessSession(testSession());
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: en.calls.start_audio })).toBeNull();
+    if (row) {
+      row.kind = "direct";
+    }
   });
 });

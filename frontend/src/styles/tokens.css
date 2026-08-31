@@ -101,6 +101,7 @@
   --surface-hover: var(--slate-50);
   --surface-active: var(--blue-50);
   --surface-selected: var(--blue-50);
+  --surface-call: var(--tg-950);
   --border-subtle: var(--slate-200);
   --border-default: var(--slate-200);
   --border-strong: var(--slate-300);
@@ -201,6 +202,14 @@
   --popover-offset: var(--space-1_5);
   --presence-size: var(--space-2);
   --avatar-icon-size: var(--space-5);
+  --call-pip-width: 120px;
+  --call-pip-height: 160px;
+  --call-float-width: 148px;
+  --call-float-height: 196px;
+  --call-chrome: color-mix(in srgb, var(--white) 15%, transparent);
+  --call-chrome-strong: color-mix(in srgb, var(--white) 20%, transparent);
+  --call-chrome-muted: color-mix(in srgb, var(--white) 10%, transparent);
+  --call-label-bg: color-mix(in srgb, var(--tg-950) 50%, transparent);
   --radio-dot-size: var(--space-3);
   --slider-thumb-size: var(--space-5);
   --switch-thumb-size: var(--space-6);
@@ -283,6 +292,7 @@ html.dark {
   --surface-hover: var(--tg-600);
   --surface-active: var(--tg-400);
   --surface-selected: var(--tg-400);
+  --surface-call: var(--tg-950);
   --border-subtle: var(--tg-500);
   --border-default: var(--tg-500);
   --border-strong: var(--tg-300);

@@ -7,6 +7,7 @@ class CallPolicy < ApplicationPolicy
   def decline? = show?
   def cancel? = show?
   def hangup? = show?
+  def screen_share? = show?
   def ice_servers? = human?
   def active? = human?
 

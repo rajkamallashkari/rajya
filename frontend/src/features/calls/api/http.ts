@@ -65,6 +65,17 @@ export async function hangupCallRequest(id: number) {
   );
 }
 
+export async function setScreenSharingRequest(id: number, sharing: boolean) {
+  return unwrap(
+    await apiClient().POST("/api/v1/calls/{id}/screen_share", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+      body: { sharing },
+    }),
+    "call_screen_share_failed",
+  );
+}
+
 export type UnloadCallAction = "cancel" | "decline" | "hangup";
 
 export function endCallOnUnload(callId: number, action: UnloadCallAction): void {

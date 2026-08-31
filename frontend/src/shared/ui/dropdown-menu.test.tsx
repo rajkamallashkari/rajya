@@ -6,6 +6,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "./dropdown-menu";
 
@@ -18,11 +19,13 @@ describe("DropdownMenu", () => {
           <Button>{"Actions"}</Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
+          <DropdownMenuLabel>{"Section"}</DropdownMenuLabel>
           <DropdownMenuItem>{"Edit"}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>,
     );
     await user.click(screen.getByRole("button", { name: "Actions" }));
     expect(await screen.findByRole("menuitem", { name: "Edit" })).toBeInTheDocument();
+    expect(screen.getByText("Section")).toBeInTheDocument();
   });
 });

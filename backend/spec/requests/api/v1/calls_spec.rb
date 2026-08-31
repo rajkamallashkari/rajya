@@ -291,6 +291,65 @@ RSpec.describe "Calls", type: :request do
       end
     end
   end
+
+  path "/api/v1/calls/{id}/screen_share" do
+    parameter name: :id, in: :path, type: :integer
+
+    post "Start or stop 1:1 screen share" do
+      tags "Calls"
+      consumes "application/json"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :payload, in: :body, schema: {
+        type: :object,
+        properties: {
+          sharing: { type: :boolean }
+        }
+      }
+
+      response "200", "sharing updated" do
+        schema "$ref" => "#/components/schemas/CallEnvelope"
+        let(:user) { create(:user) }
+        let(:peer) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, peer.account) }
+        let(:call) do
+          enable_webrtc_calls!
+          row = Calls::Create.call(account: user.account, conversation: conversation, kind: "video").value.call
+          Calls::Accept.call(account: peer.account, call: row)
+          row.reload
+        end
+        let(:id) { call.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+        let(:payload) { { sharing: true } }
+
+        run_test! do |response|
+          body = JSON.parse(response.body)
+          expect(body.dig("call", "status")).to eq("active")
+          sharing = body.dig("call", "participants").find { |row| row["account_id"] == user.account.id }
+          expect(sharing.fetch("is_screen_sharing")).to be(true)
+        end
+      end
+
+      response "403", "stranger refused" do
+        schema "$ref" => "#/components/schemas/Error"
+        let(:user) { create(:user) }
+        let(:peer) { create(:user) }
+        let(:stranger) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, peer.account) }
+        let(:call) do
+          enable_webrtc_calls!
+          Calls::Create.call(account: user.account, conversation: conversation, kind: "video").value.call
+        end
+        let(:id) { call.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(stranger)}" }
+        let(:payload) { { sharing: true } }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).dig("error", "code")).to eq("forbidden")
+        end
+      end
+    end
+  end
 end
 # rubocop:enable RSpec/EmptyExampleGroup, RSpec/MultipleDescribes, RSpec/MultipleMemoizedHelpers, RSpec/ScatteredSetup
 # rubocop:enable RSpec/VariableName

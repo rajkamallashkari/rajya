@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { getAccessSession } from "@/features/auth/model/access-session";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import {
   checkForStuckCall,
@@ -6,6 +7,7 @@ import {
   setLocalAccountId,
   setSignalingSender,
 } from "@/features/calls/lib";
+import { publishMswSignaling } from "@/features/calls/lib/msw-signaling";
 import { getCableConsumer } from "@/shared/lib/cable/consumer";
 
 export function useSignalingChannel(): void {
@@ -29,8 +31,10 @@ export function useSignalingChannel(): void {
       try {
         subscription.perform(action, data);
       } catch {
-        return;
+        /* ActionCable may be closed under MSW; BroadcastChannel still relays. */
       }
+      const sessionId = getAccessSession()?.accountId ?? accountId;
+      publishMswSignaling(action, data, sessionId);
     });
     return () => {
       setSignalingSender(null);

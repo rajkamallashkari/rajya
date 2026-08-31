@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../client";
-import { handlerMap, handlers, resetAiHelpers, resetFiledReports } from "./handlers";
+import { actorLabel, handlerMap, handlers, resetAiHelpers, resetFiledReports } from "./handlers";
 import {
   MESSAGE_STAMP,
   messagingStore,
@@ -38,6 +38,7 @@ const expectedPaths = [
   "/api/v1/calls/{id}/cancel",
   "/api/v1/calls/{id}/decline",
   "/api/v1/calls/{id}/hangup",
+  "/api/v1/calls/{id}/screen_share",
   "/api/v1/contact_nicknames",
   "/api/v1/contact_nicknames/{account_id}",
   "/api/v1/conversation_folders",
@@ -382,15 +383,21 @@ describe("MSW handlers", () => {
   });
 
   it("serves the call lifecycle routes", async () => {
+    expect(actorLabel(1)).toEqual({ name: "Ada", username: "ada" });
+    expect(actorLabel(2)).toEqual({ name: "Grace", username: "grace" });
+    expect(actorLabel(9)).toEqual({ name: "user9", username: "user9" });
     const client = createApiClient("http://rajya.test");
     const started = await client.POST("/api/v1/calls", {
-      body: { conversation_id: 1, kind: "video" },
+      body: { kind: "video" } as never,
     });
     expect(started.response.status).toBe(201);
     expect(started.data?.call?.kind).toBe("video");
     expect(started.data?.call?.status).toBe("ringing");
     expect(started.data?.call?.ended_at).toBeNull();
-    const audio = await client.POST("/api/v1/calls", { body: { conversation_id: 1 } });
+    const audio = await client.POST("/api/v1/calls", {
+      headers: { Authorization: "Bearer dev-2" },
+      body: { conversation_id: 1 },
+    });
     expect(audio.data?.call?.kind).toBe("audio");
     const active = await client.GET("/api/v1/calls/active");
     expect(active.data?.call).toBeUndefined();
@@ -414,6 +421,18 @@ describe("MSW handlers", () => {
     expect(declined.data?.call?.status).toBe("declined");
     const ended = await client.POST("/api/v1/calls/{id}/hangup", { params: { path: { id: 7 } } });
     expect(ended.data?.call?.status).toBe("ended");
+    expect(started.data?.call?.participants[0]?.is_screen_sharing).toBe(false);
+    const shared = await client.POST("/api/v1/calls/{id}/screen_share", {
+      params: { path: { id: 7 } },
+      body: { sharing: true },
+    });
+    expect(shared.response.status).toBe(200);
+    expect(shared.data?.call?.status).toBe("active");
+    const stopped = await client.POST("/api/v1/calls/{id}/screen_share", {
+      params: { path: { id: 7 } },
+      body: { sharing: false },
+    });
+    expect(stopped.response.status).toBe(200);
   });
 
   it("serves conversation and message routes from the in-memory store", async () => {

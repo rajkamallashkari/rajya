@@ -86,6 +86,15 @@ describe("call store", () => {
     expect(result.current.incomingSilenced).toBe(true);
     expect(result.current.pipSwapped).toBe(true);
     expect(result.current.facingMode).toBe("environment");
+    act(() => {
+      result.current.setScreenSharing(true);
+      result.current.setRemoteScreenStream(42, stream);
+      result.current.updateScreenSharing(7, true);
+    });
+    expect(result.current.isScreenSharing).toBe(true);
+    expect(result.current.remoteScreenStreams[42]).toBe(stream);
+    act(() => result.current.setRemoteScreenStream(42, null));
+    expect(result.current.remoteScreenStreams[42]).toBeUndefined();
     act(() => result.current.clearRemoteMedia(7));
     expect(result.current.remoteMedia[7]).toBeUndefined();
   });
@@ -138,19 +147,22 @@ describe("call store", () => {
         conversationId: 2,
         iceServers: [],
         initiatorId: 1,
-        participants: [{ id: 1, account_id: 9, status: "ringing" }],
+        participants: [{ id: 1, account_id: 9, status: "ringing", is_screen_sharing: false }],
       });
       result.current.setSpeakerVolume(2);
       result.current.updateParticipantStatus(9, "joined");
+      result.current.updateScreenSharing(9, true);
       result.current.setLocalStream(null);
     });
     expect(result.current.speakerVolume).toBe(1);
     expect(result.current.participants[0]?.status).toBe("joined");
+    expect(result.current.participants[0]?.is_screen_sharing).toBe(true);
     act(() => result.current.setSpeakerVolume(-1));
     expect(result.current.speakerVolume).toBe(0);
     act(() => {
       result.current.setSpeakerOn(true);
       result.current.updateParticipantStatus(404, "left");
+      result.current.updateScreenSharing(404, true);
       result.current.setIncomingSilenced(false);
     });
     expect(result.current.speakerOn).toBe(true);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
+import { isOwnMswCallEvent } from "@/features/calls/lib/msw-signaling";
 import { getCableConsumer, isCableConnected, resetCableConsumer } from "@/shared/lib/cable/consumer";
 import { catchUpCachedConversations, scheduleCatchUp } from "@/shared/lib/realtime/catch-up";
 import { subscribeMswRealtime } from "@/shared/lib/realtime/msw-bridge";
@@ -11,6 +12,7 @@ export function useAccountChannel(): void {
     const active = state.accounts.find((account) => account.id === state.activeAccountId);
     return active?.token ?? null;
   });
+  const accountId = useAccountsStore((state) => state.activeAccountId);
   const queryClient = useQueryClient();
   const wasConnected = useRef(isCableConnected());
 
@@ -54,7 +56,10 @@ export function useAccountChannel(): void {
       return;
     }
     return subscribeMswRealtime((data) => {
+      if (isOwnMswCallEvent(data, accountId)) {
+        return;
+      }
       void dispatchRealtimePayload(data, realtimeDeps(queryClient));
     });
-  }, [queryClient, token]);
+  }, [accountId, queryClient, token]);
 }

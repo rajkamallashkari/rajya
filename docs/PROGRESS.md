@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 11.2 |
-| **Next session** | 11.3 |
-| **Phase** | P11 — Calls |
-| **Sessions remaining in phase** | 1 (11.3) |
+| **Last completed** | 11.3 |
+| **Next session** | 12.1 |
+| **Phase** | P12 — Settings & admin |
+| **Sessions remaining in phase** | 6 (12.1–12.6) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 11.3 — Call UI: full screen, PiP, incoming banner, controls, screen share (NR-47)**
+**Session 12.1 — Preferences registry, migration of every setting, generated types**
 
-Deliverable: Call UI: full screen, PiP, incoming banner, controls, screen share (NR-47)
+Deliverable: Preferences registry, migration of every setting, generated types
 
-Docs: DESIGN_SYSTEM §5.5, §2 (z-index scale); SCHEMA §12.16; AUDIT §1.5
+Docs: **SCHEMA §7 in full**; GAP §6; AUDIT §1.7, §2.4
 
-Legacy to read: `botverse/src/components/call/` (all 13 files), `botverse/src/hooks/useCornerSnap.ts`, `useDraggable.ts`, `useCallElapsed.ts`, `useCanFlipCamera.ts`, `botverse/src/lib/ringtone.ts`
+Legacy to read: `cognify/app/models/user_setting.rb`, `app/controllers/api/v1/user_settings_controller.rb`
 
 ---
 
@@ -77,6 +77,7 @@ Legacy to read: `botverse/src/components/call/` (all 13 files), `botverse/src/ho
 | 10.2 | Web push delivery, batched fanout, subscription lifecycle, delivered-watermark wiring, silent send (NR-23) and reminders (NR-24) | `Push::DeliveryChannel` → `Push::WebPush` with VAPID. Subscribe/unsubscribe + public key. Fanout batches; visible push only when Resolve says notify and the message is not silent; muted/channel/silent/DND/none still advance delivered (Q-5, NR-23, BR-105). 410 destroys the subscription (BR-103). Shared chats prefix `[@username]` (BR-104). Reminders push after Cable. Client SW click deep-links with `?account=`. Locked-phone DoD is documented, not executed. |
 | 11.1 | Lifecycle operation, signaling authorization, timeouts, call system events | `webrtc_calls` default off (404). Ringing → active → ended/missed/declined including all four paths to `missed`. Busy via the live-participant unique index (BR-63). Timeout emits `call_missed` not `call_cancelled` (BR-65). `unsubscribed` cancels a still-ringing initiator (BR-66). One system message per call, edited in place (BR-67). SignalingChannel relays only between participants (BR-69). ICE: coturn HMAC first, Metered if unset, STUN fallback (BR-71). Client event union is typed with router no-ops. Engine/ICE restart waits for 11.2; UI/Playwright/screen share wait for 11.3. |
 | 11.2 | WebRTC engine port with ICE restart | Ported the mesh engine (SDP/ICE relay, polite glare, heartbeats, media controls). `iceconnectionstate = failed` restarts ICE up to `ice_restart_max_attempts` (default 3) then hangs up with catalog copy (F-32 / BR-70). Group video stays 640×480 @ 20 fps (BR-111). Signaling uses `to_account_id` / `ice_candidate`. Call UI/PiP/screen share wait for 11.3. |
+| 11.3 | Call UI: full screen, PiP, incoming banner, controls, screen share (NR-47) | Full-screen voice/video, PiP, incoming banner, controls. 1:1 screen share (`is_screen_sharing`, group refused). MSW signaling plus Playwright: connect+hangup, decline, timeout, start/stop screen share. Group mesh stays manual. |
 
 ---
 

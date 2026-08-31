@@ -12,6 +12,8 @@ export {
   setSignalingSender,
   setSpeakerVolume,
   startCall,
+  startScreenShare,
+  stopScreenShare,
   switchAudioInput,
   switchAudioOutput,
   toggleCamera,

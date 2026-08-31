@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import { useSignalingChannel } from "@/features/calls/hooks/use-signaling-channel";
@@ -60,8 +60,38 @@ describe("call channel hooks", () => {
     seedAccount();
     const { result } = renderHook(() => useWebRTCManager());
     expect(typeof result.current.startCall).toBe("function");
+    expect(typeof result.current.startScreenShare).toBe("function");
     expect(typeof result.current.endCall).toBe("function");
     expect(typeof result.current.toggleMic).toBe("function");
     void import("@/features/calls");
+  });
+
+  it("relays signaling over the MSW realtime bridge", async () => {
+    const posted: unknown[] = [];
+    vi.stubEnv("VITE_MSW", "1");
+    vi.stubGlobal(
+      "BroadcastChannel",
+      class {
+        public postMessage(data: unknown): void {
+          posted.push(data);
+        }
+        public close(): void {
+          return undefined;
+        }
+      },
+    );
+    seedAccount();
+    installTestCable();
+    renderHook(() => useSignalingChannel());
+    const { toggleMic } = await import("@/features/calls/lib");
+    const { useCallStore } = await import("@/features/calls/store/call-store");
+    useCallStore.setState({ callId: 4, camOn: true, micOn: true, status: "active" });
+    toggleMic();
+    expect(posted.some((row) => (row as { type?: string }).type === "mute_state")).toBe(true);
+    setAccessSession(null);
+    toggleMic();
+    setAccessSession(testSession({ token: "jwt" }));
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 });

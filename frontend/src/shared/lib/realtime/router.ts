@@ -133,6 +133,7 @@ export async function routeRealtimeEvent(
     case "incoming_call":
     case "mute_state":
     case "offer":
+    case "screen_share":
     case "user_joined":
     case "user_left":
       await handleSignalingMessage(event);

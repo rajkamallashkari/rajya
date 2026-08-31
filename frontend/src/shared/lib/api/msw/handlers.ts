@@ -267,21 +267,48 @@ const iceServersBody = {
   ice_servers: [{ urls: "stun:stun.l.google.com:19302" }],
 } satisfies IceServersBody;
 
-function callEnvelope(id: number, status: string, kind = "audio"): CallEnvelopeBody {
+function callParticipant(id: number, accountId: number, status: string, joined: boolean) {
+  return {
+    id,
+    account_id: accountId,
+    status,
+    joined_at: joined ? MESSAGE_STAMP : null,
+    is_screen_sharing: false,
+  };
+}
+
+export function actorLabel(id: number): { name: string; username: string } {
+  if (id === VIEWER.id) {
+    return { name: VIEWER.display_name, username: VIEWER.username };
+  }
+  if (id === 2) {
+    return { name: "Grace", username: "grace" };
+  }
+  return { name: `user${String(id)}`, username: `user${String(id)}` };
+}
+
+function callEnvelope(
+  id: number,
+  status: string,
+  kind = "audio",
+  initiatorId = VIEWER.id,
+  conversationId = 1,
+): CallEnvelopeBody {
   const joined = status === "active";
+  const peerId = initiatorId === VIEWER.id ? 2 : VIEWER.id;
   return {
     call: {
       id,
-      conversation_id: 1,
-      initiator_account_id: VIEWER.id,
+      conversation_id: conversationId,
+      initiator_account_id: initiatorId,
       kind,
       status,
       created_at: MESSAGE_STAMP,
       started_at: joined ? MESSAGE_STAMP : null,
       ended_at: status === "ringing" || joined ? null : MESSAGE_STAMP,
       participants: [
-        { id: 1, account_id: VIEWER.id, status: "joined", joined_at: MESSAGE_STAMP },
-        { id: 2, account_id: 2, status: joined ? "joined" : "ringing" },
+        callParticipant(1, initiatorId, "joined", true),
+        callParticipant(2, peerId, joined ? "joined" : "ringing", joined),
       ],
     },
     ice_servers: iceServersBody.ice_servers,
@@ -1297,8 +1324,22 @@ export const handlerMap = {
       }),
   ),
   "/api/v1/calls": http.post("*/api/v1/calls", async ({ request }) => {
-    const body = (await request.json()) as { kind?: string };
-    return HttpResponse.json(callEnvelope(1, "ringing", body.kind ?? "audio"), { status: 201 });
+    const body = (await request.json()) as { conversation_id?: number; kind?: string };
+    const initiatorId = actorIdFromRequest(request);
+    const kind = body.kind ?? "audio";
+    const conversationId = body.conversation_id ?? 1;
+    const envelope = callEnvelope(1, "ringing", kind, initiatorId, conversationId);
+    const label = actorLabel(initiatorId);
+    publishMswRealtime({
+      type: "incoming_call",
+      call_id: envelope.call?.id,
+      conversation_id: conversationId,
+      kind,
+      initiator_account_id: initiatorId,
+      initiator_display_name: label.name,
+      initiator_username: label.username,
+    });
+    return HttpResponse.json(envelope, { status: 201 });
   }),
   "/api/v1/calls/active": http.get("*/api/v1/calls/active", () => HttpResponse.json({})),
   "/api/v1/calls/ice_servers": http.get("*/api/v1/calls/ice_servers", () =>
@@ -1307,17 +1348,42 @@ export const handlerMap = {
   "/api/v1/calls/{id}": http.get("*/api/v1/calls/:id", ({ params }) =>
     HttpResponse.json(callEnvelope(Number(params.id), "active")),
   ),
-  "/api/v1/calls/{id}/accept": http.post("*/api/v1/calls/:id/accept", ({ params }) =>
-    HttpResponse.json(callEnvelope(Number(params.id), "active")),
-  ),
-  "/api/v1/calls/{id}/cancel": http.post("*/api/v1/calls/:id/cancel", ({ params }) =>
-    HttpResponse.json(callEnvelope(Number(params.id), "missed")),
-  ),
-  "/api/v1/calls/{id}/decline": http.post("*/api/v1/calls/:id/decline", ({ params }) =>
-    HttpResponse.json(callEnvelope(Number(params.id), "declined")),
-  ),
-  "/api/v1/calls/{id}/hangup": http.post("*/api/v1/calls/:id/hangup", ({ params }) =>
-    HttpResponse.json(callEnvelope(Number(params.id), "ended")),
+  "/api/v1/calls/{id}/accept": http.post("*/api/v1/calls/:id/accept", ({ params, request }) => {
+    const id = Number(params.id);
+    const accountId = actorIdFromRequest(request);
+    publishMswRealtime({ type: "call_accepted", call_id: id, account_id: accountId });
+    return HttpResponse.json(callEnvelope(id, "active"));
+  }),
+  "/api/v1/calls/{id}/cancel": http.post("*/api/v1/calls/:id/cancel", ({ params, request }) => {
+    const id = Number(params.id);
+    publishMswRealtime({ type: "call_cancelled", call_id: id, account_id: actorIdFromRequest(request) });
+    publishMswRealtime({ type: "call_missed", call_id: id });
+    return HttpResponse.json(callEnvelope(id, "missed"));
+  }),
+  "/api/v1/calls/{id}/decline": http.post("*/api/v1/calls/:id/decline", ({ params, request }) => {
+    const id = Number(params.id);
+    publishMswRealtime({ type: "call_declined", call_id: id, account_id: actorIdFromRequest(request) });
+    return HttpResponse.json(callEnvelope(id, "declined"));
+  }),
+  "/api/v1/calls/{id}/hangup": http.post("*/api/v1/calls/:id/hangup", ({ params, request }) => {
+    const id = Number(params.id);
+    publishMswRealtime({ type: "call_ended", call_id: id, account_id: actorIdFromRequest(request) });
+    return HttpResponse.json(callEnvelope(id, "ended"));
+  }),
+  "/api/v1/calls/{id}/screen_share": http.post(
+    "*/api/v1/calls/:id/screen_share",
+    async ({ params, request }) => {
+      const id = Number(params.id);
+      const body = (await request.json()) as { sharing?: boolean };
+      const sharing = body.sharing === true;
+      publishMswRealtime({
+        type: "screen_share",
+        call_id: id,
+        account_id: actorIdFromRequest(request),
+        sharing,
+      });
+      return HttpResponse.json(callEnvelope(id, "active"));
+    },
   ),
   "/api/v1/style_profile": http.all("*/api/v1/style_profile", async ({ request }) => {
     if (request.method === "PATCH") {

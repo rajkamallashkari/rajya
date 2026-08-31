@@ -77,13 +77,14 @@ RSpec.configure do |config|
             },
             CallParticipant: {
               type: :object,
-              required: %w[id account_id status],
+              required: %w[id account_id status is_screen_sharing],
               properties: {
                 id: { type: :integer },
                 account_id: { type: :integer },
                 status: { type: :string },
                 joined_at: { type: :string, format: :"date-time", nullable: true },
-                left_at: { type: :string, format: :"date-time", nullable: true }
+                left_at: { type: :string, format: :"date-time", nullable: true },
+                is_screen_sharing: { type: :boolean }
               }
             },
             Call: {

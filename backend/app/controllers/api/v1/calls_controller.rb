@@ -45,6 +45,17 @@ module Api
         mutate(:hangup?, Calls::Hangup)
       end
 
+      def screen_share
+        call = Call.find(params[:id])
+        authorize call, :screen_share?
+        render_result(
+          Calls::SetScreenSharing.call(
+            account: current_account, call: call, sharing: params[:sharing]
+          ),
+          serializer: CallEnvelopeResource
+        )
+      end
+
       private
 
       def mutate(query, operation)

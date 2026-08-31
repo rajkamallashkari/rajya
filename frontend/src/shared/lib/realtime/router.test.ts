@@ -162,6 +162,7 @@ describe("routeRealtimeEvent", () => {
     await routeRealtimeEvent({ type: "call_ended", call_id: 1 }, deps);
     await routeRealtimeEvent({ type: "call_missed", call_id: 1 }, deps);
     await routeRealtimeEvent({ type: "mute_state", call_id: 1, mic_on: false, cam_on: false }, deps);
+    await routeRealtimeEvent({ type: "screen_share", call_id: 1, account_id: 2, sharing: true }, deps);
     await routeRealtimeEvent({ type: "user_joined", call_id: 1 }, deps);
     await routeRealtimeEvent({ type: "user_left", call_id: 1 }, deps);
     expect(client.getQueryData(realtimeKeys.generation(3))).toBeNull();

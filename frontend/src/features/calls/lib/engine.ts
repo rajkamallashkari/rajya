@@ -6,6 +6,7 @@ import {
   endCallOnUnload,
   getActiveCall,
   hangupCallRequest,
+  setScreenSharingRequest,
   type CallKind,
 } from "@/features/calls/api/http";
 import {
@@ -45,6 +46,7 @@ const remoteDescSet: Record<number, boolean> = {};
 const makingOffer: Record<number, boolean> = {};
 const iceRestartAttempts: Record<number, number> = {};
 let localStream: MediaStream | null = null;
+let screenStream: MediaStream | null = null;
 let speakerTimer: ReturnType<typeof setInterval> | null = null;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 let heartbeatCallId: number | null = null;
@@ -137,7 +139,25 @@ async function acquireLocalMedia(callType: CallKind, isGroup: boolean): Promise<
 function stopLocalMedia(): void {
   localStream?.getTracks().forEach((track) => track.stop());
   localStream = null;
+  stopScreenTracks();
   useCallStore.getState().setLocalStream(null);
+}
+
+function stopScreenTracks(): void {
+  const share = screenStream;
+  screenStream = null;
+  share?.getTracks().forEach((track) => {
+    track.onended = null;
+    track.stop();
+  });
+  Object.values(peerConnections).forEach((pc) => {
+    pc.getSenders().forEach((sender) => {
+      if (sender.track && share?.getTracks().includes(sender.track)) {
+        pc.removeTrack(sender);
+      }
+    });
+  });
+  useCallStore.getState().setScreenSharing(false);
 }
 
 function createPeerConnection(peerId: number): RTCPeerConnection {
@@ -150,6 +170,11 @@ function createPeerConnection(peerId: number): RTCPeerConnection {
   if (localStream) {
     localStream.getTracks().forEach((track) => {
       pc.addTrack(track, localStream!);
+    });
+  }
+  if (screenStream) {
+    screenStream.getTracks().forEach((track) => {
+      pc.addTrack(track, screenStream!);
     });
   }
   pc.onicecandidate = (ev) => {
@@ -165,10 +190,16 @@ function createPeerConnection(peerId: number): RTCPeerConnection {
   };
   pc.ontrack = (ev) => {
     const [stream] = ev.streams;
-    if (stream) {
-      useCallStore.getState().setRemoteStream(peerId, stream);
-      attachSpeakerAnalyser(peerId, stream);
+    if (!stream) {
+      return;
     }
+    const existing = useCallStore.getState().remoteStreams[peerId];
+    if (existing && existing.id !== stream.id) {
+      useCallStore.getState().setRemoteScreenStream(peerId, stream);
+      return;
+    }
+    useCallStore.getState().setRemoteStream(peerId, stream);
+    attachSpeakerAnalyser(peerId, stream);
   };
   pc.onnegotiationneeded = () => {
     void negotiateOffer(peerId, false);
@@ -583,6 +614,12 @@ async function dispatchSignaling(event: RealtimeEvent): Promise<void> {
   const store = useCallStore.getState();
   switch (event.type) {
     case "incoming_call":
+      if (event.initiator_account_id === localAccountId) {
+        return;
+      }
+      if (store.callId === event.call_id) {
+        return;
+      }
       if (store.status !== "idle") {
         signal("busy", { call_id: event.call_id });
         return;
@@ -653,6 +690,15 @@ async function dispatchSignaling(event: RealtimeEvent): Promise<void> {
     case "mute_state":
       if (store.callId === event.call_id && event.account_id != null) {
         store.setRemoteMedia(event.account_id, { camOn: event.cam_on, micOn: event.mic_on });
+      }
+      return;
+    case "screen_share":
+      if (store.callId !== event.call_id || event.account_id == null || event.account_id === localAccountId) {
+        return;
+      }
+      store.updateScreenSharing(event.account_id, event.sharing);
+      if (!event.sharing) {
+        store.setRemoteScreenStream(event.account_id, null);
       }
       return;
     case "offer": {
@@ -968,6 +1014,56 @@ export async function switchAudioInput(deviceId: string): Promise<void> {
   }
 }
 
+export async function startScreenShare(): Promise<void> {
+  const store = useCallStore.getState();
+  if (!store.callId || store.status !== "active" || store.isScreenSharing) {
+    return;
+  }
+  if (store.participants.length > DIRECT_PARTICIPANT_MAX) {
+    store.setError(i18n.t("calls.errors.screen_share_group"));
+    return;
+  }
+  try {
+    const share = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+    const track = share.getVideoTracks()[0];
+    if (!track) {
+      share.getTracks().forEach((row) => row.stop());
+      return;
+    }
+    screenStream = share;
+    Object.values(peerConnections).forEach((pc) => {
+      pc.addTrack(track, share);
+    });
+    store.setScreenSharing(true);
+    track.onended = () => {
+      void stopScreenShare();
+    };
+    try {
+      await setScreenSharingRequest(store.callId, true);
+    } catch {
+      /* local share still runs; remote UI follows the extra track */
+    }
+  } catch (err) {
+    const denied = err instanceof DOMException && err.name === "NotAllowedError";
+    useCallStore.getState().setError(i18n.t(denied ? "calls.errors.permission" : "calls.errors.screen_share"));
+  }
+}
+
+export async function stopScreenShare(): Promise<void> {
+  const store = useCallStore.getState();
+  const callId = store.callId;
+  const wasSharing = store.isScreenSharing || screenStream != null;
+  stopScreenTracks();
+  if (!wasSharing || !callId) {
+    return;
+  }
+  try {
+    await setScreenSharingRequest(callId, false);
+  } catch {
+    /* ignore */
+  }
+}
+
 export async function flipCamera(): Promise<void> {
   const store = useCallStore.getState();
   if (store.callType !== "video" || !localStream) {
@@ -1048,6 +1144,9 @@ export const __test = {
   },
   setLocalStreamForTest: (stream: MediaStream | null) => {
     localStream = stream;
+  },
+  setScreenStreamForTest: (stream: MediaStream | null) => {
+    screenStream = stream;
   },
   simulateIceState: async (peerId: number, state: RTCIceConnectionState) => {
     const pc = peerConnections[peerId];
