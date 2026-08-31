@@ -15,6 +15,10 @@ class ConversationPolicy < ApplicationPolicy
     active_member?
   end
 
+  def cancel_generation?
+    show?
+  end
+
   def update?
     manage_group? && override_allows?("edit_info")
   end

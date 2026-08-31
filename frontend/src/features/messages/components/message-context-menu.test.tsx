@@ -74,6 +74,11 @@ describe("MessageContextMenu", () => {
     expect(failed.onRetry).toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: en.ui.close }));
 
+    const regenerate = { onRegenerate: vi.fn() };
+    rerender(<MessageContextMenu actions={regenerate} onClose={onClose} x={20} y={20} />);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.regenerate }));
+    expect(regenerate.onRegenerate).toHaveBeenCalled();
+
     rerender(
       <MessageContextMenu
         actions={{ hasText: true, onCopy: vi.fn() }}

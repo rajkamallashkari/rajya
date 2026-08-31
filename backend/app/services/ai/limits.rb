@@ -34,6 +34,10 @@ module Ai
       def cancel_ttl
         Settings.fetch(:ai_cancel_ttl)
       end
+
+      def reply_retry_attempts
+        Settings.fetch(:ai_reply_retry_attempts)
+      end
     end
   end
 end

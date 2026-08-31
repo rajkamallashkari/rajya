@@ -182,6 +182,27 @@ export async function saveMessage(messageId: number) {
   );
 }
 
+export async function regenerateMessage(id: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/messages/{id}/regenerate", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "regenerate_failed",
+  );
+}
+
+export async function cancelGeneration(conversationId: number, generationId: string) {
+  return unwrap(
+    await apiClient().POST("/api/v1/conversations/{id}/generations/cancel", {
+      headers: bearerHeaders(),
+      params: { path: { id: conversationId } },
+      body: { generation_id: generationId },
+    }),
+    "generation_cancel_failed",
+  );
+}
+
 export async function votePoll(pollId: number, optionIds: number[]) {
   return unwrap(
     await apiClient().POST("/api/v1/polls/{id}/vote", {

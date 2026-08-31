@@ -18,6 +18,7 @@ import { ProfilePanel } from "./profile-panel";
 import { AppProviders } from "@/app/providers";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { ADA_DEMO } from "@/features/conversations/model/demo";
+import type { Message } from "@/features/conversations/api/http";
 import {
   attachPoll,
   findConversation,
@@ -235,7 +236,9 @@ describe("conversation layers", () => {
     if (!contactCard) {
       throw new Error("missing contact card");
     }
-    await user.click(within(contactCard as HTMLElement).getByRole("button", { name: en.contact.open_profile }));
+    await user.click(
+      within(contactCard as HTMLElement).getByRole("button", { name: en.contact.open_profile }),
+    );
     expect(useLayerStore.getState().layers.some((layer) => layer.id === "account:2")).toBe(true);
     await user.click(screen.getByRole("button", { name: "Yes" }));
     await user.click(screen.getByRole("button", { name: en.polls.results }));
@@ -636,6 +639,66 @@ describe("conversation layers", () => {
       viewerId: 1,
     });
     expect(system.onReport).toBeUndefined();
+    const bot = buildMessageMenuActions({
+      message: {
+        id: 5,
+        conversation_id: 1,
+        position: 5,
+        revision: 1,
+        kind: "text",
+        body: "Hi",
+        deleted: false,
+        silent: false,
+        created_at: "2026-01-01T12:00:00.000Z",
+        sender: { id: 9, username: "bot", display_name: "Bot", kind: "bot" },
+        metadata: { prompted_by_account_id: 1 } as unknown as Message["metadata"],
+      },
+      onCopy: () => undefined,
+      onEdit: () => undefined,
+      onInfo: () => undefined,
+      onPin: () => undefined,
+      onReact: () => undefined,
+      onReactions: () => undefined,
+      onRemind: () => undefined,
+      onRegenerate: () => undefined,
+      onSave: () => undefined,
+      onSelect: () => undefined,
+      onUnsend: () => undefined,
+      pinned: [],
+      saved: [],
+      viewerId: 1,
+    });
+    expect(bot.onRegenerate).toBeDefined();
+    const otherPrompt = buildMessageMenuActions({
+      message: {
+        id: 5,
+        conversation_id: 1,
+        position: 5,
+        revision: 1,
+        kind: "text",
+        body: "Hi",
+        deleted: false,
+        silent: false,
+        created_at: "2026-01-01T12:00:00.000Z",
+        sender: { id: 9, username: "bot", display_name: "Bot", kind: "bot" },
+        metadata: { prompted_by_account_id: 1 } as unknown as Message["metadata"],
+      },
+      onCopy: () => undefined,
+      onEdit: () => undefined,
+      onInfo: () => undefined,
+      onPin: () => undefined,
+      onReact: () => undefined,
+      onReactions: () => undefined,
+      onRemind: () => undefined,
+      onRegenerate: () => undefined,
+      onSave: () => undefined,
+      onSelect: () => undefined,
+      onUnsend: () => undefined,
+      pinned: [],
+      saved: [],
+      viewerId: 2,
+    });
+    expect(otherPrompt.onRegenerate).toBeUndefined();
     expect(nextInfoId(true, 4)).toBe(4);
     expect(nextInfoId(false, 4)).toBeNull();
     const numeric = vi.fn();
@@ -723,6 +786,66 @@ describe("conversation layers", () => {
     expect(
       await screen.findByRole("status", { name: en.messages.activity.uploading_media }),
     ).toHaveAttribute("data-activity", "uploading_media");
+  });
+
+  it("regenerates a prompted bot reply and cancels a streaming generation", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    const conversation = findConversation(1);
+    conversation?.members.push({
+      account: { id: 99, username: "helper", display_name: "Helper", kind: "bot" },
+      role: "member",
+    });
+    messagingStore().messages[1]?.push({
+      id: 9001,
+      conversation_id: 1,
+      position: 9001,
+      revision: 1,
+      kind: "text",
+      body: "Bot hello",
+      deleted: false,
+      silent: false,
+      created_at: "2026-01-01T12:00:00.000Z",
+      sender: { id: 99, username: "helper", display_name: "Helper", kind: "bot" },
+      metadata: { prompted_by_account_id: 1 } as unknown as Message["metadata"],
+    });
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    const botBody = await screen.findByText("Bot hello");
+    fireEvent.contextMenu(botBody.closest("[data-message-bubble]") as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.regenerate }));
+    expect(await screen.findByText(en.messages.deleted)).toBeInTheDocument();
+    testCable().emit({
+      type: "generation_started",
+      conversation_id: 1,
+      generation_id: "g-1",
+      bot_account_id: 99,
+      triggered_by_message_id: 9001,
+    });
+    expect(
+      await screen.findByRole("status", { name: en.messages.generation.streaming }),
+    ).toBeInTheDocument();
+    testCable().emit({
+      type: "generation_chunk",
+      conversation_id: 1,
+      generation_id: "g-1",
+      delta: "partial reply",
+    });
+    expect(await screen.findByText("partial reply")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.messages.generation.cancel }));
+    expect(
+      testCable().subscriptions.some((subscription) =>
+        subscription.performs.some(
+          (row) => row.action === "cancel" && row.data?.generation_id === "g-1",
+        ),
+      ),
+    ).toBe(true);
+    await waitFor(() => {
+      expect(screen.queryByRole("status", { name: en.messages.generation.streaming })).toBeNull();
+    });
   });
 
   it("jumps from search and date, then restores scroll on back", async () => {

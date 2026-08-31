@@ -291,4 +291,22 @@ RSpec.describe "Session 3.2 message authorization 403s", type: :request do
     delete "/api/v1/saved_replies/#{row.id}", headers: auth_headers_for(user)
     expect(response).to have_http_status(:forbidden)
   end
+
+  # rubocop:disable RSpec/ExampleLength -- group bot reply then a non-prompter 403
+  it "returns 403 when a non-prompting member regenerates a bot reply (BR-15)" do
+    owner = create(:user)
+    member = create(:user)
+    bot = create(:bot)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ member.account, bot.account ])
+    trigger = Messages::Send.call(
+      conversation: conversation, sender: owner.account, body: "Hi <@#{bot.account_id}>"
+    ).value
+    reply = Bots::PersistReply.call(
+      conversation: conversation, bot: bot, body: "Old", triggered_by: trigger,
+      generation_id: "g", nonce: SecureRandom.uuid
+    ).value
+    post "/api/v1/messages/#{reply.id}/regenerate", headers: auth_headers_for(member), as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+  # rubocop:enable RSpec/ExampleLength
 end

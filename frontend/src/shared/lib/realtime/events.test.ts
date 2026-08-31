@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  EVENT_UNION_IS_EXHAUSTIVE,
-  REALTIME_EVENT_TYPES,
-  parseRealtimeEvent,
-} from "./events";
+import { EVENT_UNION_IS_EXHAUSTIVE, REALTIME_EVENT_TYPES, parseRealtimeEvent } from "./events";
 
 describe("realtime events", () => {
   it("keeps the router union exhaustive over every backend event", () => {
@@ -12,7 +8,9 @@ describe("realtime events", () => {
   });
 
   it("parses each event type and rejects invalid envelopes", () => {
-    expect(parseRealtimeEvent({ type: "message_created", conversation_id: 1, message_id: 2 })).toEqual({
+    expect(
+      parseRealtimeEvent({ type: "message_created", conversation_id: 1, message_id: 2 }),
+    ).toEqual({
       type: "message_created",
       conversation_id: 1,
       message_id: 2,
@@ -137,6 +135,58 @@ describe("realtime events", () => {
       activity: "typing",
       display_name: "",
     });
+    expect(
+      parseRealtimeEvent({
+        type: "generation_started",
+        conversation_id: 1,
+        generation_id: "g-1",
+        bot_account_id: 9,
+        triggered_by_message_id: 4,
+      }),
+    ).toEqual({
+      type: "generation_started",
+      conversation_id: 1,
+      generation_id: "g-1",
+      bot_account_id: 9,
+      triggered_by_message_id: 4,
+    });
+    expect(
+      parseRealtimeEvent({
+        type: "generation_chunk",
+        conversation_id: 1,
+        generation_id: "g-1",
+        delta: "Hi",
+      }),
+    ).toEqual({
+      type: "generation_chunk",
+      conversation_id: 1,
+      generation_id: "g-1",
+      delta: "Hi",
+    });
+    expect(
+      parseRealtimeEvent({
+        type: "generation_cancelled",
+        conversation_id: 1,
+        generation_id: "g-1",
+        error: "upstream",
+      }),
+    ).toEqual({
+      type: "generation_cancelled",
+      conversation_id: 1,
+      generation_id: "g-1",
+      error: "upstream",
+    });
+    expect(
+      parseRealtimeEvent({
+        type: "generation_cancelled",
+        conversation_id: 1,
+        generation_id: "g-1",
+      }),
+    ).toEqual({
+      type: "generation_cancelled",
+      conversation_id: 1,
+      generation_id: "g-1",
+    });
     for (const type of [
       "message_deleted",
       "message_edited",
@@ -158,6 +208,17 @@ describe("realtime events", () => {
     ).toThrow("conversation_id");
     expect(() => parseRealtimeEvent({ type: "presence", account_id: 1 })).toThrow("online");
     expect(() => parseRealtimeEvent({ type: "message_reminder", id: "x" })).toThrow("id");
+    expect(() =>
+      parseRealtimeEvent({
+        type: "generation_chunk",
+        conversation_id: 1,
+        generation_id: 1,
+        delta: "x",
+      }),
+    ).toThrow("generation_id");
+    expect(() =>
+      parseRealtimeEvent({ type: "generation_chunk", conversation_id: 1, generation_id: "g-1" }),
+    ).toThrow("delta");
     expect(() =>
       parseRealtimeEvent({
         type: "report_created",

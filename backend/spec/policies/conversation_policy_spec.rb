@@ -85,6 +85,13 @@ RSpec.describe ConversationPolicy do
     expect(described_class.new(human.account, conversation).start_call?).to be(true)
   end
 
+  it "lets an active member cancel a generation" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    expect(described_class.new(user.account, conversation)).to be_cancel_generation
+    expect(described_class.new(create(:user).account, conversation)).not_to be_cancel_generation
+  end
+
   it "lets a channel member pin the conversation in their sidebar (NR-21)" do
     member = create(:user)
     conversation = create_talk(kind: "channel", owner: create(:user).account, members: [ member.account ])

@@ -90,6 +90,7 @@ Rails.application.routes.draw do
           post :mute, to: "conversation_mutes#create"
           delete :mute, to: "conversation_mutes#destroy"
           post :receipts, to: "conversation_receipts#create"
+          post "generations/cancel", to: "conversation_generations#create"
           post :leave, to: "conversation_leaves#create"
           get :media, to: "conversation_galleries#show"
           get :search, to: "conversation_searches#show"
@@ -119,6 +120,7 @@ Rails.application.routes.draw do
         end
         member do
           post :forward
+          post :regenerate, to: "message_regenerations#create"
           get :info
         end
         resources :reactions, only: %i[index create destroy], param: :emoji, constraints: { emoji: /.*/ }

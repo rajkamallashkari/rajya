@@ -92,6 +92,18 @@ RSpec.describe Realtime do
     expect(types).not_to include("sidebar_update")
   end
 
+  it "treats generation stream events as ephemeral (no push)" do
+    owner = create(:user)
+    member = create(:account)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ member ])
+
+    expect {
+      described_class.publish(
+        conversation, :generation_chunk, "generation_id" => "1:2:3", "delta" => "h"
+      )
+    }.not_to have_enqueued_job(Push::FanoutJob)
+  end
+
   it "fans typing to other members' account streams" do
     owner = create(:user)
     member = create(:account)

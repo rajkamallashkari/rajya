@@ -55,18 +55,9 @@ describe("routeRealtimeEvent", () => {
       { type: "message_created", conversation_id: 1, message_id: 2 },
       deps,
     );
-    await routeRealtimeEvent(
-      { type: "message_edited", conversation_id: 1, message_id: 1 },
-      deps,
-    );
-    await routeRealtimeEvent(
-      { type: "message_deleted", conversation_id: 1, message_id: 3 },
-      deps,
-    );
-    await routeRealtimeEvent(
-      { type: "message_reacted", conversation_id: 1, message_id: 1 },
-      deps,
-    );
+    await routeRealtimeEvent({ type: "message_edited", conversation_id: 1, message_id: 1 }, deps);
+    await routeRealtimeEvent({ type: "message_deleted", conversation_id: 1, message_id: 3 }, deps);
+    await routeRealtimeEvent({ type: "message_reacted", conversation_id: 1, message_id: 1 }, deps);
     await routeRealtimeEvent(
       { type: "attachment_processed", conversation_id: 1, message_id: 1, attachment_id: 9 },
       deps,
@@ -76,10 +67,7 @@ describe("routeRealtimeEvent", () => {
     await routeRealtimeEvent({ type: "message_pinned", conversation_id: 1, message_id: 1 }, deps);
     await routeRealtimeEvent({ type: "message_unpinned", conversation_id: 1, message_id: 1 }, deps);
     await routeRealtimeEvent({ type: "sidebar_update", conversation_id: 1 }, deps);
-    await routeRealtimeEvent(
-      { type: "join_request", conversation_id: 1, status: "pending" },
-      deps,
-    );
+    await routeRealtimeEvent({ type: "join_request", conversation_id: 1, status: "pending" }, deps);
     await routeRealtimeEvent(
       { type: "join_request", conversation_id: 1, join_request_id: 4, status: "approved" },
       deps,
@@ -117,6 +105,52 @@ describe("routeRealtimeEvent", () => {
       { type: "typing", conversation_id: 1, account_id: 9, activity: "dancing", display_name: "X" },
       deps,
     );
+    await routeRealtimeEvent(
+      {
+        type: "generation_started",
+        conversation_id: 1,
+        generation_id: "g-1",
+        bot_account_id: 9,
+        triggered_by_message_id: 2,
+      },
+      deps,
+    );
+    await routeRealtimeEvent(
+      { type: "generation_chunk", conversation_id: 1, generation_id: "g-1", delta: "Hel" },
+      deps,
+    );
+    await routeRealtimeEvent(
+      { type: "generation_chunk", conversation_id: 1, generation_id: "other", delta: "x" },
+      deps,
+    );
+    await routeRealtimeEvent(
+      { type: "generation_chunk", conversation_id: 2, generation_id: "g-1", delta: "x" },
+      deps,
+    );
+    expect(client.getQueryData(realtimeKeys.generation(1))).toEqual({
+      botAccountId: 9,
+      generationId: "g-1",
+      text: "Hel",
+    });
+    await routeRealtimeEvent(
+      { type: "generation_cancelled", conversation_id: 1, generation_id: "other" },
+      deps,
+    );
+    expect(client.getQueryData(realtimeKeys.generation(1))).toEqual({
+      botAccountId: 9,
+      generationId: "g-1",
+      text: "Hel",
+    });
+    await routeRealtimeEvent(
+      { type: "generation_cancelled", conversation_id: 1, generation_id: "g-1" },
+      deps,
+    );
+    expect(client.getQueryData(realtimeKeys.generation(1))).toBeNull();
+    await routeRealtimeEvent(
+      { type: "generation_cancelled", conversation_id: 3, generation_id: "g-2" },
+      deps,
+    );
+    expect(client.getQueryData(realtimeKeys.generation(3))).toBeNull();
 
     const cached = client.getQueryData<MessagePages>(messageKeys.page(1));
     expect(cached?.pages[0]?.messages.some((row) => row.id === 2)).toBe(true);
@@ -161,9 +195,18 @@ describe("routeRealtimeEvent", () => {
     client.setQueryData(
       messageKeys.page(1),
       pages([
-        message(1, { sender: { id: 1, username: "ada", display_name: "Ada", kind: "human" }, tick: "sent" }),
-        message(2, { sender: { id: 2, username: "grace", display_name: "Grace", kind: "human" }, tick: "sent" }),
-        message(-3, { sender: { id: 1, username: "ada", display_name: "Ada", kind: "human" }, tick: "sent" }),
+        message(1, {
+          sender: { id: 1, username: "ada", display_name: "Ada", kind: "human" },
+          tick: "sent",
+        }),
+        message(2, {
+          sender: { id: 2, username: "grace", display_name: "Grace", kind: "human" },
+          tick: "sent",
+        }),
+        message(-3, {
+          sender: { id: 1, username: "ada", display_name: "Ada", kind: "human" },
+          tick: "sent",
+        }),
       ]),
     );
     const deps = { cache: client, fetchMessage: vi.fn() };
@@ -171,7 +214,9 @@ describe("routeRealtimeEvent", () => {
       { type: "receipts_updated", conversation_id: 1, account_id: 1, kind: "read", position: 9 },
       deps,
     );
-    expect(client.getQueryData<MessagePages>(messageKeys.page(1))?.pages[0]?.messages[0]?.tick).toBe("sent");
+    expect(
+      client.getQueryData<MessagePages>(messageKeys.page(1))?.pages[0]?.messages[0]?.tick,
+    ).toBe("sent");
     await routeRealtimeEvent(
       { type: "receipts_updated", conversation_id: 1, account_id: 2, kind: "read", position: 1 },
       deps,
@@ -181,10 +226,18 @@ describe("routeRealtimeEvent", () => {
     expect(afterRead?.[1]?.tick).toBe("sent");
     expect(afterRead?.[2]?.tick).toBe("sent");
     await routeRealtimeEvent(
-      { type: "receipts_updated", conversation_id: 1, account_id: 2, kind: "delivered", position: 1 },
+      {
+        type: "receipts_updated",
+        conversation_id: 1,
+        account_id: 2,
+        kind: "delivered",
+        position: 1,
+      },
       deps,
     );
-    expect(client.getQueryData<MessagePages>(messageKeys.page(1))?.pages[0]?.messages[0]?.tick).toBe("read");
+    expect(
+      client.getQueryData<MessagePages>(messageKeys.page(1))?.pages[0]?.messages[0]?.tick,
+    ).toBe("read");
     await routeRealtimeEvent(
       { type: "receipts_updated", conversation_id: 99, account_id: 2, kind: "read", position: 1 },
       deps,
@@ -193,7 +246,9 @@ describe("routeRealtimeEvent", () => {
       { type: "receipts_updated", conversation_id: 1, account_id: 2, kind: "viewed", position: 1 },
       deps,
     );
-    expect(client.getQueryData<MessagePages>(messageKeys.page(1))?.pages[0]?.messages[0]?.tick).toBe("read");
+    expect(
+      client.getQueryData<MessagePages>(messageKeys.page(1))?.pages[0]?.messages[0]?.tick,
+    ).toBe("read");
   });
 
   it("clears a sender's typing bubble when their message arrives", async () => {
@@ -207,9 +262,48 @@ describe("routeRealtimeEvent", () => {
       {
         cache: client,
         fetchMessage: async () =>
-          message(2, { sender: { id: 8, username: "priya", display_name: "Priya", kind: "human" } }),
+          message(2, {
+            sender: { id: 8, username: "priya", display_name: "Priya", kind: "human" },
+          }),
       },
     );
     expect(client.getQueryData(realtimeKeys.typing(1))).toEqual([]);
+  });
+
+  it("clears a matching bot generation when the reply arrives", async () => {
+    const client = new QueryClient();
+    client.setQueryData(messageKeys.page(1), pages([message(1)]));
+    client.setQueryData(realtimeKeys.generation(1), {
+      botAccountId: 8,
+      generationId: "g-9",
+      text: "partial",
+    });
+    await routeRealtimeEvent(
+      { type: "message_created", conversation_id: 1, message_id: 2 },
+      {
+        cache: client,
+        fetchMessage: async () =>
+          message(2, {
+            sender: { id: 2, username: "ada", display_name: "Ada", kind: "human" },
+          }),
+      },
+    );
+    expect(client.getQueryData(realtimeKeys.generation(1))).toEqual({
+      botAccountId: 8,
+      generationId: "g-9",
+      text: "partial",
+    });
+    await routeRealtimeEvent(
+      { type: "message_created", conversation_id: 1, message_id: 3 },
+      {
+        cache: client,
+        fetchMessage: async () =>
+          message(3, {
+            sender: { id: 8, username: "bot", display_name: "Bot", kind: "bot" },
+            metadata: { generation_id: "g-9" } as unknown as Message["metadata"],
+          }),
+      },
+    );
+    expect(client.getQueryData(realtimeKeys.generation(1))).toBeNull();
   });
 });

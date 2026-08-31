@@ -16,6 +16,35 @@ RSpec.describe MessagePolicy do
     expect(policy).to be_forward.and be_react.and be_save.and be_pin
   end
 
+  # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations -- prompting vs peer vs human vs nil actor
+  it "allows the prompting account to regenerate a bot reply and refuses others (BR-15)" do
+    user = create(:user)
+    peer = create(:user)
+    bot = create(:bot)
+    conversation = create_talk(kind: "group", owner: user.account, members: [ peer.account, bot.account ])
+    trigger = Messages::Send.call(
+      conversation: conversation, sender: user.account, body: "Hi <@#{bot.account_id}>"
+    ).value
+    reply = Bots::PersistReply.call(
+      conversation: conversation, bot: bot, body: "Old", triggered_by: trigger,
+      generation_id: "g", nonce: SecureRandom.uuid
+    ).value
+
+    expect(described_class.new(user.account, reply)).to be_regenerate
+    expect(described_class.new(peer.account, reply)).not_to be_regenerate
+    expect(described_class.new(user.account, trigger)).not_to be_regenerate
+    expect(described_class.new(nil, reply)).not_to be_regenerate
+    expect(described_class.new(user.account, Message)).not_to be_regenerate
+    outsider = create(:user)
+    expect(described_class.new(outsider.account, reply)).not_to be_regenerate
+    reply.update_columns(sender_account_id: nil)
+    expect(described_class.new(user.account, reply.reload)).not_to be_regenerate
+    reply.update_columns(sender_account_id: bot.account_id)
+    reply.update!(deleted_at: Time.current)
+    expect(described_class.new(user.account, reply)).not_to be_regenerate
+  end
+  # rubocop:enable RSpec/ExampleLength
+
   it "denies another member edit/unsend but allows react" do
     user, message = setup
     peer = message.conversation.conversation_memberships.where.not(account: user.account).sole.account

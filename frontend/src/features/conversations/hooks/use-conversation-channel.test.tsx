@@ -79,6 +79,7 @@ describe("realtime channel hooks", () => {
     const cable = installTestCable();
     const { result } = renderHook(() => useConversationChannel(null), { wrapper: createWrapper() });
     result.current.publishActivity("typing");
+    result.current.cancelGeneration("g-1");
     expect(cable.subscriptions).toHaveLength(0);
   });
 
@@ -209,6 +210,12 @@ describe("realtime channel hooks", () => {
     expect(cable.subscriptions[0]?.performs).toEqual([
       { action: "typing", data: { activity: "typing" } },
       { action: "typing", data: { activity: "recording_audio" } },
+    ]);
+    result.current.cancelGeneration("g-1");
+    expect(cable.subscriptions[0]?.performs).toEqual([
+      { action: "typing", data: { activity: "typing" } },
+      { action: "typing", data: { activity: "recording_audio" } },
+      { action: "cancel", data: { generation_id: "g-1" } },
     ]);
   });
 });

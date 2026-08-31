@@ -7,6 +7,10 @@ module Ai
 
     DEFAULTS = {
       bot_reply: "You are a helpful assistant in a private chat. Stay in the bot's persona.",
+      conversation_summary: "You are a conversation archiver. Summarise the following chat excerpt in " \
+                            "2-3 concise paragraphs. Capture the key topics discussed, the user's main " \
+                            "questions or interests, and any important context that would help a " \
+                            "continuation of the conversation. Write in the third person.",
       rewrite: "Rewrite the user's draft. Preserve meaning. Apply the requested tone.",
       summarize: "Summarize the conversation concisely for someone catching up.",
       suggest_replies: "Suggest short reply options the user might send.",

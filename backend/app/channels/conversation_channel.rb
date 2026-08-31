@@ -28,4 +28,15 @@ class ConversationChannel < ApplicationCable::Channel
       activity: data["activity"]
     )
   end
+
+  def cancel(data)
+    return if @tracking_conversation_id.blank?
+
+    conversation = Conversation.find_by(id: @tracking_conversation_id)
+    return if conversation.nil?
+
+    Bots::Cancel.call(
+      account: current_account, conversation: conversation, generation_id: data["generation_id"]
+    )
+  end
 end

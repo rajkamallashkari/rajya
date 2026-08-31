@@ -98,6 +98,7 @@ export type SettingKey =
   | "ai_rate_limit_summarize"
   | "ai_rate_limit_translate"
   | "ai_reply_rate_limit"
+  | "ai_reply_retry_attempts"
   | "ai_rewrite_models"
   | "ai_stream_timeout"
   | "ai_style_profile_models"

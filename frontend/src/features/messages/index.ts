@@ -13,6 +13,7 @@ export { SelectionToolbar } from "./components/selection-toolbar";
 export { SystemMessage } from "./components/system-message";
 export { TickIndicator } from "./components/tick-indicator";
 export { TranscriptBlock } from "./components/transcript-block";
+export { StreamingBubble } from "./components/streaming-bubble";
 export { TypingBubble } from "./components/typing-bubble";
 export { UnreadDivider } from "./components/unread-divider";
 export {

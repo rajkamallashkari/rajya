@@ -34,6 +34,8 @@ import {
   usePollResults,
   useReactMessage,
   useReactionDetails,
+  useRegenerateMessage,
+  useCancelGeneration,
   useReorderFolders,
   useReportReasons,
   useCreateReport,
@@ -48,6 +50,8 @@ import {
 import type { MessagePage } from "./http";
 import { attachPoll, findConversation, seedPositions } from "@/shared/lib/api/msw/messaging-store";
 import { conversationPermissionDefaults } from "@/features/conversations/model/permissions";
+import { useGeneration } from "@/features/conversations/hooks/use-generation";
+import { realtimeKeys } from "@/shared/lib/realtime/keys";
 import { testSession } from "@/test/access-session";
 import { server } from "@/test/msw";
 import { en } from "@/shared/lib/i18n/catalog";
@@ -300,9 +304,9 @@ describe("message queries", () => {
     );
     expect(await screen.findByText("Lunch?")).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.getByText("Lunch?").closest("[data-loaded]")?.getAttribute("data-loaded")).not.toBe(
-        "0",
-      );
+      expect(
+        screen.getByText("Lunch?").closest("[data-loaded]")?.getAttribute("data-loaded"),
+      ).not.toBe("0");
     });
     await user.click(screen.getByRole("button", { name: "vote-live" }));
     await user.click(screen.getByRole("button", { name: "close-live" }));
@@ -629,11 +633,15 @@ describe("message queries", () => {
       const membership = useFolderMembership();
       return (
         <div>
-          <p data-inbox={inbox.data?.conversations.length ?? 0}>{inbox.data?.conversations.length ?? 0}</p>
+          <p data-inbox={inbox.data?.conversations.length ?? 0}>
+            {inbox.data?.conversations.length ?? 0}
+          </p>
           <p data-archived={archived.data?.conversations.length ?? 0}>
             {archived.data?.conversations.length ?? 0}
           </p>
-          <p data-folders={folders.data?.folders.length ?? 0}>{folders.data?.folders.length ?? 0}</p>
+          <p data-folders={folders.data?.folders.length ?? 0}>
+            {folders.data?.folders.length ?? 0}
+          </p>
           <Button onClick={() => archive.mutate({ archived: true, id: 1 })} type="button">
             archive-chat
           </Button>
@@ -841,5 +849,97 @@ describe("reports", () => {
     );
     expect(await screen.findByText("spam")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "file-report" }));
+  });
+
+  it("tombstones a regenerated reply and clears a cancelled generation", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+
+    function GenerationHarness() {
+      const page = useMessagePage(1);
+      const regenerate = useRegenerateMessage(1);
+      const cancel = useCancelGeneration(1);
+      const generation = useGeneration(1);
+      const client = useQueryClient();
+      const deleted = page.messages.find((row) => row.id === 101)?.deleted;
+      return (
+        <div>
+          <p data-deleted={String(deleted)}>{deleted ? "tombstoned" : "live"}</p>
+          <p data-generation={generation ? "on" : "off"}>{generation ? "streaming" : "idle"}</p>
+          <Button onClick={() => regenerate.mutate(101)} type="button">
+            regen
+          </Button>
+          <Button
+            onClick={() => {
+              client.setQueryData(realtimeKeys.generation(1), {
+                botAccountId: 9,
+                generationId: "g-1",
+                text: "partial",
+              });
+              cancel.mutate("g-1");
+            }}
+            type="button"
+          >
+            cancel-gen
+          </Button>
+        </div>
+      );
+    }
+
+    render(
+      <AppProviders>
+        <GenerationHarness />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("live")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "regen" }));
+    expect(await screen.findByText("tombstoned")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "cancel-gen" }));
+    await waitFor(() => {
+      expect(screen.getByText("idle")).toBeInTheDocument();
+    });
+  });
+
+  it("rolls regenerate back when the request fails", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    server.use(
+      http.post("*/api/v1/messages/:id/regenerate", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+    );
+
+    function RegenFailHarness() {
+      const page = useMessagePage(1);
+      const regenerate = useRegenerateMessage(1);
+      const emptyRegen = useRegenerateMessage(9);
+      const deleted = page.messages.find((row) => row.id === 101)?.deleted;
+      return (
+        <div>
+          <p data-deleted={String(deleted)}>{deleted ? "tombstoned" : "live"}</p>
+          <Button onClick={() => emptyRegen.mutate(1)} type="button">
+            empty-regen
+          </Button>
+          <Button onClick={() => regenerate.mutate(101)} type="button">
+            regen-fail
+          </Button>
+        </div>
+      );
+    }
+
+    render(
+      <AppProviders>
+        <RegenFailHarness />
+      </AppProviders>,
+    );
+    expect(await screen.findByText("live")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "empty-regen" }));
+    await user.click(screen.getByRole("button", { name: "regen-fail" }));
+    await waitFor(() => {
+      expect(screen.getByText("live")).toBeInTheDocument();
+    });
   });
 });

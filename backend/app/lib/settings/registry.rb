@@ -405,6 +405,10 @@ module Settings
         type: :integer, category: :ai, default: 20, min: 1, max: 1_000,
         description: "Per-account bot-reply generations per window (F-12)."
       },
+      ai_reply_retry_attempts: {
+        type: :integer, category: :ai, default: 3, min: 1, max: 10,
+        description: "Bot-reply job retries after an upstream failure (BR-78)."
+      },
       ai_rewrite_models: {
         type: :array, category: :ai, default: %w[groq/llama-3.1-8b-instant ollama/llama3.2],
         description: "Ordered rewrite models provider/model (NR-8)."

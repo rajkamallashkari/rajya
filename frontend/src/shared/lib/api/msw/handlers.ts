@@ -448,43 +448,51 @@ export const handlerMap = {
     );
     return HttpResponse.json({ conversations });
   }),
-  "/api/v1/conversations/{id}": http.all("*/api/v1/conversations/:id", async ({ params, request }) => {
-    const conversation = findConversation(Number(params.id));
-    if (!conversation) {
-      return jsonError(404);
-    }
-    if (request.method === "PATCH") {
-      const body = (await request.json().catch(() => ({}))) as {
-        description?: string | null;
-        member_permissions?: { [key: string]: string };
-        restrict_forwarding?: boolean;
-        slow_mode_seconds?: number;
-        title?: string | null;
-      };
-      Object.assign(conversation, {
-        ...(body.title !== undefined ? { title: body.title } : {}),
-        ...(body.description !== undefined ? { description: body.description } : {}),
-        ...(body.member_permissions !== undefined
-          ? { member_permissions: body.member_permissions }
-          : {}),
-        ...(body.slow_mode_seconds !== undefined ? { slow_mode_seconds: body.slow_mode_seconds } : {}),
-        ...(body.restrict_forwarding !== undefined
-          ? { restrict_forwarding: body.restrict_forwarding }
-          : {}),
-      });
-    } else {
-      conversation.manually_unread_at = null;
-    }
-    return HttpResponse.json(conversation);
-  }),
-  "/api/v1/conversations/{id}/pin": http.all("*/api/v1/conversations/:id/pin", ({ params, request }) => {
-    const conversation = findConversation(Number(params.id));
-    if (!conversation) {
-      return jsonError(404);
-    }
-    conversation.pinned_at = request.method === "DELETE" ? null : MESSAGE_STAMP;
-    return HttpResponse.json(conversation);
-  }),
+  "/api/v1/conversations/{id}": http.all(
+    "*/api/v1/conversations/:id",
+    async ({ params, request }) => {
+      const conversation = findConversation(Number(params.id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      if (request.method === "PATCH") {
+        const body = (await request.json().catch(() => ({}))) as {
+          description?: string | null;
+          member_permissions?: { [key: string]: string };
+          restrict_forwarding?: boolean;
+          slow_mode_seconds?: number;
+          title?: string | null;
+        };
+        Object.assign(conversation, {
+          ...(body.title !== undefined ? { title: body.title } : {}),
+          ...(body.description !== undefined ? { description: body.description } : {}),
+          ...(body.member_permissions !== undefined
+            ? { member_permissions: body.member_permissions }
+            : {}),
+          ...(body.slow_mode_seconds !== undefined
+            ? { slow_mode_seconds: body.slow_mode_seconds }
+            : {}),
+          ...(body.restrict_forwarding !== undefined
+            ? { restrict_forwarding: body.restrict_forwarding }
+            : {}),
+        });
+      } else {
+        conversation.manually_unread_at = null;
+      }
+      return HttpResponse.json(conversation);
+    },
+  ),
+  "/api/v1/conversations/{id}/pin": http.all(
+    "*/api/v1/conversations/:id/pin",
+    ({ params, request }) => {
+      const conversation = findConversation(Number(params.id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      conversation.pinned_at = request.method === "DELETE" ? null : MESSAGE_STAMP;
+      return HttpResponse.json(conversation);
+    },
+  ),
   "/api/v1/conversations/{id}/receipts": http.post(
     "*/api/v1/conversations/:id/receipts",
     async ({ params, request }) => {
@@ -517,72 +525,91 @@ export const handlerMap = {
       return HttpResponse.json(conversation);
     },
   ),
-  "/api/v1/conversations/{id}/leave": http.post("*/api/v1/conversations/:id/leave", ({ params }) => {
-    const conversation = findConversation(Number(params.id));
-    if (!conversation) {
-      return jsonError(404);
-    }
-    return okResponse();
-  }),
-  "/api/v1/conversations/{id}/media": http.get("*/api/v1/conversations/:id/media", ({ params, request }) => {
-    if (String(params.id) === "998") {
-      return jsonError(500);
-    }
-    const url = new URL(request.url);
-    const kind = url.searchParams.get("kind") ?? "images";
-    const page = Number(url.searchParams.get("page") ?? "1");
-    if (kind === "links") {
-      return HttpResponse.json({
-        items: [
-          {
-            item_kind: "link" as const,
-            attachment: null,
-            link: {
-              url: "https://example.com",
-              title: "Example",
-              description: "Body",
-              site_name: "Ex",
-            },
-          },
-          {
-            item_kind: "link" as const,
-            attachment: null,
-            link: { url: "https://example.org/bare" },
-          },
-        ],
-        meta: { has_more: false, page: 1, per_page: 30, total: 2 },
+  "/api/v1/conversations/{id}/leave": http.post(
+    "*/api/v1/conversations/:id/leave",
+    ({ params }) => {
+      const conversation = findConversation(Number(params.id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      return okResponse();
+    },
+  ),
+  "/api/v1/conversations/{id}/generations/cancel": http.post(
+    "*/api/v1/conversations/:id/generations/cancel",
+    async ({ request, params }) => {
+      const body = (await request.json()) as { generation_id?: string };
+      const generationId = body.generation_id ?? "";
+      publishMswRealtime({
+        type: "generation_cancelled",
+        conversation_id: Number(params.id),
+        generation_id: generationId,
       });
-    }
-    const items =
-      kind === "images" && page > 1
-        ? []
-        : [
+      return HttpResponse.json({ generation_id: generationId });
+    },
+  ),
+  "/api/v1/conversations/{id}/media": http.get(
+    "*/api/v1/conversations/:id/media",
+    ({ params, request }) => {
+      if (String(params.id) === "998") {
+        return jsonError(500);
+      }
+      const url = new URL(request.url);
+      const kind = url.searchParams.get("kind") ?? "images";
+      const page = Number(url.searchParams.get("page") ?? "1");
+      if (kind === "links") {
+        return HttpResponse.json({
+          items: [
             {
-              item_kind: "attachment" as const,
-              attachment: {
-                byte_size: 12,
-                content_type: kind === "files" ? "application/pdf" : "image/png",
-                filename: kind === "files" ? "notes.pdf" : undefined,
-                id: 9,
-                kind: kind === "files" ? ("file" as const) : ("image" as const),
-                message_id: 1,
-                processing_status: "ready" as const,
-                width: 16,
-                height: 9,
+              item_kind: "link" as const,
+              attachment: null,
+              link: {
+                url: "https://example.com",
+                title: "Example",
+                description: "Body",
+                site_name: "Ex",
               },
-              link: null,
             },
-          ];
-    return HttpResponse.json({
-      items,
-      meta: {
-        has_more: kind === "images" && page === 1,
-        page,
-        per_page: 30,
-        total: kind === "images" ? 2 : items.length,
-      },
-    });
-  }),
+            {
+              item_kind: "link" as const,
+              attachment: null,
+              link: { url: "https://example.org/bare" },
+            },
+          ],
+          meta: { has_more: false, page: 1, per_page: 30, total: 2 },
+        });
+      }
+      const items =
+        kind === "images" && page > 1
+          ? []
+          : [
+              {
+                item_kind: "attachment" as const,
+                attachment: {
+                  byte_size: 12,
+                  content_type: kind === "files" ? "application/pdf" : "image/png",
+                  filename: kind === "files" ? "notes.pdf" : undefined,
+                  id: 9,
+                  kind: kind === "files" ? ("file" as const) : ("image" as const),
+                  message_id: 1,
+                  processing_status: "ready" as const,
+                  width: 16,
+                  height: 9,
+                },
+                link: null,
+              },
+            ];
+      return HttpResponse.json({
+        items,
+        meta: {
+          has_more: kind === "images" && page === 1,
+          page,
+          per_page: 30,
+          total: kind === "images" ? 2 : items.length,
+        },
+      });
+    },
+  ),
   "/api/v1/search": http.get("*/api/v1/search", ({ request }) => {
     const q = new URL(request.url).searchParams.get("q") ?? "";
     const filters = searchFiltersFromRequest(request.url);
@@ -628,9 +655,7 @@ export const handlerMap = {
       const body = (await request.json()) as { duration?: number };
       const duration = body.duration ?? 0;
       conversation.muted_until =
-        duration > 0
-          ? new Date(Date.now() + duration * MS_PER_SECOND).toISOString()
-          : null;
+        duration > 0 ? new Date(Date.now() + duration * MS_PER_SECOND).toISOString() : null;
       return HttpResponse.json(conversation);
     },
   ),
@@ -713,6 +738,13 @@ export const handlerMap = {
     }
     return HttpResponse.json(info);
   }),
+  "/api/v1/messages/{id}/regenerate": http.post(
+    "*/api/v1/messages/:id/regenerate",
+    ({ params }) => {
+      const next = tombstoneMessage(Number(params.id));
+      return next ? HttpResponse.json(next) : jsonError(404);
+    },
+  ),
   "/api/v1/messages": http.post("*/api/v1/messages", async ({ request }) => {
     const body = (await request.json()) as {
       body?: string;
@@ -744,21 +776,27 @@ export const handlerMap = {
       );
     },
   ),
-  "/api/v1/messages/bulk_unsend": http.post("*/api/v1/messages/bulk_unsend", async ({ request }) => {
-    const body = (await request.json()) as { message_ids?: number[] };
-    const messages = (body.message_ids ?? [])
-      .map((id) => tombstoneMessage(id))
-      .filter((row): row is NonNullable<typeof row> => Boolean(row));
-    return HttpResponse.json({ messages });
-  }),
-  "/api/v1/messages/bulk_forward": http.post("*/api/v1/messages/bulk_forward", async ({ request }) => {
-    const body = (await request.json()) as { conversation_id?: number; message_ids?: number[] };
-    const messages = (body.message_ids ?? []).map((id) => {
-      const source = findMessage(id);
-      return appendSent(body.conversation_id ?? 1, source?.body ?? "", undefined);
-    });
-    return HttpResponse.json({ messages }, { status: 201 });
-  }),
+  "/api/v1/messages/bulk_unsend": http.post(
+    "*/api/v1/messages/bulk_unsend",
+    async ({ request }) => {
+      const body = (await request.json()) as { message_ids?: number[] };
+      const messages = (body.message_ids ?? [])
+        .map((id) => tombstoneMessage(id))
+        .filter((row): row is NonNullable<typeof row> => Boolean(row));
+      return HttpResponse.json({ messages });
+    },
+  ),
+  "/api/v1/messages/bulk_forward": http.post(
+    "*/api/v1/messages/bulk_forward",
+    async ({ request }) => {
+      const body = (await request.json()) as { conversation_id?: number; message_ids?: number[] };
+      const messages = (body.message_ids ?? []).map((id) => {
+        const source = findMessage(id);
+        return appendSent(body.conversation_id ?? 1, source?.body ?? "", undefined);
+      });
+      return HttpResponse.json({ messages }, { status: 201 });
+    },
+  ),
   "/api/v1/messages/bulk_save": http.post("*/api/v1/messages/bulk_save", async ({ request }) => {
     const body = (await request.json()) as { message_ids?: number[] };
     const saved_messages = (body.message_ids ?? []).map((id) => {
@@ -1070,7 +1108,9 @@ export const handlerMap = {
     "*/api/v1/conversation_folders/:conversation_folder_id/conversations",
     async ({ params, request }) => {
       const records = folderRecords();
-      const folder = records.folders.find((row) => row.id === Number(params.conversation_folder_id));
+      const folder = records.folders.find(
+        (row) => row.id === Number(params.conversation_folder_id),
+      );
       if (!folder) {
         return jsonError(404);
       }
@@ -1082,19 +1122,22 @@ export const handlerMap = {
       return HttpResponse.json(folder);
     },
   ),
-  "/api/v1/conversation_folders/{conversation_folder_id}/conversations/{conversation_id}": http.delete(
-    "*/api/v1/conversation_folders/:conversation_folder_id/conversations/:conversation_id",
-    ({ params }) => {
-      const records = folderRecords();
-      const folder = records.folders.find((row) => row.id === Number(params.conversation_folder_id));
-      if (!folder) {
-        return jsonError(404);
-      }
-      const conversationId = Number(params.conversation_id);
-      folder.conversation_ids = folder.conversation_ids.filter((id) => id !== conversationId);
-      return HttpResponse.json(folder);
-    },
-  ),
+  "/api/v1/conversation_folders/{conversation_folder_id}/conversations/{conversation_id}":
+    http.delete(
+      "*/api/v1/conversation_folders/:conversation_folder_id/conversations/:conversation_id",
+      ({ params }) => {
+        const records = folderRecords();
+        const folder = records.folders.find(
+          (row) => row.id === Number(params.conversation_folder_id),
+        );
+        if (!folder) {
+          return jsonError(404);
+        }
+        const conversationId = Number(params.conversation_id);
+        folder.conversation_ids = folder.conversation_ids.filter((id) => id !== conversationId);
+        return HttpResponse.json(folder);
+      },
+    ),
 } satisfies HandlerMap;
 
 export const handlers: HttpHandler[] = Object.values(handlerMap);

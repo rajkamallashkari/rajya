@@ -907,6 +907,15 @@
     "max": 1000,
     "allow_nil": false
   },
+  "ai_reply_retry_attempts": {
+    "type": "integer",
+    "category": "ai",
+    "default": 3,
+    "description": "Bot-reply job retries after an upstream failure (BR-78).",
+    "min": 1,
+    "max": 10,
+    "allow_nil": false
+  },
   "ai_rewrite_models": {
     "type": "array",
     "category": "ai",

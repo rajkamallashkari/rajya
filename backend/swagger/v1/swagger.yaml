@@ -211,6 +211,56 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Ok"
+  "/api/v1/messages/{id}/regenerate":
+    post:
+      summary: Regenerate a bot reply
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: tombstoned
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Message"
+  "/api/v1/conversations/{id}/generations/cancel":
+    post:
+      summary: Cancel an in-flight bot generation
+      tags:
+      - Conversations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: cancel flagged
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Generation"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                generation_id:
+                  type: string
+              required:
+              - generation_id
   "/api/v1/contact_nicknames":
     get:
       summary: List the current account's contact nicknames
@@ -3765,6 +3815,13 @@ components:
             "$ref": "#/components/schemas/GalleryItem"
         meta:
           "$ref": "#/components/schemas/GalleryPageMeta"
+    Generation:
+      type: object
+      required:
+      - generation_id
+      properties:
+        generation_id:
+          type: string
     Session:
       type: object
       required:

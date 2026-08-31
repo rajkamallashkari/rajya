@@ -27,6 +27,16 @@ class MessagePolicy < ApplicationPolicy
     conversation_policy.pin?
   end
 
+  def regenerate?
+    return false unless account
+    return false unless record.is_a?(Message)
+    return false unless conversation_policy.show?
+    return false unless record.sender_account&.bot?
+    return false if record.deleted?
+
+    record.metadata["prompted_by_account_id"].to_i == account.id
+  end
+
   def bulk_unsend?
     account.present?
   end

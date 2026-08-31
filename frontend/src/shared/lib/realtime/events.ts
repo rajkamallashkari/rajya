@@ -1,5 +1,13 @@
 export interface RealtimePayloads {
   attachment_processed: { conversation_id: number; message_id: number; attachment_id: number };
+  generation_cancelled: { conversation_id: number; generation_id: string; error?: string };
+  generation_chunk: { conversation_id: number; generation_id: string; delta: string };
+  generation_started: {
+    conversation_id: number;
+    generation_id: string;
+    bot_account_id: number;
+    triggered_by_message_id: number;
+  };
   message_created: { conversation_id: number; message_id: number };
   message_deleted: { conversation_id: number; message_id: number };
   message_edited: { conversation_id: number; message_id: number };
@@ -32,6 +40,9 @@ export interface RealtimePayloads {
 
 export const REALTIME_EVENT_TYPES = [
   "attachment_processed",
+  "generation_cancelled",
+  "generation_chunk",
+  "generation_started",
   "message_created",
   "message_deleted",
   "message_edited",
@@ -52,10 +63,10 @@ export const REALTIME_EVENT_TYPES = [
 
 type PayloadKey = keyof RealtimePayloads;
 type ListedType = (typeof REALTIME_EVENT_TYPES)[number];
-export type ExhaustiveEventList = [Exclude<PayloadKey, ListedType>, Exclude<ListedType, PayloadKey>] extends [
-  never,
-  never,
-]
+export type ExhaustiveEventList = [
+  Exclude<PayloadKey, ListedType>,
+  Exclude<ListedType, PayloadKey>,
+] extends [never, never]
   ? true
   : false;
 
@@ -110,10 +121,37 @@ function parseMessageEvent<Type extends ListedType>(
   };
 }
 
+function requireString(data: Record<string, unknown>, key: string): string {
+  const value = data[key];
+  if (typeof value !== "string") {
+    throw new Error(`invalid realtime event: ${key}`);
+  }
+  return value;
+}
+
 const PARSERS: { [Type in ListedType]: (data: Record<string, unknown>) => RealtimeEvent } = {
   attachment_processed: (data) => ({
     ...parseMessageEvent("attachment_processed", data),
     attachment_id: requireNumber(data, "attachment_id"),
+  }),
+  generation_cancelled: (data) => ({
+    type: "generation_cancelled",
+    conversation_id: requireNumber(data, "conversation_id"),
+    generation_id: requireString(data, "generation_id"),
+    error: optionalString(data, "error"),
+  }),
+  generation_chunk: (data) => ({
+    type: "generation_chunk",
+    conversation_id: requireNumber(data, "conversation_id"),
+    generation_id: requireString(data, "generation_id"),
+    delta: requireString(data, "delta"),
+  }),
+  generation_started: (data) => ({
+    type: "generation_started",
+    conversation_id: requireNumber(data, "conversation_id"),
+    generation_id: requireString(data, "generation_id"),
+    bot_account_id: requireNumber(data, "bot_account_id"),
+    triggered_by_message_id: requireNumber(data, "triggered_by_message_id"),
   }),
   message_created: (data) => parseMessageEvent("message_created", data),
   message_deleted: (data) => parseMessageEvent("message_deleted", data),

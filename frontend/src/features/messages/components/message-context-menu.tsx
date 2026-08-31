@@ -49,6 +49,7 @@ export interface MessageMenuActions {
   onSelect?: () => void;
   onReactions?: () => void;
   onRemind?: () => void;
+  onRegenerate?: () => void;
   onUnsend?: () => void;
   quickReactions?: string[];
 }
@@ -79,6 +80,11 @@ export function MessageContextMenu({
       key: "retry",
       label: t("messages.menu.retry"),
       onClick: actions.isFailed ? actions.onRetry : undefined,
+    },
+    {
+      key: "regenerate",
+      label: t("messages.menu.regenerate"),
+      onClick: actions.onRegenerate,
     },
     {
       key: "reply",
@@ -199,7 +205,7 @@ export function MessageContextMenu({
 
 function MenuIcon({ name, pinned, saved }: { name: string; pinned?: boolean; saved?: boolean }) {
   const className = ICON_CLASS;
-  if (name === "retry") {
+  if (name === "retry" || name === "regenerate") {
     return <RotateCcw className={className} />;
   }
   if (name === "reply") {

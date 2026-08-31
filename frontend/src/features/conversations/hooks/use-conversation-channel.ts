@@ -3,9 +3,17 @@ import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { getAccessSession } from "@/features/auth/model/access-session";
 import type { ActivityKind } from "@/features/conversations/model/typing";
 import { TYPING_THROTTLE_MS } from "@/features/conversations/model/typing";
-import { getCableConsumer, isCableConnected, type CableSubscription } from "@/shared/lib/cable/consumer";
+import {
+  getCableConsumer,
+  isCableConnected,
+  type CableSubscription,
+} from "@/shared/lib/cable/consumer";
 import { RECONNECT_POLL_MS, UNMOUNT_GRACE_MS } from "@/shared/lib/cable/timing";
-import { catchUpConversation, resetCatchUpScheduler, scheduleCatchUp } from "@/shared/lib/realtime/catch-up";
+import {
+  catchUpConversation,
+  resetCatchUpScheduler,
+  scheduleCatchUp,
+} from "@/shared/lib/realtime/catch-up";
 import { publishMswRealtime } from "@/shared/lib/realtime/msw-bridge";
 import { dispatchRealtimePayload, realtimeDeps } from "@/shared/lib/realtime/router";
 
@@ -16,6 +24,7 @@ function enqueueConversationCatchUp(queryClient: QueryClient, conversationId: nu
 }
 
 export function useConversationChannel(conversationId: number | null): {
+  cancelGeneration: (generationId: string) => void;
   publishActivity: (activity: ActivityKind) => void;
 } {
   const queryClient = useQueryClient();
@@ -120,5 +129,15 @@ export function useConversationChannel(conversationId: number | null): {
     [conversationId],
   );
 
-  return { publishActivity };
+  const cancelGeneration = useCallback(
+    (generationId: string) => {
+      if (conversationId == null) {
+        return;
+      }
+      subscriptionRef.current?.perform("cancel", { generation_id: generationId });
+    },
+    [conversationId],
+  );
+
+  return { cancelGeneration, publishActivity };
 }

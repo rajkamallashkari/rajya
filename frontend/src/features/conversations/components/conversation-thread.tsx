@@ -14,6 +14,7 @@ import {
   useBulkForward,
   useBulkSave,
   useBulkUnsend,
+  useCancelGeneration,
   useConversation,
   useCreateReminder,
   useEditMessage,
@@ -25,6 +26,7 @@ import {
   usePollResults,
   useReactMessage,
   useReactionDetails,
+  useRegenerateMessage,
   useSaveMessage,
   useSavedIds,
   useSavedReplies,
@@ -36,12 +38,19 @@ import { MessageInfoSheet } from "@/features/conversations/components/message-in
 import { ReminderSheet } from "@/features/conversations/components/reminder-sheet";
 import { ReportHost } from "@/features/conversations/components/report-host";
 import { useConversationChannel } from "@/features/conversations/hooks/use-conversation-channel";
+import { useGeneration } from "@/features/conversations/hooks/use-generation";
 import { useTypingIndicators } from "@/features/conversations/hooks/use-typing-indicators";
+import {
+  canRegenerateBotReply,
+  generationSenderName,
+  type GenerationState,
+} from "@/features/conversations/model/generation";
 import { conversationById, type DemoMessage } from "@/features/conversations/model/demo";
 import { THREAD_LOAD_OLDER_PX } from "@/features/conversations/model/constants";
 import { formatThreadDate, sameCalendarDay } from "@/features/conversations/model/dates";
 import { newClientNonce, parseConversationId } from "@/features/conversations/model/ids";
 import { conversationTitle } from "@/features/conversations/model/title";
+import type { ActivityKind } from "@/features/conversations/model/typing";
 import { useGifSearch, useStickerPacks } from "@/features/media/api/queries";
 import {
   DateDivider,
@@ -50,13 +59,13 @@ import {
   PollResultsSheet,
   ReactionDetailsSheet,
   SelectionToolbar,
+  StreamingBubble,
   TypingBubble,
   groupMessageRuns,
   type MessageMenuActions,
 } from "@/features/messages";
 import { tickStatus } from "@/features/messages/model/ticks";
 import type { GroupableMessage } from "@/features/messages/model/constants";
-import type { ActivityKind } from "@/features/conversations/model/typing";
 import { copyText } from "@/features/messages/model/copy-text";
 import {
   contactViewFromApi,
@@ -66,11 +75,7 @@ import {
 import { LayerHeader } from "@/app/navigation/layer-header";
 import { useMobileViewport } from "@/shared/hooks/use-mobile-viewport";
 import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
-import {
-  ChatSearchBar,
-  JumpDateSheet,
-  SearchResultsPanel,
-} from "@/features/search";
+import { ChatSearchBar, JumpDateSheet, SearchResultsPanel } from "@/features/search";
 import { useConversationSearch } from "@/features/search/api/queries";
 import { useDebouncedValue } from "@/features/search/hooks/use-debounced-value";
 import { SEARCH_DEBOUNCE_MS } from "@/features/search/model/constants";
@@ -175,8 +180,9 @@ function DemoThread({
 
 function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const { t, i18n } = useTranslation();
-  const { publishActivity } = useConversationChannel(conversationId);
+  const { cancelGeneration, publishActivity } = useConversationChannel(conversationId);
   const typists = useTypingIndicators(conversationId);
+  const generation = useGeneration(conversationId);
   const conversationQuery = useConversation(conversationId);
   const page = useMessagePage(conversationId);
   const send = useSendMessage(conversationId);
@@ -185,6 +191,8 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const pin = usePinMessage(conversationId);
   const save = useSaveMessage();
   const unsend = useUnsendMessage(conversationId);
+  const regenerate = useRegenerateMessage(conversationId);
+  const cancel = useCancelGeneration(conversationId);
   const bulkUnsend = useBulkUnsend(conversationId);
   const bulkSave = useBulkSave();
   const bulkForward = useBulkForward(conversationId);
@@ -308,7 +316,16 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
       });
     }
     openConversation(conversationLayer(String(conversationId), title, String(first.message_id)));
-  }, [chatOpen, conversationId, debouncedSearch, openConversation, searchFilters, searchHits, searchMode, title]);
+  }, [
+    chatOpen,
+    conversationId,
+    debouncedSearch,
+    openConversation,
+    searchFilters,
+    searchHits,
+    searchMode,
+    title,
+  ]);
 
   const onThreadBack = (): void => {
     const restored = useSearchStore.getState().handleBack();
@@ -387,7 +404,11 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
             <IconButton aria-label={t("search.open")} onClick={openChatSearch} type="button">
               <Search className="h-[var(--icon-size)] w-[var(--icon-size)]" />
             </IconButton>
-            <IconButton aria-label={t("search.jump_date")} onClick={() => setDateOpen(true)} type="button">
+            <IconButton
+              aria-label={t("search.jump_date")}
+              onClick={() => setDateOpen(true)}
+              type="button"
+            >
               <Calendar className="h-[var(--icon-size)] w-[var(--icon-size)]" />
             </IconButton>
           </>
@@ -462,8 +483,18 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
       >
         <ThreadMessages
           conversationId={conversationId}
+          generation={generation}
+          generationName={generationSenderName(
+            generation,
+            conversation,
+            t("conversations.untitled"),
+          )}
           locale={i18n.language}
           messages={messages}
+          onCancelGeneration={(generationId) => {
+            cancelGeneration(generationId);
+            cancel.mutate(generationId);
+          }}
           onOpenMenu={(id, point) => setMenu({ id, x: point.clientX, y: point.clientY })}
           onOpenPollResults={(id) => setResultsPollId(pollResultsId(messages, id))}
           onVote={(id, optionIds) => voteFromThread(messages, id, optionIds, vote.mutate)}
@@ -538,6 +569,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
             onReact: (id, emoji) => react.mutate({ emoji, id }),
             onReactions: setReactionsId,
             onRemind: setRemindId,
+            onRegenerate: (id) => regenerate.mutate(id),
             onReport: setReportId,
             onSave: (id) => save.mutate(id),
             onSelect: (id) =>
@@ -607,8 +639,11 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
 
 function ThreadMessages({
   conversationId,
+  generation,
+  generationName,
   locale,
   messages,
+  onCancelGeneration,
   onOpenMenu,
   onOpenPollResults,
   onVote,
@@ -617,8 +652,11 @@ function ThreadMessages({
   viewerId,
 }: {
   conversationId: number;
+  generation: GenerationState | null;
+  generationName: string;
   locale: string;
   messages: Message[];
+  onCancelGeneration: (generationId: string) => void;
   onOpenMenu: (id: number, point: { clientX: number; clientY: number }) => void;
   onOpenPollResults: (id: number) => void;
   onVote: (id: number, optionIds: string[]) => void;
@@ -713,6 +751,13 @@ function ThreadMessages({
           senderName={typist.displayName}
         />
       ))}
+      {generation ? (
+        <StreamingBubble
+          onCancel={() => onCancelGeneration(generation.generationId)}
+          senderName={generationName}
+          text={generation.text}
+        />
+      ) : null}
     </>
   );
 }
@@ -788,6 +833,7 @@ export function buildMessageMenuActions({
   onReact,
   onReactions,
   onRemind,
+  onRegenerate,
   onReport,
   onSave,
   onSelect,
@@ -805,6 +851,7 @@ export function buildMessageMenuActions({
   onReact: (id: number, emoji: string) => void;
   onReactions: (id: number) => void;
   onRemind: (id: number) => void;
+  onRegenerate?: (id: number) => void;
   onReport?: (id: number) => void;
   onSave: (id: number) => void;
   onSelect: (id: number) => void;
@@ -820,6 +867,7 @@ export function buildMessageMenuActions({
   const isMine = message.sender?.id === viewerId;
   const canCopy = Boolean(message.body) && !restrictForwarding;
   const canReport = Boolean(onReport) && !isMine && !message.deleted && message.kind !== "system";
+  const canRegenerate = Boolean(onRegenerate) && canRegenerateBotReply(message, viewerId);
   return {
     canEdit: isMine && !message.deleted && Boolean(message.body),
     hasText: canCopy,
@@ -833,6 +881,7 @@ export function buildMessageMenuActions({
     onReact: (emoji) => onReact(message.id, emoji),
     onReactions: () => onReactions(message.id),
     onRemind: () => onRemind(message.id),
+    onRegenerate: canRegenerate ? () => onRegenerate?.(message.id) : undefined,
     onReport: canReport ? () => onReport?.(message.id) : undefined,
     onSave: () => onSave(message.id),
     onSelect: () => onSelect(message.id),

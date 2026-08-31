@@ -2,13 +2,20 @@ import { useEffect } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAccessSession } from "@/features/auth/model/access-session";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
-import { conversationKeys, folderKeys, messageKeys, reportKeys, savedReplyKeys } from "@/features/conversations/api/keys";
+import {
+  conversationKeys,
+  folderKeys,
+  messageKeys,
+  reportKeys,
+  savedReplyKeys,
+} from "@/features/conversations/api/keys";
 import {
   addConversationToFolder,
   archiveConversation,
   bulkForwardMessages,
   bulkSaveMessages,
   bulkUnsendMessages,
+  cancelGeneration,
   closePoll,
   createFolder,
   createMessageReminder,
@@ -31,6 +38,7 @@ import {
   pinConversation,
   pinMessage,
   reactToMessage,
+  regenerateMessage,
   removeConversationFromFolder,
   reorderFolders,
   saveMessage,
@@ -63,6 +71,7 @@ import {
 import { MS_PER_SECOND } from "@/features/conversations/model/constants";
 import { enqueueAndFlush } from "@/shared/lib/outbox/processor";
 import { sendOutboxMessage } from "@/shared/lib/outbox/send";
+import { realtimeKeys } from "@/shared/lib/realtime/keys";
 
 type MessagePageParam = { after?: number; before?: number };
 
@@ -468,6 +477,43 @@ export function useUnsendMessage(conversationId: number) {
   });
 }
 
+export function useRegenerateMessage(conversationId: number) {
+  const queryClient = useQueryClient();
+  const key = messageKeys.page(conversationId);
+  return useMutation({
+    mutationFn: (id: number) => regenerateMessage(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<MessagePages>(key);
+      if (previous) {
+        queryClient.setQueryData(
+          key,
+          mapPages(previous, (message) =>
+            message.id === id ? { ...message, body: null, deleted: true } : message,
+          ),
+        );
+      }
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      rollbackPages(queryClient, key, context?.previous);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+export function useCancelGeneration(conversationId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (generationId: string) => cancelGeneration(conversationId, generationId),
+    onMutate: async () => {
+      queryClient.setQueryData(realtimeKeys.generation(conversationId), null);
+    },
+  });
+}
+
 export function useVotePoll(conversationId: number) {
   const queryClient = useQueryClient();
   const key = messageKeys.page(conversationId);
@@ -649,8 +695,15 @@ export function useSavedReplies() {
 
 export function useCreateReminder() {
   return useMutation({
-    mutationFn: ({ messageId, note, remindAt }: { messageId: number; note?: string; remindAt: string }) =>
-      createMessageReminder(messageId, remindAt, note),
+    mutationFn: ({
+      messageId,
+      note,
+      remindAt,
+    }: {
+      messageId: number;
+      note?: string;
+      remindAt: string;
+    }) => createMessageReminder(messageId, remindAt, note),
   });
 }
 
@@ -683,7 +736,10 @@ export function useArchiveConversation() {
         queryClient.setQueryData(listKey, removeFromList(previousList, id));
         if (row) {
           queryClient.setQueryData(archivedKey, {
-            conversations: [...(previousArchived?.conversations ?? []), { ...row, archived_at: stamp }],
+            conversations: [
+              ...(previousArchived?.conversations ?? []),
+              { ...row, archived_at: stamp },
+            ],
           });
         }
       } else {
@@ -721,7 +777,10 @@ export function useMuteConversation() {
       );
       const mutedUntil =
         duration > 0 ? new Date(Date.now() + duration * MS_PER_SECOND).toISOString() : null;
-      queryClient.setQueryData(key, patchConversationList(previous, id, { muted_until: mutedUntil }));
+      queryClient.setQueryData(
+        key,
+        patchConversationList(previous, id, { muted_until: mutedUntil }),
+      );
       queryClient.setQueryData(
         conversationKeys.archived(),
         patchConversationList(previousArchived, id, { muted_until: mutedUntil }),

@@ -53,6 +53,7 @@ module Messages
       touch_sidebar!(message)
       unarchive_on_activity!
       publish!(message)
+      Bots::Dispatch.call(message: message)
       success(message)
     end
 

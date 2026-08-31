@@ -1,7 +1,14 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../client";
 import { handlerMap, handlers, resetFiledReports } from "./handlers";
-import { MESSAGE_STAMP, messagingStore, resetMessagingStore, messageSearchHits, conversationSearchHits, accountSearchHits } from "./messaging-store";
+import {
+  MESSAGE_STAMP,
+  messagingStore,
+  resetMessagingStore,
+  messageSearchHits,
+  conversationSearchHits,
+  accountSearchHits,
+} from "./messaging-store";
 
 const expectedPaths = [
   "/api/v1/accounts/search",
@@ -37,6 +44,7 @@ const expectedPaths = [
   "/api/v1/conversations/{conversation_id}/pins/{message_id}",
   "/api/v1/conversations/{id}",
   "/api/v1/conversations/{id}/archive",
+  "/api/v1/conversations/{id}/generations/cancel",
   "/api/v1/conversations/{id}/leave",
   "/api/v1/conversations/{id}/media",
   "/api/v1/conversations/{id}/mute",
@@ -58,6 +66,7 @@ const expectedPaths = [
   "/api/v1/messages/{id}",
   "/api/v1/messages/{id}/forward",
   "/api/v1/messages/{id}/info",
+  "/api/v1/messages/{id}/regenerate",
   "/api/v1/messages/{message_id}/reactions",
   "/api/v1/messages/{message_id}/reactions/{emoji}",
   "/api/v1/message_reminders",
@@ -441,9 +450,9 @@ describe("MSW handlers", () => {
     const firstSearchRow = rows[0];
     if (firstSearchRow) {
       firstSearchRow.deleted = true;
-      expect(messageSearchHits(firstSearchRow.body ?? "", 1).map((row) => row.message_id)).not.toContain(
-        firstSearchRow.id,
-      );
+      expect(
+        messageSearchHits(firstSearchRow.body ?? "", 1).map((row) => row.message_id),
+      ).not.toContain(firstSearchRow.id);
       firstSearchRow.deleted = false;
     }
     expect(messageSearchHits("", 1, { createdAfter: "2027-01-01T00:00:00.000Z" })).toEqual([]);
@@ -548,6 +557,33 @@ describe("MSW handlers", () => {
       params: { path: { id: 0 } },
     });
     expect(missingInfo.response.status).toBe(404);
+    const regenerated = await client.POST("/api/v1/messages/{id}/regenerate", {
+      params: { path: { id: sent.data?.id ?? 1 } },
+    });
+    expect(regenerated.data?.deleted).toBe(true);
+    const missingRegen = await client.POST("/api/v1/messages/{id}/regenerate", {
+      params: { path: { id: 0 } },
+    });
+    expect(missingRegen.response.status).toBe(404);
+    const cancelledGeneration = await client.POST("/api/v1/conversations/{id}/generations/cancel", {
+      params: { path: { id: 1 } },
+      body: { generation_id: "g-1" },
+    });
+    expect(cancelledGeneration.data?.generation_id).toBe("g-1");
+    const cancelledEmpty = await client.POST("/api/v1/conversations/{id}/generations/cancel", {
+      params: { path: { id: 1 } },
+      body: { generation_id: "" },
+    });
+    expect(cancelledEmpty.data?.generation_id).toBe("");
+    const cancelledMissing = await fetch(
+      "http://rajya.test/api/v1/conversations/1/generations/cancel",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      },
+    );
+    expect((await cancelledMissing.json()).generation_id).toBe("");
     const reacted = await client.POST("/api/v1/messages/{message_id}/reactions", {
       params: { path: { message_id: sent.data?.id ?? 1 } },
       body: { emoji: "👍" },
@@ -1004,7 +1040,9 @@ describe("MSW handlers", () => {
       params: { path: { id: 1 }, query: { kind: "images", page: 2 } },
     });
     expect(mediaPage.data?.meta.has_more).toBe(false);
-    const retried = await client.POST("/api/v1/attachments/{id}/retry", { params: { path: { id: 1 } } });
+    const retried = await client.POST("/api/v1/attachments/{id}/retry", {
+      params: { path: { id: 1 } },
+    });
     expect(retried.data?.processing_status).toBe("pending");
     const transcribed = await client.POST("/api/v1/attachments/{id}/transcribe", {
       params: { path: { id: 1 } },
@@ -1014,7 +1052,9 @@ describe("MSW handlers", () => {
     expect(exportsListed.data?.export_jobs).toHaveLength(1);
     const exportCreated = await client.POST("/api/v1/export_jobs", { body: { format: "json" } });
     expect(exportCreated.response.status).toBe(201);
-    const exportShown = await client.GET("/api/v1/export_jobs/{id}", { params: { path: { id: 1 } } });
+    const exportShown = await client.GET("/api/v1/export_jobs/{id}", {
+      params: { path: { id: 1 } },
+    });
     expect(exportShown.data?.id).toBe(1);
     const exportUrl = await client.GET("/api/v1/export_jobs/{id}/download", {
       params: { path: { id: 1 } },

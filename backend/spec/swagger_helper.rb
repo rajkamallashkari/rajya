@@ -265,6 +265,13 @@ RSpec.configure do |config|
                 meta: { "$ref" => "#/components/schemas/GalleryPageMeta" }
               }
             },
+            Generation: {
+              type: :object,
+              required: %w[generation_id],
+              properties: {
+                generation_id: { type: :string }
+              }
+            },
             Session: {
               type: :object,
               required: %w[token account user],

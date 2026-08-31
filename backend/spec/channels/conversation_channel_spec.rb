@@ -77,4 +77,28 @@ RSpec.describe ConversationChannel, type: :channel do
     expect { perform :typing, activity: "typing" }.not_to change(Message, :count)
     expect(Typing::Store.read(conversation.id, user.account.id)).to be_nil
   end
+
+  it "sets the cancel flag from the socket without writing a row" do
+    conversation = create_direct_between(user.account, create(:account))
+    subscribe conversation_id: conversation.id
+
+    expect { perform :cancel, generation_id: "9:8:7" }.not_to change(Message, :count)
+    expect(Ai::Cancellation.requested?("9:8:7")).to be(true)
+  end
+
+  it "skips cancel when the subscription never tracked a conversation" do
+    conversation = create_direct_between(user.account, create(:account))
+    subscribe conversation_id: conversation.id
+    subscription.instance_variable_set(:@tracking_conversation_id, nil)
+    perform :cancel, generation_id: "skip"
+    expect(Ai::Cancellation.requested?("skip")).to be(false)
+  end
+
+  it "skips cancel when the conversation no longer exists" do
+    conversation = create_direct_between(user.account, create(:account))
+    subscribe conversation_id: conversation.id
+    conversation.destroy!
+    perform :cancel, generation_id: "gone"
+    expect(Ai::Cancellation.requested?("gone")).to be(false)
+  end
 end

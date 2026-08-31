@@ -15,6 +15,10 @@ RSpec.describe Ai::Limits do
     expect(described_class.cancel_ttl).to eq(300)
   end
 
+  it "reads bot-reply retry attempts from settings" do
+    expect(described_class.reply_retry_attempts).to eq(3)
+  end
+
   it "picks up context window and summarization threshold without a restart" do
     stub_setting(:ai_context_window, 5, category: "ai")
     stub_setting(:ai_summarization_threshold, 7, category: "ai")
