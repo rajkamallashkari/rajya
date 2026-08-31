@@ -227,6 +227,64 @@ describe("realtime events", () => {
         auto_flagged: "yes",
       }),
     ).toThrow("auto_flagged");
+    expect(parseRealtimeEvent({ type: "call_missed", call_id: 4 })).toEqual({
+      type: "call_missed",
+      call_id: 4,
+    });
+    expect(
+      parseRealtimeEvent({
+        type: "incoming_call",
+        call_id: 1,
+        conversation_id: 2,
+        initiator_account_id: 3,
+      }),
+    ).toEqual({
+      type: "incoming_call",
+      call_id: 1,
+      conversation_id: 2,
+      kind: "audio",
+      initiator_account_id: 3,
+    });
+    expect(
+      parseRealtimeEvent({
+        type: "incoming_call",
+        call_id: 1,
+        conversation_id: 2,
+        kind: "video",
+        initiator_account_id: 3,
+      }).kind,
+    ).toBe("video");
+    expect(parseRealtimeEvent({ type: "offer", call_id: 1, from_account_id: 2, payload: { sdp: "x" } })).toEqual(
+      {
+        type: "offer",
+        call_id: 1,
+        from_account_id: 2,
+        payload: { sdp: "x" },
+      },
+    );
+    expect(parseRealtimeEvent({ type: "answer", call_id: 1 }).type).toBe("answer");
+    expect(parseRealtimeEvent({ type: "ice_candidate", call_id: 1 }).type).toBe("ice_candidate");
+    expect(parseRealtimeEvent({ type: "busy", call_id: 1, account_id: 2 }).account_id).toBe(2);
+    expect(parseRealtimeEvent({ type: "call_accepted", call_id: 1 }).type).toBe("call_accepted");
+    expect(parseRealtimeEvent({ type: "call_cancelled", call_id: 1 }).type).toBe("call_cancelled");
+    expect(parseRealtimeEvent({ type: "call_declined", call_id: 1 }).type).toBe("call_declined");
+    expect(parseRealtimeEvent({ type: "call_ended", call_id: 1 }).type).toBe("call_ended");
+    expect(parseRealtimeEvent({ type: "user_joined", call_id: 1 }).type).toBe("user_joined");
+    expect(parseRealtimeEvent({ type: "user_left", call_id: 1 }).type).toBe("user_left");
+    expect(parseRealtimeEvent({ type: "call_dismissed", call_id: 1, reason: "silenced" })).toEqual({
+      type: "call_dismissed",
+      call_id: 1,
+      reason: "silenced",
+    });
+    expect(parseRealtimeEvent({ type: "call_dismissed", call_id: 1 }).reason).toBeUndefined();
+    expect(parseRealtimeEvent({ type: "mute_state", call_id: 1, mic_on: true, cam_on: false })).toEqual({
+      type: "mute_state",
+      call_id: 1,
+      mic_on: true,
+      cam_on: false,
+    });
+    expect(parseRealtimeEvent({ type: "mute_state", call_id: 1 }).mic_on).toBe(false);
+    expect(() => parseRealtimeEvent({ type: "incoming_call", call_id: 1 })).toThrow("conversation_id");
     expect(parseRealtimeEvent({ type: "phone_verified", account_id: "x", phone: 1 })).toEqual({
       type: "phone_verified",
     });

@@ -148,6 +148,18 @@ Rails.application.routes.draw do
       resources :export_jobs, only: %i[index create show] do
         member { get :download }
       end
+      resources :calls, only: %i[create show] do
+        collection do
+          get :active
+          get :ice_servers
+        end
+        member do
+          post :accept
+          post :decline
+          post :cancel
+          post :hangup
+        end
+      end
       resources :gifs, only: :index
       resources :message_reminders, only: %i[index create update destroy]
       get "push_subscriptions/vapid", to: "push_subscriptions#vapid"

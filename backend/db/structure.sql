@@ -536,7 +536,7 @@ CREATE TABLE public.call_participants (
     status character varying NOT NULL,
     joined_at timestamp(6) without time zone,
     left_at timestamp(6) without time zone,
-    CONSTRAINT ck_call_participants_status CHECK (((status)::text = ANY ((ARRAY['invited'::character varying, 'ringing'::character varying, 'joined'::character varying, 'left'::character varying, 'declined'::character varying, 'missed'::character varying])::text[])))
+    CONSTRAINT ck_call_participants_status CHECK (((status)::text = ANY ((ARRAY['invited'::character varying, 'ringing'::character varying, 'joined'::character varying, 'left'::character varying, 'declined'::character varying, 'missed'::character varying, 'busy'::character varying])::text[])))
 );
 
 
@@ -3736,6 +3736,13 @@ CREATE INDEX idx_messages_has_link ON public.messages USING btree (conversation_
 
 
 --
+-- Name: idx_messages_one_system_per_call; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_messages_one_system_per_call ON public.messages USING btree (((metadata ->> 'call_id'::text))) WHERE (((kind)::text = 'system'::text) AND ((metadata ->> 'call_id'::text) IS NOT NULL));
+
+
+--
 -- Name: idx_phone_verif_requests_code_digest; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5307,6 +5314,7 @@ ALTER TABLE ONLY public.bot_commands
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260831163000'),
 ('20260831140000'),
 ('20260831053000'),
 ('20260830235000'),

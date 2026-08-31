@@ -75,6 +75,60 @@ RSpec.configure do |config|
                 shared_memory: { type: :boolean }
               }
             },
+            CallParticipant: {
+              type: :object,
+              required: %w[id account_id status],
+              properties: {
+                id: { type: :integer },
+                account_id: { type: :integer },
+                status: { type: :string },
+                joined_at: { type: :string, format: :"date-time", nullable: true },
+                left_at: { type: :string, format: :"date-time", nullable: true }
+              }
+            },
+            Call: {
+              type: :object,
+              required: %w[id conversation_id initiator_account_id kind status participants created_at],
+              properties: {
+                id: { type: :integer },
+                conversation_id: { type: :integer },
+                initiator_account_id: { type: :integer },
+                kind: { type: :string },
+                status: { type: :string },
+                started_at: { type: :string, format: :"date-time", nullable: true },
+                ended_at: { type: :string, format: :"date-time", nullable: true },
+                duration_seconds: { type: :integer, nullable: true },
+                created_at: { type: :string, format: :"date-time" },
+                participants: { type: :array, items: { "$ref" => "#/components/schemas/CallParticipant" } }
+              }
+            },
+            CallEnvelope: {
+              type: :object,
+              properties: {
+                call: { "$ref" => "#/components/schemas/Call", nullable: true },
+                ice_servers: {
+                  type: :array,
+                  nullable: true,
+                  items: {
+                    type: :object,
+                    additionalProperties: true
+                  }
+                }
+              }
+            },
+            IceServers: {
+              type: :object,
+              required: %w[ice_servers],
+              properties: {
+                ice_servers: {
+                  type: :array,
+                  items: {
+                    type: :object,
+                    additionalProperties: true
+                  }
+                }
+              }
+            },
             SessionUser: {
               type: :object,
               required: %w[id onboarded has_password has_passkey phone_verified],

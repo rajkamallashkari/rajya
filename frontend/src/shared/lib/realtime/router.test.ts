@@ -150,6 +150,20 @@ describe("routeRealtimeEvent", () => {
       { type: "generation_cancelled", conversation_id: 3, generation_id: "g-2" },
       deps,
     );
+    await routeRealtimeEvent({ type: "incoming_call", call_id: 1, conversation_id: 1, kind: "audio", initiator_account_id: 2 }, deps);
+    await routeRealtimeEvent({ type: "offer", call_id: 1 }, deps);
+    await routeRealtimeEvent({ type: "answer", call_id: 1 }, deps);
+    await routeRealtimeEvent({ type: "ice_candidate", call_id: 1 }, deps);
+    await routeRealtimeEvent({ type: "busy", call_id: 1 }, deps);
+    await routeRealtimeEvent({ type: "call_accepted", call_id: 1 }, deps);
+    await routeRealtimeEvent({ type: "call_cancelled", call_id: 1 }, deps);
+    await routeRealtimeEvent({ type: "call_declined", call_id: 1 }, deps);
+    await routeRealtimeEvent({ type: "call_dismissed", call_id: 1 }, deps);
+    await routeRealtimeEvent({ type: "call_ended", call_id: 1 }, deps);
+    await routeRealtimeEvent({ type: "call_missed", call_id: 1 }, deps);
+    await routeRealtimeEvent({ type: "mute_state", call_id: 1, mic_on: false, cam_on: false }, deps);
+    await routeRealtimeEvent({ type: "user_joined", call_id: 1 }, deps);
+    await routeRealtimeEvent({ type: "user_left", call_id: 1 }, deps);
     expect(client.getQueryData(realtimeKeys.generation(3))).toBeNull();
 
     const cached = client.getQueryData<MessagePages>(messageKeys.page(1));

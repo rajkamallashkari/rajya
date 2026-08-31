@@ -82,6 +82,7 @@ RSpec.configure do |config|
   require Rails.root.join("spec/support/conversation_permission_matrix")
   require Rails.root.join("spec/support/message_helpers")
   require Rails.root.join("spec/support/push_helpers")
+  require Rails.root.join("spec/support/call_helpers")
   config.include AuthHelpers, type: :request
   config.include AuthHelpers, type: :channel
   config.include WebauthnHelpers
@@ -89,6 +90,7 @@ RSpec.configure do |config|
   config.include ConversationHelpers
   config.include MessageHelpers
   config.include PushHelpers
+  config.include CallHelpers
 
   config.before do
     Rails.cache.clear

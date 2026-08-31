@@ -723,8 +723,8 @@
   "group_video_resolution": {
     "type": "string",
     "category": "calls",
-    "default": "720p",
-    "description": "Default group-video resolution (BR-111).",
+    "default": "640x480",
+    "description": "Group-video resolution cap for mesh bandwidth (BR-111).",
     "min": null,
     "max": null,
     "allow_nil": false
@@ -732,10 +732,59 @@
   "group_video_frame_rate": {
     "type": "integer",
     "category": "calls",
-    "default": 30,
-    "description": "Default group-video frame rate (BR-111).",
+    "default": 20,
+    "description": "Group-video frame-rate cap for mesh bandwidth (BR-111).",
     "min": 1,
     "max": 60,
+    "allow_nil": false
+  },
+  "stun_urls": {
+    "type": "array",
+    "category": "calls",
+    "default": [
+      "stun:stun.l.google.com:19302",
+      "stun:stun1.l.google.com:19302",
+      "stun:stun2.l.google.com:19302"
+    ],
+    "description": "STUN URLs always offered to WebRTC clients (BR-71).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "turn_port": {
+    "type": "integer",
+    "category": "calls",
+    "default": 443,
+    "description": "coturn listening port for HMAC TURN URLs (BR-71).",
+    "min": 1,
+    "max": 65535,
+    "allow_nil": false
+  },
+  "turn_credential_ttl": {
+    "type": "integer",
+    "category": "calls",
+    "default": 86400,
+    "description": "Seconds a coturn HMAC username remains valid (BR-71).",
+    "min": 60,
+    "max": 604800,
+    "allow_nil": false
+  },
+  "metered_ice_timeout": {
+    "type": "integer",
+    "category": "calls",
+    "default": 3,
+    "description": "Seconds to wait for Metered TURN credentials before STUN-only.",
+    "min": 1,
+    "max": 15,
+    "allow_nil": false
+  },
+  "metered_ice_cache_ttl": {
+    "type": "integer",
+    "category": "calls",
+    "default": 14400,
+    "description": "Seconds to cache a successful Metered TURN response.",
+    "min": 60,
+    "max": 86400,
     "allow_nil": false
   },
   "ai_bot_reply_models": {
@@ -1229,6 +1278,32 @@
     "description": "Retries for unexpected transcription job errors before a visible fail (NR-33).",
     "min": 1,
     "max": 10,
+    "allow_nil": false
+  },
+  "notification_cascade_defaults": {
+    "type": "object",
+    "category": "notifications",
+    "default": {
+      "level": "all",
+      "show_preview": true,
+      "sound": true,
+      "vibration": true,
+      "dnd_enabled": false,
+      "dnd_start": "22:00",
+      "dnd_end": "07:00",
+      "dnd_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "description": "Code-defined notification cascade defaults (BR-98, BR-99); never stored on the preferences row.",
+    "min": null,
+    "max": null,
     "allow_nil": false
   },
   "push_ttl": {

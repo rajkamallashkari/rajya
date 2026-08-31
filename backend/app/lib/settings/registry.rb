@@ -323,12 +323,33 @@ module Settings
         description: "Maximum humans in a mesh call (BR-62)."
       },
       group_video_resolution: {
-        type: :string, category: :calls, default: "720p",
-        description: "Default group-video resolution (BR-111)."
+        type: :string, category: :calls, default: "640x480",
+        description: "Group-video resolution cap for mesh bandwidth (BR-111)."
       },
       group_video_frame_rate: {
-        type: :integer, category: :calls, default: 30, min: 1, max: 60,
-        description: "Default group-video frame rate (BR-111)."
+        type: :integer, category: :calls, default: 20, min: 1, max: 60,
+        description: "Group-video frame-rate cap for mesh bandwidth (BR-111)."
+      },
+      stun_urls: {
+        type: :array, category: :calls,
+        default: %w[stun:stun.l.google.com:19302 stun:stun1.l.google.com:19302 stun:stun2.l.google.com:19302],
+        description: "STUN URLs always offered to WebRTC clients (BR-71)."
+      },
+      turn_port: {
+        type: :integer, category: :calls, default: 443, min: 1, max: 65_535,
+        description: "coturn listening port for HMAC TURN URLs (BR-71)."
+      },
+      turn_credential_ttl: {
+        type: :integer, category: :calls, default: 86_400, min: 60, max: 604_800,
+        description: "Seconds a coturn HMAC username remains valid (BR-71)."
+      },
+      metered_ice_timeout: {
+        type: :integer, category: :calls, default: 3, min: 1, max: 15,
+        description: "Seconds to wait for Metered TURN credentials before STUN-only."
+      },
+      metered_ice_cache_ttl: {
+        type: :integer, category: :calls, default: 14_400, min: 60, max: 86_400,
+        description: "Seconds to cache a successful Metered TURN response."
       },
 
       # --- ai (BR-74, BR-75, BR-80, BR-84, NR-8, D-3) ---

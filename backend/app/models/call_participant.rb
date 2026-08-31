@@ -1,5 +1,6 @@
 class CallParticipant < ApplicationRecord
-  STATUSES = %w[invited ringing joined left declined missed].freeze
+  STATUSES = %w[invited ringing joined left declined missed busy].freeze
+  LIVE = %w[invited ringing joined].freeze
 
   belongs_to :call
   belongs_to :account

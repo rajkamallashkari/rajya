@@ -120,6 +120,21 @@ export async function routeRealtimeEvent(
     case "message_reminder":
       await deps.cache.invalidateQueries({ queryKey: realtimeKeys.reminders });
       return;
+    case "answer":
+    case "busy":
+    case "call_accepted":
+    case "call_cancelled":
+    case "call_declined":
+    case "call_dismissed":
+    case "call_ended":
+    case "call_missed":
+    case "ice_candidate":
+    case "incoming_call":
+    case "mute_state":
+    case "offer":
+    case "user_joined":
+    case "user_left":
+      return;
     default: {
       const exhaustive: never = event;
       throw new Error(String(exhaustive));

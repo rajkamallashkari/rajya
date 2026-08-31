@@ -663,6 +663,189 @@ paths:
               properties:
                 reason:
                   type: string
+  "/api/v1/calls":
+    post:
+      summary: Start a call
+      tags:
+      - Calls
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: ringing
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CallEnvelope"
+        '403':
+          description: stranger refused
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '404':
+          description: flag off
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversation_id:
+                  type: integer
+                kind:
+                  type: string
+  "/api/v1/calls/active":
+    get:
+      summary: Current live call
+      tags:
+      - Calls
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CallEnvelope"
+  "/api/v1/calls/ice_servers":
+    get:
+      summary: ICE server credentials
+      tags:
+      - Calls
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/IceServers"
+  "/api/v1/calls/{id}":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: Show a call
+      tags:
+      - Calls
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: shown
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CallEnvelope"
+        '403':
+          description: stranger refused
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  "/api/v1/calls/{id}/accept":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Accept a ringing call
+      tags:
+      - Calls
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: accepted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CallEnvelope"
+        '403':
+          description: stranger refused
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  "/api/v1/calls/{id}/decline":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Decline a ringing call
+      tags:
+      - Calls
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: declined
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CallEnvelope"
+  "/api/v1/calls/{id}/cancel":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Cancel a ringing call
+      tags:
+      - Calls
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: cancelled
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CallEnvelope"
+  "/api/v1/calls/{id}/hangup":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    post:
+      summary: Hang up an active call
+      tags:
+      - Calls
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: ended
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CallEnvelope"
+        '403':
+          description: stranger refused
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
   "/api/v1/contact_nicknames":
     get:
       summary: List the current account's contact nicknames
@@ -3950,6 +4133,88 @@ components:
           nullable: true
         shared_memory:
           type: boolean
+    CallParticipant:
+      type: object
+      required:
+      - id
+      - account_id
+      - status
+      properties:
+        id:
+          type: integer
+        account_id:
+          type: integer
+        status:
+          type: string
+        joined_at:
+          type: string
+          format: date-time
+          nullable: true
+        left_at:
+          type: string
+          format: date-time
+          nullable: true
+    Call:
+      type: object
+      required:
+      - id
+      - conversation_id
+      - initiator_account_id
+      - kind
+      - status
+      - participants
+      - created_at
+      properties:
+        id:
+          type: integer
+        conversation_id:
+          type: integer
+        initiator_account_id:
+          type: integer
+        kind:
+          type: string
+        status:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        duration_seconds:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        participants:
+          type: array
+          items:
+            "$ref": "#/components/schemas/CallParticipant"
+    CallEnvelope:
+      type: object
+      properties:
+        call:
+          "$ref": "#/components/schemas/Call"
+          nullable: true
+        ice_servers:
+          type: array
+          nullable: true
+          items:
+            type: object
+            additionalProperties: true
+    IceServers:
+      type: object
+      required:
+      - ice_servers
+      properties:
+        ice_servers:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
     SessionUser:
       type: object
       required:

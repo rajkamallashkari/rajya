@@ -36,6 +36,25 @@ export interface RealtimePayloads {
     activity: string;
     display_name: string;
   };
+  answer: { call_id: number; from_account_id?: number; payload?: unknown };
+  busy: { call_id: number; account_id?: number };
+  call_accepted: { call_id: number; account_id?: number };
+  call_cancelled: { call_id: number; account_id?: number };
+  call_declined: { call_id: number; account_id?: number };
+  call_dismissed: { call_id: number; reason?: string };
+  call_ended: { call_id: number; account_id?: number };
+  call_missed: { call_id: number };
+  ice_candidate: { call_id: number; from_account_id?: number; payload?: unknown };
+  incoming_call: {
+    call_id: number;
+    conversation_id: number;
+    kind: string;
+    initiator_account_id: number;
+  };
+  mute_state: { call_id: number; account_id?: number; mic_on: boolean; cam_on: boolean };
+  offer: { call_id: number; from_account_id?: number; payload?: unknown };
+  user_joined: { call_id: number; account_id?: number };
+  user_left: { call_id: number; account_id?: number };
 }
 
 export const REALTIME_EVENT_TYPES = [
@@ -59,6 +78,20 @@ export const REALTIME_EVENT_TYPES = [
   "sidebar_update",
   "join_request",
   "typing",
+  "answer",
+  "busy",
+  "call_accepted",
+  "call_cancelled",
+  "call_declined",
+  "call_dismissed",
+  "call_ended",
+  "call_missed",
+  "ice_candidate",
+  "incoming_call",
+  "mute_state",
+  "offer",
+  "user_joined",
+  "user_left",
 ] as const satisfies ReadonlyArray<keyof RealtimePayloads>;
 
 type PayloadKey = keyof RealtimePayloads;
@@ -127,6 +160,29 @@ function requireString(data: Record<string, unknown>, key: string): string {
     throw new Error(`invalid realtime event: ${key}`);
   }
   return value;
+}
+
+function parseCallId<Type extends ListedType>(
+  type: Type,
+  data: Record<string, unknown>,
+): { type: Type; call_id: number; account_id?: number } {
+  return {
+    type,
+    call_id: requireNumber(data, "call_id"),
+    account_id: optionalNumber(data, "account_id"),
+  };
+}
+
+function parseRelay<Type extends ListedType>(
+  type: Type,
+  data: Record<string, unknown>,
+): { type: Type; call_id: number; from_account_id?: number; payload?: unknown } {
+  return {
+    type,
+    call_id: requireNumber(data, "call_id"),
+    from_account_id: optionalNumber(data, "from_account_id"),
+    payload: data.payload,
+  };
 }
 
 const PARSERS: { [Type in ListedType]: (data: Record<string, unknown>) => RealtimeEvent } = {
@@ -210,6 +266,36 @@ const PARSERS: { [Type in ListedType]: (data: Record<string, unknown>) => Realti
     activity: optionalString(data, "activity") ?? "typing",
     display_name: optionalString(data, "display_name") ?? "",
   }),
+  answer: (data) => parseRelay("answer", data),
+  busy: (data) => parseCallId("busy", data),
+  call_accepted: (data) => parseCallId("call_accepted", data),
+  call_cancelled: (data) => parseCallId("call_cancelled", data),
+  call_declined: (data) => parseCallId("call_declined", data),
+  call_dismissed: (data) => ({
+    type: "call_dismissed",
+    call_id: requireNumber(data, "call_id"),
+    reason: optionalString(data, "reason"),
+  }),
+  call_ended: (data) => parseCallId("call_ended", data),
+  call_missed: (data) => ({ type: "call_missed", call_id: requireNumber(data, "call_id") }),
+  ice_candidate: (data) => parseRelay("ice_candidate", data),
+  incoming_call: (data) => ({
+    type: "incoming_call",
+    call_id: requireNumber(data, "call_id"),
+    conversation_id: requireNumber(data, "conversation_id"),
+    kind: optionalString(data, "kind") ?? "audio",
+    initiator_account_id: requireNumber(data, "initiator_account_id"),
+  }),
+  mute_state: (data) => ({
+    type: "mute_state",
+    call_id: requireNumber(data, "call_id"),
+    account_id: optionalNumber(data, "account_id"),
+    mic_on: data.mic_on === true,
+    cam_on: data.cam_on === true,
+  }),
+  offer: (data) => parseRelay("offer", data),
+  user_joined: (data) => parseCallId("user_joined", data),
+  user_left: (data) => parseCallId("user_left", data),
 };
 
 export function parseRealtimeEvent(data: unknown): RealtimeEvent {

@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 10.2 |
-| **Next session** | 11.1 |
+| **Last completed** | 11.1 |
+| **Next session** | 11.2 |
 | **Phase** | P11 — Calls |
-| **Sessions remaining in phase** | 3 (11.1–11.3) |
+| **Sessions remaining in phase** | 2 (11.2–11.3) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 11.1 — Lifecycle operation, signaling authorization, timeouts, call system events**
+**Session 11.2 — WebRTC engine port with ICE restart**
 
-Deliverable: Lifecycle operation, signaling authorization, timeouts, call system events
+Deliverable: WebRTC engine port with ICE restart
 
-Docs: SCHEMA §3 (calls); GAP §5; **AUDIT §2.6 in full** incl. the state diagram
+Docs: GAP §5; AUDIT §2.6 (BR-62, BR-69, BR-70, BR-111), §5 (F-32)
 
-Legacy to read: `cognify/app/services/call_lifecycle_service.rb`, `call_history_service.rb`, `ice_server_service.rb`, `app/channels/signaling_channel.rb`, `app/jobs/expire_stale_calls_job.rb`, `app/models/call_session.rb`, `call_participant.rb`
+Legacy to read: `botverse/src/lib/webrtc/engine.ts` (**981 lines — read in full; this is the largest body of validated logic being carried across**), `botverse/src/lib/webrtc/index.ts`, `botverse/src/hooks/useWebRTCManager.ts`, `useSignalingChannel.ts`
 
 ---
 
@@ -75,6 +75,7 @@ Legacy to read: `cognify/app/services/call_lifecycle_service.rb`, `call_history_
 | 9.4 | Slash commands (NR-45): `bot_commands`, builtins, `/` menu, invocation through P3 send | `bot_commands` plus builtins (`sticker`, `gif`, `help`). `GET /conversations/:id/commands` lists builtins and commands of bots present in the chat. `/sticker` and `/gif` stay client pickers; other invocations go through `Messages::Send` with `client_nonce` and position. Group slash dispatch without @mention. Prompt assembler injects command context. Playwright stream/cancel/regenerate/rewrite/slash still waits for live AI/Cable. |
 | 10.1 | Cascade resolver, timezone-aware DND, F-9 and F-21 fixes | Four-scope cascade over one `preferences` document (`defaults → global → kind:* → conversation:<id>`). `Notifications::Resolve(account:, conversation:, message:)` requires the message so mentions-only cannot silence a group (F-9). DND uses `locale.timezone` including overnight `dnd_days` (F-21). Mute is checked once inside the resolver (BR-101). Channels stay silent (BR-105). Web Push, fanout, silent send, and reminder delivery wait for 10.2. |
 | 10.2 | Web push delivery, batched fanout, subscription lifecycle, delivered-watermark wiring, silent send (NR-23) and reminders (NR-24) | `Push::DeliveryChannel` → `Push::WebPush` with VAPID. Subscribe/unsubscribe + public key. Fanout batches; visible push only when Resolve says notify and the message is not silent; muted/channel/silent/DND/none still advance delivered (Q-5, NR-23, BR-105). 410 destroys the subscription (BR-103). Shared chats prefix `[@username]` (BR-104). Reminders push after Cable. Client SW click deep-links with `?account=`. Locked-phone DoD is documented, not executed. |
+| 11.1 | Lifecycle operation, signaling authorization, timeouts, call system events | `webrtc_calls` default off (404). Ringing → active → ended/missed/declined including all four paths to `missed`. Busy via the live-participant unique index (BR-63). Timeout emits `call_missed` not `call_cancelled` (BR-65). `unsubscribed` cancels a still-ringing initiator (BR-66). One system message per call, edited in place (BR-67). SignalingChannel relays only between participants (BR-69). ICE: coturn HMAC first, Metered if unset, STUN fallback (BR-71). Client event union is typed with router no-ops. Engine/ICE restart waits for 11.2; UI/Playwright/screen share wait for 11.3. |
 
 ---
 

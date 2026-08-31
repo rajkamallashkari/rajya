@@ -26,7 +26,7 @@ module Realtime
     report_created
     sidebar_update
     typing
-  ].freeze
+  ].freeze + Calls::SIGNALING_EVENTS
   EPHEMERAL_EVENTS = %w[
     attachment_processed generation_cancelled generation_chunk generation_started typing
   ].freeze
