@@ -1,6 +1,7 @@
-# One job carrying a recipient list (F-19). Successful acceptance advances
-# the delivered watermark even when the conversation is muted (Q-5). Real
-# Web Push delivery is P10.2; this is the test-double seam.
+# One job carrying a recipient list (F-19). Visible Web Push is skipped for
+# silent send (NR-23), channels (BR-105), mute/DND/level, but the delivered
+# watermark still advances — including when muted (Q-5). A successful push
+# acceptance is the delivery signal when a notification is actually sent.
 module Push
   class Fanout < ApplicationOperation
     def call(event:, payload:, recipient_account_ids:)
@@ -21,14 +22,31 @@ module Push
       message = Message.find_by(id: payload["message_id"] || payload[:message_id])
       return if message.nil?
 
-      (recipient_account_ids - [ message.sender_account_id ]).each do |account_id|
-        account = Account.find_by(id: account_id)
-        next if account.nil?
-
-        Receipts::Advance.call(
-          account: account, conversation: message.conversation, position: message.position, kind: "delivered"
-        )
+      Array(recipient_account_ids).each_slice(Settings.fetch(:fanout_batch_size)) do |batch|
+        (batch - [ message.sender_account_id ]).each { |account_id| deliver_to(message, account_id) }
       end
+    end
+
+    def deliver_to(message, account_id)
+      account = Account.find_by(id: account_id)
+      return if account.nil? || account.user.nil?
+
+      resolution = Notifications::Resolve.call(
+        account: account, conversation: message.conversation, message: message
+      )
+      if message.silent || !resolution.success? || !resolution.value.notify
+        mark_delivered!(account, message)
+        return
+      end
+
+      payload = Payload.for_message(account: account, message: message, settings: resolution.value.settings)
+      mark_delivered!(account, message) if DeliveryChannel.deliver(account: account, payload: payload)
+    end
+
+    def mark_delivered!(account, message)
+      Receipts::Advance.call(
+        account: account, conversation: message.conversation, position: message.position, kind: "delivered"
+      )
     end
   end
 end

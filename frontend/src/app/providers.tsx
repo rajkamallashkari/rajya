@@ -3,11 +3,13 @@ import { type ReactNode, useState } from "react";
 import { ThemeProvider } from "@/app/theme-provider";
 import { createQueryClient } from "@/shared/lib/query/client";
 import { useOutboxLifecycle } from "@/shared/lib/outbox/lifecycle";
+import { usePushSubscription } from "@/features/auth/hooks/use-push-subscription";
 import { Toaster } from "@/shared/ui/toast";
 import { TooltipProvider } from "@/shared/ui/tooltip";
 
 function OutboxBridge({ children }: { children: ReactNode }) {
   useOutboxLifecycle();
+  usePushSubscription();
   return children;
 }
 

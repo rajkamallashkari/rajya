@@ -75,6 +75,16 @@ RSpec.describe Realtime do
     expect(captured.map { |row| row.fetch(:stream) }).to eq([ "account:4" ])
   end
 
+  it "splits fanout into batches from the registry size (F-19)" do
+    owner = create(:user)
+    member = create(:account)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ member ])
+    stub_setting(:fanout_batch_size, 1, category: "notifications")
+
+    expect { described_class.publish(conversation, :message_created, "message_id" => 9) }
+      .to have_enqueued_job(Push::FanoutJob).exactly(2).times
+  end
+
   it "does not enqueue push or sidebar_update for typing (NR-3)" do
     owner = create(:user)
     member = create(:account)

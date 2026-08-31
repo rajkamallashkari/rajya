@@ -20,6 +20,9 @@ gem "rack-attack"
 # WebAuthn passkeys (session 2.3). Challenges live in Rails.cache, not cookies.
 gem "webauthn"
 
+# Web Push (VAPID) — BR-103. Session 10.2.
+gem "web-push"
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 

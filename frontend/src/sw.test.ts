@@ -11,9 +11,11 @@ describe("sw entry", () => {
       clients: {
         claim: vi.fn(),
         matchAll: async () => [{ postMessage: (data: unknown) => posted.push(data) }],
+        openWindow: async () => null,
       },
       caches: { open: vi.fn(), keys: vi.fn(), delete: vi.fn() },
       fetch: vi.fn(),
+      registration: { showNotification: vi.fn() },
     });
     await queueOutbox(
       1,
@@ -29,6 +31,8 @@ describe("sw entry", () => {
     expect(addEventListener).toHaveBeenCalledWith("activate", expect.any(Function));
     expect(addEventListener).toHaveBeenCalledWith("fetch", expect.any(Function));
     expect(addEventListener).toHaveBeenCalledWith("sync", expect.any(Function));
+    expect(addEventListener).toHaveBeenCalledWith("push", expect.any(Function));
+    expect(addEventListener).toHaveBeenCalledWith("notificationclick", expect.any(Function));
 
     const sync = addEventListener.mock.calls.find((call) => call[0] === "sync")?.[1] as
       | ((event: { lastChance?: boolean; tag: string; waitUntil: (promise: Promise<unknown>) => void }) => void)

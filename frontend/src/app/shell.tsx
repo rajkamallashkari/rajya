@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ImpersonationBanner } from "@/app/banners/impersonation-banner";
 import { OfflineBanner } from "@/app/banners/offline-banner";
@@ -34,18 +34,28 @@ export function AppShell() {
   );
   const mobile = useMobileViewport();
   const hydrateAccounts = useAccountsStore((state) => state.hydrate);
+  const setActiveAccount = useAccountsStore((state) => state.setActive);
   const needsOnboarding = useAccountsStore((state) => {
     const active = state.accounts.find((account) => account.id === state.activeAccountId);
     return active !== undefined && !active.onboarded;
   });
   const conversations = useConversations();
   const params = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   useAccountChannel();
 
   useEffect(() => {
     hydrateAccounts();
   }, [hydrateAccounts]);
+
+  useEffect(() => {
+    const account = Number(searchParams.get("account"));
+    if (!Number.isFinite(account) || account < 1) {
+      return;
+    }
+    setActiveAccount(account);
+  }, [searchParams, setActiveAccount]);
 
   useEffect(() => {
     const conversationId = params.conversationId;

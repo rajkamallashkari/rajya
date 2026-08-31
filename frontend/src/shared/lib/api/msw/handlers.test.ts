@@ -93,6 +93,8 @@ const expectedPaths = [
   "/api/v1/polls/{id}",
   "/api/v1/polls/{id}/close",
   "/api/v1/polls/{id}/vote",
+  "/api/v1/push_subscriptions",
+  "/api/v1/push_subscriptions/vapid",
   "/api/v1/reports",
   "/api/v1/reports/reasons",
   "/api/v1/saved_messages",
@@ -986,6 +988,16 @@ describe("MSW handlers", () => {
       params: { path: { id: 1 } },
     });
     expect(cancelledReminder.data?.ok).toBe(true);
+    const vapid = await client.GET("/api/v1/push_subscriptions/vapid");
+    expect(vapid.data?.public_key).toBe("vapid-public");
+    const subscribed = await client.POST("/api/v1/push_subscriptions", {
+      body: { endpoint: "https://push.example/1", keys: { p256dh: "p", auth: "a" } },
+    });
+    expect(subscribed.response.status).toBe(201);
+    const unsubscribed = await client.DELETE("/api/v1/push_subscriptions", {
+      params: { query: { endpoint: "https://push.example/1" } },
+    });
+    expect(unsubscribed.data?.ok).toBe(true);
     const forwardedMissing = await client.POST("/api/v1/messages/{id}/forward", {
       params: { path: { id: 0 } },
       body: {},

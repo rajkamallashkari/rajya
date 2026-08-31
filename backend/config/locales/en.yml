@@ -215,5 +215,11 @@ en:
   passkeys:
     default_nickname: "Passkey"
 
+  push:
+    preview_hidden: "New message"
+    reminder:
+      body: "You asked to be reminded about this message."
+      title: "Reminder"
+
   whatsapp:
     verified: "✅ Verified"

@@ -2572,6 +2572,68 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Message"
+  "/api/v1/push_subscriptions/vapid":
+    get:
+      summary: VAPID public key
+      tags:
+      - Push
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/VapidKey"
+  "/api/v1/push_subscriptions":
+    post:
+      summary: Register a Web Push subscription
+      tags:
+      - Push
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/WebPushSubscription"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                endpoint:
+                  type: string
+                keys:
+                  type: object
+                  properties:
+                    p256dh:
+                      type: string
+                    auth:
+                      type: string
+    delete:
+      summary: Remove a Web Push subscription
+      tags:
+      - Push
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: endpoint
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: removed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
   "/api/v1/reports":
     post:
       summary: Submit a report
@@ -4354,6 +4416,24 @@ components:
       properties:
         ok:
           type: boolean
+    VapidKey:
+      type: object
+      required:
+      - public_key
+      properties:
+        public_key:
+          type: string
+          nullable: true
+    WebPushSubscription:
+      type: object
+      required:
+      - id
+      - endpoint
+      properties:
+        id:
+          type: integer
+        endpoint:
+          type: string
     ExportJob:
       type: object
       required:

@@ -21,7 +21,8 @@ describe("service worker registration", () => {
     const scope: ServiceWorkerScope = {
       addEventListener: (type, listener) => listeners.set(type, listener),
       skipWaiting: async () => undefined,
-      clients: { claim: async () => undefined },
+      clients: { claim: async () => undefined, matchAll: async () => [], openWindow: async () => null },
+      registration: { showNotification: async () => undefined },
     };
     const caches = {
       open: async () => ({
@@ -42,7 +43,12 @@ describe("service worker registration", () => {
       respondWith,
     } as unknown as Event);
     listeners.get("sync")?.({ tag: "outbox-sync", waitUntil } as unknown as Event);
-    expect(listeners.size).toBe(4);
+    listeners.get("push")?.({ data: { json: () => ({}) }, waitUntil } as unknown as Event);
+    listeners.get("notificationclick")?.({
+      notification: { close: () => undefined },
+      waitUntil,
+    } as unknown as Event);
+    expect(listeners.size).toBe(6);
     expect(waitUntil).toHaveBeenCalled();
   });
 });

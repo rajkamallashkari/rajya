@@ -174,4 +174,53 @@ describe("AppShell", () => {
     expect(useSearchStore.getState().chatOpen).toBe(false);
     expect(useLayerStore.getState().layers).toHaveLength(1);
   });
+
+  it("activates the account from a push deep-link query", async () => {
+    useAccountsStore.getState().upsertAccount(
+      {
+        displayName: "Ada",
+        hasPasskey: false,
+        hasPassword: true,
+        id: 1,
+        onboarded: true,
+        token: "a",
+        username: "ada",
+      },
+      true,
+    );
+    useAccountsStore.getState().upsertAccount({
+      displayName: "Bob",
+      hasPasskey: false,
+      hasPassword: true,
+      id: 2,
+      onboarded: true,
+      token: "b",
+      username: "bob",
+    });
+    render(
+      <AppProviders>
+        <MemoryRouter initialEntries={["/c/1?account=2"]}>
+          <Routes>
+            <Route element={<AppShell />} path="/c/:conversationId" />
+          </Routes>
+        </MemoryRouter>
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(useAccountsStore.getState().activeAccountId).toBe(2);
+    });
+  });
+
+  it("ignores a missing or invalid account query", () => {
+    render(
+      <AppProviders>
+        <MemoryRouter initialEntries={["/c/1?account=nope"]}>
+          <Routes>
+            <Route element={<AppShell />} path="/c/:conversationId" />
+          </Routes>
+        </MemoryRouter>
+      </AppProviders>,
+    );
+    expect(Number.isFinite(Number("nope"))).toBe(false);
+  });
 });

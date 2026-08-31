@@ -118,6 +118,14 @@ Until automation lands with the live DB:
 3. Restore check: `./ops/backups/restore.sh /path/to.dump rajya_scratch` then
    diff schema against production (P0 DoD).
 
+### Web Push (session 10.2)
+
+Set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` in `.env`
+(generate with `bundle exec ruby -e 'k=WebPush.generate_key; puts k.public_key, k.private_key'`
+from `backend/`). Manual check: install the PWA on a locked phone, send a DM,
+tap the notification — it should open `/c/:id` for the right account. iOS only
+delivers Web Push to an installed PWA, not a Safari tab.
+
 ### Meta WhatsApp app review (long-lead)
 
 Submit `whatsapp_business_messaging` review during P0 (TARGET §4.8 / NR-9).

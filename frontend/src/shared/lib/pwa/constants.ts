@@ -5,6 +5,7 @@ export const APP_SHELL_URLS = ["/", "/manifest.json", "/favicon.ico"] as const;
 export const IMMUTABLE_ASSET = /\/assets\/.*\.(js|css|woff2?|ttf|otf|eot)(\?.*)?$/;
 export const API_PREFIX = "/api/";
 export const CABLE_PREFIX = "/cable";
+export const BASE64_GROUP = 4;
 
 export function isHttpGet(method: string, protocol: string): boolean {
   return method === "GET" && (protocol === "http:" || protocol === "https:");

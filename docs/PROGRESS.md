@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 10.1 |
-| **Next session** | 10.2 |
-| **Phase** | P10 — Notifications |
-| **Sessions remaining in phase** | 1 (10.2) |
+| **Last completed** | 10.2 |
+| **Next session** | 11.1 |
+| **Phase** | P11 — Calls |
+| **Sessions remaining in phase** | 3 (11.1–11.3) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 10.2 — Web push delivery, batched fanout, subscription lifecycle, delivered-watermark wiring, silent send (NR-23) and reminders (NR-24)**
+**Session 11.1 — Lifecycle operation, signaling authorization, timeouts, call system events**
 
-Deliverable: Web push delivery, batched fanout, subscription lifecycle, delivered-watermark wiring, silent send (NR-23) and reminders (NR-24)
+Deliverable: Lifecycle operation, signaling authorization, timeouts, call system events
 
-Docs: GAP §7; TARGET §9 (`DeliveryChannel`); SCHEMA §12.6, §12.16; AUDIT §2.9 (BR-103…105), §5 (F-19)
+Docs: SCHEMA §3 (calls); GAP §5; **AUDIT §2.6 in full** incl. the state diagram
 
-Legacy to read: `cognify/app/services/web_push_service.rb`, `app/jobs/send_push_notification_job.rb`, `app/models/web_push_subscription.rb`, `app/controllers/api/v1/push_subscriptions_controller.rb`
+Legacy to read: `cognify/app/services/call_lifecycle_service.rb`, `call_history_service.rb`, `ice_server_service.rb`, `app/channels/signaling_channel.rb`, `app/jobs/expire_stale_calls_job.rb`, `app/models/call_session.rb`, `call_participant.rb`
 
 ---
 
@@ -74,6 +74,7 @@ Legacy to read: `cognify/app/services/web_push_service.rb`, `app/jobs/send_push_
 | 9.3 | Bot memory + pgvector, DS-1 disclosure, helpers, style profile consent, Bot Builder, personas | Shared memory with provenance, unfiltered across accounts (NR-11). DS-1 profile line and first-message notice. Rewrite into the composer; suggest-reply and translate in the message menu; translations cached in metadata (BR-86). Style profile defaults off (F-11). Bot Builder propose/approve/decline; 30 fresh personas; `deactivated_at` hides from the directory (BR-81). NR-F1 replica bot is a seam only. Admin approve UI waits for P12.5. Slash commands wait for 9.4. Playwright stream/cancel/regenerate/rewrite/slash waits. |
 | 9.4 | Slash commands (NR-45): `bot_commands`, builtins, `/` menu, invocation through P3 send | `bot_commands` plus builtins (`sticker`, `gif`, `help`). `GET /conversations/:id/commands` lists builtins and commands of bots present in the chat. `/sticker` and `/gif` stay client pickers; other invocations go through `Messages::Send` with `client_nonce` and position. Group slash dispatch without @mention. Prompt assembler injects command context. Playwright stream/cancel/regenerate/rewrite/slash still waits for live AI/Cable. |
 | 10.1 | Cascade resolver, timezone-aware DND, F-9 and F-21 fixes | Four-scope cascade over one `preferences` document (`defaults → global → kind:* → conversation:<id>`). `Notifications::Resolve(account:, conversation:, message:)` requires the message so mentions-only cannot silence a group (F-9). DND uses `locale.timezone` including overnight `dnd_days` (F-21). Mute is checked once inside the resolver (BR-101). Channels stay silent (BR-105). Web Push, fanout, silent send, and reminder delivery wait for 10.2. |
+| 10.2 | Web push delivery, batched fanout, subscription lifecycle, delivered-watermark wiring, silent send (NR-23) and reminders (NR-24) | `Push::DeliveryChannel` → `Push::WebPush` with VAPID. Subscribe/unsubscribe + public key. Fanout batches; visible push only when Resolve says notify and the message is not silent; muted/channel/silent/DND/none still advance delivered (Q-5, NR-23, BR-105). 410 destroys the subscription (BR-103). Shared chats prefix `[@username]` (BR-104). Reminders push after Cable. Client SW click deep-links with `?account=`. Locked-phone DoD is documented, not executed. |
 
 ---
 

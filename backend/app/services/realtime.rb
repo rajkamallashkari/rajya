@@ -178,7 +178,9 @@ module Realtime
     end
 
     def enqueue_push(item, recipient_account_ids)
-      Push::FanoutJob.perform_later(item.event.to_s, item.data, recipient_account_ids)
+      Array(recipient_account_ids).each_slice(Settings.fetch(:fanout_batch_size)) do |batch|
+        Push::FanoutJob.perform_later(item.event.to_s, item.data, batch)
+      end
     end
 
     def deliver_live(items)

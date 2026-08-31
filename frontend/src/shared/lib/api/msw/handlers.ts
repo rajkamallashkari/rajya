@@ -1023,6 +1023,15 @@ export const handlerMap = {
     const poll = findPoll(Number(params.id));
     return poll ? HttpResponse.json(poll) : jsonError(404);
   }),
+  "/api/v1/push_subscriptions/vapid": http.get("*/api/v1/push_subscriptions/vapid", () =>
+    HttpResponse.json({ public_key: "vapid-public" }),
+  ),
+  "/api/v1/push_subscriptions": http.all("*/api/v1/push_subscriptions", ({ request }) => {
+    if (request.method === "POST") {
+      return HttpResponse.json({ id: 1, endpoint: "https://push.example/1" }, { status: 201 });
+    }
+    return HttpResponse.json(ok);
+  }),
   "/api/v1/reports/reasons": http.get("*/api/v1/reports/reasons", () =>
     HttpResponse.json({
       reasons: [{ id: "spam", label: "Spam" }],

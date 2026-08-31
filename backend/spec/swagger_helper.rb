@@ -344,6 +344,21 @@ RSpec.configure do |config|
                 ok: { type: :boolean }
               }
             },
+            VapidKey: {
+              type: :object,
+              required: %w[public_key],
+              properties: {
+                public_key: { type: :string, nullable: true }
+              }
+            },
+            WebPushSubscription: {
+              type: :object,
+              required: %w[id endpoint],
+              properties: {
+                id: { type: :integer },
+                endpoint: { type: :string }
+              }
+            },
             ExportJob: {
               type: :object,
               required: %w[id format include_media status expires_at created_at],

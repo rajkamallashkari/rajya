@@ -8,11 +8,19 @@ import {
   type FetchEventLike,
   type SyncEventLike,
 } from "./handlers";
+import {
+  handleNotificationClick,
+  handlePush,
+  type NotificationClickEventLike,
+  type PushClients,
+  type PushEventLike,
+  type ShowNotificationScope,
+} from "./push-event";
 
-export interface ServiceWorkerScope {
+export interface ServiceWorkerScope extends ShowNotificationScope {
   addEventListener: (type: string, listener: (event: Event) => void) => void;
   skipWaiting: () => Promise<void>;
-  clients: { claim: () => Promise<void> };
+  clients: PushClients & { claim: () => Promise<void> };
 }
 
 export function registerServiceWorkerListeners(
@@ -34,5 +42,13 @@ export function registerServiceWorkerListeners(
   });
   scope.addEventListener("sync", (event) => {
     handleOutboxSync(event as unknown as SyncEventLike, drain);
+  });
+  scope.addEventListener("push", (event) => {
+    const pushEvent = event as unknown as PushEventLike;
+    pushEvent.waitUntil(handlePush(pushEvent, scope));
+  });
+  scope.addEventListener("notificationclick", (event) => {
+    const clickEvent = event as unknown as NotificationClickEventLike;
+    clickEvent.waitUntil(handleNotificationClick(clickEvent, scope.clients));
   });
 }

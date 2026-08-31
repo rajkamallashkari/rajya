@@ -150,6 +150,9 @@ Rails.application.routes.draw do
       end
       resources :gifs, only: :index
       resources :message_reminders, only: %i[index create update destroy]
+      get "push_subscriptions/vapid", to: "push_subscriptions#vapid"
+      post "push_subscriptions", to: "push_subscriptions#create"
+      delete "push_subscriptions", to: "push_subscriptions#destroy"
       resources :scheduled_messages, only: %i[index create update destroy] do
         member { post :send_now }
       end
