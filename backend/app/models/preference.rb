@@ -3,6 +3,8 @@
 class Preference < ApplicationRecord
   self.primary_key = "account_id"
 
+  DEFAULT_TIMEZONE = Preferences.defaults.dig("locale", "timezone").freeze
+
   belongs_to :account, inverse_of: :preference
 
   def privacy(key)

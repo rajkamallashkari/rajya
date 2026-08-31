@@ -100,6 +100,43 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+export function parseWallpaper(value: unknown): WallpaperPreference | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const wallpaperRaw = value as Record<string, unknown>;
+  return {
+    blur: isFiniteNumber(wallpaperRaw.blur)
+      ? clampUnit(wallpaperRaw.blur)
+      : DEFAULT_APPEARANCE.wallpaper.blur,
+    dim: isFiniteNumber(wallpaperRaw.dim)
+      ? clampUnit(wallpaperRaw.dim)
+      : DEFAULT_APPEARANCE.wallpaper.dim,
+    preset: isPreset(wallpaperRaw.preset)
+      ? wallpaperRaw.preset
+      : DEFAULT_APPEARANCE.wallpaper.preset,
+  };
+}
+
+export function wallpaperLayerStyle(
+  wallpaper: WallpaperPreference,
+  reduceTransparency = false,
+): Record<string, string> {
+  const properties = appearanceCustomProperties({
+    ...DEFAULT_APPEARANCE,
+    reduceTransparency,
+    wallpaper,
+  });
+  return {
+    "--wallpaper-blur": properties["--wallpaper-blur"] as string,
+    "--wallpaper-dim": properties["--wallpaper-dim"] as string,
+    "--wallpaper-image": properties["--wallpaper-image"] as string,
+  };
+}
+
 export function parseAppearance(value: unknown): AppearancePersonalisation {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     return {

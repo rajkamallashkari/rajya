@@ -5,6 +5,7 @@ export type Conversation = components["schemas"]["Conversation"];
 export type Message = components["schemas"]["Message"];
 export type MessagePage = components["schemas"]["MessagePage"];
 export type MessageInfo = components["schemas"]["MessageInfo"];
+export type Wallpaper = components["schemas"]["Wallpaper"];
 
 export async function listConversations(archived = false) {
   return unwrap(
@@ -251,6 +252,17 @@ export async function unpinConversation(id: number) {
       params: { path: { id } },
     }),
     "unpin_conversation_failed",
+  );
+}
+
+export async function updateConversationWallpaper(id: number, wallpaper: Wallpaper | null) {
+  return unwrap(
+    await apiClient().PATCH("/api/v1/conversations/{id}/wallpaper", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+      body: { wallpaper: wallpaper ?? undefined },
+    }),
+    "wallpaper_failed",
   );
 }
 

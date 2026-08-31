@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Mic, MicOff, PhoneOff, SwitchCamera, Video, VideoOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useCanFlipCamera } from "@/features/calls/hooks/use-can-flip-camera";
@@ -56,17 +56,17 @@ export function FloatingVideoOverlay() {
   const hasLiveTrack = primaryStream?.getVideoTracks().some((track) => track.readyState === "live");
   const hasVideo = Boolean(hasLiveTrack && feedCamOn);
 
-  const clearArmTimer = () => {
+  const clearArmTimer = useCallback(() => {
     if (armTimerRef.current) {
       clearTimeout(armTimerRef.current);
       armTimerRef.current = null;
     }
-  };
-  const closeControls = () => {
+  }, []);
+  const closeControls = useCallback(() => {
     clearArmTimer();
     setControlsOpen(false);
     setControlsArmed(false);
-  };
+  }, [clearArmTimer]);
   const openControls = () => {
     setControlsOpen(true);
     setControlsArmed(false);
@@ -77,7 +77,7 @@ export function FloatingVideoOverlay() {
     }, CALL_CONTROLS_ARM_MS);
   };
 
-  useEffect(() => () => clearArmTimer(), []);
+  useEffect(() => () => clearArmTimer(), [clearArmTimer]);
 
   useEffect(() => {
     if (!visible) {
@@ -85,7 +85,7 @@ export function FloatingVideoOverlay() {
       return;
     }
     bindVideoElement(videoRef.current, primaryStream ?? null, hasVideo);
-  }, [hasVideo, primaryStream, visible]);
+  }, [closeControls, hasVideo, primaryStream, visible]);
 
   useEffect(() => {
     if (!controlsOpen) {
@@ -99,7 +99,7 @@ export function FloatingVideoOverlay() {
     };
     document.addEventListener("pointerdown", onPointerDown, true);
     return () => document.removeEventListener("pointerdown", onPointerDown, true);
-  }, [controlsOpen, elRef]);
+  }, [closeControls, controlsOpen, elRef]);
 
   if (!visible) {
     return null;

@@ -7,9 +7,7 @@ class StickerPolicy < ApplicationPolicy
     def resolve
       return scope.none unless account
 
-      scope.joins(:sticker_pack).where(
-        "sticker_packs.owner_account_id = ? OR sticker_packs.published_at IS NOT NULL", account.id
-      )
+      scope.joins(:sticker_pack).merge(StickerPack.owned_by(account).or(StickerPack.published))
     end
   end
 end

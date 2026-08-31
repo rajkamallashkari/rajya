@@ -42,6 +42,13 @@ afterEach(() => {
   resetSearchStore();
 });
 
+async function liveThreadReady(text?: string): Promise<void> {
+  await screen.findByRole("textbox");
+  if (text) {
+    expect(screen.getByText(text)).toBeInTheDocument();
+  }
+}
+
 describe("conversation layers", () => {
   it("sends, edits the last message, and opens the profile on the demo path", async () => {
     const user = userEvent.setup();
@@ -58,6 +65,9 @@ describe("conversation layers", () => {
     expect(screen.getByText(en.composer.editing)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.composer.dismiss_edit }));
     fireEvent.keyDown(field, { key: SHORTCUTS.editLast });
+    expect(document.querySelector("[data-conversation-thread]")?.className).toContain(
+      "chat-wallpaper",
+    );
     await user.clear(field);
     await user.type(field, "edited");
     await user.keyboard("{Enter}");
@@ -118,6 +128,10 @@ describe("conversation layers", () => {
   it("loads a live conversation, sends, and opens message info", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     setAccessSession(testSession());
+    const conversation = findConversation(1);
+    if (conversation) {
+      conversation.wallpaper = { preset: "dusk", dim: 0.1, blur: 0 };
+    }
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -128,7 +142,11 @@ describe("conversation layers", () => {
         <ConversationThread conversationId="1" />
       </AppProviders>,
     );
-    expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
+    await screen.findByRole("textbox");
+    expect(screen.getByText("See you at the gate")).toBeInTheDocument();
+    expect(
+      document.querySelector("[data-conversation-thread]")?.getAttribute("style"),
+    ).toContain("--wallpaper-image");
     const field = screen.getByRole("textbox");
     await user.type(field, "/sticker");
     await user.click(await screen.findByRole("option", { name: /sticker/i }));
@@ -268,7 +286,8 @@ describe("conversation layers", () => {
         <ConversationThread conversationId="1" />
       </AppProviders>,
     );
-    expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
+    await screen.findByRole("textbox");
+    expect(screen.getByText("See you at the gate")).toBeInTheDocument();
     await user.type(screen.getByRole("textbox"), "queued-body");
     await user.keyboard("{Enter}");
     expect(await screen.findByText("queued-body")).toBeInTheDocument();
@@ -306,7 +325,7 @@ describe("conversation layers", () => {
         <ConversationThread conversationId="1" />
       </AppProviders>,
     );
-    expect(await screen.findByText("m60")).toBeInTheDocument();
+    await liveThreadReady("m60");
     expect(screen.queryByText("m1")).not.toBeInTheDocument();
     const scroller = document.querySelector("[data-layer-scroll='1']") as HTMLDivElement;
     Object.defineProperty(scroller, "scrollTop", { configurable: true, writable: true, value: 0 });
@@ -422,7 +441,7 @@ describe("conversation layers", () => {
         <ConversationThread conversationId="1" />
       </AppProviders>,
     );
-    expect(await screen.findByText("Are you free later?")).toBeInTheDocument();
+    await liveThreadReady("Are you free later?");
     const bubble = screen.getByText("Are you free later?").closest("[data-message-bubble]");
     fireEvent.contextMenu(bubble as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.report }));
@@ -828,8 +847,8 @@ describe("conversation layers", () => {
         <ConversationThread conversationId="1" />
       </AppProviders>,
     );
-    const botBody = await screen.findByText("Bot hello");
-    fireEvent.contextMenu(botBody.closest("[data-message-bubble]") as HTMLElement);
+    await liveThreadReady("Bot hello");
+    fireEvent.contextMenu(screen.getByText("Bot hello").closest("[data-message-bubble]") as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.regenerate }));
     expect(await screen.findByText(en.messages.deleted)).toBeInTheDocument();
     testCable().emit({
@@ -882,13 +901,14 @@ describe("conversation layers", () => {
         <ConversationThread conversationId="15" />
       </AppProviders>,
     );
-    expect(await screen.findByText("Ping 79")).toBeInTheDocument();
+    await liveThreadReady("Ping 79");
     rerender(
       <AppProviders>
         <ConversationThread conversationId="1" />
       </AppProviders>,
     );
-    expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
+    await screen.findByRole("textbox");
+    expect(screen.getByText("See you at the gate")).toBeInTheDocument();
     rerender(
       <AppProviders>
         <ConversationThread conversationId="15" />
@@ -951,7 +971,8 @@ describe("conversation layers", () => {
         <ConversationThread conversationId="1" />
       </AppProviders>,
     );
-    expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
+    await screen.findByRole("textbox");
+    expect(screen.getByText("See you at the gate")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.ai.summarize }));
     expect(await screen.findByText("Ship Friday")).toBeInTheDocument();
     fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
@@ -983,7 +1004,8 @@ describe("conversation layers", () => {
         <ConversationThread conversationId="1" />
       </AppProviders>,
     );
-    expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
+    await screen.findByRole("textbox");
+    expect(screen.getByText("See you at the gate")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.calls.start_audio }));
     expect(spy).toHaveBeenCalledWith(1, "audio", 1);
     await user.click(screen.getByRole("button", { name: en.calls.start_video }));
@@ -1000,7 +1022,8 @@ describe("conversation layers", () => {
         <ConversationThread conversationId="1" />
       </AppProviders>,
     );
-    expect(await screen.findByText("See you at the gate")).toBeInTheDocument();
+    await screen.findByRole("textbox");
+    expect(screen.getByText("See you at the gate")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: en.calls.start_audio })).toBeNull();
     if (row) {
       row.kind = "direct";

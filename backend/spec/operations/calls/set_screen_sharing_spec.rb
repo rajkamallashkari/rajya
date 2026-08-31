@@ -63,4 +63,20 @@ RSpec.describe Calls::SetScreenSharing do
     call.participant_for(callee.account.id).update!(status: "left")
     expect(described_class.call(account: callee.account, call: call.reload, sharing: true).error_code).to eq(:forbidden)
   end
+
+  it "skips persist when the participant row disappears under the lock" do
+    initiator, _callee, call = active_direct
+    allow(call).to receive(:with_lock).and_wrap_original do |method, &block|
+      call.participant_for(initiator.account.id).destroy!
+      method.call(&block)
+    end
+
+    expect(described_class.call(account: initiator.account, call: call, sharing: true)).to be_success
+  end
+
+  it "rejects when the participant row is gone before the lock" do
+    initiator, _callee, call = active_direct
+    allow(call).to receive_messages(includes_account?: true, participant_for: nil)
+    expect(described_class.call(account: initiator.account, call: call, sharing: true).error_code).to eq(:forbidden)
+  end
 end

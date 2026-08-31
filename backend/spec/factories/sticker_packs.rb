@@ -3,7 +3,7 @@ FactoryBot.define do
     sequence(:slug) { |n| "pack-#{n}" }
     sequence(:name) { |n| "Pack #{n}" }
     kind { "sticker" }
-    association :owner_account, factory: :account
+    owner_account factory: :account
 
     trait :system do
       owner_account { nil }

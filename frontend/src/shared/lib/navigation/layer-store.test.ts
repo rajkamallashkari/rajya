@@ -3,6 +3,7 @@ import {
   conversationLayer,
   layersForOpenConversation,
   partitionLayers,
+  settingsLayer,
   useLayerStore,
 } from "./layer-store";
 
@@ -68,6 +69,12 @@ describe("layer-store", () => {
 
   it("partitions the conversation from the detail stack", () => {
     expect(conversationLayer("ada", "Ada")).toEqual(ada);
+    expect(settingsLayer("Settings")).toEqual({
+      conversationId: "settings",
+      id: "settings",
+      kind: "settings",
+      title: "Settings",
+    });
     expect(partitionLayers([])).toEqual({ conversation: undefined, details: [] });
     expect(partitionLayers([ada, adaProfile, memberProfile])).toEqual({
       conversation: ada,

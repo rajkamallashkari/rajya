@@ -84,4 +84,10 @@ RSpec.describe "Preferences registry round-trip", type: :request do
       expect(JSON.parse(response.body).dig("data", "chat", "session_only_flag")).to be(true)
     end
   end
+
+  it "returns 422 when data is not an object" do
+    user = create(:user)
+    patch "/api/v1/preferences", headers: auth_headers_for(user), as: :json, params: { data: "x" }
+    expect(response).to have_http_status(:unprocessable_content)
+  end
 end

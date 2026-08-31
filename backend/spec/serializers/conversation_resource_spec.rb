@@ -140,7 +140,8 @@ RSpec.describe ConversationResource do
       "last_message" => nil,
       "pinned_at" => nil,
       "manually_unread_at" => nil,
-      "archived_at" => nil
+      "archived_at" => nil,
+      "wallpaper" => nil
     )
   end
 end

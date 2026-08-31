@@ -267,6 +267,131 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conversations/{id}/wallpaper": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set the viewer's per-conversation wallpaper (NR-42) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        wallpaper?: components["schemas"]["Wallpaper"];
+                    };
+                };
+            };
+            responses: {
+                /** @description updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Conversation"];
+                    };
+                };
+                /** @description invalid wallpaper */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/font_configs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the curated font catalogue */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FontConfigList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accent_configs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the curated accent catalogue */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccentConfigList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/attachments/{id}/download": {
         parameters: {
             query?: never;
@@ -6776,6 +6901,33 @@ export interface components {
             /** Format: date-time */
             updated_at: string | null;
         };
+        Wallpaper: {
+            /** @enum {string} */
+            preset: "none" | "dusk" | "mist" | "grove";
+            dim: number;
+            blur: number;
+        };
+        FontConfig: {
+            id: number;
+            name: string;
+            font_family_value: string;
+            google_font_url?: string | null;
+            position?: number | null;
+        };
+        FontConfigList: {
+            font_configs: components["schemas"]["FontConfig"][];
+        };
+        AccentConfig: {
+            id: string;
+            label: string;
+            hex: string;
+            is_light_compatible: boolean;
+            is_dark_compatible: boolean;
+            position?: number | null;
+        };
+        AccentConfigList: {
+            accent_configs: components["schemas"]["AccentConfig"][];
+        };
         PhoneVerification: {
             code?: string | null;
             wa_url?: string | null;
@@ -7006,6 +7158,7 @@ export interface components {
             pinned_at?: string | null;
             /** Format: date-time */
             manually_unread_at?: string | null;
+            wallpaper?: components["schemas"]["Wallpaper"];
             peer?: components["schemas"]["Account"];
             last_message?: components["schemas"]["MessagePreview"];
             members: components["schemas"]["ConversationMember"][];

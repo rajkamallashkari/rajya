@@ -15,6 +15,7 @@ export {
   DEFAULT_APPEARANCE,
   PALETTE_CONTRAST_PAIRS,
   parseAppearance,
+  parseWallpaper,
   palettePassesContrast,
   resolveAppearance,
   SKIN_TONE_MAX,
@@ -23,6 +24,7 @@ export {
   firstValue,
   WALLPAPER_IMAGES,
   WALLPAPER_PRESET_IDS,
+  wallpaperLayerStyle,
 } from "./appearance";
 export type {
   AppearancePersonalisation,
@@ -61,3 +63,4 @@ export {
 } from "./constants";
 export { DEFAULT_SLIDERS, TYPOGRAPHY } from "./typography-config";
 export type { DerivedTypography, TypographySliders } from "./typography-config";
+export { applyFont, DEFAULT_FONT_FAMILY, FONT_LINK_ID, withFontDisplaySwap } from "./fonts";

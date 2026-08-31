@@ -27,7 +27,7 @@ class StickerPackPolicy < ApplicationPolicy
     def resolve
       return scope.none unless account
 
-      scope.where("owner_account_id = ? OR published_at IS NOT NULL", account.id)
+      scope.owned_by(account).or(scope.published)
     end
   end
 

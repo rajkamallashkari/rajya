@@ -54,4 +54,25 @@ RSpec.describe Preferences::Registry do
     end
     expect(Preferences.defaults.dig("chat", "enter_to_send")).to be(true)
   end
+
+  it "boots the schema when the in-memory tree is empty" do
+    described_class.instance_variable_set(:@tree, nil)
+    described_class.boot
+    expect(described_class.tree.keys).to include("appearance")
+  ensure
+    described_class.instance_variable_set(:@tree, nil)
+    described_class.boot
+  end
+
+  it "includes scopes on a field in the exported payload" do
+    described_class.with_temporary_field(
+      "chat", "demo", type: :enum, values: %w[a], default: "a", scopes: %w[global]
+    ) do
+      expect(described_class.payload.dig("fields", "chat.demo", "scopes")).to eq([ "global" ])
+    end
+  end
+
+  it "renders empty unions when a field is missing from the exporter tree" do
+    expect(described_class::Exporter.new({}, []).to_s).to include("export interface PreferenceDocument")
+  end
 end

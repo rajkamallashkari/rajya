@@ -1,4 +1,4 @@
-import { Bot, Filter } from "lucide-react";
+import { Bot, Filter, Settings } from "lucide-react";
 import { useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
@@ -34,7 +34,7 @@ import {
 import { formatMessageTime } from "@/features/messages";
 import { GlobalSearchHits, SearchFilterSheet } from "@/features/search";
 import { useSearchStore } from "@/features/search/store/search-store";
-import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { conversationLayer, settingsLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { Button } from "@/shared/ui/button";
 import { IconButton } from "@/shared/ui/icon-button";
 import { Input } from "@/shared/ui/input";
@@ -111,6 +111,13 @@ export function ConversationList({
             {t("app.tagline")}
           </p>
         </div>
+        <IconButton
+          aria-label={t("shell.settings")}
+          onClick={() => pushLayer(settingsLayer(t("shell.settings")))}
+          type="button"
+        >
+          <Settings className="h-[var(--icon-size)] w-[var(--icon-size)]" />
+        </IconButton>
         <Button asChild size="sm" variant="ghost">
           <Link to="/dev/gallery">{t("app.gallery")}</Link>
         </Button>

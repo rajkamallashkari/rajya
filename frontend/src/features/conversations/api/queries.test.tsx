@@ -45,6 +45,7 @@ import {
   useSendMessage,
   useUnsendMessage,
   useUpdateConversation,
+  useUpdateConversationWallpaper,
   useUpdateFolder,
   useVotePoll,
 } from "./queries";
@@ -525,11 +526,18 @@ describe("message queries", () => {
           { status: 500 },
         ),
       ),
+      http.patch("*/api/v1/conversations/:id/wallpaper", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
     );
 
     function OrgHarness() {
       const pin = usePinConversation();
       const unread = useMarkConversationUnread();
+      const wallpaper = useUpdateConversationWallpaper();
       const replies = useSavedReplies();
       const commands = useConversationCommands(1);
       const remind = useCreateReminder();
@@ -548,6 +556,20 @@ describe("message queries", () => {
           </Button>
           <Button onClick={() => unread.mutate({ id: 1, unread: false })} type="button">
             read-chat
+          </Button>
+          <Button
+            onClick={() =>
+              wallpaper.mutate({
+                id: 1,
+                wallpaper: { preset: "dusk", dim: 0.1, blur: 0 },
+              })
+            }
+            type="button"
+          >
+            wallpaper-chat
+          </Button>
+          <Button onClick={() => wallpaper.mutate({ id: 1, wallpaper: null })} type="button">
+            wallpaper-clear
           </Button>
           <Button
             onClick={() => remind.mutate({ messageId: 101, remindAt: "2099-01-01T09:00:00.000Z" })}
@@ -571,6 +593,8 @@ describe("message queries", () => {
     await user.click(screen.getByRole("button", { name: "unpin-chat" }));
     await user.click(screen.getByRole("button", { name: "unread-chat" }));
     await user.click(screen.getByRole("button", { name: "read-chat" }));
+    await user.click(screen.getByRole("button", { name: "wallpaper-chat" }));
+    await user.click(screen.getByRole("button", { name: "wallpaper-clear" }));
     await user.click(screen.getByRole("button", { name: "remind" }));
   });
 

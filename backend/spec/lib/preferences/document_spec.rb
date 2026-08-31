@@ -158,6 +158,65 @@ RSpec.describe Preferences::Document do
     it "rejects a notifications hash that is not an object at the namespace" do
       expect(described_class.apply({}, { "notifications" => [] }).errors).to have_key("notifications")
     end
+
+    it "fills defaults when a stored namespace is not a hash" do
+      expect(described_class.materialize("appearance" => "dark").dig("appearance", "theme")).to eq("system")
+    end
+
+    it "coerces an integer that has no min or max" do
+      Preferences::Registry.with_temporary_field("chat", "count", type: :integer, default: 0) do
+        result = described_class.apply({}, { "chat" => { "count" => "4" } })
+        expect(result.ok?).to be(true)
+        expect(result.stored.dig("chat", "count")).to eq(4)
+      end
+    end
+
+    it "rejects an unknown notification scope during coerce" do
+      errors = {}
+      node = Preferences::Registry.tree.fetch("notifications")
+      described_class.send(:coerce_scoped, node, { "kind:nope" => {} }, "notifications", errors)
+      expect(errors).to have_key("notifications.kind:nope")
+    end
+
+    it "rejects an unknown field during coerce" do
+      errors = {}
+      fields = Preferences::Registry.tree.fetch("chat").fetch(:fields)
+      described_class.send(:coerce_fields, fields, { "nope" => true }, "chat", errors)
+      expect(errors).to have_key("chat.nope")
+    end
+
+    it "rejects a non-object value during field coerce" do
+      errors = {}
+      fields = Preferences::Registry.tree.fetch("chat").fetch(:fields)
+      described_class.send(:coerce_fields, fields, "x", "chat", errors)
+      expect(errors).to have_key("chat")
+    end
+
+    it "rejects a field lookup when the node has no field map" do
+      errors = {}
+      described_class.send(:reject_unknown_field, { type: :namespace }, "theme", "dark", "appearance", errors)
+      expect(errors).to have_key("appearance")
+    end
+
+    it "accepts a six-item quick-reaction list" do
+      result = described_class.apply({}, { "chat" => { "quick_reactions" => %w[a b c d e f] } })
+      expect(result.stored.dig("chat", "quick_reactions")).to eq(%w[a b c d e f])
+    end
+
+    it "rejects an integer below the registered minimum" do
+      expect(described_class.apply({}, { "appearance" => { "text_size" => -9 } }).errors)
+        .to have_key("appearance.text_size")
+    end
+
+    it "rejects a string that is not in the field allow-list" do
+      Preferences::Registry.with_temporary_field("chat", "mode", type: :string, default: "a", values: %w[a b]) do
+        expect(described_class.apply({}, { "chat" => { "mode" => "z" } }).errors).to have_key("chat.mode")
+      end
+    end
+
+    it "treats a nil json value as null during coerce" do
+      expect(described_class.send(:coerce_json, nil, "ai.style_profile", {})).to be_nil
+    end
   end
 end
 # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations

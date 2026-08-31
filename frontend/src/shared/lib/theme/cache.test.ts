@@ -35,6 +35,8 @@ describe("theme cache", () => {
           reduceTransparency: true,
           wallpaper: { blur: 0.2, dim: 0.1, preset: "dusk" },
         },
+        fontFamily: "Inter, sans-serif",
+        fontUrl: "https://fonts.example/css",
       }),
     );
     expect(parsed.theme).toBe("dark");
@@ -44,6 +46,8 @@ describe("theme cache", () => {
     expect(parsed.density).toBe("compact");
     expect(parsed.adminOverrides).toEqual({ "--surface-app": "#000000" });
     expect(parsed.appearance.bubbleCornerStyle).toBe("square");
+    expect(parsed.fontFamily).toBe("Inter, sans-serif");
+    expect(parsed.fontUrl).toBe("https://fonts.example/css");
   });
 
   it("falls back field-by-field for bad shapes", () => {
@@ -55,6 +59,8 @@ describe("theme cache", () => {
         sliders: "nope",
         density: "huge",
         adminOverrides: ["x"],
+        fontFamily: 1,
+        fontUrl: "",
       }),
     );
     expect(parsed.theme).toBe(DEFAULT_THEME);
@@ -63,6 +69,8 @@ describe("theme cache", () => {
     expect(parsed.density).toBe(DEFAULT_DENSITY);
     expect(parsed.adminOverrides).toEqual({});
     expect(parsed.sliders).toEqual(DEFAULT_THEME_CACHE.sliders);
+    expect(parsed.fontFamily).toBe("inherit");
+    expect(parsed.fontUrl).toBeNull();
     const partial = parseThemeCache(
       JSON.stringify({
         sliders: { size: "x", weight: 2 },

@@ -25,6 +25,7 @@ import {
   type ThemeCache,
 } from "./cache";
 import { deriveTypography } from "./derive-typography";
+import { applyFont, DEFAULT_FONT_FAMILY } from "./fonts";
 import { DEFAULT_SLIDERS, type TypographySliders } from "./typography-config";
 
 export interface ApplyThemeInput {
@@ -32,6 +33,8 @@ export interface ApplyThemeInput {
   adminOverrides: SemanticOverrides;
   appearance?: AppearancePersonalisation;
   density: Density;
+  fontFamily?: string;
+  fontUrl?: string | null;
   sliders: TypographySliders;
   theme: ThemePreference;
   userSetsAccent: boolean;
@@ -128,6 +131,10 @@ export function applyTheme(
   rootEl.dataset.transparency = data.transparency;
   rootEl.dataset.wallpaper = data.wallpaper;
 
+  const fontFamily = input.fontFamily ?? DEFAULT_FONT_FAMILY;
+  const fontUrl = input.fontUrl ?? null;
+  applyFont(doc, fontFamily, fontUrl);
+
   updateThemeColorMeta(doc, palette["--surface-app"]);
 
   if (storage) {
@@ -136,6 +143,8 @@ export function applyTheme(
       adminOverrides: input.adminOverrides,
       appearance,
       density: input.density,
+      fontFamily,
+      fontUrl,
       sliders: input.sliders,
       theme: input.theme,
       userSetsAccent: input.userSetsAccent,

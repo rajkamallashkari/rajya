@@ -49,12 +49,14 @@ import {
   unpinConversation,
   unsendMessage,
   updateConversation,
+  updateConversationWallpaper,
   updateFolder,
   votePoll,
   type Conversation,
   type ConversationFolder,
   type Message,
   type MessagePage,
+  type Wallpaper,
 } from "@/features/conversations/api/http";
 import {
   appendToNewest,
@@ -115,6 +117,7 @@ export function useConversations(archived = false) {
 export function useConversation(id: number) {
   const queryClient = useQueryClient();
   return useQuery({
+    enabled: id > 0,
     queryFn: async () => {
       const data = await getConversation(id);
       void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
@@ -657,6 +660,33 @@ export function usePinConversation() {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+export function useUpdateConversationWallpaper() {
+  const queryClient = useQueryClient();
+  const listKey = conversationKeys.list();
+  return useMutation({
+    mutationFn: ({ id, wallpaper }: { id: number; wallpaper: Wallpaper | null }) =>
+      updateConversationWallpaper(id, wallpaper),
+    onMutate: async ({ id, wallpaper }) => {
+      await queryClient.cancelQueries({ queryKey: conversationKeys.all });
+      const previousList = queryClient.getQueryData<{ conversations: Conversation[] }>(listKey);
+      const previousDetail = queryClient.getQueryData<Conversation>(conversationKeys.detail(id));
+      queryClient.setQueryData(listKey, patchConversationList(previousList, id, { wallpaper: wallpaper ?? undefined }));
+      queryClient.setQueryData(conversationKeys.detail(id), (current: Conversation | undefined) =>
+        current ? { ...current, wallpaper: wallpaper ?? undefined } : current,
+      );
+      return { previousList, previousDetail };
+    },
+    onError: (_error, { id }, context) => {
+      queryClient.setQueryData(listKey, context?.previousList);
+      queryClient.setQueryData(conversationKeys.detail(id), context?.previousDetail);
+    },
+    onSettled: (_data, _error, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: listKey });
+      void queryClient.invalidateQueries({ queryKey: conversationKeys.detail(id) });
     },
   });
 }

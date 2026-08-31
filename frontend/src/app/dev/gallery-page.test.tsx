@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, it, vi } from "vitest";
@@ -16,6 +16,7 @@ import {
 import { AppProviders } from "@/app/providers";
 import { appRoutes, createRouter } from "@/app/router";
 import { en } from "@/shared/lib/i18n/catalog";
+import { conversationLayer, settingsLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
 
 describe("GalleryPage", () => {
   it(
@@ -33,13 +34,33 @@ describe("GalleryPage", () => {
     }
     expect(document.querySelector("[data-combination='light-comfortable']")).not.toBeNull();
     expect(document.querySelector("[data-combination='dark-compact']")).not.toBeNull();
-    await user.click(screen.getByRole("button", { name: en.gallery.theme.dark }));
+    await user.click(
+      within(screen.getByRole("group", { name: en.gallery.theme_legend })).getByRole("button", {
+        name: en.gallery.theme.dark,
+      }),
+    );
     expect(document.querySelector("[data-theme-preference='dark']")).not.toBeNull();
-    await user.click(screen.getByRole("button", { name: en.gallery.theme.light }));
-    await user.click(screen.getByRole("button", { name: en.gallery.density.compact }));
+    await user.click(
+      within(screen.getByRole("group", { name: en.gallery.theme_legend })).getByRole("button", {
+        name: en.gallery.theme.light,
+      }),
+    );
+    await user.click(
+      within(screen.getByRole("group", { name: en.gallery.density_legend })).getByRole("button", {
+        name: en.gallery.density.compact,
+      }),
+    );
     expect(document.querySelector("[data-density='compact']")).not.toBeNull();
-    await user.click(screen.getByRole("button", { name: en.gallery.density.comfortable }));
-    await user.click(screen.getByRole("button", { name: en.gallery.theme.system }));
+    await user.click(
+      within(screen.getByRole("group", { name: en.gallery.density_legend })).getByRole("button", {
+        name: en.gallery.density.comfortable,
+      }),
+    );
+    await user.click(
+      within(screen.getByRole("group", { name: en.gallery.theme_legend })).getByRole("button", {
+        name: en.gallery.theme.system,
+      }),
+    );
     expect(document.querySelector("[data-theme-preference='system']")).not.toBeNull();
     await user.click(screen.getByRole("button", { name: en.gallery.toast.trigger }));
     expect(await screen.findByText(en.gallery.toast.title)).toBeInTheDocument();
@@ -98,6 +119,25 @@ describe("GalleryPage", () => {
 });
 
 describe("gallery route", () => {
+  it("renders the settings panel on the settings layer", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    window.dispatchEvent(new Event("resize"));
+    render(
+      <AppProviders>
+        <GalleryPage />
+      </AppProviders>,
+    );
+    useLayerStore.getState().openConversation(conversationLayer("ada", "Ada"));
+    useLayerStore.getState().pushLayer(settingsLayer(en.shell.settings));
+    await waitFor(() => {
+      expect(document.querySelector("[data-settings-panel]")).not.toBeNull();
+    });
+  });
+
   it("is registered on the app router", () => {
     expect(createRouter()).toBeTruthy();
     expect(appRoutes.some((route) => route.path === "/dev/gallery")).toBe(true);

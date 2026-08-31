@@ -1,7 +1,8 @@
 import { http, HttpResponse, type HttpHandler } from "msw";
 import { MS_PER_SECOND } from "@/features/conversations/model/constants";
-import type { paths } from "@/shared/lib/api/schema";
+import type { components, paths } from "@/shared/lib/api/schema";
 import { publishMswRealtime } from "@/shared/lib/realtime/msw-bridge";
+import { ACCENT_BOOT_HEX, ACCENT_CONTRAST_NEAR_BLACK } from "@/shared/lib/theme/constants";
 import preferencesRegistry from "@/shared/lib/config/preferences-registry.json";
 import type { PreferenceDocument } from "@/shared/lib/config/preferences-registry";
 import {
@@ -220,6 +221,13 @@ export function resetPreferences() {
   preferenceState = { data: clonePreferenceDefaults(), updated_at: MESSAGE_STAMP };
 }
 
+export function seedPreferenceOverlay(overlay: Record<string, unknown>) {
+  preferenceState = {
+    data: deepMerge(clonePreferenceDefaults() as unknown as Record<string, unknown>, overlay) as unknown as PreferenceDocument,
+    updated_at: MESSAGE_STAMP,
+  };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -428,6 +436,63 @@ export const handlerMap = {
     }
     return HttpResponse.json(preferenceState);
   }),
+  "/api/v1/font_configs": http.get("*/api/v1/font_configs", () =>
+    HttpResponse.json({
+      font_configs: [
+        {
+          id: 1,
+          name: "System",
+          font_family_value: "inherit",
+          google_font_url: null,
+          position: 0,
+        },
+        {
+          id: 2,
+          name: "Inter",
+          font_family_value: "Inter, sans-serif",
+          google_font_url:
+            "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap",
+          position: 1,
+        },
+      ],
+    }),
+  ),
+  "/api/v1/accent_configs": http.get("*/api/v1/accent_configs", () =>
+    HttpResponse.json({
+      accent_configs: [
+        {
+          id: "cyber_indigo",
+          label: "Cyber Indigo",
+          hex: ACCENT_BOOT_HEX,
+          is_light_compatible: true,
+          is_dark_compatible: true,
+          position: 0,
+        },
+        {
+          id: "ember",
+          label: "Ember",
+          hex: ACCENT_CONTRAST_NEAR_BLACK,
+          is_light_compatible: true,
+          is_dark_compatible: true,
+          position: 1,
+        },
+      ],
+    }),
+  ),
+  "/api/v1/conversations/{id}/wallpaper": http.patch(
+    "*/api/v1/conversations/:id/wallpaper",
+    async ({ params, request }) => {
+      const conversation = findConversation(Number(params.id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      const body = (await request.json()) as {
+        wallpaper?: components["schemas"]["Wallpaper"] | null;
+      };
+      conversation.wallpaper = body.wallpaper ?? undefined;
+      return HttpResponse.json(conversation);
+    },
+  ),
   "/api/v1/users/me/password": http.all("*/api/v1/users/me/password", ({ request }) => {
     if (request.method === "PATCH") {
       return HttpResponse.json(session);

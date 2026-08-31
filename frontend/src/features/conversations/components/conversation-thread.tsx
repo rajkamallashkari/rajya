@@ -1,5 +1,5 @@
 import { Calendar, Phone, Search, Video } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { getAccessSession } from "@/features/auth/model/access-session";
 import {
@@ -97,8 +97,16 @@ import { SEARCH_DEBOUNCE_MS } from "@/features/search/model/constants";
 import { serializeFilters } from "@/features/search/model/filters";
 import { wrapMatchIndex } from "@/features/search/model/highlight";
 import { resetSearchStore, useSearchStore } from "@/features/search/store/search-store";
+import { usePreferences } from "@/features/settings/api/queries";
+import { asPreferenceDocument } from "@/features/settings/model/map-preferences";
+import { DEFAULT_QUICK_REACTIONS } from "@/features/messages/model/menu";
+import { parseWallpaper, resolveAppearance, wallpaperLayerStyle } from "@/shared/lib/theme";
+import { useThemeControls } from "@/app/theme-provider";
 import { IconButton } from "@/shared/ui/icon-button";
 import { ListView } from "@/shared/ui/list-view";
+
+const THREAD_SURFACE =
+  "chat-wallpaper flex h-full min-h-0 flex-col bg-[var(--surface-chat)]";
 
 export function ConversationThread({ conversationId }: { conversationId: string }): ReactNode {
   const liveId = parseConversationId(conversationId);
@@ -132,10 +140,7 @@ function DemoThread({
   const lastSent = [...sent].reverse()[0];
 
   return (
-    <div
-      className="flex h-full min-h-0 flex-col bg-[var(--surface-chat)]"
-      data-conversation-thread=""
-    >
+    <div className={THREAD_SURFACE} data-conversation-thread="">
       <LayerHeader
         onTitleClick={() =>
           pushLayer({
@@ -195,6 +200,8 @@ function DemoThread({
 
 function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const { t, i18n } = useTranslation();
+  const { input } = useThemeControls();
+  const preferences = usePreferences();
   const { cancelGeneration, publishActivity } = useConversationChannel(conversationId);
   const typists = useTypingIndicators(conversationId);
   const generation = useGeneration(conversationId);
@@ -280,6 +287,16 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
       : listed;
   const conversation = conversationQuery.data;
   const title = conversation ? conversationTitle(conversation, t("conversations.untitled")) : "";
+  const membershipWallpaper = parseWallpaper(conversation?.wallpaper);
+  const wallpaperStyle = membershipWallpaper
+    ? (wallpaperLayerStyle(
+        membershipWallpaper,
+        resolveAppearance(input.appearance).reduceTransparency,
+      ) as CSSProperties)
+    : undefined;
+  const quickReactions =
+    asPreferenceDocument(preferences.data?.data)?.chat?.quick_reactions ??
+    [...DEFAULT_QUICK_REACTIONS];
 
   useEffect(() => {
     jumpedQuery.current = "";
@@ -381,10 +398,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
 
   if (conversationQuery.isPending || page.isPending) {
     return (
-      <div
-        className="flex h-full min-h-0 flex-col bg-[var(--surface-chat)]"
-        data-conversation-thread=""
-      >
+      <div className={THREAD_SURFACE} data-conversation-thread="">
         <ListView status="loading">{null}</ListView>
       </div>
     );
@@ -394,10 +408,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   }
 
   return (
-    <div
-      className="flex h-full min-h-0 flex-col bg-[var(--surface-chat)]"
-      data-conversation-thread=""
-    >
+    <div className={THREAD_SURFACE} data-conversation-thread="" style={wallpaperStyle}>
       <LayerHeader
         onBack={onThreadBack}
         onTitleClick={() =>
@@ -678,6 +689,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
             },
             onUnsend: (id) => unsend.mutate(id),
             pinned: pinned.data,
+            quickReactions,
             restrictForwarding: Boolean(conversation.restrict_forwarding),
             saved: saved.data,
             viewerId,
@@ -944,6 +956,7 @@ export function buildMessageMenuActions({
   onSelect,
   onUnsend,
   pinned,
+  quickReactions,
   restrictForwarding = false,
   saved,
   viewerId,
@@ -966,6 +979,7 @@ export function buildMessageMenuActions({
   onTranslate?: (id: number) => void;
   onUnsend: (id: number) => void;
   pinned: number[];
+  quickReactions?: string[];
   restrictForwarding?: boolean;
   saved: number[];
   viewerId: number;
@@ -998,5 +1012,6 @@ export function buildMessageMenuActions({
       Boolean(onSuggestReply) && canCopy ? () => onSuggestReply?.(message.id) : undefined,
     onTranslate: Boolean(onTranslate) && canCopy ? () => onTranslate?.(message.id) : undefined,
     onUnsend: () => onUnsend(message.id),
+    quickReactions,
   };
 }

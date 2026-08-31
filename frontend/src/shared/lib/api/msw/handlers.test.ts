@@ -14,6 +14,7 @@ const expectedPaths = [
   "/api/v1/accounts/search",
   "/api/v1/accounts/username",
   "/api/v1/accounts/{id}",
+  "/api/v1/accent_configs",
   "/api/v1/admin/bot_requests",
   "/api/v1/admin/bot_requests/{id}/approve",
   "/api/v1/admin/bot_requests/{id}/decline",
@@ -73,10 +74,12 @@ const expectedPaths = [
   "/api/v1/conversations/{id}/suggest_replies",
   "/api/v1/conversations/{id}/summarize",
   "/api/v1/conversations/{id}/unread",
+  "/api/v1/conversations/{id}/wallpaper",
   "/api/v1/direct_uploads",
   "/api/v1/export_jobs",
   "/api/v1/export_jobs/{id}",
   "/api/v1/export_jobs/{id}/download",
+  "/api/v1/font_configs",
   "/api/v1/gifs",
   "/api/v1/invites/{token}",
   "/api/v1/invites/{token}/join",
@@ -375,11 +378,29 @@ describe("MSW handlers", () => {
     });
     expect(summary.data?.text).toBe("Ship Friday");
     const prefs = await client.GET("/api/v1/preferences");
-    expect(prefs.data?.data.appearance.theme).toBe("system");
+    expect((prefs.data?.data.appearance as { theme: string }).theme).toBe("system");
     const patchedPrefs = await client.PATCH("/api/v1/preferences", {
       body: { data: { appearance: { theme: "dark" } } },
     });
-    expect(patchedPrefs.data?.data.appearance.theme).toBe("dark");
+    expect((patchedPrefs.data?.data.appearance as { theme: string }).theme).toBe("dark");
+    const blankPrefs = await client.PATCH("/api/v1/preferences", {
+      body: {} as { data: { [key: string]: unknown } },
+    });
+    expect(blankPrefs.response.status).toBe(200);
+    const fonts = await client.GET("/api/v1/font_configs");
+    expect(fonts.data?.font_configs[0]?.name).toBe("System");
+    const accents = await client.GET("/api/v1/accent_configs");
+    expect(accents.data?.accent_configs[0]?.id).toBe("cyber_indigo");
+    const paper = await client.PATCH("/api/v1/conversations/{id}/wallpaper", {
+      params: { path: { id: 1 } },
+      body: { wallpaper: { preset: "dusk", dim: 0.1, blur: 0 } },
+    });
+    expect(paper.data?.wallpaper?.preset).toBe("dusk");
+    const missingPaper = await client.PATCH("/api/v1/conversations/{id}/wallpaper", {
+      params: { path: { id: 999 } },
+      body: { wallpaper: { preset: "mist", dim: 0, blur: 0 } },
+    });
+    expect(missingPaper.response.status).toBe(404);
     const style = await client.GET("/api/v1/style_profile");
     expect(style.data?.enabled).toBe(false);
     const refused = await client.POST("/api/v1/style_profile");

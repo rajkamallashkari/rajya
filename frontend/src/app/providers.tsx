@@ -1,5 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
+import { PreferencesThemeBridge } from "@/app/preferences-theme-bridge";
 import { ThemeProvider } from "@/app/theme-provider";
 import { createQueryClient } from "@/shared/lib/query/client";
 import { useOutboxLifecycle } from "@/shared/lib/outbox/lifecycle";
@@ -19,9 +20,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <OutboxBridge>
         <ThemeProvider>
-          <TooltipProvider>
-            <Toaster>{children}</Toaster>
-          </TooltipProvider>
+          <PreferencesThemeBridge>
+            <TooltipProvider>
+              <Toaster>{children}</Toaster>
+            </TooltipProvider>
+          </PreferencesThemeBridge>
         </ThemeProvider>
       </OutboxBridge>
     </QueryClientProvider>

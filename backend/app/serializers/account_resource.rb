@@ -5,4 +5,3 @@ class AccountResource < ApplicationResource
     object.bot?
   end
 end
-

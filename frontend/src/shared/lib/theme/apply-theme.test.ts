@@ -89,6 +89,22 @@ describe("applyTheme", () => {
     expect(document.documentElement.style.getPropertyValue("--wallpaper-image")).toContain(
       "linear-gradient",
     );
+    const linked = applyTheme(
+      {
+        ...defaultThemeInput(),
+        fontFamily: "Inter, sans-serif",
+        fontUrl: "https://fonts.googleapis.com/css2?family=Inter",
+        theme: "light",
+      },
+      document,
+    );
+    expect(linked).toBe("light");
+    expect(document.documentElement.style.getPropertyValue("--app-font-family")).toBe(
+      "Inter, sans-serif",
+    );
+    expect(document.getElementById("rajya-font")?.getAttribute("href")).toContain("display=swap");
+    applyTheme({ ...defaultThemeInput(), theme: "light" }, document);
+    expect(document.getElementById("rajya-font")).toBeNull();
   });
 
   it("keeps admin accent unless the user set one", () => {

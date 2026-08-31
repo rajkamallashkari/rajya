@@ -48,6 +48,9 @@ describe("AppShell", () => {
     );
     expect(screen.getByRole("alert")).toHaveTextContent("Ada");
     expect(screen.queryByRole("dialog")).toBeNull();
+    await user.click(screen.getByRole("button", { name: en.shell.settings }));
+    expect(document.querySelector("[data-settings-panel]")).not.toBeNull();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
     await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
     expect(useShellStore.getState().impersonatingName).toBeNull();
     expect(await screen.findByRole("button", { name: en.shell.open_profile })).toBeInTheDocument();

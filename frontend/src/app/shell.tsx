@@ -11,6 +11,7 @@ import { ConversationList } from "@/features/conversations/components/conversati
 import { ConversationThread } from "@/features/conversations/components/conversation-thread";
 import { ProfilePanel } from "@/features/conversations/components/profile-panel";
 import { MediaGalleryPanel } from "@/features/media";
+import { SettingsPanel } from "@/features/settings";
 import { CallOverlays, TopCallBar, useSignalingChannel, useWebRTCManager } from "@/features/calls";
 import { useAccountChannel } from "@/features/conversations/hooks/use-account-channel";
 import { getMessage } from "@/features/conversations/api/http";
@@ -138,6 +139,9 @@ export function AppShell() {
               }
               if (layer.kind === "gallery") {
                 return <MediaGalleryPanel conversationId={layer.conversationId} />;
+              }
+              if (layer.kind === "settings") {
+                return <SettingsPanel />;
               }
               return (
                 <ProfilePanel

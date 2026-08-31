@@ -62,15 +62,20 @@ RSpec.describe Messages::React do
       .to eq(:validation_failed)
   end
 
-  it "accepts a published custom emoji and rejects an unpublished or sticker-kind token" do
+  it "accepts a published custom emoji" do
     user, message = setup
     pack = create(:sticker_pack, :published, :emoji, owner_account: create(:user).account)
     sticker = create(:sticker, sticker_pack: pack)
-    hidden = create(:sticker, sticker_pack: create(:sticker_pack, :emoji))
-    as_sticker = create(:sticker, sticker_pack: create(:sticker_pack, :published))
 
     expect(described_class.call(message: message, actor: user.account, emoji: sticker.reaction_token)).to be_success
     expect(message.reactions.sole.emoji).to eq(sticker.reaction_token)
+  end
+
+  it "rejects an unpublished, sticker-kind, or unknown custom emoji token" do
+    user, message = setup
+    hidden = create(:sticker, sticker_pack: create(:sticker_pack, :emoji))
+    as_sticker = create(:sticker, sticker_pack: create(:sticker_pack, :published))
+
     expect(described_class.call(message: message, actor: user.account, emoji: hidden.reaction_token).error_code)
       .to eq(:not_found)
     expect(described_class.call(message: message, actor: user.account, emoji: as_sticker.reaction_token).error_code)

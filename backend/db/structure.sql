@@ -722,6 +722,7 @@ CREATE TABLE public.conversation_memberships (
     pinned_at timestamp(6) without time zone,
     manually_unread_at timestamp(6) without time zone,
     last_message_at timestamp(6) without time zone,
+    wallpaper jsonb,
     CONSTRAINT ck_memberships_role CHECK (((role)::text = ANY ((ARRAY['member'::character varying, 'admin'::character varying, 'owner'::character varying])::text[]))),
     CONSTRAINT ck_memberships_seen_gte_read CHECK ((last_seen_position >= last_read_position)),
     CONSTRAINT ck_memberships_status CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'left'::character varying, 'removed'::character varying])::text[])))
@@ -5315,6 +5316,7 @@ ALTER TABLE ONLY public.bot_commands
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260831200000'),
 ('20260831183000'),
 ('20260831163000'),
 ('20260831140000'),

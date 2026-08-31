@@ -6,11 +6,13 @@ import {
   clampUnit,
   DEFAULT_APPEARANCE,
   parseAppearance,
+  parseWallpaper,
   palettePassesContrast,
   resolveAppearance,
   sliderUnit,
   firstValue,
   WALLPAPER_IMAGES,
+  wallpaperLayerStyle,
 } from "./appearance";
 import { SEMANTIC_DEFAULTS } from "./constants";
 
@@ -74,5 +76,13 @@ describe("appearance", () => {
     expect(
       palettePassesContrast({ ...SEMANTIC_DEFAULTS.light, "--text-primary": "#EFF6FF" }, 0),
     ).toBe(false);
+    expect(parseWallpaper(null)).toBeNull();
+    expect(parseWallpaper("dusk")).toBeNull();
+    expect(parseWallpaper([])).toBeNull();
+    expect(parseWallpaper({}).preset).toBe("none");
+    expect(parseWallpaper({ preset: "mist", dim: 0.2, blur: 0.4 })?.preset).toBe("mist");
+    expect(wallpaperLayerStyle({ preset: "none", dim: 0, blur: 0 })["--wallpaper-image"]).toBe(
+      WALLPAPER_IMAGES.none,
+    );
   });
 });

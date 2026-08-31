@@ -8,6 +8,7 @@ import { LayerHost } from "@/app/navigation/layer-host";
 import { Composer, type VoiceRecorderResult } from "@/features/composer";
 import { ChatListItem, ConversationThread, ProfilePanel } from "@/features/conversations";
 import { MediaGalleryPanel } from "@/features/media";
+import { SettingsPanel } from "@/features/settings";
 import { ADA_DEMO } from "@/features/conversations/model/demo";
 import {
   DateDivider,
@@ -800,6 +801,9 @@ function GalleryLayerDemo() {
           }
           if (layer.kind === "gallery") {
             return <MediaGalleryPanel conversationId={layer.conversationId} />;
+          }
+          if (layer.kind === "settings") {
+            return <SettingsPanel />;
           }
           return <ProfilePanel conversationId={layer.conversationId} />;
         }}

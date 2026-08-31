@@ -8,6 +8,7 @@ import { QrSheet } from "@/features/conversations/components/qr-sheet";
 import { ReportHost } from "@/features/conversations/components/report-host";
 import { conversationById } from "@/features/conversations/model/demo";
 import { parseConversationId } from "@/features/conversations/model/ids";
+import { WallpaperPicker } from "@/features/settings";
 import { canEditInfo, canManageInvites, profileUrl } from "@/features/conversations/model/links";
 import { conversationTitle } from "@/features/conversations/model/title";
 import { copyText } from "@/features/messages/model/copy-text";
@@ -144,6 +145,7 @@ function ProfileBody({
 }) {
   const { t } = useTranslation();
   const pushLayer = useLayerStore((state) => state.pushLayer);
+  const liveId = parseConversationId(conversationId);
   return (
     <div className="flex h-full min-h-0 flex-col bg-[var(--surface-panel)]" data-profile-panel="">
       <LayerHeader title={name} />
@@ -166,6 +168,11 @@ function ProfileBody({
           {t("media.gallery_title")}
         </Button>
       </div>
+      {liveId != null ? (
+        <div className="px-[var(--space-list-x)]">
+          <WallpaperPicker conversationId={liveId} />
+        </div>
+      ) : null}
       {children}
     </div>
   );

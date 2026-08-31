@@ -32,6 +32,10 @@ RSpec.describe Preference do
       allow(broken).to receive(:data).and_return("x")
       expect(broken.timezone).to eq("UTC")
     end
+
+    it "exposes the registry timezone default for accounts without a preference row" do
+      expect(described_class::DEFAULT_TIMEZONE).to eq(Preferences.defaults.dig("locale", "timezone"))
+    end
   end
 
   describe "style profile consent" do

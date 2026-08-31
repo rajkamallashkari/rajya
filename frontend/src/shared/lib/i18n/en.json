@@ -230,7 +230,8 @@
     "back": "Back",
     "chats": "Chats",
     "open_profile": "Open profile",
-    "profile_subtitle": "Shared media and info"
+    "profile_subtitle": "Shared media and info",
+    "settings": "Settings"
   },
   "lists": {
     "empty_action": "New chat",
@@ -795,9 +796,14 @@
       "mist": "Mist",
       "none": "None"
     },
-    "title": "Chat wallpaper"
+    "this_chat": "Wallpaper for this chat",
+    "title": "Chat wallpaper",
+    "use_default": "Use default wallpaper"
   },
   "appearance": {
+    "accent": "Accent",
+    "accent_dark": "Dark accent",
+    "accent_light": "Light accent",
     "autoplay": "Media autoplay",
     "autoplay_policy": {
       "always": "Always",
@@ -809,9 +815,27 @@
       "square": "Square"
     },
     "corners": "Bubble corners",
+    "density": "Message density",
+    "density_option": {
+      "comfortable": "Comfortable",
+      "compact": "Compact"
+    },
+    "font": "Font",
     "reduce_transparency": "Reduce transparency",
     "skin_tone": "Emoji skin tone",
-    "timestamps": "Always show timestamps"
+    "split_accents": "Split light and dark accents",
+    "text_letter_spacing": "Letter spacing",
+    "text_line_height": "Line height",
+    "text_size": "Text size",
+    "text_weight": "Text weight",
+    "theme": "Colour theme",
+    "theme_option": {
+      "dark": "Dark",
+      "light": "Light",
+      "system": "System"
+    },
+    "timestamps": "Always show timestamps",
+    "typography_preview": "The quick brown fox jumps over the lazy dog."
   },
   "qr": {
     "copy": "Copy link",
@@ -838,5 +862,11 @@
     "last_seen": "Last seen {{when}}",
     "revoke": "Sign out",
     "unknown_device": "Unknown device"
+  },
+  "settings": {
+    "appearance": "Appearance",
+    "quick_reaction_slot": "Quick reaction {{n}}",
+    "quick_reactions": "Quick reactions",
+    "title": "Settings"
   }
 }

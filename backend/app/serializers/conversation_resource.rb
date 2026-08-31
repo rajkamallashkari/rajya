@@ -67,6 +67,10 @@ class ConversationResource < ApplicationResource
     object.membership&.manually_unread_at
   end
 
+  attribute :wallpaper do
+    object.membership&.wallpaper
+  end
+
   attribute :peer do
     peer = peer_account
     peer && AccountResource.new(peer).to_h

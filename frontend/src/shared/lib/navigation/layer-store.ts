@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { abortAllLayers } from "@/shared/lib/navigation/layer-stack";
 
-export type LayerKind = "conversation" | "profile" | "gallery";
+export type LayerKind = "conversation" | "gallery" | "profile" | "settings";
 
 export interface LayerEntry {
   accountId?: string;
@@ -40,6 +40,17 @@ export function conversationLayer(
     focusMessageId,
     id: `conversation:${conversationId}`,
     kind: "conversation",
+    title,
+  };
+}
+
+export const SETTINGS_LAYER_ID = "settings";
+
+export function settingsLayer(title: string): LayerEntry {
+  return {
+    conversationId: SETTINGS_LAYER_ID,
+    id: SETTINGS_LAYER_ID,
+    kind: "settings",
     title,
   };
 }

@@ -1,4 +1,5 @@
 import { DEFAULT_APPEARANCE, parseAppearance, type AppearancePersonalisation } from "./appearance";
+import { DEFAULT_FONT_FAMILY } from "./fonts";
 import {
   ACCENT_BOOT_HEX,
   DEFAULT_DENSITY,
@@ -20,6 +21,8 @@ export interface ThemeCache {
   adminOverrides: SemanticOverrides;
   appearance: AppearancePersonalisation;
   density: Density;
+  fontFamily: string;
+  fontUrl: string | null;
   sliders: TypographySliders;
   theme: ThemePreference;
   userSetsAccent: boolean;
@@ -33,6 +36,8 @@ export const DEFAULT_THEME_CACHE: ThemeCache = {
     wallpaper: { ...DEFAULT_APPEARANCE.wallpaper },
   },
   density: DEFAULT_DENSITY,
+  fontFamily: DEFAULT_FONT_FAMILY,
+  fontUrl: null,
   sliders: DEFAULT_SLIDERS,
   theme: DEFAULT_THEME,
   userSetsAccent: false,
@@ -86,6 +91,9 @@ export function parseThemeCache(raw: string | null): ThemeCache {
       adminOverrides: parseAdminOverrides(record.adminOverrides),
       appearance: parseAppearance(record.appearance),
       density: isDensity(record.density) ? record.density : DEFAULT_DENSITY,
+      fontFamily: typeof record.fontFamily === "string" ? record.fontFamily : DEFAULT_FONT_FAMILY,
+      fontUrl:
+        typeof record.fontUrl === "string" && record.fontUrl.length > 0 ? record.fontUrl : null,
       sliders: {
         letterSpacing: isSlider(slidersRaw.letterSpacing)
           ? slidersRaw.letterSpacing

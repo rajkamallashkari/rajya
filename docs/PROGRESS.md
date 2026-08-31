@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 12.1 |
-| **Next session** | 12.2 |
+| **Last completed** | 12.2 |
+| **Next session** | 12.3 |
 | **Phase** | P12 — Settings & admin |
-| **Sessions remaining in phase** | 5 (12.2–12.6) |
+| **Sessions remaining in phase** | 4 (12.3–12.6) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 12.2 — Settings panels: typography sliders, quick reactions, and the full personalisation surface**
+**Session 12.3 — Remaining user panels: Devices, Chats with saved replies and nicknames, export, Stickers**
 
-Deliverable: Settings panels: typography sliders, quick reactions, and the full personalisation surface — wallpaper (NR-42), corner style, timestamps, autoplay, skin tone
+Deliverable: Remaining user panels: Devices (NR-44), Chats with saved replies and nicknames, export (NR-32), Stickers
 
-Docs: DESIGN_SYSTEM §3.5, §5.4, §8.1, DS-8; AUDIT §1.7, NR-13
+Docs: SCHEMA §12.6, §12.10, §12.12, §12.13
 
-Legacy to read: `botverse/src/components/panels/`, `botverse/src/stores/typographyStore.ts`, `notificationPreferenceStore.ts`
+Legacy to read: None — new surfaces over P2/P3/P7 work
 
 ---
 
@@ -79,6 +79,7 @@ Legacy to read: `botverse/src/components/panels/`, `botverse/src/stores/typograp
 | 11.2 | WebRTC engine port with ICE restart | Ported the mesh engine (SDP/ICE relay, polite glare, heartbeats, media controls). `iceconnectionstate = failed` restarts ICE up to `ice_restart_max_attempts` (default 3) then hangs up with catalog copy (F-32 / BR-70). Group video stays 640×480 @ 20 fps (BR-111). Signaling uses `to_account_id` / `ice_candidate`. Call UI/PiP/screen share wait for 11.3. |
 | 11.3 | Call UI: full screen, PiP, incoming banner, controls, screen share (NR-47) | Full-screen voice/video, PiP, incoming banner, controls. 1:1 screen share (`is_screen_sharing`, group refused). MSW signaling plus Playwright: connect+hangup, decline, timeout, start/stop screen share. Group mesh stays manual. |
 | 12.1 | Preferences registry, migration of every setting, generated types | `Preferences.define` validates the SCHEMA §7 JSONB document (appearance, locale, privacy, chat, ai, four-scope notifications). GET/PATCH `/api/v1/preferences` deep-merges without a migration; unknown keys 422. Generated `preferences-registry.json` + `.d.ts`. Typography stays −5…+5 (NR-13); style-profile consent still defaults off (F-11). Settings panels wait for 12.2. |
+| 12.2 | Settings panels: typography sliders, quick reactions, and the full personalisation surface | Appearance settings (theme, split accents, fonts, −5…+5 sliders, density, corners, timestamps, autoplay, skin tone, six quick reactions) write the preferences document; `PreferencesThemeBridge` is the only `setInput` writer. Per-conversation wallpaper (NR-42) lives on the membership. Playwright: theme, wallpaper, and all four sliders apply live. Devices/Chats/export/Stickers wait for 12.3. |
 
 ---
 

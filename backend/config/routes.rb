@@ -64,6 +64,8 @@ Rails.application.routes.draw do
       get "users/me/phone/verification", to: "phone_verifications#show"
       get "me", to: "users#show"
       resource :preferences, only: %i[show update]
+      resources :font_configs, only: :index
+      resources :accent_configs, only: :index
       get "accounts/username", to: "usernames#show"
       get "accounts/search", to: "account_searches#index"
       get "search", to: "searches#index"
@@ -89,6 +91,7 @@ Rails.application.routes.draw do
         member do
           post :pin, to: "conversation_pins#create"
           delete :pin, to: "conversation_pins#destroy"
+          patch :wallpaper, to: "conversation_wallpapers#update"
           post :unread, to: "conversation_unreads#create"
           delete :unread, to: "conversation_unreads#destroy"
           post :archive, to: "conversation_archives#create"

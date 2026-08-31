@@ -166,6 +166,52 @@ RSpec.configure do |config|
                 updated_at: { type: :string, format: :"date-time", nullable: true }
               }
             },
+            Wallpaper: {
+              type: :object,
+              required: %w[preset dim blur],
+              properties: {
+                preset: { type: :string, enum: %w[none dusk mist grove] },
+                dim: { type: :number },
+                blur: { type: :number }
+              }
+            },
+            FontConfig: {
+              type: :object,
+              required: %w[id name font_family_value],
+              properties: {
+                id: { type: :integer },
+                name: { type: :string },
+                font_family_value: { type: :string },
+                google_font_url: { type: :string, nullable: true },
+                position: { type: :integer, nullable: true }
+              }
+            },
+            FontConfigList: {
+              type: :object,
+              required: %w[font_configs],
+              properties: {
+                font_configs: { type: :array, items: { "$ref" => "#/components/schemas/FontConfig" } }
+              }
+            },
+            AccentConfig: {
+              type: :object,
+              required: %w[id label hex is_light_compatible is_dark_compatible],
+              properties: {
+                id: { type: :string },
+                label: { type: :string },
+                hex: { type: :string },
+                is_light_compatible: { type: :boolean },
+                is_dark_compatible: { type: :boolean },
+                position: { type: :integer, nullable: true }
+              }
+            },
+            AccentConfigList: {
+              type: :object,
+              required: %w[accent_configs],
+              properties: {
+                accent_configs: { type: :array, items: { "$ref" => "#/components/schemas/AccentConfig" } }
+              }
+            },
             PhoneVerification: {
               type: :object,
               required: %w[status phone_changed],
@@ -501,6 +547,7 @@ RSpec.configure do |config|
                 },
                 pinned_at: { type: :string, format: :"date-time", nullable: true },
                 manually_unread_at: { type: :string, format: :"date-time", nullable: true },
+                wallpaper: { "$ref" => "#/components/schemas/Wallpaper", nullable: true },
                 peer: { "$ref" => "#/components/schemas/Account", nullable: true },
                 last_message: { "$ref" => "#/components/schemas/MessagePreview", nullable: true },
                 members: { type: :array, items: { "$ref" => "#/components/schemas/ConversationMember" } }
