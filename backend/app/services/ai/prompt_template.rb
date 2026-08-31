@@ -9,8 +9,9 @@ module Ai
       bot_reply: "You are a helpful assistant in a private chat. Stay in the bot's persona.",
       rewrite: "Rewrite the user's draft. Preserve meaning. Apply the requested tone.",
       summarize: "Summarize the conversation concisely for someone catching up.",
-      smart_reply: "Suggest short reply options the user might send.",
-      translate: "Translate the message. Preserve formatting markers from the restricted set."
+      suggest_replies: "Suggest short reply options the user might send.",
+      translate: "Translate the message. Preserve formatting markers from the restricted set.",
+      style_profile: "Describe the writer's style from the supplied messages. Be concise."
     }.freeze
 
     class << self

@@ -331,14 +331,39 @@ module Settings
         description: "Default group-video frame rate (BR-111)."
       },
 
-      # --- ai (BR-74, BR-75, BR-80, BR-84) ---
+      # --- ai (BR-74, BR-75, BR-80, BR-84, NR-8, D-3) ---
+      ai_bot_reply_models: {
+        type: :array, category: :ai,
+        default: %w[groq/llama-3.3-70b-versatile groq/llama-3.1-8b-instant gemini/gemini-2.5-flash ollama/llama3.2],
+        description: "Ordered bot_reply models provider/model (NR-8, TARGET §6.3)."
+      },
+      ai_cancel_ttl: {
+        type: :integer, category: :ai, default: 300, min: 30, max: 3_600,
+        description: "Seconds a stream-cancel flag remains set (BR-79 unified)."
+      },
       ai_context_window: {
         type: :integer, category: :ai, default: 20, min: 1, max: 200,
         description: "Prior messages included in a bot context window (BR-74)."
       },
-      ai_summarization_threshold: {
-        type: :integer, category: :ai, default: 40, min: 2, max: 500,
-        description: "Unread count that unlocks summarization (BR-75)."
+      ai_embedding_models: {
+        type: :array, category: :ai, default: %w[ollama/nomic-embed-text],
+        description: "Ordered embedding models; Ollama is the floor (D-3)."
+      },
+      ai_fallback_attempt_cap: {
+        type: :integer, category: :ai, default: 2, min: 0, max: 10,
+        description: "Fallback provider attempts after the primary fails."
+      },
+      ai_image_gen_models: {
+        type: :array, category: :ai, default: [],
+        description: "Ordered image_gen models; unconfigured until NR-F3."
+      },
+      ai_max_tokens: {
+        type: :integer, category: :ai, default: 1_024, min: 16, max: 8_192,
+        description: "Completion token cap sent to chat providers (BR-74)."
+      },
+      ai_memory_top_k: {
+        type: :integer, category: :ai, default: 8, min: 1, max: 50,
+        description: "Memories retrieved per bot reply (NR-11)."
       },
       ai_prompt_minimum_length: {
         type: :integer, category: :ai, default: 80, min: 1, max: 10_000,
@@ -346,39 +371,140 @@ module Settings
       },
       ai_rate_limit_per_capability: {
         type: :integer, category: :ai, default: 30, min: 1, max: 1_000,
-        description: "Per-account per-capability AI requests per window (BR-84)."
+        description: "Fallback per-account per-capability AI requests per window (BR-84)."
+      },
+      ai_rate_limit_period: {
+        type: :integer, category: :ai, default: 60, min: 1, max: 86_400,
+        description: "Seconds in the default AI rate-limit window (BR-84)."
+      },
+      ai_rate_limit_rewrite: {
+        type: :integer, category: :ai, default: 10, min: 1, max: 1_000,
+        description: "Rewrite requests per account per window (BR-84)."
+      },
+      ai_rate_limit_style_profile: {
+        type: :integer, category: :ai, default: 1, min: 1, max: 1_000,
+        description: "Style-profile builds per account per style-profile window (BR-84)."
+      },
+      ai_rate_limit_style_profile_period: {
+        type: :integer, category: :ai, default: 3_600, min: 60, max: 86_400,
+        description: "Seconds in the style-profile rate-limit window (BR-84, 1 hour)."
+      },
+      ai_rate_limit_suggest_replies: {
+        type: :integer, category: :ai, default: 10, min: 1, max: 1_000,
+        description: "Smart-reply requests per account per window (BR-84)."
+      },
+      ai_rate_limit_summarize: {
+        type: :integer, category: :ai, default: 5, min: 1, max: 1_000,
+        description: "Summarize requests per account per window (BR-84)."
+      },
+      ai_rate_limit_translate: {
+        type: :integer, category: :ai, default: 20, min: 1, max: 1_000,
+        description: "Translate requests per account per window (BR-84)."
       },
       ai_reply_rate_limit: {
         type: :integer, category: :ai, default: 20, min: 1, max: 1_000,
-        description: "Per-account bot-reply generations per window."
+        description: "Per-account bot-reply generations per window (F-12)."
       },
-      ai_memory_top_k: {
-        type: :integer, category: :ai, default: 8, min: 1, max: 50,
-        description: "Memories retrieved per bot reply (NR-11)."
+      ai_rewrite_models: {
+        type: :array, category: :ai, default: %w[groq/llama-3.1-8b-instant ollama/llama3.2],
+        description: "Ordered rewrite models provider/model (NR-8)."
       },
       ai_stream_timeout: {
         type: :integer, category: :ai, default: 60, min: 5, max: 300,
         description: "Seconds before an AI stream is aborted."
       },
-      ai_fallback_attempt_cap: {
-        type: :integer, category: :ai, default: 2, min: 0, max: 10,
-        description: "Fallback provider attempts after the primary fails."
+      ai_style_profile_models: {
+        type: :array, category: :ai, default: %w[groq/llama-3.1-8b-instant ollama/llama3.2],
+        description: "Ordered style_profile models provider/model (NR-8)."
+      },
+      ai_suggest_replies_models: {
+        type: :array, category: :ai, default: %w[groq/llama-3.1-8b-instant ollama/llama3.2],
+        description: "Ordered suggest_replies models provider/model (NR-8)."
+      },
+      ai_summarization_threshold: {
+        type: :integer, category: :ai, default: 40, min: 2, max: 500,
+        description: "Unread count that unlocks summarization (BR-75)."
+      },
+      ai_summarize_models: {
+        type: :array, category: :ai,
+        default: %w[groq/llama-3.3-70b-versatile gemini/gemini-2.5-flash ollama/llama3.2],
+        description: "Ordered summarize models provider/model (NR-8)."
+      },
+      ai_temperature: {
+        type: :float, category: :ai, default: 0.9, min: 0, max: 2,
+        description: "Sampling temperature sent to chat providers."
       },
       ai_transcribe_models: {
         type: :array, category: :ai, default: [ "groq/whisper-large-v3" ],
         description: "Ordered transcribe models (provider/model) for voice notes (NR-33)."
       },
+      ai_translate_models: {
+        type: :array, category: :ai, default: %w[groq/llama-3.1-8b-instant ollama/llama3.2],
+        description: "Ordered translate models provider/model (NR-8)."
+      },
+      ai_vision_models: {
+        type: :array, category: :ai, default: [],
+        description: "Ordered vision models; unconfigured until NR-F2."
+      },
+      gemini_api_key: {
+        type: :string, category: :ai, default: "",
+        description: "Google AI Studio API key; blank skips Gemini in the chain (D-3)."
+      },
+      gemini_generate_path: {
+        type: :string, category: :ai, default: "/v1beta/models/%{model}:generateContent",
+        description: "Gemini generateContent path template with %{model}."
+      },
+      gemini_host: {
+        type: :string, category: :ai, default: "generativelanguage.googleapis.com",
+        description: "Google AI Studio / Gemini API host."
+      },
       groq_api_key: {
         type: :string, category: :ai, default: "",
-        description: "Groq API key for whisper transcription; blank fails visibly (NR-33)."
+        description: "Groq API key for chat and whisper; blank skips Groq (D-3, NR-33)."
+      },
+      groq_chat_path: {
+        type: :string, category: :ai, default: "/openai/v1/chat/completions",
+        description: "Groq OpenAI-compatible chat completions path."
       },
       groq_host: {
         type: :string, category: :ai, default: "api.groq.com",
-        description: "Groq API host for whisper transcription (NR-33)."
+        description: "Groq API host for chat and whisper (D-3, NR-33)."
       },
       groq_transcribe_path: {
         type: :string, category: :ai, default: "/openai/v1/audio/transcriptions",
         description: "Groq whisper transcription path (NR-33)."
+      },
+      ollama_base_url: {
+        type: :string, category: :ai, default: "http://ollama:11434",
+        description: "Ollama base URL; Compose service name is the floor (D-3)."
+      },
+      ollama_chat_path: {
+        type: :string, category: :ai, default: "/api/chat",
+        description: "Ollama chat path."
+      },
+      ollama_embed_path: {
+        type: :string, category: :ai, default: "/api/embed",
+        description: "Ollama embeddings path."
+      },
+      openrouter_api_key: {
+        type: :string, category: :ai, default: "",
+        description: "Optional OpenRouter key; blank keeps OpenRouter out of the chain."
+      },
+      openrouter_chat_path: {
+        type: :string, category: :ai, default: "/api/v1/chat/completions",
+        description: "OpenRouter chat completions path."
+      },
+      openrouter_host: {
+        type: :string, category: :ai, default: "openrouter.ai",
+        description: "OpenRouter API host (optional breadth provider)."
+      },
+      openrouter_http_referer: {
+        type: :string, category: :ai, default: "https://rajya.pages.dev",
+        description: "OpenRouter HTTP-Referer header."
+      },
+      openrouter_title: {
+        type: :string, category: :ai, default: "Rajya",
+        description: "OpenRouter X-Title header."
       },
       transcribe_retry_attempts: {
         type: :integer, category: :ai, default: 2, min: 1, max: 10,

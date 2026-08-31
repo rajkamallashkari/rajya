@@ -1,5 +1,6 @@
 require "rails_helper"
 
+# rubocop:disable RSpec/ExampleLength -- named SCHEMA §8 keys
 RSpec.describe Settings::Registry do
   it "registers every SCHEMA_DESIGN.md §8 constant category" do
     categories = described_class.entries.values.map { |entry| entry.fetch(:category) }.uniq
@@ -18,7 +19,8 @@ RSpec.describe Settings::Registry do
       :presence_ttl, :last_active_debounce, :presence_offline_grace,
       :mention_everyone_limit, :mention_everyone_period, :slow_mode_presets,
       :file_caps, :user_quota_bytes, :blocked_upload_extensions, :orphan_blob_max_age, :gallery_page_size,
-      :sticker_pack_max_bytes, :gif_search_limit, :ai_transcribe_models, :location_tile_request_cap
+      :sticker_pack_max_bytes, :gif_search_limit, :ai_transcribe_models, :ai_bot_reply_models,
+      :ai_reply_rate_limit, :ollama_base_url, :location_tile_request_cap
     )
   end
 
@@ -26,3 +28,4 @@ RSpec.describe Settings::Registry do
     expect(described_class.registered?(:not_a_real_setting)).to be(false)
   end
 end
+# rubocop:enable RSpec/ExampleLength

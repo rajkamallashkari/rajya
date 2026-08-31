@@ -37,5 +37,10 @@ RSpec.describe Ai::PromptTemplate do
 
       expect(described_class.fetch(:not_a_capability)).to eq("not_a_capability")
     end
+
+    it "ships defaults for every chat capability" do
+      expect(described_class.fetch(:suggest_replies)).to include("reply")
+      expect(described_class.fetch(:style_profile)).to include("style")
+    end
   end
 end

@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 8.2 |
-| **Next session** | 9.1 |
+| **Last completed** | 9.1 |
+| **Next session** | 9.2 |
 | **Phase** | P9 — Bots & AI |
-| **Sessions remaining in phase** | 4 (9.1–9.4) |
+| **Sessions remaining in phase** | 3 (9.2–9.4) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 9.1 — Provider interface, model registry, runner, usage events, prompt templates**
+**Session 9.2 — Bot reply loop, streaming, cancel, regenerate, summarization, mentions**
 
-Deliverable: Provider interface, model registry, runner, usage events, prompt templates
+Deliverable: Bot reply loop, streaming, cancel, regenerate, summarization, mentions
 
-Docs: TARGET §6 in full; SCHEMA §8; GAP §4; AUDIT §2.8 (BR-72…74, 84, 85), §5 (F-12), D-3, NR-8
+Docs: TARGET §6.4–6.6; GAP §4; AUDIT §2.8 (BR-75…83), §2.1 (BR-15)
 
-Legacy to read: `cognify/app/services/ai_service.rb`, `app/services/ai_service/stream_executor.rb`
+Legacy to read: `cognify/app/jobs/bot_reply_job.rb`, `app/services/conversation_summary_service.rb`, `mention_dispatcher.rb`, `app/controllers/api/v1/ai_controller.rb`
 
 ---
 
@@ -69,6 +69,7 @@ Legacy to read: `cognify/app/services/ai_service.rb`, `app/services/ai_service/s
 | 7.4 | Voice transcription (NR-33), location/contact rendering (NR-30, NR-31), export jobs (NR-32) | Groq `whisper-large-v3` via a thin AI registry, low-priority queue, `voice_transcription` default on; quota/provider errors set `transcript_status=failed` with UI retry (F-17). OSM tiles with attribution and a client request cap; in-app contacts open the profile layer. `export_jobs` API/job charges requester quota, TTL 7 days, honours `restrict_forwarding`, excludes left memberships. Export UI waits for 12.3; import is not built (S-23 / NR-F8). Playwright send-photo/voice/file/sticker/GIF/location waits for phase DoD. |
 | 8.1 | FTS, global and in-chat search, jump navigation, discoverability gates | Generated `search_vector` GIN (`simple`) with an EXPLAIN assertion (F-15). Global, in-chat, and people search honour discoverability (BR-45/46), blocks (NR-1), and tombstones. Client min length 2 and 350ms debounce from settings (BR-112). Jump-to-message with back-restore and jump-to-date shortcuts. Playwright: scroll, search, jump, back restores scroll. Advanced filters (NR-43) wait for 8.2. |
 | 8.2 | Advanced filters (NR-43): sender, date range, kind, has-attachment, has-link | Each filter is an SQL predicate with a dedicated btree/partial index and EXPLAIN coverage. Filter-only search works without a text query. Client filter sheet composes the same params on global and in-chat search. |
+| 9.1 | Provider interface, model registry, runner, usage events, prompt templates | Groq-first chain with Ollama as the floor (D-3). Fallback on 402/404/429/timeout writes `fallback` usage events (BR-73, F-12). Bot replies are rate-limited and a cache error denies (BR-85 fail closed). Reply loop waits for 9.2. |
 
 ---
 

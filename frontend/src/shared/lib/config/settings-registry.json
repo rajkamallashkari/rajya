@@ -738,6 +738,29 @@
     "max": 60,
     "allow_nil": false
   },
+  "ai_bot_reply_models": {
+    "type": "array",
+    "category": "ai",
+    "default": [
+      "groq/llama-3.3-70b-versatile",
+      "groq/llama-3.1-8b-instant",
+      "gemini/gemini-2.5-flash",
+      "ollama/llama3.2"
+    ],
+    "description": "Ordered bot_reply models provider/model (NR-8, TARGET §6.3).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "ai_cancel_ttl": {
+    "type": "integer",
+    "category": "ai",
+    "default": 300,
+    "description": "Seconds a stream-cancel flag remains set (BR-79 unified).",
+    "min": 30,
+    "max": 3600,
+    "allow_nil": false
+  },
   "ai_context_window": {
     "type": "integer",
     "category": "ai",
@@ -747,13 +770,51 @@
     "max": 200,
     "allow_nil": false
   },
-  "ai_summarization_threshold": {
+  "ai_embedding_models": {
+    "type": "array",
+    "category": "ai",
+    "default": [
+      "ollama/nomic-embed-text"
+    ],
+    "description": "Ordered embedding models; Ollama is the floor (D-3).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "ai_fallback_attempt_cap": {
     "type": "integer",
     "category": "ai",
-    "default": 40,
-    "description": "Unread count that unlocks summarization (BR-75).",
-    "min": 2,
-    "max": 500,
+    "default": 2,
+    "description": "Fallback provider attempts after the primary fails.",
+    "min": 0,
+    "max": 10,
+    "allow_nil": false
+  },
+  "ai_image_gen_models": {
+    "type": "array",
+    "category": "ai",
+    "default": [],
+    "description": "Ordered image_gen models; unconfigured until NR-F3.",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "ai_max_tokens": {
+    "type": "integer",
+    "category": "ai",
+    "default": 1024,
+    "description": "Completion token cap sent to chat providers (BR-74).",
+    "min": 16,
+    "max": 8192,
+    "allow_nil": false
+  },
+  "ai_memory_top_k": {
+    "type": "integer",
+    "category": "ai",
+    "default": 8,
+    "description": "Memories retrieved per bot reply (NR-11).",
+    "min": 1,
+    "max": 50,
     "allow_nil": false
   },
   "ai_prompt_minimum_length": {
@@ -769,7 +830,70 @@
     "type": "integer",
     "category": "ai",
     "default": 30,
-    "description": "Per-account per-capability AI requests per window (BR-84).",
+    "description": "Fallback per-account per-capability AI requests per window (BR-84).",
+    "min": 1,
+    "max": 1000,
+    "allow_nil": false
+  },
+  "ai_rate_limit_period": {
+    "type": "integer",
+    "category": "ai",
+    "default": 60,
+    "description": "Seconds in the default AI rate-limit window (BR-84).",
+    "min": 1,
+    "max": 86400,
+    "allow_nil": false
+  },
+  "ai_rate_limit_rewrite": {
+    "type": "integer",
+    "category": "ai",
+    "default": 10,
+    "description": "Rewrite requests per account per window (BR-84).",
+    "min": 1,
+    "max": 1000,
+    "allow_nil": false
+  },
+  "ai_rate_limit_style_profile": {
+    "type": "integer",
+    "category": "ai",
+    "default": 1,
+    "description": "Style-profile builds per account per style-profile window (BR-84).",
+    "min": 1,
+    "max": 1000,
+    "allow_nil": false
+  },
+  "ai_rate_limit_style_profile_period": {
+    "type": "integer",
+    "category": "ai",
+    "default": 3600,
+    "description": "Seconds in the style-profile rate-limit window (BR-84, 1 hour).",
+    "min": 60,
+    "max": 86400,
+    "allow_nil": false
+  },
+  "ai_rate_limit_suggest_replies": {
+    "type": "integer",
+    "category": "ai",
+    "default": 10,
+    "description": "Smart-reply requests per account per window (BR-84).",
+    "min": 1,
+    "max": 1000,
+    "allow_nil": false
+  },
+  "ai_rate_limit_summarize": {
+    "type": "integer",
+    "category": "ai",
+    "default": 5,
+    "description": "Summarize requests per account per window (BR-84).",
+    "min": 1,
+    "max": 1000,
+    "allow_nil": false
+  },
+  "ai_rate_limit_translate": {
+    "type": "integer",
+    "category": "ai",
+    "default": 20,
+    "description": "Translate requests per account per window (BR-84).",
     "min": 1,
     "max": 1000,
     "allow_nil": false
@@ -778,18 +902,21 @@
     "type": "integer",
     "category": "ai",
     "default": 20,
-    "description": "Per-account bot-reply generations per window.",
+    "description": "Per-account bot-reply generations per window (F-12).",
     "min": 1,
     "max": 1000,
     "allow_nil": false
   },
-  "ai_memory_top_k": {
-    "type": "integer",
+  "ai_rewrite_models": {
+    "type": "array",
     "category": "ai",
-    "default": 8,
-    "description": "Memories retrieved per bot reply (NR-11).",
-    "min": 1,
-    "max": 50,
+    "default": [
+      "groq/llama-3.1-8b-instant",
+      "ollama/llama3.2"
+    ],
+    "description": "Ordered rewrite models provider/model (NR-8).",
+    "min": null,
+    "max": null,
     "allow_nil": false
   },
   "ai_stream_timeout": {
@@ -801,13 +928,59 @@
     "max": 300,
     "allow_nil": false
   },
-  "ai_fallback_attempt_cap": {
+  "ai_style_profile_models": {
+    "type": "array",
+    "category": "ai",
+    "default": [
+      "groq/llama-3.1-8b-instant",
+      "ollama/llama3.2"
+    ],
+    "description": "Ordered style_profile models provider/model (NR-8).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "ai_suggest_replies_models": {
+    "type": "array",
+    "category": "ai",
+    "default": [
+      "groq/llama-3.1-8b-instant",
+      "ollama/llama3.2"
+    ],
+    "description": "Ordered suggest_replies models provider/model (NR-8).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "ai_summarization_threshold": {
     "type": "integer",
     "category": "ai",
-    "default": 2,
-    "description": "Fallback provider attempts after the primary fails.",
+    "default": 40,
+    "description": "Unread count that unlocks summarization (BR-75).",
+    "min": 2,
+    "max": 500,
+    "allow_nil": false
+  },
+  "ai_summarize_models": {
+    "type": "array",
+    "category": "ai",
+    "default": [
+      "groq/llama-3.3-70b-versatile",
+      "gemini/gemini-2.5-flash",
+      "ollama/llama3.2"
+    ],
+    "description": "Ordered summarize models provider/model (NR-8).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "ai_temperature": {
+    "type": "float",
+    "category": "ai",
+    "default": 0.9,
+    "description": "Sampling temperature sent to chat providers.",
     "min": 0,
-    "max": 10,
+    "max": 2,
     "allow_nil": false
   },
   "ai_transcribe_models": {
@@ -821,11 +994,68 @@
     "max": null,
     "allow_nil": false
   },
+  "ai_translate_models": {
+    "type": "array",
+    "category": "ai",
+    "default": [
+      "groq/llama-3.1-8b-instant",
+      "ollama/llama3.2"
+    ],
+    "description": "Ordered translate models provider/model (NR-8).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "ai_vision_models": {
+    "type": "array",
+    "category": "ai",
+    "default": [],
+    "description": "Ordered vision models; unconfigured until NR-F2.",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "gemini_api_key": {
+    "type": "string",
+    "category": "ai",
+    "default": "",
+    "description": "Google AI Studio API key; blank skips Gemini in the chain (D-3).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "gemini_generate_path": {
+    "type": "string",
+    "category": "ai",
+    "default": "/v1beta/models/%{model}:generateContent",
+    "description": "Gemini generateContent path template with %{model}.",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "gemini_host": {
+    "type": "string",
+    "category": "ai",
+    "default": "generativelanguage.googleapis.com",
+    "description": "Google AI Studio / Gemini API host.",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
   "groq_api_key": {
     "type": "string",
     "category": "ai",
     "default": "",
-    "description": "Groq API key for whisper transcription; blank fails visibly (NR-33).",
+    "description": "Groq API key for chat and whisper; blank skips Groq (D-3, NR-33).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "groq_chat_path": {
+    "type": "string",
+    "category": "ai",
+    "default": "/openai/v1/chat/completions",
+    "description": "Groq OpenAI-compatible chat completions path.",
     "min": null,
     "max": null,
     "allow_nil": false
@@ -834,7 +1064,7 @@
     "type": "string",
     "category": "ai",
     "default": "api.groq.com",
-    "description": "Groq API host for whisper transcription (NR-33).",
+    "description": "Groq API host for chat and whisper (D-3, NR-33).",
     "min": null,
     "max": null,
     "allow_nil": false
@@ -844,6 +1074,78 @@
     "category": "ai",
     "default": "/openai/v1/audio/transcriptions",
     "description": "Groq whisper transcription path (NR-33).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "ollama_base_url": {
+    "type": "string",
+    "category": "ai",
+    "default": "http://ollama:11434",
+    "description": "Ollama base URL; Compose service name is the floor (D-3).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "ollama_chat_path": {
+    "type": "string",
+    "category": "ai",
+    "default": "/api/chat",
+    "description": "Ollama chat path.",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "ollama_embed_path": {
+    "type": "string",
+    "category": "ai",
+    "default": "/api/embed",
+    "description": "Ollama embeddings path.",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "openrouter_api_key": {
+    "type": "string",
+    "category": "ai",
+    "default": "",
+    "description": "Optional OpenRouter key; blank keeps OpenRouter out of the chain.",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "openrouter_chat_path": {
+    "type": "string",
+    "category": "ai",
+    "default": "/api/v1/chat/completions",
+    "description": "OpenRouter chat completions path.",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "openrouter_host": {
+    "type": "string",
+    "category": "ai",
+    "default": "openrouter.ai",
+    "description": "OpenRouter API host (optional breadth provider).",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "openrouter_http_referer": {
+    "type": "string",
+    "category": "ai",
+    "default": "https://rajya.pages.dev",
+    "description": "OpenRouter HTTP-Referer header.",
+    "min": null,
+    "max": null,
+    "allow_nil": false
+  },
+  "openrouter_title": {
+    "type": "string",
+    "category": "ai",
+    "default": "Rajya",
+    "description": "OpenRouter X-Title header.",
     "min": null,
     "max": null,
     "allow_nil": false
