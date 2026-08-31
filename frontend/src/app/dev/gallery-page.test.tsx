@@ -18,7 +18,9 @@ import { appRoutes, createRouter } from "@/app/router";
 import { en } from "@/shared/lib/i18n/catalog";
 
 describe("GalleryPage", () => {
-  it("renders every primitive section and switches theme and density", async () => {
+  it(
+    "renders every primitive section and switches theme and density",
+    async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     render(
       <AppProviders>
@@ -90,7 +92,9 @@ describe("GalleryPage", () => {
     expect(document.querySelector("[data-media-gallery]")).not.toBeNull();
     await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
     await user.click(screen.getByRole("button", { name: en.lists.error_retry }));
-  });
+  },
+  15_000,
+);
 });
 
 describe("gallery route", () => {

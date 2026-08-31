@@ -323,4 +323,11 @@ RSpec.describe "Session 3.1 conversation authorization 403s", type: :request do
          headers: auth_headers_for(user), params: { generation_id: "1:2:3" }, as: :json
     expect(response).to have_http_status(:forbidden)
   end
+
+  it "returns 403 when listing slash commands is denied (F-1)" do
+    user, conversation = actor_setup(:direct)
+    stub_deny(ConversationPolicy, :show?)
+    get "/api/v1/conversations/#{conversation.id}/commands", headers: auth_headers_for(user)
+    expect(response).to have_http_status(:forbidden)
+  end
 end

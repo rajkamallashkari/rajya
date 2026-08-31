@@ -24,6 +24,32 @@ RSpec.describe Bots::Dispatch do
     expect(Bots::ReplyJob).not_to have_been_enqueued.with(group.id, anything, silent.id)
   end
 
+  it "enqueues a group bot when its declared slash command is invoked (NR-45)" do
+    owner = create(:user)
+    planner = create(:bot)
+    silent = create(:bot)
+    create(:bot_command, bot: planner, name: "plan", description: "Turn a goal into steps")
+    group = create_talk(kind: "group", owner: owner.account, members: [ planner.account, silent.account ])
+    nonce = SecureRandom.uuid
+    message = Messages::Send.call(
+      conversation: group, sender: owner.account, body: "/plan ship friday", client_nonce: nonce
+    ).value
+
+    expect(message).to have_attributes(body: "/plan ship friday", client_nonce: nonce)
+    expect(Bots::ReplyJob).to have_been_enqueued.with(group.id, message.id, planner.id).once
+    expect(Bots::ReplyJob).not_to have_been_enqueued.with(group.id, anything, silent.id)
+  end
+
+  it "does not dispatch a client-only builtin in a group" do
+    owner = create(:user)
+    bot = create(:bot)
+    group = create_talk(kind: "group", owner: owner.account, members: [ bot.account ])
+    message = Messages::Send.call(conversation: group, sender: owner.account, body: "/sticker").value
+
+    expect(message.body).to eq("/sticker")
+    expect(Bots::ReplyJob).not_to have_been_enqueued.with(group.id, message.id, bot.id)
+  end
+
   it "does not dispatch from a bot-authored message (BR-83)" do
     user = create(:user)
     bot = create(:bot)

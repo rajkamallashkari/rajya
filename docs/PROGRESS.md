@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 9.3 |
-| **Next session** | 9.4 |
-| **Phase** | P9 — Bots & AI |
-| **Sessions remaining in phase** | 1 (9.4) |
+| **Last completed** | 9.4 |
+| **Next session** | 10.1 |
+| **Phase** | P10 — Notifications |
+| **Sessions remaining in phase** | 2 (10.1, 10.2) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 9.4 — Slash commands (NR-45): `bot_commands`, built-in commands, the `/` menu, and invocation as an ordinary message through the P3 send operation**
+**Session 10.1 — Cascade resolver, timezone-aware DND, F-9 and F-21 fixes**
 
-Deliverable: **Slash commands (NR-45)**: `bot_commands`, built-in commands, the `/` menu, and invocation as an ordinary message through the P3 send operation
+Deliverable: Cascade resolver, timezone-aware DND, F-9 and F-21 fixes
 
-Docs: SCHEMA §12.14; DESIGN_SYSTEM §4 (`SlashCommandMenu`)
+Docs: **GAP §7 in full**; SCHEMA §7 (cascade subsection); AUDIT §2.9 (BR-98…102)
 
-Legacy to read: `cognify/app/services/mention_dispatcher.rb` — the closest existing parsing path
+Legacy to read: `cognify/app/services/notification_preference_service.rb`, `app/models/notification_preference.rb`, `app/controllers/api/v1/notification_preferences_controller.rb`
 
 ---
 
@@ -72,6 +72,7 @@ Legacy to read: `cognify/app/services/mention_dispatcher.rb` — the closest exi
 | 9.1 | Provider interface, model registry, runner, usage events, prompt templates | Groq-first chain with Ollama as the floor (D-3). Fallback on 402/404/429/timeout writes `fallback` usage events (BR-73, F-12). Bot replies are rate-limited and a cache error denies (BR-85 fail closed). Reply loop waits for 9.2. |
 | 9.2 | Bot reply loop, streaming, cancel, regenerate, summarization, mentions | Direct DMs always reply; groups only on `<@account_id>` of an active bot member; bot-authored messages never dispatch (BR-83). Stream over Cable with cancel (BR-77), idempotent nonce (BR-76), regenerate tombstone for the prompting account (BR-15), rolling summary (BR-75), NR-12 quoted target. Context window and summarization threshold from settings. Playwright stream/cancel/regenerate/rewrite/slash waits for later sessions. |
 | 9.3 | Bot memory + pgvector, DS-1 disclosure, helpers, style profile consent, Bot Builder, personas | Shared memory with provenance, unfiltered across accounts (NR-11). DS-1 profile line and first-message notice. Rewrite into the composer; suggest-reply and translate in the message menu; translations cached in metadata (BR-86). Style profile defaults off (F-11). Bot Builder propose/approve/decline; 30 fresh personas; `deactivated_at` hides from the directory (BR-81). NR-F1 replica bot is a seam only. Admin approve UI waits for P12.5. Slash commands wait for 9.4. Playwright stream/cancel/regenerate/rewrite/slash waits. |
+| 9.4 | Slash commands (NR-45): `bot_commands`, builtins, `/` menu, invocation through P3 send | `bot_commands` plus builtins (`sticker`, `gif`, `help`). `GET /conversations/:id/commands` lists builtins and commands of bots present in the chat. `/sticker` and `/gif` stay client pickers; other invocations go through `Messages::Send` with `client_nonce` and position. Group slash dispatch without @mention. Prompt assembler injects command context. Playwright stream/cancel/regenerate/rewrite/slash still waits for live AI/Cable. |
 
 ---
 

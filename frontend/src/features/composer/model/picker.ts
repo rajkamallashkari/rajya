@@ -158,19 +158,55 @@ export function savedRepliesAsCommands(replies: SavedReplyView[]): SlashCommand[
   return replies.map((reply) => ({
     description: reply.body,
     name: reply.shortcut.replace(/^\//, ""),
-    source: "builtin",
+    source: "saved_reply",
   }));
 }
 
 export interface SlashCommand {
+  botAccountId?: number | null;
+  clientAction?: "open_sticker_picker" | "open_gif_picker" | null;
   description: string;
   name: string;
-  source: "builtin" | "bot";
+  source: "builtin" | "bot" | "saved_reply";
   usageHint?: string;
 }
 
+export function slashCommandsFromApi(
+  rows:
+    | Array<{
+        bot_account_id?: number | null;
+        client_action?: "open_sticker_picker" | "open_gif_picker" | null;
+        description: string;
+        name: string;
+        source: "builtin" | "bot";
+        usage_hint?: string | null;
+      }>
+    | undefined,
+): SlashCommand[] {
+  return (rows ?? []).map((row) => ({
+    botAccountId: row.bot_account_id,
+    clientAction: row.client_action,
+    description: row.description,
+    name: row.name,
+    source: row.source,
+    usageHint: row.usage_hint ?? undefined,
+  }));
+}
+
+export function isPickerCommand(command: SlashCommand): boolean {
+  return (
+    command.clientAction === "open_sticker_picker" ||
+    command.clientAction === "open_gif_picker" ||
+    isPickerSlash(command.name)
+  );
+}
+
 export function commandQuery(raw: string): string {
-  return raw.replace(/^\//, "").trim().toLowerCase();
+  return raw.replace(/^\//, "").trim().split(/\s+/)[0]!.toLowerCase();
+}
+
+export function slashMenuOpen(raw: string): boolean {
+  return raw.startsWith("/") && !/\s/.test(raw.slice(1));
 }
 
 export function filterCommands(commands: SlashCommand[], raw: string): SlashCommand[] {

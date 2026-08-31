@@ -9,9 +9,12 @@ import {
   filterCommands,
   filterGifs,
   filterReplies,
+  isPickerCommand,
   rememberEmoji,
   expandSavedReplyShortcut,
   savedRepliesAsCommands,
+  slashCommandsFromApi,
+  slashMenuOpen,
   gifsFromList,
   isPickerSlash,
   pickerTabForSlash,
@@ -44,19 +47,59 @@ describe("picker model", () => {
     expect(
       filterCommands([{ description: "Find chats", name: "help", source: "bot" }], "chat"),
     ).toHaveLength(1);
-    expect(expandSavedReplyShortcut("/omw ", [{ body: "On my way", id: "1", shortcut: "/omw" }])).toBe(
-      "On my way ",
-    );
-    expect(expandSavedReplyShortcut("/omw\n", [{ body: "On my way", id: "1", shortcut: "/omw" }])).toBe(
-      "On my way\n",
-    );
-    expect(expandSavedReplyShortcut("/omw", [{ body: "On my way", id: "1", shortcut: "/omw" }])).toBe(
-      "/omw",
-    );
+    expect(
+      expandSavedReplyShortcut("/omw ", [{ body: "On my way", id: "1", shortcut: "/omw" }]),
+    ).toBe("On my way ");
+    expect(
+      expandSavedReplyShortcut("/omw\n", [{ body: "On my way", id: "1", shortcut: "/omw" }]),
+    ).toBe("On my way\n");
+    expect(
+      expandSavedReplyShortcut("/omw", [{ body: "On my way", id: "1", shortcut: "/omw" }]),
+    ).toBe("/omw");
     expect(expandSavedReplyShortcut("hi ", [])).toBe("hi ");
     expect(expandSavedReplyShortcut(" ", [{ body: "Hi", id: "1", shortcut: "/omw" }])).toBe(" ");
     expect(expandSavedReplyShortcut("hi ", [{ body: "hi", id: "1", shortcut: "hi" }])).toBe("hi ");
-    expect(savedRepliesAsCommands([{ body: "Hi", id: "1", shortcut: "/omw" }])[0]?.name).toBe("omw");
+    expect(savedRepliesAsCommands([{ body: "Hi", id: "1", shortcut: "/omw" }])[0]?.name).toBe(
+      "omw",
+    );
+    expect(savedRepliesAsCommands([{ body: "Hi", id: "1", shortcut: "/omw" }])[0]?.source).toBe(
+      "saved_reply",
+    );
+    expect(commandQuery("/plan extra")).toBe("plan");
+    expect(slashMenuOpen("/")).toBe(true);
+    expect(slashMenuOpen("/plan")).toBe(true);
+    expect(slashMenuOpen("/plan extra")).toBe(false);
+    expect(slashMenuOpen("hi")).toBe(false);
+    expect(
+      slashCommandsFromApi([
+        {
+          bot_account_id: 2,
+          client_action: "open_sticker_picker",
+          description: "Stickers",
+          name: "sticker",
+          source: "builtin",
+          usage_hint: null,
+        },
+      ])[0],
+    ).toEqual({
+      botAccountId: 2,
+      clientAction: "open_sticker_picker",
+      description: "Stickers",
+      name: "sticker",
+      source: "builtin",
+      usageHint: undefined,
+    });
+    expect(slashCommandsFromApi(undefined)).toEqual([]);
+    expect(isPickerCommand({ description: "s", name: "sticker", source: "builtin" })).toBe(true);
+    expect(
+      isPickerCommand({
+        clientAction: "open_gif_picker",
+        description: "g",
+        name: "gif",
+        source: "builtin",
+      }),
+    ).toBe(true);
+    expect(isPickerCommand({ description: "Plan", name: "plan", source: "bot" })).toBe(false);
     expect(isPickerSlash("sticker")).toBe(true);
     expect(isPickerSlash("gif")).toBe(true);
     expect(isPickerSlash("omw")).toBe(false);
@@ -74,9 +117,9 @@ describe("picker model", () => {
       ]),
     ).toEqual([{ id: "9", packId: "1", shortcode: "wave", url: "https://x" }]);
     expect(stickerViewsFromPacks(undefined)).toEqual([]);
-    expect(gifsFromList([{ id: "g", preview_url: "https://g", title: "Party" }])[0]?.previewUrl).toBe(
-      "https://g",
-    );
+    expect(
+      gifsFromList([{ id: "g", preview_url: "https://g", title: "Party" }])[0]?.previewUrl,
+    ).toBe("https://g");
     expect(gifsFromList(undefined)).toEqual([]);
   });
 });
@@ -139,7 +182,12 @@ describe("PickerSheet", () => {
     const { rerender } = render(
       <PickerSheet
         gifs={[
-          { id: "g1", previewLabel: "gif", previewUrl: "https://media.test/gif.gif", title: "Party" },
+          {
+            id: "g1",
+            previewLabel: "gif",
+            previewUrl: "https://media.test/gif.gif",
+            title: "Party",
+          },
         ]}
         initialTab="gifs"
         onGifQueryChange={onGifQueryChange}

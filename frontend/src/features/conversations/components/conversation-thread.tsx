@@ -2,7 +2,12 @@ import { Calendar, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { getAccessSession } from "@/features/auth/model/access-session";
-import { isNewBotConversation, MemoryNotice, SmartReplyChips, SummarizeCard } from "@/features/bots";
+import {
+  isNewBotConversation,
+  MemoryNotice,
+  SmartReplyChips,
+  SummarizeCard,
+} from "@/features/bots";
 import {
   useRewrite,
   useSuggestReplies,
@@ -12,6 +17,7 @@ import {
 import { Composer } from "@/features/composer";
 import {
   gifsFromList,
+  slashCommandsFromApi,
   stickerViewsFromPacks,
   type GifView,
   type StickerView,
@@ -23,6 +29,7 @@ import {
   useBulkUnsend,
   useCancelGeneration,
   useConversation,
+  useConversationCommands,
   useCreateReminder,
   useEditMessage,
   useJumpToMessage,
@@ -207,6 +214,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const pinned = usePinnedIds(conversationId);
   const saved = useSavedIds();
   const savedReplies = useSavedReplies();
+  const commands = useConversationCommands(conversationId);
   const packs = useStickerPacks();
   const [gifQuery, setGifQuery] = useState("");
   const gifs = useGifSearch(gifQuery);
@@ -609,6 +617,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         gifUnavailable={gifs.isError}
         gifs={gifsFromList(gifs.data?.gifs)}
         savedReplies={savedReplyViews(savedReplies.data?.saved_replies)}
+        slashCommands={slashCommandsFromApi(commands.data?.commands)}
         stickers={stickerViewsFromPacks(packs.data?.sticker_packs)}
         provisional={provisional}
         value={draft}

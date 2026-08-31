@@ -37,16 +37,32 @@ module Bots
       if account.nil?
         account = Account.create!(kind: "bot", username: username, display_name: attrs[:name].presence || username,
                                   bio: attrs[:bio].to_s)
-        Bot.create!(account: account, persona_prompt: prompt, owner_account: nil)
+        bot = Bot.create!(account: account, persona_prompt: prompt, owner_account: nil)
+        upsert_commands!(bot, attrs[:commands])
         :created
       else
         account.update!(display_name: attrs[:name].presence || account.display_name, bio: attrs[:bio].to_s)
         bot = account.bot || account.create_bot!(persona_prompt: prompt, owner_account: nil)
         bot.update!(persona_prompt: prompt, owner_account: nil)
+        upsert_commands!(bot, attrs[:commands])
         :updated
       end
     rescue ActiveRecord::RecordInvalid => e
       e.record.errors.full_messages.join(", ")
+    end
+
+    def upsert_commands!(bot, raw_commands)
+      Array(raw_commands).each_with_index do |raw, index|
+        attrs = raw.to_h.symbolize_keys
+        name = attrs[:name].to_s.strip.downcase
+        next if name.blank?
+
+        command = bot.bot_commands.find_or_initialize_by(name: name)
+        command.description = attrs[:description].to_s
+        command.usage_hint = attrs[:usage_hint].to_s.presence
+        command.position = attrs[:position].presence || index
+        command.save!
+      end
     end
   end
   # rubocop:enable Rajya/NoUserFacingStrings

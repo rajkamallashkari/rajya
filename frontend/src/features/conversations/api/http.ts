@@ -416,6 +416,16 @@ export async function listSavedReplies() {
   );
 }
 
+export async function listConversationCommands(conversationId: number) {
+  return unwrap(
+    await apiClient().GET("/api/v1/conversations/{id}/commands", {
+      headers: bearerHeaders(),
+      params: { path: { id: conversationId } },
+    }),
+    "commands_failed",
+  );
+}
+
 export async function createMessageReminder(messageId: number, remindAt: string, note?: string) {
   return unwrap(
     await apiClient().POST("/api/v1/message_reminders", {

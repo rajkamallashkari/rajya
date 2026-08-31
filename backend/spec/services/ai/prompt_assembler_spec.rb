@@ -111,4 +111,38 @@ RSpec.describe Ai::PromptAssembler do
                              .select { |turn| turn.fetch(:role) == "system" }.pluck(:content)
     expect(systems.join).not_to include("remember")
   end
+
+  it "injects slash-command context for a declared command" do
+    user, bot, conversation = bot_dm
+    create(:bot_command, bot: bot, name: "plan", description: "Turn a goal into steps")
+    trigger = send_text(conversation, user.account, "/plan ship friday")
+
+    systems = described_class.messages(conversation: conversation, bot: bot, triggered_by: trigger)
+                             .select { |turn| turn.fetch(:role) == "system" }.pluck(:content)
+
+    expect(systems.join).to include("slash command", "/plan", "ship friday")
+  end
+
+  it "lists available commands when /help is invoked" do
+    user, bot, conversation = bot_dm
+    create(:bot_command, bot: bot, name: "plan", description: "Turn a goal into steps",
+           usage_hint: "/plan <goal>")
+    create(:bot_command, bot: bot, name: "status", description: "Bot status")
+    trigger = send_text(conversation, user.account, "/help")
+
+    systems = described_class.messages(conversation: conversation, bot: bot, triggered_by: trigger)
+                             .select { |turn| turn.fetch(:role) == "system" }.pluck(:content)
+
+    expect(systems.join).to include("available", "/plan", "/help", "/plan <goal>")
+  end
+
+  it "skips slash context when the prefix is not this bot's command" do
+    user, bot, conversation = bot_dm
+    trigger = send_text(conversation, user.account, "/unknown")
+
+    systems = described_class.messages(conversation: conversation, bot: bot, triggered_by: trigger)
+                             .select { |turn| turn.fetch(:role) == "system" }.pluck(:content)
+
+    expect(systems.join).not_to include("slash command")
+  end
 end

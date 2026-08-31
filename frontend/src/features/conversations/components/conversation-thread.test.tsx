@@ -138,8 +138,17 @@ describe("conversation layers", () => {
     await user.type(screen.getByPlaceholderText(en.picker.search_gifs), "party");
     await user.click(await screen.findByRole("button", { name: "Party" }));
     await user.type(field, "/om");
-    expect(await screen.findByRole("option")).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: /omw/i })).toBeInTheDocument();
     await user.clear(field);
+    await user.type(field, "/pl");
+    expect(await screen.findByRole("option", { name: /plan/i })).toBeInTheDocument();
+    await user.clear(field);
+    await user.type(field, "/help");
+    await user.keyboard("{Enter}");
+    await waitFor(() => {
+      expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    });
+    expect(screen.getByText("/help")).toBeInTheDocument();
     await user.type(field, "live-hello");
     await user.keyboard("{Enter}");
     expect(await screen.findByText("live-hello")).toBeInTheDocument();

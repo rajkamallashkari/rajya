@@ -46,6 +46,27 @@ RSpec.describe Bots::Import do
     expect(account.reload.bot).to be_present
   end
 
+  it "upserts declared slash commands on import" do
+    described_class.call
+    atlas = Account.find_by!(username: "atlas").bot
+
+    expect(atlas.bot_commands.find_by(name: "plan")).to have_attributes(
+      description: "Turn a goal into ordered next steps"
+    )
+    described_class.call
+    expect(atlas.bot_commands.where(name: "plan").count).to eq(1)
+  end
+
+  it "skips blank command names on import" do
+    result = described_class.call(
+      [ { username: "cmdbot", name: "X", bio: "b", persona_prompt: "A" * 80,
+          commands: [ { name: "", description: "nope" }, { name: "plan", description: "Plan" } ] } ]
+    ).value
+
+    expect(result.created).to eq(1)
+    expect(Account.find_by!(username: "cmdbot").bot.bot_commands.map(&:name)).to eq(%w[plan])
+  end
+
   it "captures persistence errors" do
     allow(Account).to receive(:create!).and_raise(ActiveRecord::RecordInvalid.new(Account.new))
     result = described_class.call(

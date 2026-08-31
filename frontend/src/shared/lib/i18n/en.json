@@ -717,6 +717,7 @@
   },
   "slash": {
     "empty": "No commands match",
+    "help": "List commands available in this chat",
     "hint": "{{hint}}"
   },
   "wallpaper": {

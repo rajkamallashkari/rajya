@@ -53,6 +53,7 @@ const expectedPaths = [
   "/api/v1/conversations/{conversation_id}/pins/{message_id}",
   "/api/v1/conversations/{id}",
   "/api/v1/conversations/{id}/archive",
+  "/api/v1/conversations/{id}/commands",
   "/api/v1/conversations/{id}/generations/cancel",
   "/api/v1/conversations/{id}/leave",
   "/api/v1/conversations/{id}/media",
@@ -922,6 +923,10 @@ describe("MSW handlers", () => {
     expect(emptyReorder.data?.folders).toEqual([]);
     const replies = await client.GET("/api/v1/saved_replies");
     expect(replies.data?.saved_replies).toHaveLength(1);
+    const commands = await client.GET("/api/v1/conversations/{id}/commands", {
+      params: { path: { id: 1 } },
+    });
+    expect(commands.data?.commands.some((row) => row.name === "plan")).toBe(true);
     const createdReply = await client.POST("/api/v1/saved_replies", {
       body: { shortcut: "/omw", body: "On my way" },
     });

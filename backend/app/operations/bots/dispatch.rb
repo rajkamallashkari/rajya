@@ -19,7 +19,17 @@ module Bots
       return members if message.conversation.direct?
 
       mentioned = Mentions::Parser.parse(message.body).account_ids
-      members.select { |bot| mentioned.include?(bot.account_id) }
+      command = SlashCommands::Parser.parse(message.body)
+      members.select do |bot|
+        mentioned.include?(bot.account_id) || owns_command?(bot, command)
+      end
+    end
+
+    def owns_command?(bot, command)
+      return false if command.nil?
+      return false if SlashCommands::Builtins.client_only?(command.name)
+
+      bot.bot_commands.exists?(name: command.name)
     end
 
     def bot_members(conversation)

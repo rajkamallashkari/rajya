@@ -98,6 +98,7 @@ Rails.application.routes.draw do
           post "generations/cancel", to: "conversation_generations#create"
           post :suggest_replies, to: "conversation_suggest_replies#create"
           post :summarize, to: "conversation_summaries#create"
+          get :commands, to: "conversation_commands#index"
           post :leave, to: "conversation_leaves#create"
           get :media, to: "conversation_galleries#show"
           get :search, to: "conversation_searches#show"

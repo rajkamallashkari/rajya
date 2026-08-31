@@ -263,6 +263,17 @@ RSpec.describe Messages::Send do
     expect(result.value.attachments.sole.content_type).to eq("image/gif")
   end
 
+  it "records a slash invocation as an ordinary ordered message with a client_nonce (NR-45)" do
+    user, conversation = setup
+    nonce = SecureRandom.uuid
+    first = send!(conversation, user.account, body: "/help", client_nonce: nonce).value
+    second = send!(conversation, user.account, body: "/help", client_nonce: nonce).value
+
+    expect(first).to have_attributes(body: "/help", client_nonce: nonce, position: 1, kind: "text")
+    expect(second.id).to eq(first.id)
+    expect(conversation.messages.count).to eq(1)
+  end
+
   it "surfaces a GIF import failure on send" do
     user, conversation = setup
     expect(send!(conversation, user.account, gif_id: "t1").error_code).to eq(:not_found)

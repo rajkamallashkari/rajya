@@ -81,6 +81,10 @@ en:
       bot:
         account_kind: "must be a bot account"
         username_taken: "has already been taken"
+      bot_command:
+        description_blank: "can't be blank"
+        name_invalid: "must be 1–32 lowercase letters, numbers, or underscores"
+        reserved: "is a built-in command name"
       block:
         self: "can't be the same as the blocking account"
       report:
@@ -181,6 +185,12 @@ en:
     admin: admin
     member: member
     owner: owner
+
+  slash:
+    builtins:
+      gif: "Search GIFs"
+      help: "List commands available in this chat"
+      sticker: "Browse stickers"
 
   system_events:
     member_added: "%{name} was added"

@@ -737,6 +737,29 @@ RSpec.configure do |config|
                 saved_replies: { type: :array, items: { "$ref" => "#/components/schemas/SavedReply" } }
               }
             },
+            SlashCommand: {
+              type: :object,
+              required: %w[name description source],
+              properties: {
+                name: { type: :string },
+                description: { type: :string },
+                usage_hint: { type: :string, nullable: true },
+                source: { type: :string, enum: %w[builtin bot] },
+                bot_account_id: { type: :integer, nullable: true },
+                client_action: {
+                  type: :string,
+                  nullable: true,
+                  enum: %w[open_sticker_picker open_gif_picker]
+                }
+              }
+            },
+            SlashCommandList: {
+              type: :object,
+              required: %w[commands],
+              properties: {
+                commands: { type: :array, items: { "$ref" => "#/components/schemas/SlashCommand" } }
+              }
+            },
             Sticker: {
               type: :object,
               required: %w[id sticker_pack_id shortcode position],

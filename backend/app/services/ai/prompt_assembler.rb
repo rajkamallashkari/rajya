@@ -7,6 +7,8 @@ module Ai
     SYSTEM_ROLE = "system"
     SUMMARY_PREFIX = "Summary of earlier conversation:"
     QUOTE_PREFIX = "The user is replying to this earlier message (quoted context, distinct from history):"
+    COMMAND_PREFIX = "The user invoked a slash command (ordinary chat message, distinct from history):"
+    HELP_PREFIX = "The user asked which commands are available in this conversation:"
 
     def self.messages(...)
       new(...).messages
@@ -19,7 +21,7 @@ module Ai
     end
 
     def messages
-      [ system_message, memory_message, summary_message, quote_message, *history_messages ].compact
+      [ system_message, memory_message, summary_message, quote_message, slash_message, *history_messages ].compact
     end
 
     private
@@ -53,6 +55,30 @@ module Ai
 
       clip = Settings.fetch(:reply_quote_length)
       { role: SYSTEM_ROLE, content: "#{QUOTE_PREFIX}\n#{quoted.body.to_s[0, clip]}" }
+    end
+
+    def slash_message
+      command = SlashCommands::Parser.parse(@triggered_by.body)
+      return if command.nil?
+
+      if command.name == SlashCommands::Builtins::HELP
+        return { role: SYSTEM_ROLE, content: "#{HELP_PREFIX}\n#{help_listing}" }
+      end
+
+      row = @bot.bot_commands.find_by(name: command.name)
+      return if row.nil?
+
+      { role: SYSTEM_ROLE,
+        content: "#{COMMAND_PREFIX}\n/#{row.name} #{row.description}\nArguments: #{command.arguments}" }
+    end
+
+    def help_listing
+      declared = @bot.bot_commands.order(:position, :name).map do |row|
+        hint = row.usage_hint.present? ? " #{row.usage_hint}" : ""
+        "/#{row.name} — #{row.description}#{hint}"
+      end
+      builtins = SlashCommands::Builtins.entries.map { |row| "/#{row.name} — #{row.description}" }
+      (builtins + declared).join("\n")
     end
 
     def history_messages

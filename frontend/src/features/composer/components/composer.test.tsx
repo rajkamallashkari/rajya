@@ -120,14 +120,7 @@ describe("Composer", () => {
     fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
     await user.click(screen.getByRole("menuitem", { name: en.composer.rewrite }));
     expect(onRewrite).toHaveBeenCalled();
-    rerender(
-      <Composer
-        onRewrite={onRewrite}
-        onSend={onSend}
-        provisional
-        value="later"
-      />,
-    );
+    rerender(<Composer onRewrite={onRewrite} onSend={onSend} provisional value="later" />);
     expect(screen.getByText(en.ai.provisional)).toBeInTheDocument();
     fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
     await user.click(screen.getByRole("menuitem", { name: en.composer.send_silent }));
@@ -283,8 +276,28 @@ describe("Composer", () => {
       />,
     );
     await user.type(screen.getByRole("textbox"), "/om");
-    await user.click(screen.getByRole("option"));
+    await user.click(screen.getByRole("option", { name: /omw/i }));
     expect(onChange).toHaveBeenCalledWith("On my way ");
+  });
+
+  it("inserts a bot slash command so send can post it as an ordinary message", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const onSend = vi.fn();
+    render(
+      <Composer
+        onChange={onChange}
+        onSend={onSend}
+        slashCommands={[{ description: "Turn a goal into steps", name: "plan", source: "bot" }]}
+      />,
+    );
+    await user.type(screen.getByRole("textbox"), "/pl");
+    await user.click(screen.getByRole("option", { name: /plan/i }));
+    expect(onChange).toHaveBeenCalledWith("/plan ");
+    await user.clear(screen.getByRole("textbox"));
+    await user.type(screen.getByRole("textbox"), "/help");
+    await user.keyboard("{Enter}");
+    expect(onSend).toHaveBeenCalledWith({ silent: false, text: "/help" });
   });
 
   it("opens the sticker picker from a slash command without an extra composer button", async () => {

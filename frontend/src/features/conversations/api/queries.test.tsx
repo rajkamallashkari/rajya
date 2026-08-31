@@ -17,6 +17,7 @@ import {
   useBulkUnsend,
   useClosePoll,
   useConversations,
+  useConversationCommands,
   useCreateFolder,
   useCreateReminder,
   useDestroyFolder,
@@ -530,10 +531,12 @@ describe("message queries", () => {
       const pin = usePinConversation();
       const unread = useMarkConversationUnread();
       const replies = useSavedReplies();
+      const commands = useConversationCommands(1);
       const remind = useCreateReminder();
       return (
         <div>
           <p>{replies.data?.saved_replies.length ?? 0}</p>
+          <p data-commands="">{commands.data?.commands.length ?? 0}</p>
           <Button onClick={() => pin.mutate({ id: 1, pinned: true })} type="button">
             pin-chat
           </Button>

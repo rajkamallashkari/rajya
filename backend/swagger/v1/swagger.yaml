@@ -724,6 +724,26 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Ok"
+  "/api/v1/conversations/{id}/commands":
+    get:
+      summary: List slash commands available in a conversation
+      tags:
+      - Bots
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SlashCommandList"
   "/api/v1/conversation_folders":
     get:
       summary: List conversation folders
@@ -5056,6 +5076,43 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/SavedReply"
+    SlashCommand:
+      type: object
+      required:
+      - name
+      - description
+      - source
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        usage_hint:
+          type: string
+          nullable: true
+        source:
+          type: string
+          enum:
+          - builtin
+          - bot
+        bot_account_id:
+          type: integer
+          nullable: true
+        client_action:
+          type: string
+          nullable: true
+          enum:
+          - open_sticker_picker
+          - open_gif_picker
+    SlashCommandList:
+      type: object
+      required:
+      - commands
+      properties:
+        commands:
+          type: array
+          items:
+            "$ref": "#/components/schemas/SlashCommand"
     Sticker:
       type: object
       required:

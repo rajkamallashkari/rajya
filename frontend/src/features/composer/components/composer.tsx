@@ -24,9 +24,10 @@ import {
 import {
   expandSavedReplyShortcut,
   filterCommands,
-  isPickerSlash,
+  isPickerCommand,
   pickerTabForSlash,
   savedRepliesAsCommands,
+  slashMenuOpen,
   type GifView,
   type PickerTab,
   type SavedReplyView,
@@ -38,7 +39,12 @@ import { usePressHold } from "@/shared/hooks/use-press-hold";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { cn } from "@/shared/lib/cn";
 import { Button, DismissLayer, IconButton, Textarea } from "@/shared/ui";
-import { ICON_CLASS, MENU_CONTENT_CLASS, MENU_ITEM_AI_CLASS, MENU_ITEM_CLASS } from "@/shared/ui/metrics";
+import {
+  ICON_CLASS,
+  MENU_CONTENT_CLASS,
+  MENU_ITEM_AI_CLASS,
+  MENU_ITEM_CLASS,
+} from "@/shared/ui/metrics";
 
 export type { ComposerAttachment };
 
@@ -81,6 +87,7 @@ export function Composer({
   replyTo,
   savedReplies = [],
   scheduledLabel,
+  slashCommands = [],
   stickers = [],
   value,
   voice,
@@ -111,6 +118,7 @@ export function Composer({
   replyTo?: ComposerReply | null;
   savedReplies?: SavedReplyView[];
   scheduledLabel?: string | null;
+  slashCommands?: SlashCommand[];
   stickers?: StickerView[];
   value?: string;
   voice?: VoiceRecorderResult;
@@ -277,14 +285,24 @@ export function Composer({
     },
   ].filter((item) => !item.hidden);
 
-  const replyCommands = savedRepliesAsCommands(savedReplies);
-  const pickerCommands: SlashCommand[] = [
-    { description: t("picker.slash_stickers"), name: "sticker", source: "builtin" },
-    { description: t("picker.slash_gifs"), name: "gif", source: "builtin" },
+  const fallbackCommands: SlashCommand[] = [
+    {
+      clientAction: "open_sticker_picker",
+      description: t("picker.slash_stickers"),
+      name: "sticker",
+      source: "builtin",
+    },
+    {
+      clientAction: "open_gif_picker",
+      description: t("picker.slash_gifs"),
+      name: "gif",
+      source: "builtin",
+    },
+    { description: t("slash.help"), name: "help", source: "builtin" },
   ];
-  const slashMatches = text.startsWith("/")
-    ? filterCommands([...pickerCommands, ...replyCommands], text)
-    : [];
+  const catalogCommands = slashCommands.length > 0 ? slashCommands : fallbackCommands;
+  const menuCommands = [...catalogCommands, ...savedRepliesAsCommands(savedReplies)];
+  const slashMatches = slashMenuOpen(text) ? filterCommands(menuCommands, text) : [];
 
   function openPicker(tab: PickerTab): void {
     setPickerTab(tab);
@@ -292,13 +310,19 @@ export function Composer({
   }
 
   function onSlashSelect(command: SlashCommand): void {
-    const tab = pickerTabForSlash(command.name);
-    if (tab && isPickerSlash(command.name)) {
-      setText("");
-      openPicker(tab);
+    if (isPickerCommand(command)) {
+      const tab = pickerTabForSlash(command.name);
+      if (tab) {
+        setText("");
+        openPicker(tab);
+      }
       return;
     }
-    setText(`${command.description} `);
+    if (command.source === "saved_reply") {
+      setText(`${command.description} `);
+      return;
+    }
+    setText(`/${command.name} `);
   }
 
   return (
@@ -330,11 +354,7 @@ export function Composer({
       ) : null}
       {slashMatches.length > 0 ? (
         <div className="px-[var(--space-3)] pb-[var(--space-2)]">
-          <SlashCommandMenu
-            commands={[...pickerCommands, ...replyCommands]}
-            onSelect={onSlashSelect}
-            query={text}
-          />
+          <SlashCommandMenu commands={menuCommands} onSelect={onSlashSelect} query={text} />
         </div>
       ) : null}
       <form

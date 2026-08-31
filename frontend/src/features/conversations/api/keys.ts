@@ -3,6 +3,7 @@ export const conversationKeys = {
   list: () => [...conversationKeys.all, "list"] as const,
   archived: () => [...conversationKeys.list(), "archived"] as const,
   detail: (id: number) => [...conversationKeys.all, "detail", id] as const,
+  commands: (id: number) => [...conversationKeys.all, "commands", id] as const,
 };
 
 export const folderKeys = {

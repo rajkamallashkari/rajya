@@ -1198,6 +1198,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conversations/{id}/commands": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List slash commands available in a conversation */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SlashCommandList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conversation_folders": {
         parameters: {
             query?: never;
@@ -6537,6 +6575,19 @@ export interface components {
         };
         SavedReplyList: {
             saved_replies: components["schemas"]["SavedReply"][];
+        };
+        SlashCommand: {
+            name: string;
+            description: string;
+            usage_hint?: string | null;
+            /** @enum {string} */
+            source: "builtin" | "bot";
+            bot_account_id?: number | null;
+            /** @enum {string|null} */
+            client_action?: "open_sticker_picker" | "open_gif_picker" | null;
+        };
+        SlashCommandList: {
+            commands: components["schemas"]["SlashCommand"][];
         };
         Sticker: {
             id: number;

@@ -382,6 +382,40 @@ ALTER SEQUENCE public.blocks_id_seq OWNED BY public.blocks.id;
 
 
 --
+-- Name: bot_commands; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.bot_commands (
+    id bigint NOT NULL,
+    bot_id bigint NOT NULL,
+    name public.citext NOT NULL,
+    description text NOT NULL,
+    usage_hint text,
+    "position" smallint DEFAULT 0 NOT NULL,
+    CONSTRAINT ck_bot_commands_name CHECK (((name)::text ~ '^[a-z0-9_]{1,32}$'::text))
+);
+
+
+--
+-- Name: bot_commands_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.bot_commands_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: bot_commands_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.bot_commands_id_seq OWNED BY public.bot_commands.id;
+
+
+--
 -- Name: bot_memories; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2524,6 +2558,13 @@ ALTER TABLE ONLY public.blocks ALTER COLUMN id SET DEFAULT nextval('public.block
 
 
 --
+-- Name: bot_commands id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bot_commands ALTER COLUMN id SET DEFAULT nextval('public.bot_commands_id_seq'::regclass);
+
+
+--
 -- Name: bot_memories id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3000,6 +3041,14 @@ ALTER TABLE ONLY public.audit_events
 
 ALTER TABLE ONLY public.blocks
     ADD CONSTRAINT blocks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bot_commands bot_commands_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bot_commands
+    ADD CONSTRAINT bot_commands_pkey PRIMARY KEY (id);
 
 
 --
@@ -3516,6 +3565,13 @@ CREATE INDEX idx_audit_events_impersonated_account ON public.audit_events USING 
 --
 
 CREATE UNIQUE INDEX idx_blocks_unique ON public.blocks USING btree (blocker_account_id, blocked_account_id);
+
+
+--
+-- Name: idx_bot_commands_bot_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_bot_commands_bot_name ON public.bot_commands USING btree (bot_id, name);
 
 
 --
@@ -5237,12 +5293,21 @@ ALTER TABLE ONLY public.message_link_previews
 
 
 --
+-- Name: bot_commands fk_rails_fe7c59d7b8; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bot_commands
+    ADD CONSTRAINT fk_rails_fe7c59d7b8 FOREIGN KEY (bot_id) REFERENCES public.bots(id) ON DELETE CASCADE;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260831140000'),
 ('20260831053000'),
 ('20260830235000'),
 ('20260830223100'),

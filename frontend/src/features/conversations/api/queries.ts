@@ -27,6 +27,7 @@ import {
   getMessageInfo,
   getPoll,
   listConversations,
+  listConversationCommands,
   listFolders,
   listMessages,
   listReactions,
@@ -690,6 +691,13 @@ export function useSavedReplies() {
   return useQuery({
     queryFn: listSavedReplies,
     queryKey: savedReplyKeys.list(),
+  });
+}
+
+export function useConversationCommands(conversationId: number) {
+  return useQuery({
+    queryFn: () => listConversationCommands(conversationId),
+    queryKey: conversationKeys.commands(conversationId),
   });
 }
 

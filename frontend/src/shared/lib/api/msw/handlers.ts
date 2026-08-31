@@ -662,6 +662,38 @@ export const handlerMap = {
       });
     },
   ),
+  "/api/v1/conversations/{id}/commands": http.get("*/api/v1/conversations/:id/commands", () =>
+    HttpResponse.json({
+      commands: [
+        {
+          client_action: "open_sticker_picker",
+          description: "Browse stickers",
+          name: "sticker",
+          source: "builtin",
+        },
+        {
+          client_action: "open_gif_picker",
+          description: "Search GIFs",
+          name: "gif",
+          source: "builtin",
+        },
+        {
+          client_action: null,
+          description: "List commands available in this chat",
+          name: "help",
+          source: "builtin",
+        },
+        {
+          bot_account_id: 2,
+          client_action: null,
+          description: "Turn a goal into steps",
+          name: "plan",
+          source: "bot",
+          usage_hint: "/plan <goal>",
+        },
+      ],
+    }),
+  ),
   "/api/v1/conversations/{id}/archive": http.all(
     "*/api/v1/conversations/:id/archive",
     ({ params, request }) => {
@@ -1190,7 +1222,12 @@ export const handlerMap = {
           id: 1,
           kind: "create",
           status: "pending",
-          payload: { bio: "Sky", name: "Nimbus", persona_prompt: "A".repeat(80), username: "nimbus" },
+          payload: {
+            bio: "Sky",
+            name: "Nimbus",
+            persona_prompt: "A".repeat(80),
+            username: "nimbus",
+          },
         },
         { status: 201 },
       );
@@ -1203,8 +1240,9 @@ export const handlerMap = {
   "/api/v1/admin/bot_requests": http.get("*/api/v1/admin/bot_requests", () =>
     HttpResponse.json({ bot_requests: [] }),
   ),
-  "/api/v1/admin/bot_requests/{id}/approve": http.post("*/api/v1/admin/bot_requests/:id/approve", () =>
-    HttpResponse.json(nimbusBot),
+  "/api/v1/admin/bot_requests/{id}/approve": http.post(
+    "*/api/v1/admin/bot_requests/:id/approve",
+    () => HttpResponse.json(nimbusBot),
   ),
   "/api/v1/admin/bot_requests/{id}/decline": http.post(
     "*/api/v1/admin/bot_requests/:id/decline",
