@@ -1,42 +1,26 @@
 # Keyed directly by `account_id` (SCHEMA_DESIGN.md §7) — settings live in the
-# `data` JSONB registry (CONVENTIONS.md §4.5), never as new columns.
+# `data` JSONB registry, never as new columns.
 class Preference < ApplicationRecord
   self.primary_key = "account_id"
 
-  # SCHEMA_DESIGN.md §7 privacy object — also the discoverability source of
-  # truth (BR-45…47). Missing keys fall back to these defaults so a row of
-  # `{}` is equivalent to the documented document.
-  PRIVACY_DEFAULTS = {
-    "read_receipts" => true,
-    "last_active" => true,
-    "discoverable_by_username" => true,
-    "discoverable_by_email" => false,
-    "discoverable_by_phone" => false,
-    "show_email_on_profile" => false,
-    "show_phone_on_profile" => false
-  }.freeze
-
   belongs_to :account, inverse_of: :preference
 
-  DEFAULT_TIMEZONE = "UTC"
-  STYLE_PROFILE_ENABLED_DEFAULT = false
-
   def privacy(key)
-    stored = data.is_a?(Hash) ? data.dig("privacy", key.to_s) : nil
-    stored.nil? ? self.class.privacy_default(key) : stored
+    Preferences::Document.dig(data, "privacy", key)
   end
 
   def style_profile_enabled?
-    stored = data.is_a?(Hash) ? data.dig("ai", "style_profile_enabled") : nil
-    stored.nil? ? STYLE_PROFILE_ENABLED_DEFAULT : ActiveModel::Type::Boolean.new.cast(stored)
+    ActiveModel::Type::Boolean.new.cast(Preferences::Document.dig(data, "ai", "style_profile_enabled"))
   end
 
   def style_profile
-    data.is_a?(Hash) ? data.dig("ai", "style_profile") : nil
+    stored = data.is_a?(Hash) ? data.dig("ai", "style_profile") : nil
+    stored
   end
 
   def style_profile_updated_at
-    data.is_a?(Hash) ? data.dig("ai", "style_profile_updated_at") : nil
+    stored = data.is_a?(Hash) ? data.dig("ai", "style_profile_updated_at") : nil
+    stored
   end
 
   def merge_ai!(attrs)
@@ -47,11 +31,10 @@ class Preference < ApplicationRecord
   end
 
   def timezone
-    stored = data.is_a?(Hash) ? data.dig("locale", "timezone") : nil
-    stored.presence || DEFAULT_TIMEZONE
+    Preferences::Document.dig(data, "locale", "timezone")
   end
 
   def self.privacy_default(key)
-    PRIVACY_DEFAULTS.fetch(key.to_s)
+    Preferences.defaults.dig("privacy", key.to_s)
   end
 end

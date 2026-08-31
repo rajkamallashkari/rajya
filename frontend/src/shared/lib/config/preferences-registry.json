@@ -1,0 +1,619 @@
+{
+  "fields": {
+    "appearance.theme": {
+      "type": "enum",
+      "default": "system",
+      "values": [
+        "light",
+        "dark",
+        "system"
+      ],
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.accent_light": {
+      "type": "string",
+      "default": "cyber_indigo",
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.accent_dark": {
+      "type": "string",
+      "default": "cyber_indigo",
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.split_accents": {
+      "type": "boolean",
+      "default": false,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.font_config_id": {
+      "type": "integer",
+      "min": 1,
+      "max": 2147483647,
+      "allow_nil": true,
+      "scoped": false
+    },
+    "appearance.text_size": {
+      "type": "integer",
+      "default": 0,
+      "min": -5,
+      "max": 5,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.text_weight": {
+      "type": "integer",
+      "default": 0,
+      "min": -5,
+      "max": 5,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.text_line_height": {
+      "type": "integer",
+      "default": 0,
+      "min": -5,
+      "max": 5,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.text_letter_spacing": {
+      "type": "integer",
+      "default": 0,
+      "min": -5,
+      "max": 5,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.density": {
+      "type": "enum",
+      "default": "comfortable",
+      "values": [
+        "comfortable",
+        "compact"
+      ],
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.wallpaper.preset": {
+      "type": "enum",
+      "default": "none",
+      "values": [
+        "none",
+        "dusk",
+        "mist",
+        "grove"
+      ],
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.wallpaper.dim": {
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.wallpaper.blur": {
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.bubble_corner_style": {
+      "type": "enum",
+      "default": "rounded",
+      "values": [
+        "rounded",
+        "square"
+      ],
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.chat_font_config_id": {
+      "type": "integer",
+      "min": 1,
+      "max": 2147483647,
+      "allow_nil": true,
+      "scoped": false
+    },
+    "appearance.reduce_transparency": {
+      "type": "boolean",
+      "default": false,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.always_show_timestamps": {
+      "type": "boolean",
+      "default": false,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.media_autoplay": {
+      "type": "enum",
+      "default": "wifi_only",
+      "values": [
+        "always",
+        "wifi_only",
+        "never"
+      ],
+      "allow_nil": false,
+      "scoped": false
+    },
+    "appearance.emoji_skin_tone": {
+      "type": "integer",
+      "default": 0,
+      "min": 0,
+      "max": 5,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "locale.language": {
+      "type": "enum",
+      "default": "en",
+      "values": [
+        "af",
+        "ar",
+        "az",
+        "be",
+        "bg",
+        "bn",
+        "bs",
+        "ca",
+        "cs",
+        "cy",
+        "da",
+        "de",
+        "el",
+        "en",
+        "eo",
+        "es",
+        "et",
+        "eu",
+        "fa",
+        "fi",
+        "fr",
+        "ga",
+        "gl",
+        "gu",
+        "he",
+        "hi",
+        "hr",
+        "hu",
+        "hy",
+        "id",
+        "is",
+        "it",
+        "ja",
+        "ka",
+        "kk",
+        "km",
+        "ko",
+        "ku",
+        "ky",
+        "lb",
+        "lo",
+        "lt",
+        "lv",
+        "mg",
+        "mk",
+        "ml",
+        "mn",
+        "mr",
+        "ms",
+        "mt",
+        "my",
+        "nb",
+        "ne",
+        "nl",
+        "pa",
+        "pl",
+        "pt",
+        "ro",
+        "ru",
+        "si",
+        "sk",
+        "sl",
+        "sq",
+        "sr",
+        "sv",
+        "sw",
+        "ta",
+        "te",
+        "tg",
+        "th",
+        "tl",
+        "tr",
+        "tt",
+        "uk",
+        "ur",
+        "uz",
+        "vi",
+        "zh",
+        "zu"
+      ],
+      "allow_nil": false,
+      "scoped": false
+    },
+    "locale.timezone": {
+      "type": "string",
+      "default": "UTC",
+      "allow_nil": false,
+      "format": "iana",
+      "scoped": false
+    },
+    "locale.date_format": {
+      "type": "enum",
+      "default": "MMM D, YYYY",
+      "values": [
+        "YYYY-MM-DD",
+        "MM/DD/YYYY",
+        "DD/MM/YYYY",
+        "DD-MM-YYYY",
+        "MMM D, YYYY",
+        "D MMM YYYY",
+        "MMMM D, YYYY",
+        "D MMMM YYYY",
+        "ddd, MMM D, YYYY",
+        "MM.DD.YYYY",
+        "DD.MM.YYYY"
+      ],
+      "allow_nil": false,
+      "scoped": false
+    },
+    "locale.time_format": {
+      "type": "enum",
+      "default": "12h",
+      "values": [
+        "12h",
+        "24h"
+      ],
+      "allow_nil": false,
+      "scoped": false
+    },
+    "privacy.read_receipts": {
+      "type": "boolean",
+      "default": true,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "privacy.last_active": {
+      "type": "boolean",
+      "default": true,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "privacy.discoverable_by_username": {
+      "type": "boolean",
+      "default": true,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "privacy.discoverable_by_email": {
+      "type": "boolean",
+      "default": false,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "privacy.discoverable_by_phone": {
+      "type": "boolean",
+      "default": false,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "privacy.show_email_on_profile": {
+      "type": "boolean",
+      "default": false,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "privacy.show_phone_on_profile": {
+      "type": "boolean",
+      "default": false,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "chat.quick_reactions": {
+      "type": "array",
+      "default": [
+        "👍",
+        "❤️",
+        "😂",
+        "😮",
+        "😭",
+        "🙏"
+      ],
+      "allow_nil": false,
+      "of": "string",
+      "size": 6,
+      "max_item_length": 16,
+      "scoped": false
+    },
+    "chat.enter_to_send": {
+      "type": "boolean",
+      "default": true,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "chat.voice_transcription_enabled": {
+      "type": "boolean",
+      "default": true,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "chat.link_previews_enabled": {
+      "type": "boolean",
+      "default": true,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "chat.save_to_gallery": {
+      "type": "boolean",
+      "default": false,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "chat.archive_muted_chats": {
+      "type": "boolean",
+      "default": false,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "ai.translation_language": {
+      "type": "enum",
+      "default": "en",
+      "values": [
+        "af",
+        "ar",
+        "az",
+        "be",
+        "bg",
+        "bn",
+        "bs",
+        "ca",
+        "cs",
+        "cy",
+        "da",
+        "de",
+        "el",
+        "en",
+        "eo",
+        "es",
+        "et",
+        "eu",
+        "fa",
+        "fi",
+        "fr",
+        "ga",
+        "gl",
+        "gu",
+        "he",
+        "hi",
+        "hr",
+        "hu",
+        "hy",
+        "id",
+        "is",
+        "it",
+        "ja",
+        "ka",
+        "kk",
+        "km",
+        "ko",
+        "ku",
+        "ky",
+        "lb",
+        "lo",
+        "lt",
+        "lv",
+        "mg",
+        "mk",
+        "ml",
+        "mn",
+        "mr",
+        "ms",
+        "mt",
+        "my",
+        "nb",
+        "ne",
+        "nl",
+        "pa",
+        "pl",
+        "pt",
+        "ro",
+        "ru",
+        "si",
+        "sk",
+        "sl",
+        "sq",
+        "sr",
+        "sv",
+        "sw",
+        "ta",
+        "te",
+        "tg",
+        "th",
+        "tl",
+        "tr",
+        "tt",
+        "uk",
+        "ur",
+        "uz",
+        "vi",
+        "zh",
+        "zu"
+      ],
+      "allow_nil": false,
+      "scoped": false
+    },
+    "ai.style_profile_enabled": {
+      "type": "boolean",
+      "default": false,
+      "allow_nil": false,
+      "scoped": false
+    },
+    "ai.style_profile": {
+      "type": "json",
+      "allow_nil": true,
+      "scoped": false
+    },
+    "ai.style_profile_updated_at": {
+      "type": "string",
+      "allow_nil": true,
+      "scoped": false
+    },
+    "notifications.level": {
+      "type": "enum",
+      "default": "all",
+      "values": [
+        "all",
+        "mentions",
+        "none"
+      ],
+      "allow_nil": false,
+      "scoped": true
+    },
+    "notifications.show_preview": {
+      "type": "boolean",
+      "default": true,
+      "allow_nil": false,
+      "scoped": true
+    },
+    "notifications.sound": {
+      "type": "boolean",
+      "default": true,
+      "allow_nil": false,
+      "scoped": true
+    },
+    "notifications.vibration": {
+      "type": "boolean",
+      "default": true,
+      "allow_nil": false,
+      "scoped": true
+    },
+    "notifications.dnd_enabled": {
+      "type": "boolean",
+      "default": false,
+      "allow_nil": false,
+      "scoped": true
+    },
+    "notifications.dnd_start": {
+      "type": "string",
+      "default": "22:00",
+      "allow_nil": false,
+      "format": "time",
+      "scoped": true
+    },
+    "notifications.dnd_end": {
+      "type": "string",
+      "default": "07:00",
+      "allow_nil": false,
+      "format": "time",
+      "scoped": true
+    },
+    "notifications.dnd_days": {
+      "type": "array",
+      "default": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "min": 0,
+      "max": 6,
+      "allow_nil": false,
+      "of": "integer",
+      "scoped": true
+    }
+  },
+  "defaults": {
+    "appearance": {
+      "theme": "system",
+      "accent_light": "cyber_indigo",
+      "accent_dark": "cyber_indigo",
+      "split_accents": false,
+      "font_config_id": null,
+      "text_size": 0,
+      "text_weight": 0,
+      "text_line_height": 0,
+      "text_letter_spacing": 0,
+      "density": "comfortable",
+      "wallpaper": {
+        "preset": "none",
+        "dim": 0.0,
+        "blur": 0.0
+      },
+      "bubble_corner_style": "rounded",
+      "chat_font_config_id": null,
+      "reduce_transparency": false,
+      "always_show_timestamps": false,
+      "media_autoplay": "wifi_only",
+      "emoji_skin_tone": 0
+    },
+    "locale": {
+      "language": "en",
+      "timezone": "UTC",
+      "date_format": "MMM D, YYYY",
+      "time_format": "12h"
+    },
+    "privacy": {
+      "read_receipts": true,
+      "last_active": true,
+      "discoverable_by_username": true,
+      "discoverable_by_email": false,
+      "discoverable_by_phone": false,
+      "show_email_on_profile": false,
+      "show_phone_on_profile": false
+    },
+    "chat": {
+      "quick_reactions": [
+        "👍",
+        "❤️",
+        "😂",
+        "😮",
+        "😭",
+        "🙏"
+      ],
+      "enter_to_send": true,
+      "voice_transcription_enabled": true,
+      "link_previews_enabled": true,
+      "save_to_gallery": false,
+      "archive_muted_chats": false
+    },
+    "ai": {
+      "translation_language": "en",
+      "style_profile_enabled": false,
+      "style_profile": null,
+      "style_profile_updated_at": null
+    },
+    "notifications": {
+      "global": {
+        "level": "all",
+        "show_preview": true,
+        "sound": true,
+        "vibration": true,
+        "dnd_enabled": false,
+        "dnd_start": "22:00",
+        "dnd_end": "07:00",
+        "dnd_days": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    }
+  }
+}

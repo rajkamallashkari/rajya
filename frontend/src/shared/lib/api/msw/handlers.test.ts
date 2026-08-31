@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../client";
-import { actorLabel, handlerMap, handlers, resetAiHelpers, resetFiledReports } from "./handlers";
+import { actorLabel, handlerMap, handlers, resetAiHelpers, resetFiledReports, resetPreferences } from "./handlers";
 import {
   MESSAGE_STAMP,
   messagingStore,
@@ -99,6 +99,7 @@ const expectedPaths = [
   "/api/v1/passkeys/register",
   "/api/v1/passkeys/registration_options",
   "/api/v1/passkeys/{id}",
+  "/api/v1/preferences",
   "/api/v1/polls/{id}",
   "/api/v1/polls/{id}/close",
   "/api/v1/polls/{id}/vote",
@@ -152,6 +153,7 @@ describe("MSW handlers", () => {
     resetMessagingStore();
     resetFiledReports();
     resetAiHelpers();
+    resetPreferences();
   });
 
   it("serves every generated path with typed bodies", async () => {
@@ -372,6 +374,12 @@ describe("MSW handlers", () => {
       body: { mode: "unread" },
     });
     expect(summary.data?.text).toBe("Ship Friday");
+    const prefs = await client.GET("/api/v1/preferences");
+    expect(prefs.data?.data.appearance.theme).toBe("system");
+    const patchedPrefs = await client.PATCH("/api/v1/preferences", {
+      body: { data: { appearance: { theme: "dark" } } },
+    });
+    expect(patchedPrefs.data?.data.appearance.theme).toBe("dark");
     const style = await client.GET("/api/v1/style_profile");
     expect(style.data?.enabled).toBe(false);
     const refused = await client.POST("/api/v1/style_profile");

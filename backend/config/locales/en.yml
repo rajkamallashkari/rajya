@@ -51,6 +51,18 @@ en:
       poll:
         question_blank: "can't be blank"
         options: "must have between %{min} and %{max} options"
+      preference:
+        invalid: "is invalid"
+        invalid_time: "must be HH:MM"
+        invalid_timezone: "must be an IANA timezone"
+        not_an_object: "must be an object"
+        not_included: "is not an allowed value"
+        out_of_range: "is out of range"
+        too_long: "is too long"
+        unknown_font: "must refer to a font in the catalogue"
+        unknown_key: "is not a registered preference"
+        unknown_scope: "is not a valid notification scope"
+        wrong_size: "must have the required number of entries"
       conversation:
         direct_key: "must be present only for direct conversations"
         member_permissions: "contains unknown keys or roles"

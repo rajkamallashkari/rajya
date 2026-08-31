@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 11.3 |
-| **Next session** | 12.1 |
+| **Last completed** | 12.1 |
+| **Next session** | 12.2 |
 | **Phase** | P12 — Settings & admin |
-| **Sessions remaining in phase** | 6 (12.1–12.6) |
+| **Sessions remaining in phase** | 5 (12.2–12.6) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 12.1 — Preferences registry, migration of every setting, generated types**
+**Session 12.2 — Settings panels: typography sliders, quick reactions, and the full personalisation surface**
 
-Deliverable: Preferences registry, migration of every setting, generated types
+Deliverable: Settings panels: typography sliders, quick reactions, and the full personalisation surface — wallpaper (NR-42), corner style, timestamps, autoplay, skin tone
 
-Docs: **SCHEMA §7 in full**; GAP §6; AUDIT §1.7, §2.4
+Docs: DESIGN_SYSTEM §3.5, §5.4, §8.1, DS-8; AUDIT §1.7, NR-13
 
-Legacy to read: `cognify/app/models/user_setting.rb`, `app/controllers/api/v1/user_settings_controller.rb`
+Legacy to read: `botverse/src/components/panels/`, `botverse/src/stores/typographyStore.ts`, `notificationPreferenceStore.ts`
 
 ---
 
@@ -78,6 +78,7 @@ Legacy to read: `cognify/app/models/user_setting.rb`, `app/controllers/api/v1/us
 | 11.1 | Lifecycle operation, signaling authorization, timeouts, call system events | `webrtc_calls` default off (404). Ringing → active → ended/missed/declined including all four paths to `missed`. Busy via the live-participant unique index (BR-63). Timeout emits `call_missed` not `call_cancelled` (BR-65). `unsubscribed` cancels a still-ringing initiator (BR-66). One system message per call, edited in place (BR-67). SignalingChannel relays only between participants (BR-69). ICE: coturn HMAC first, Metered if unset, STUN fallback (BR-71). Client event union is typed with router no-ops. Engine/ICE restart waits for 11.2; UI/Playwright/screen share wait for 11.3. |
 | 11.2 | WebRTC engine port with ICE restart | Ported the mesh engine (SDP/ICE relay, polite glare, heartbeats, media controls). `iceconnectionstate = failed` restarts ICE up to `ice_restart_max_attempts` (default 3) then hangs up with catalog copy (F-32 / BR-70). Group video stays 640×480 @ 20 fps (BR-111). Signaling uses `to_account_id` / `ice_candidate`. Call UI/PiP/screen share wait for 11.3. |
 | 11.3 | Call UI: full screen, PiP, incoming banner, controls, screen share (NR-47) | Full-screen voice/video, PiP, incoming banner, controls. 1:1 screen share (`is_screen_sharing`, group refused). MSW signaling plus Playwright: connect+hangup, decline, timeout, start/stop screen share. Group mesh stays manual. |
+| 12.1 | Preferences registry, migration of every setting, generated types | `Preferences.define` validates the SCHEMA §7 JSONB document (appearance, locale, privacy, chat, ai, four-scope notifications). GET/PATCH `/api/v1/preferences` deep-merges without a migration; unknown keys 422. Generated `preferences-registry.json` + `.d.ts`. Typography stays −5…+5 (NR-13); style-profile consent still defaults off (F-11). Settings panels wait for 12.2. |
 
 ---
 

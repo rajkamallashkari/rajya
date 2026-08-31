@@ -63,6 +63,7 @@ Rails.application.routes.draw do
       post "users/me/phone/verification", to: "phone_verifications#create"
       get "users/me/phone/verification", to: "phone_verifications#show"
       get "me", to: "users#show"
+      resource :preferences, only: %i[show update]
       get "accounts/username", to: "usernames#show"
       get "accounts/search", to: "account_searches#index"
       get "search", to: "searches#index"

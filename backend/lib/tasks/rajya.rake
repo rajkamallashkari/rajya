@@ -33,6 +33,14 @@ namespace :rajya do
       export type SettingsRegistry = Record<SettingKey, SettingsRegistryEntry>;
     TS
     puts "Wrote #{dts_path}"
+
+    pref_json = dir.join("preferences-registry.json")
+    File.write(pref_json, JSON.pretty_generate(Preferences.registry_payload))
+    puts "Wrote #{pref_json}"
+
+    pref_dts = dir.join("preferences-registry.d.ts")
+    File.write(pref_dts, Preferences.typescript)
+    puts "Wrote #{pref_dts}"
   end
 
   # Compose and CI create the Postgres database before Rails runs, so

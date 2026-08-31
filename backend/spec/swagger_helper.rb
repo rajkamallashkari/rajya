@@ -158,6 +158,14 @@ RSpec.configure do |config|
                 available: { type: :boolean }
               }
             },
+            Preferences: {
+              type: :object,
+              required: %w[data updated_at],
+              properties: {
+                data: { type: :object, additionalProperties: true },
+                updated_at: { type: :string, format: :"date-time", nullable: true }
+              }
+            },
             PhoneVerification: {
               type: :object,
               required: %w[status phone_changed],

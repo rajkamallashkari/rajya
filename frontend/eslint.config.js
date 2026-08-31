@@ -18,6 +18,7 @@ export default defineConfig(
     "public/mockServiceWorker.js",
     "src/shared/lib/api/schema.d.ts",
     "src/shared/lib/config/settings-registry.d.ts",
+    "src/shared/lib/config/preferences-registry.d.ts",
   ]),
   js.configs.recommended,
   ...tseslint.configs.recommended,

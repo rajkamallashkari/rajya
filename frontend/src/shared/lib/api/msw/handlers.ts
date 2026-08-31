@@ -2,6 +2,8 @@ import { http, HttpResponse, type HttpHandler } from "msw";
 import { MS_PER_SECOND } from "@/features/conversations/model/constants";
 import type { paths } from "@/shared/lib/api/schema";
 import { publishMswRealtime } from "@/shared/lib/realtime/msw-bridge";
+import preferencesRegistry from "@/shared/lib/config/preferences-registry.json";
+import type { PreferenceDocument } from "@/shared/lib/config/preferences-registry";
 import {
   appendSent,
   findConversation,
@@ -205,6 +207,32 @@ export function resetAiHelpers() {
   styleProfileState = { enabled: false, profile: null, updated_at: null, message_count: 0 };
 }
 
+function clonePreferenceDefaults(): PreferenceDocument {
+  return structuredClone(preferencesRegistry.defaults) as PreferenceDocument;
+}
+
+let preferenceState = {
+  data: clonePreferenceDefaults(),
+  updated_at: MESSAGE_STAMP as string | null,
+};
+
+export function resetPreferences() {
+  preferenceState = { data: clonePreferenceDefaults(), updated_at: MESSAGE_STAMP };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function deepMerge(base: Record<string, unknown>, overlay: Record<string, unknown>): Record<string, unknown> {
+  const next: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(overlay)) {
+    const existing = next[key];
+    next[key] = isRecord(existing) && isRecord(value) ? deepMerge(existing, value) : value;
+  }
+  return next;
+}
+
 const translationBody = {
   text: "Hello",
   source_language: "es",
@@ -385,6 +413,20 @@ export const handlerMap = {
       return HttpResponse.json(passkey);
     }
     return HttpResponse.json(ok);
+  }),
+  "/api/v1/preferences": http.all("*/api/v1/preferences", async ({ request }) => {
+    if (request.method === "PATCH") {
+      const body = (await request.json()) as { data?: Record<string, unknown> };
+      const overlay = isRecord(body.data) ? body.data : {};
+      preferenceState = {
+        data: deepMerge(
+          preferenceState.data as unknown as Record<string, unknown>,
+          overlay,
+        ) as unknown as PreferenceDocument,
+        updated_at: MESSAGE_STAMP,
+      };
+    }
+    return HttpResponse.json(preferenceState);
   }),
   "/api/v1/users/me/password": http.all("*/api/v1/users/me/password", ({ request }) => {
     if (request.method === "PATCH") {
