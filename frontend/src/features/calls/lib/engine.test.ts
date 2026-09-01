@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ICE_RESTART_MAX_ATTEMPTS, SPEAKER_POLL_MS, VOLUME_PROBE_DEFAULT } from "@/features/calls/model/constants";
+import {
+  ICE_RESTART_MAX_ATTEMPTS,
+  SPEAKER_POLL_MS,
+  VOLUME_PROBE_DEFAULT,
+} from "@/features/calls/model/constants";
 import { resetCallStore, useCallStore } from "@/features/calls/store/call-store";
 import { i18n } from "@/shared/lib/i18n";
 
@@ -189,7 +193,9 @@ describe("webrtc engine", () => {
 
   it("maps start-call error codes and recovers stuck calls", async () => {
     const { startCall, checkForStuckCall, endStuckCall } = await import("./engine");
-    mockCreate.mockRejectedValueOnce({ error: { code: "conflict", details: { reason: "already_in_call" } } });
+    mockCreate.mockRejectedValueOnce({
+      error: { code: "conflict", details: { reason: "already_in_call" } },
+    });
     mockGetActive.mockResolvedValueOnce({
       call: { id: 11, conversation_id: 1, kind: "audio", status: "active", participants: [] },
     });
@@ -219,7 +225,9 @@ describe("webrtc engine", () => {
 
   it("cancels a ringing stuck call", async () => {
     const { endStuckCall } = await import("./engine");
-    useCallStore.getState().setStuckCall({ id: 9, conversationId: 1, callType: "audio", status: "ringing" });
+    useCallStore
+      .getState()
+      .setStuckCall({ id: 9, conversationId: 1, callType: "audio", status: "ringing" });
     mockCancel.mockResolvedValueOnce({});
     await endStuckCall();
     expect(mockCancel).toHaveBeenCalledWith(9);
@@ -278,7 +286,8 @@ describe("webrtc engine", () => {
   });
 
   it("handles signaling: incoming, busy, mute, join, leave, dismiss", async () => {
-    const { handleSignalingMessage, setLocalAccountId, setSignalingSender, __test } = await import("./engine");
+    const { handleSignalingMessage, setLocalAccountId, setSignalingSender, __test } =
+      await import("./engine");
     const sent: Array<[string, Record<string, unknown>]> = [];
     setSignalingSender((action, data) => sent.push([action, data]));
     setLocalAccountId(1);
@@ -336,16 +345,15 @@ describe("webrtc engine", () => {
   });
 
   it("accepts, rejects, cancels, and ends calls", async () => {
-    const { acceptCall, rejectCall, cancelCall, endCall, setSignalingSender, __test } = await import(
-      "./engine"
-    );
+    const { acceptCall, rejectCall, cancelCall, endCall, setSignalingSender, __test } =
+      await import("./engine");
     setSignalingSender(() => undefined);
     useCallStore.setState({
       callId: 7,
       callType: "audio",
       participants: [
-        { id: 1, account_id: 1, status: "joined" },
-        { id: 2, account_id: 2, status: "joined" },
+        { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+        { id: 2, account_id: 2, status: "joined", is_screen_sharing: false },
       ],
       status: "ringing-incoming",
     });
@@ -397,13 +405,17 @@ describe("webrtc engine", () => {
 
   it("heartbeats while active and stops after hangup", async () => {
     vi.useFakeTimers();
-    const { handleSignalingMessage, setSignalingSender, endCall, setLocalAccountId } = await import(
-      "./engine"
-    );
+    const { handleSignalingMessage, setSignalingSender, endCall, setLocalAccountId } =
+      await import("./engine");
     const sent: Array<[string, Record<string, unknown>]> = [];
     setSignalingSender((action, data) => sent.push([action, data]));
     setLocalAccountId(1);
-    useCallStore.setState({ callId: 3, status: "connecting", participants: [], iceServers: [{ urls: "stun:x" }] });
+    useCallStore.setState({
+      callId: 3,
+      status: "connecting",
+      participants: [],
+      iceServers: [{ urls: "stun:x" }],
+    });
     await handleSignalingMessage({ type: "call_accepted", call_id: 3, account_id: 55 });
     await vi.advanceTimersByTimeAsync(20_000);
     expect(sent).toContainEqual(["heartbeat", { call_id: 3 }]);
@@ -416,9 +428,8 @@ describe("webrtc engine", () => {
   });
 
   it("relays offer and answer payloads and ignores a colliding impolite offer", async () => {
-    const { handleSignalingMessage, setLocalAccountId, setSignalingSender, __test } = await import(
-      "./engine"
-    );
+    const { handleSignalingMessage, setLocalAccountId, setSignalingSender, __test } =
+      await import("./engine");
     setSignalingSender(() => undefined);
     setLocalAccountId(1);
     useCallStore.setState({ callId: 1, iceServers: [{ urls: "stun:x" }] });
@@ -546,16 +557,18 @@ describe("webrtc engine", () => {
       iceServers: [{ urls: "stun:x" }],
       micOn: true,
       participants: [
-        { id: 1, account_id: 1, status: "joined" },
-        { id: 2, account_id: 2, status: "joined" },
-        { id: 3, account_id: 3, status: "joined" },
+        { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+        { id: 2, account_id: 2, status: "joined", is_screen_sharing: false },
+        { id: 3, account_id: 3, status: "joined", is_screen_sharing: false },
       ],
       status: "active",
     });
     __test.setLocalStreamForTest(fakeStream("both"));
     const pc = __test.createPeerConnection(9) as unknown as FakePC;
     pc.onicecandidate?.({ candidate: null } as RTCPeerConnectionIceEvent);
-    pc.onicecandidate?.({ candidate: { toJSON: () => ({ candidate: "x" }) } } as unknown as RTCPeerConnectionIceEvent);
+    pc.onicecandidate?.({
+      candidate: { toJSON: () => ({ candidate: "x" }) },
+    } as unknown as RTCPeerConnectionIceEvent);
     pc.ontrack?.({ streams: [fakeStream("audio")] } as unknown as RTCTrackEvent);
     pc.onnegotiationneeded?.();
     await vi.advanceTimersByTimeAsync(SPEAKER_POLL_MS);
@@ -602,8 +615,15 @@ describe("webrtc engine", () => {
     await rejectCall();
     await cancelCall();
     await endCall();
-    useCallStore.setState({ callId: 20, callType: "audio", participants: [], status: "ringing-incoming" });
-    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("device"));
+    useCallStore.setState({
+      callId: 20,
+      callType: "audio",
+      participants: [],
+      status: "ringing-incoming",
+    });
+    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("device"),
+    );
     mockDecline.mockRejectedValueOnce(new Error("x"));
     await acceptCall();
     useCallStore.setState({ callId: 21, status: "ringing-incoming" });
@@ -626,9 +646,23 @@ describe("webrtc engine", () => {
       from_account_id: 2,
       payload: { type: "offer", sdp: "v=0" },
     });
-    await handleSignalingMessage({ type: "offer", call_id: 99, payload: { type: "offer", sdp: "v=0" } });
-    await handleSignalingMessage({ type: "answer", call_id: 1, from_account_id: 77, payload: { type: "answer", sdp: "v=0" } });
-    await handleSignalingMessage({ type: "ice_candidate", call_id: 1, from_account_id: 77, payload: { candidate: "z" } });
+    await handleSignalingMessage({
+      type: "offer",
+      call_id: 99,
+      payload: { type: "offer", sdp: "v=0" },
+    });
+    await handleSignalingMessage({
+      type: "answer",
+      call_id: 1,
+      from_account_id: 77,
+      payload: { type: "answer", sdp: "v=0" },
+    });
+    await handleSignalingMessage({
+      type: "ice_candidate",
+      call_id: 1,
+      from_account_id: 77,
+      payload: { candidate: "z" },
+    });
     live.addIceCandidate.mockRejectedValueOnce(new Error("late"));
     __test.getRemoteDescSet()[11] = true;
     await handleSignalingMessage({
@@ -640,8 +674,8 @@ describe("webrtc engine", () => {
     useCallStore.setState({
       callId: 1,
       participants: [
-        { id: 1, account_id: 1, status: "joined" },
-        { id: 2, account_id: 2, status: "joined" },
+        { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+        { id: 2, account_id: 2, status: "joined", is_screen_sharing: false },
       ],
       status: "active",
     });
@@ -649,9 +683,9 @@ describe("webrtc engine", () => {
     useCallStore.setState({
       callId: 5,
       participants: [
-        { id: 1, account_id: 1, status: "joined" },
-        { id: 2, account_id: 2, status: "joined" },
-        { id: 3, account_id: 3, status: "joined" },
+        { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+        { id: 2, account_id: 2, status: "joined", is_screen_sharing: false },
+        { id: 3, account_id: 3, status: "joined", is_screen_sharing: false },
       ],
       status: "active",
     });
@@ -702,7 +736,9 @@ describe("webrtc engine", () => {
     await switchAudioInput("x");
     useCallStore.setState({ callType: "audio" });
     await flipCamera();
-    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("flip"));
+    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("flip"),
+    );
     useCallStore.setState({ callType: "video" });
     __test.setLocalStreamForTest(fakeStream("both"));
     await flipCamera();
@@ -779,7 +815,9 @@ describe("webrtc engine", () => {
     await switchAudioOutput("out");
     await applyAudioOutputToElement(sinkEl);
     sinkEl.remove();
-    (navigator.mediaDevices.enumerateDevices as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("enum"));
+    (navigator.mediaDevices.enumerateDevices as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("enum"),
+    );
     await toggleSpeaker();
     (navigator.mediaDevices.enumerateDevices as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
       { deviceId: "d", kind: "audiooutput", label: "Default" },
@@ -792,7 +830,9 @@ describe("webrtc engine", () => {
     });
     __test.setLocalStreamForTest(fakeStream("audio"));
     await toggleSpeaker();
-    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("mic"));
+    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("mic"),
+    );
     await switchAudioInput("mic-2");
     (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       getVideoTracks: () => [],
@@ -822,9 +862,23 @@ describe("webrtc engine", () => {
     mockCancel.mockRejectedValueOnce(new Error("cancel"));
     useCallStore.setState({ status: "idle", callId: null });
     await startCall(1, "audio", 1);
-    await handleSignalingMessage({ type: "offer", call_id: 1, from_account_id: 2, payload: { type: "pranswer", sdp: "x" } });
-    await handleSignalingMessage({ type: "ice_candidate", call_id: 1, payload: { candidate: "z" } });
-    await handleSignalingMessage({ type: "ice_candidate", call_id: 1, from_account_id: 2, payload: null });
+    await handleSignalingMessage({
+      type: "offer",
+      call_id: 1,
+      from_account_id: 2,
+      payload: { type: "pranswer", sdp: "x" },
+    });
+    await handleSignalingMessage({
+      type: "ice_candidate",
+      call_id: 1,
+      payload: { candidate: "z" },
+    });
+    await handleSignalingMessage({
+      type: "ice_candidate",
+      call_id: 1,
+      from_account_id: 2,
+      payload: null,
+    });
     await handleSignalingMessage({ type: "call_declined", call_id: 1 });
     await handleSignalingMessage({ type: "busy", call_id: 99, account_id: 1 });
     useCallStore.setState({ callId: 1, status: "connecting" });
@@ -875,10 +929,18 @@ describe("webrtc engine", () => {
     });
     __test.attachSpeakerAnalyser(23, fakeStream("audio"));
     __test.applySpeakerVolume(0.3);
-    await __test.replaceAudioTrack({ kind: "audio", enabled: true, stop: vi.fn() } as unknown as MediaStreamTrack);
+    await __test.replaceAudioTrack({
+      kind: "audio",
+      enabled: true,
+      stop: vi.fn(),
+    } as unknown as MediaStreamTrack);
     __test.setLocalStreamForTest(fakeStream("audio"));
     await __test.applyMicModeForSpeaker(true);
-    await __test.replaceAudioTrack({ kind: "audio", enabled: true, stop: vi.fn() } as unknown as MediaStreamTrack);
+    await __test.replaceAudioTrack({
+      kind: "audio",
+      enabled: true,
+      stop: vi.fn(),
+    } as unknown as MediaStreamTrack);
     useCallStore.setState({ iceServers: [{ urls: "stun:x" }], callId: 1 });
     __test.createPeerConnection(30);
     Object.defineProperty(__test.getPeerConnections()[30]!, "iceConnectionState", {
@@ -889,7 +951,10 @@ describe("webrtc engine", () => {
     useCallStore.setState({
       callId: 70,
       callType: "audio",
-      participants: [{ id: 1, account_id: 1, status: "joined" }, { id: 2, account_id: 2, status: "joined" }],
+      participants: [
+        { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+        { id: 2, account_id: 2, status: "joined", is_screen_sharing: false },
+      ],
       status: "ringing-incoming",
     });
     mockAccept.mockResolvedValueOnce({
@@ -901,9 +966,13 @@ describe("webrtc engine", () => {
         ],
       },
     });
-    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockResolvedValueOnce(fakeStream("audio"));
+    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      fakeStream("audio"),
+    );
     await acceptCall();
-    useCallStore.getState().setStuckCall({ id: 12, conversationId: 1, callType: "audio", status: "ringing" });
+    useCallStore
+      .getState()
+      .setStuckCall({ id: 12, conversationId: 1, callType: "audio", status: "ringing" });
     mockCancel.mockRejectedValueOnce(new Error("gone"));
     await endStuckCall();
     Object.defineProperty(HTMLMediaElement.prototype, "volume", {
@@ -944,7 +1013,9 @@ describe("webrtc engine", () => {
       payload: { type: "offer", sdp: "v=0" },
     });
     __test.getRemoteDescSet()[9] = true;
-    (__test.getPeerConnections()[9] as unknown as FakePC).addIceCandidate.mockRejectedValueOnce(new Error("late"));
+    (__test.getPeerConnections()[9] as unknown as FakePC).addIceCandidate.mockRejectedValueOnce(
+      new Error("late"),
+    );
     await handleSignalingMessage({
       type: "ice_candidate",
       call_id: 1,
@@ -953,11 +1024,20 @@ describe("webrtc engine", () => {
     });
     useCallStore.setState({ callId: 5, status: "active" });
     await handleSignalingMessage({ type: "call_declined", call_id: 99, account_id: 2 });
-    await handleSignalingMessage({ type: "answer", call_id: 99, from_account_id: 9, payload: { type: "answer", sdp: "v=0" } });
-    useCallStore.getState().setStuckCall({ id: 3, conversationId: 1, callType: "audio", status: "active" });
+    await handleSignalingMessage({
+      type: "answer",
+      call_id: 99,
+      from_account_id: 9,
+      payload: { type: "answer", sdp: "v=0" },
+    });
+    useCallStore
+      .getState()
+      .setStuckCall({ id: 3, conversationId: 1, callType: "audio", status: "active" });
     mockHangup.mockResolvedValueOnce({});
     await endStuckCall();
-    useCallStore.getState().setStuckCall({ id: 4, conversationId: 1, callType: "audio", status: "ringing" });
+    useCallStore
+      .getState()
+      .setStuckCall({ id: 4, conversationId: 1, callType: "audio", status: "ringing" });
     mockCancel.mockResolvedValueOnce({});
     await endStuckCall();
     __test.resetVolumeWritable();
@@ -970,7 +1050,12 @@ describe("webrtc engine", () => {
       getVideoTracks: () => [],
     });
     await __test.applyMicModeForSpeaker(false);
-    useCallStore.setState({ callId: 90, callType: "audio", participants: [], status: "ringing-incoming" });
+    useCallStore.setState({
+      callId: 90,
+      callType: "audio",
+      participants: [],
+      status: "ringing-incoming",
+    });
     (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
       new DOMException("denied", "NotAllowedError"),
     );
@@ -999,8 +1084,15 @@ describe("webrtc engine", () => {
   });
 
   it("covers remaining ?? and ternary branches", async () => {
-    const { __test, checkForStuckCall, setLocalAccountId, handleSignalingMessage, acceptCall, flipCamera, toggleSpeaker } =
-      await import("./engine");
+    const {
+      __test,
+      checkForStuckCall,
+      setLocalAccountId,
+      handleSignalingMessage,
+      acceptCall,
+      flipCamera,
+      toggleSpeaker,
+    } = await import("./engine");
     expect(__test.callErrorMessage({ error: {} })).toBe(i18n.t("calls.errors.start_failed"));
     mockGetActive.mockResolvedValueOnce({
       call: { id: 2, conversation_id: 1, kind: "video", status: "ringing", participants: [] },
@@ -1026,7 +1118,9 @@ describe("webrtc engine", () => {
     Object.defineProperty(navigator, "mediaDevices", {
       configurable: true,
       value: {
-        enumerateDevices: vi.fn(async () => [{ deviceId: "d", kind: "audiooutput", label: "Built-in" }]),
+        enumerateDevices: vi.fn(async () => [
+          { deviceId: "d", kind: "audiooutput", label: "Built-in" },
+        ]),
         getUserMedia: vi.fn(async () => fakeStream("both")),
       },
     });
@@ -1035,7 +1129,7 @@ describe("webrtc engine", () => {
     useCallStore.setState({
       callId: 8,
       callType: "audio",
-      participants: [{ id: 1, account_id: 2, status: "joined" }],
+      participants: [{ id: 1, account_id: 2, status: "joined", is_screen_sharing: false }],
       status: "ringing-incoming",
     });
     mockAccept.mockResolvedValueOnce({ call: {}, ice_servers: [] });
@@ -1052,13 +1146,23 @@ describe("webrtc engine", () => {
     });
     await flipCamera();
     const probe = document.createElement("audio");
-    Object.defineProperty(probe, "volume", { configurable: true, get: () => VOLUME_PROBE_DEFAULT, set: () => undefined });
+    Object.defineProperty(probe, "volume", {
+      configurable: true,
+      get: () => VOLUME_PROBE_DEFAULT,
+      set: () => undefined,
+    });
     const orig = document.createElement.bind(document);
-    document.createElement = ((tag: string) => (tag === "audio" ? probe : orig(tag))) as typeof document.createElement;
+    document.createElement = ((tag: string) =>
+      tag === "audio" ? probe : orig(tag)) as typeof document.createElement;
     __test.resetVolumeWritable();
     __test.detectVolumeWritable();
     document.createElement = orig;
-    useCallStore.setState({ callId: 91, callType: "audio", participants: [], status: "ringing-incoming" });
+    useCallStore.setState({
+      callId: 91,
+      callType: "audio",
+      participants: [],
+      status: "ringing-incoming",
+    });
     Object.defineProperty(navigator, "mediaDevices", {
       configurable: true,
       value: {
@@ -1073,13 +1177,8 @@ describe("webrtc engine", () => {
   });
 
   it("shares a screen in 1:1, refuses groups, and leaves the call healthy when stopped", async () => {
-    const {
-      __test,
-      handleSignalingMessage,
-      setLocalAccountId,
-      startScreenShare,
-      stopScreenShare,
-    } = await import("./engine");
+    const { __test, handleSignalingMessage, setLocalAccountId, startScreenShare, stopScreenShare } =
+      await import("./engine");
     setLocalAccountId(1);
     mockScreenShare.mockResolvedValue({});
     useCallStore.setState({
@@ -1114,7 +1213,9 @@ describe("webrtc engine", () => {
 
     useCallStore.setState({ isScreenSharing: false });
     await startScreenShare();
-    const video = display.getVideoTracks()[0] as MediaStreamTrack & { onended: (() => void) | null };
+    const video = display.getVideoTracks()[0] as MediaStreamTrack & {
+      onended: (() => void) | null;
+    };
     video.onended?.();
     await Promise.resolve();
     expect(useCallStore.getState().isScreenSharing).toBe(false);
@@ -1226,11 +1327,11 @@ describe("webrtc engine", () => {
     expect(withScreen.addTrack).toHaveBeenCalled();
     const first = fakeStream("video");
     const second = fakeStream("video");
-    withScreen.ontrack?.({ streams: [first] } as RTCTrackEvent);
+    withScreen.ontrack?.({ streams: [first] } as unknown as RTCTrackEvent);
     expect(useCallStore.getState().remoteStreams[8]).toBe(first);
-    withScreen.ontrack?.({ streams: [second] } as RTCTrackEvent);
+    withScreen.ontrack?.({ streams: [second] } as unknown as RTCTrackEvent);
     expect(useCallStore.getState().remoteScreenStreams[8]).toBe(second);
-    withScreen.ontrack?.({ streams: [] } as RTCTrackEvent);
+    withScreen.ontrack?.({ streams: [] } as unknown as RTCTrackEvent);
     __test.setScreenStreamForTest(null);
     __test.cleanupAllPeers();
 
@@ -1243,13 +1344,33 @@ describe("webrtc engine", () => {
       ],
       status: "active",
     });
-    await handleSignalingMessage({ type: "screen_share", call_id: 3, account_id: 2, sharing: true });
+    await handleSignalingMessage({
+      type: "screen_share",
+      call_id: 3,
+      account_id: 2,
+      sharing: true,
+    });
     expect(useCallStore.getState().participants[1]?.is_screen_sharing).toBe(true);
-    await handleSignalingMessage({ type: "screen_share", call_id: 3, account_id: 2, sharing: false });
+    await handleSignalingMessage({
+      type: "screen_share",
+      call_id: 3,
+      account_id: 2,
+      sharing: false,
+    });
     expect(useCallStore.getState().remoteScreenStreams[2]).toBeUndefined();
-    await handleSignalingMessage({ type: "screen_share", call_id: 99, account_id: 2, sharing: true });
+    await handleSignalingMessage({
+      type: "screen_share",
+      call_id: 99,
+      account_id: 2,
+      sharing: true,
+    });
     await handleSignalingMessage({ type: "screen_share", call_id: 3, sharing: true });
-    await handleSignalingMessage({ type: "screen_share", call_id: 3, account_id: 1, sharing: true });
+    await handleSignalingMessage({
+      type: "screen_share",
+      call_id: 3,
+      account_id: 1,
+      sharing: true,
+    });
     __test.cleanupAllPeers();
   });
 });

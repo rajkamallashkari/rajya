@@ -8,6 +8,26 @@
     "gallery": "Gallery",
     "accounts": "Accounts"
   },
+  "admin": {
+    "account_ids": "Account IDs",
+    "category": "Category {{name}}",
+    "code_default": "Code default",
+    "colours": "Colours",
+    "contrast_failed": "{{token}} fails contrast against {{against}}",
+    "current": "Current",
+    "flags": "Feature flags",
+    "percentage": "Rollout percentage",
+    "reset": "Reset",
+    "reset_all": "Reset all colours",
+    "reset_string": "Reset string",
+    "search": "Search strings",
+    "settings": "Settings",
+    "strings": "Strings",
+    "surface": "Surface",
+    "surface_all": "All surfaces",
+    "title": "Admin",
+    "used_on_screen": "Used on this screen"
+  },
   "ai": {
     "build_style": "Build my style profile",
     "consent": "Let helpers learn my writing style",

@@ -2,7 +2,11 @@ import { http, HttpResponse, type HttpHandler } from "msw";
 import { MS_PER_SECOND } from "@/features/conversations/model/constants";
 import type { components, paths } from "@/shared/lib/api/schema";
 import { publishMswRealtime } from "@/shared/lib/realtime/msw-bridge";
-import { ACCENT_BOOT_HEX, ACCENT_CONTRAST_NEAR_BLACK } from "@/shared/lib/theme/constants";
+import {
+  ACCENT_BOOT_HEX,
+  ACCENT_CONTRAST_NEAR_BLACK,
+  SEMANTIC_DEFAULTS,
+} from "@/shared/lib/theme/constants";
 import preferencesRegistry from "@/shared/lib/config/preferences-registry.json";
 import type { PreferenceDocument } from "@/shared/lib/config/preferences-registry";
 import {
@@ -32,6 +36,11 @@ import {
 type HealthBody = NonNullable<
   paths["/health"]["get"]["responses"][200]["content"]
 >["application/json"];
+type AdminSetting = components["schemas"]["AdminSetting"];
+type AdminFeatureFlag = components["schemas"]["AdminFeatureFlag"];
+type AdminTranslationString = components["schemas"]["AdminTranslationString"];
+type AdminThemeToken = components["schemas"]["AdminThemeToken"];
+type AdminThemeMap = Record<"dark" | "light", AdminThemeToken[]>;
 
 type SessionBody = NonNullable<
   paths["/auth/login"]["post"]["responses"][200]["content"]
@@ -93,6 +102,7 @@ const session = {
     has_password: true,
     has_passkey: false,
     phone_verified: false,
+    is_admin: false,
   },
 } satisfies SessionBody;
 
@@ -233,16 +243,114 @@ export function resetPreferences() {
 
 export function seedPreferenceOverlay(overlay: Record<string, unknown>) {
   preferenceState = {
-    data: deepMerge(clonePreferenceDefaults() as unknown as Record<string, unknown>, overlay) as unknown as PreferenceDocument,
+    data: deepMerge(
+      clonePreferenceDefaults() as unknown as Record<string, unknown>,
+      overlay,
+    ) as unknown as PreferenceDocument,
     updated_at: MESSAGE_STAMP,
   };
+}
+
+const adminSetting = {
+  key: "message_edit_window",
+  type: "integer",
+  category: "messaging",
+  default: 900,
+  description: "Seconds after send during which the sender may edit (BR-2, 15 min).",
+  min: 1,
+  max: 86400,
+  allow_nil: false,
+  value: 900,
+  overridden: false,
+} satisfies AdminSetting;
+
+const adminArraySetting = {
+  key: "gif_providers",
+  type: "array",
+  category: "",
+  default: [],
+  description: "GIF search providers.",
+  value: ["tenor"],
+  overridden: false,
+} satisfies AdminSetting;
+
+const adminFlag = {
+  key: "webrtc_calls",
+  description: "P2P audio/video via Cable signaling.",
+  default: false,
+  enabled: false,
+  overridden: false,
+  rollout: {},
+} satisfies AdminFeatureFlag;
+
+const adminString = {
+  key: "errors.not_found",
+  locale: "en",
+  surface: "errors",
+  default: "The requested resource could not be found.",
+  value: "The requested resource could not be found.",
+  overridden: false,
+} satisfies AdminTranslationString;
+
+const adminScreenString = {
+  key: "admin.title",
+  locale: "en",
+  surface: "admin",
+  default: "Admin",
+  value: "Admin",
+  overridden: false,
+} satisfies AdminTranslationString;
+
+const adminOptionalString = {
+  key: "admin.optional",
+  locale: "en",
+  surface: "admin",
+  default: null,
+  value: "Optional",
+  overridden: false,
+} satisfies AdminTranslationString;
+
+const adminToken = {
+  token_name: "--text-primary",
+  default: SEMANTIC_DEFAULTS.light["--text-primary"],
+  value: SEMANTIC_DEFAULTS.light["--text-primary"],
+  overridden: false,
+} satisfies AdminThemeToken;
+
+const adminDarkToken = {
+  ...adminToken,
+  default: SEMANTIC_DEFAULTS.dark["--text-primary"],
+  value: SEMANTIC_DEFAULTS.dark["--text-primary"],
+};
+
+let adminSettings: AdminSetting[] = [adminSetting, adminArraySetting];
+let adminFlags: AdminFeatureFlag[] = [adminFlag];
+let adminStrings: AdminTranslationString[] = [adminString, adminScreenString, adminOptionalString];
+let adminThemes: AdminThemeMap = {
+  light: [adminToken],
+  dark: [adminDarkToken],
+};
+let themePalette: components["schemas"]["ThemeOverridePalette"] = { light: {}, dark: {} };
+
+export function resetAdminConfig() {
+  adminSettings = [{ ...adminSetting }, { ...adminArraySetting, value: ["tenor"] }];
+  adminFlags = [{ ...adminFlag, rollout: {} }];
+  adminStrings = [{ ...adminString }, { ...adminScreenString }, { ...adminOptionalString }];
+  adminThemes = {
+    light: [{ ...adminToken }],
+    dark: [{ ...adminDarkToken }],
+  };
+  themePalette = { light: {}, dark: {} };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function deepMerge(base: Record<string, unknown>, overlay: Record<string, unknown>): Record<string, unknown> {
+function deepMerge(
+  base: Record<string, unknown>,
+  overlay: Record<string, unknown>,
+): Record<string, unknown> {
   const next: Record<string, unknown> = { ...base };
   for (const [key, value] of Object.entries(overlay)) {
     const existing = next[key];
@@ -1440,6 +1548,139 @@ export const handlerMap = {
         payload: {},
       }),
   ),
+  "/api/v1/admin/settings": http.all("*/api/v1/admin/settings", async ({ request }) => {
+    if (request.method === "PATCH") {
+      const body = (await request.json()) as { key?: string; value?: unknown };
+      adminSettings = adminSettings.map((row) =>
+        row.key === body.key ? { ...row, value: body.value, overridden: true } : row,
+      );
+      const setting = adminSettings.find((row) => row.key === body.key) ?? {
+        ...adminSetting,
+        key: body.key ?? adminSetting.key,
+        value: body.value,
+        overridden: true,
+      };
+      return HttpResponse.json({ setting });
+    }
+    if (request.method === "DELETE") {
+      const key = new URL(request.url).searchParams.get("key");
+      adminSettings = adminSettings.map((row) =>
+        row.key === key ? { ...row, value: row.default, overridden: false } : row,
+      );
+      return HttpResponse.json({
+        setting: adminSettings.find((row) => row.key === key) ?? adminSetting,
+      });
+    }
+    return HttpResponse.json({ settings: adminSettings, unregistered_keys: [] });
+  }),
+  "/api/v1/admin/feature_flags": http.all("*/api/v1/admin/feature_flags", async ({ request }) => {
+    if (request.method === "PATCH") {
+      const body = (await request.json()) as {
+        enabled?: boolean;
+        key?: string;
+        rollout?: Record<string, unknown>;
+      };
+      adminFlags = adminFlags.map((row) =>
+        row.key === body.key
+          ? {
+              ...row,
+              enabled: Boolean(body.enabled),
+              overridden: true,
+              rollout: body.rollout ?? {},
+            }
+          : row,
+      );
+      return HttpResponse.json({
+        feature_flag: adminFlags.find((row) => row.key === body.key) ?? adminFlag,
+      });
+    }
+    return HttpResponse.json({ feature_flags: adminFlags, unregistered_keys: [] });
+  }),
+  "/api/v1/admin/translation_strings": http.all(
+    "*/api/v1/admin/translation_strings",
+    async ({ request }) => {
+      if (request.method === "PATCH") {
+        const body = (await request.json()) as { key?: string; value?: string; locale?: string };
+        adminStrings = adminStrings.map((row) =>
+          row.key === body.key ? { ...row, value: body.value ?? row.value, overridden: true } : row,
+        );
+        return HttpResponse.json({
+          translation_string: adminStrings.find((row) => row.key === body.key) ?? adminString,
+        });
+      }
+      if (request.method === "DELETE") {
+        const key = new URL(request.url).searchParams.get("key");
+        adminStrings = adminStrings.map((row) =>
+          row.key === key ? { ...row, value: row.default ?? row.value, overridden: false } : row,
+        );
+        return HttpResponse.json({
+          translation_string: adminStrings.find((row) => row.key === key) ?? adminString,
+        });
+      }
+      const q = new URL(request.url).searchParams.get("q") ?? "";
+      const surface = new URL(request.url).searchParams.get("surface") ?? "";
+      const translation_strings = adminStrings.filter((row) => {
+        if (surface && row.surface !== surface) {
+          return false;
+        }
+        if (q && !`${row.key}${row.value}`.includes(q)) {
+          return false;
+        }
+        return true;
+      });
+      return HttpResponse.json({ translation_strings });
+    },
+  ),
+  "/api/v1/admin/theme_overrides": http.all(
+    "*/api/v1/admin/theme_overrides",
+    async ({ request }) => {
+      if (request.method === "PATCH") {
+        const body = (await request.json()) as {
+          theme?: string;
+          token_name?: string;
+          value?: string;
+        };
+        if (body.value === SEMANTIC_DEFAULTS.light["--surface-app"]) {
+          return HttpResponse.json(
+            {
+              error: {
+                code: "validation_failed",
+                message: "contrast",
+                details: { pair: { token: "--text-primary", against: "--surface-app" } },
+              },
+            },
+            { status: 422 },
+          );
+        }
+        const theme = body.theme === "dark" ? "dark" : "light";
+        const tokenName = body.token_name ?? "--text-primary";
+        const tokens = adminThemes[theme];
+        adminThemes = {
+          ...adminThemes,
+          [theme]: tokens.map((token) =>
+            token.token_name === tokenName
+              ? { ...token, value: body.value ?? token.value, overridden: true }
+              : token,
+          ),
+        };
+        themePalette = {
+          ...themePalette,
+          [theme]: { ...themePalette[theme], [tokenName]: body.value ?? "" },
+        };
+        const override =
+          adminThemes[theme].find((token) => token.token_name === tokenName) ?? adminToken;
+        return HttpResponse.json({ override });
+      }
+      if (request.method === "DELETE") {
+        resetAdminConfig();
+        return HttpResponse.json({ themes: adminThemes });
+      }
+      return HttpResponse.json({ themes: adminThemes });
+    },
+  ),
+  "/api/v1/theme_overrides": http.get("*/api/v1/theme_overrides", () =>
+    HttpResponse.json(themePalette),
+  ),
   "/api/v1/calls": http.post("*/api/v1/calls", async ({ request }) => {
     const body = (await request.json()) as { conversation_id?: number; kind?: string };
     const initiatorId = actorIdFromRequest(request);
@@ -1473,18 +1714,30 @@ export const handlerMap = {
   }),
   "/api/v1/calls/{id}/cancel": http.post("*/api/v1/calls/:id/cancel", ({ params, request }) => {
     const id = Number(params.id);
-    publishMswRealtime({ type: "call_cancelled", call_id: id, account_id: actorIdFromRequest(request) });
+    publishMswRealtime({
+      type: "call_cancelled",
+      call_id: id,
+      account_id: actorIdFromRequest(request),
+    });
     publishMswRealtime({ type: "call_missed", call_id: id });
     return HttpResponse.json(callEnvelope(id, "missed"));
   }),
   "/api/v1/calls/{id}/decline": http.post("*/api/v1/calls/:id/decline", ({ params, request }) => {
     const id = Number(params.id);
-    publishMswRealtime({ type: "call_declined", call_id: id, account_id: actorIdFromRequest(request) });
+    publishMswRealtime({
+      type: "call_declined",
+      call_id: id,
+      account_id: actorIdFromRequest(request),
+    });
     return HttpResponse.json(callEnvelope(id, "declined"));
   }),
   "/api/v1/calls/{id}/hangup": http.post("*/api/v1/calls/:id/hangup", ({ params, request }) => {
     const id = Number(params.id);
-    publishMswRealtime({ type: "call_ended", call_id: id, account_id: actorIdFromRequest(request) });
+    publishMswRealtime({
+      type: "call_ended",
+      call_id: id,
+      account_id: actorIdFromRequest(request),
+    });
     return HttpResponse.json(callEnvelope(id, "ended"));
   }),
   "/api/v1/calls/{id}/screen_share": http.post(

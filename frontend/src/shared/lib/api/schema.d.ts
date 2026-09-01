@@ -89,6 +89,380 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List registry settings with current values */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminSettingList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Reset a setting to its code default */
+        delete: {
+            parameters: {
+                query?: {
+                    key?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description reset */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminSettingEnvelope"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Override a registered setting */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        key?: string;
+                        value?: unknown;
+                    };
+                };
+            };
+            responses: {
+                /** @description updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminSettingEnvelope"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/admin/feature_flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List feature flags with defaults and rollout */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminFeatureFlagList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Toggle a flag and set rollout */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        key?: string;
+                        enabled?: boolean;
+                        rollout?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminFeatureFlagEnvelope"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/admin/translation_strings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the string catalogue */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    surface?: string;
+                    locale?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminTranslationStringList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Reset a catalogue string to its default */
+        delete: {
+            parameters: {
+                query?: {
+                    key?: string;
+                    locale?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description reset */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminTranslationStringEnvelope"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Override a catalogue string */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        key?: string;
+                        locale?: string;
+                        value?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminTranslationStringEnvelope"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/admin/theme_overrides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List semantic colour tokens */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminThemeOverrideList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Reset colour tokens */
+        delete: {
+            parameters: {
+                query?: {
+                    theme?: string;
+                    token_name?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description reset */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminThemeOverrideList"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Set a semantic colour token */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        theme?: string;
+                        token_name?: string;
+                        value?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminThemeOverrideEnvelope"];
+                    };
+                };
+                /** @description low contrast */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/theme_overrides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fetch merged admin colour overrides for applyTheme */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description palettes */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ThemeOverridePalette"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/messages/{id}/translate": {
         parameters: {
             query?: never;
@@ -6886,6 +7260,7 @@ export interface components {
             has_password: boolean;
             has_passkey: boolean;
             phone_verified: boolean;
+            is_admin: boolean;
         };
         Me: {
             account: components["schemas"]["Account"];
@@ -6927,6 +7302,80 @@ export interface components {
         };
         AccentConfigList: {
             accent_configs: components["schemas"]["AccentConfig"][];
+        };
+        AdminSetting: {
+            key: string;
+            type: string;
+            category: string;
+            default: unknown;
+            description: string;
+            min?: number | null;
+            max?: number | null;
+            allow_nil?: boolean;
+            value: unknown;
+            overridden: boolean;
+        } & {
+            [key: string]: unknown;
+        };
+        AdminSettingList: {
+            settings: components["schemas"]["AdminSetting"][];
+            unregistered_keys: string[];
+        };
+        AdminSettingEnvelope: {
+            setting: components["schemas"]["AdminSetting"];
+        };
+        AdminFeatureFlag: {
+            key: string;
+            description: string;
+            default: boolean;
+            enabled: boolean;
+            overridden: boolean;
+            rollout: {
+                [key: string]: unknown;
+            };
+        };
+        AdminFeatureFlagList: {
+            feature_flags: components["schemas"]["AdminFeatureFlag"][];
+            unregistered_keys: string[];
+        };
+        AdminFeatureFlagEnvelope: {
+            feature_flag: components["schemas"]["AdminFeatureFlag"];
+        };
+        AdminTranslationString: {
+            key: string;
+            locale: string;
+            surface: string;
+            default?: string | null;
+            value: string;
+            overridden: boolean;
+        };
+        AdminTranslationStringList: {
+            translation_strings: components["schemas"]["AdminTranslationString"][];
+        };
+        AdminTranslationStringEnvelope: {
+            translation_string: components["schemas"]["AdminTranslationString"];
+        };
+        AdminThemeToken: {
+            token_name: string;
+            default: string;
+            value: string;
+            overridden: boolean;
+        };
+        AdminThemeOverrideList: {
+            themes: {
+                [key: string]: components["schemas"]["AdminThemeToken"][];
+            };
+        };
+        AdminThemeOverrideEnvelope: {
+            override: components["schemas"]["AdminThemeToken"];
+        };
+        ThemeOverridePalette: {
+            light: {
+                [key: string]: string;
+            };
+            dark: {
+                [key: string]: string;
+            };
         };
         PhoneVerification: {
             code?: string | null;

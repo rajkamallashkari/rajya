@@ -51,6 +51,265 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Error"
+  "/api/v1/admin/settings":
+    get:
+      summary: List registry settings with current values
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminSettingList"
+    patch:
+      summary: Override a registered setting
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminSettingEnvelope"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  type: string
+                value: {}
+    delete:
+      summary: Reset a setting to its code default
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: reset
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminSettingEnvelope"
+  "/api/v1/admin/feature_flags":
+    get:
+      summary: List feature flags with defaults and rollout
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminFeatureFlagList"
+    patch:
+      summary: Toggle a flag and set rollout
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminFeatureFlagEnvelope"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  type: string
+                enabled:
+                  type: boolean
+                rollout:
+                  type: object
+                  additionalProperties: true
+  "/api/v1/admin/translation_strings":
+    get:
+      summary: List the string catalogue
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: surface
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: locale
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminTranslationStringList"
+    patch:
+      summary: Override a catalogue string
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminTranslationStringEnvelope"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  type: string
+                locale:
+                  type: string
+                value:
+                  type: string
+    delete:
+      summary: Reset a catalogue string to its default
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: key
+        in: query
+        schema:
+          type: string
+      - name: locale
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: reset
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminTranslationStringEnvelope"
+  "/api/v1/admin/theme_overrides":
+    get:
+      summary: List semantic colour tokens
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminThemeOverrideList"
+    patch:
+      summary: Set a semantic colour token
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminThemeOverrideEnvelope"
+        '422':
+          description: low contrast
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                theme:
+                  type: string
+                token_name:
+                  type: string
+                value:
+                  type: string
+    delete:
+      summary: Reset colour tokens
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: theme
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: token_name
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: reset
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminThemeOverrideList"
+  "/api/v1/theme_overrides":
+    get:
+      summary: Fetch merged admin colour overrides for applyTheme
+      tags:
+      - Appearance
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: palettes
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ThemeOverridePalette"
   "/api/v1/messages/{id}/translate":
     post:
       summary: Translate a message (BR-86)
@@ -4367,6 +4626,7 @@ components:
       - has_password
       - has_passkey
       - phone_verified
+      - is_admin
       properties:
         id:
           type: integer
@@ -4383,6 +4643,8 @@ components:
         has_passkey:
           type: boolean
         phone_verified:
+          type: boolean
+        is_admin:
           type: boolean
     Me:
       type: object
@@ -4491,6 +4753,189 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/AccentConfig"
+    AdminSetting:
+      type: object
+      required:
+      - key
+      - type
+      - category
+      - default
+      - description
+      - value
+      - overridden
+      properties:
+        key:
+          type: string
+        type:
+          type: string
+        category:
+          type: string
+        default: {}
+        description:
+          type: string
+        min:
+          type: number
+          nullable: true
+        max:
+          type: number
+          nullable: true
+        allow_nil:
+          type: boolean
+        value: {}
+        overridden:
+          type: boolean
+      additionalProperties: true
+    AdminSettingList:
+      type: object
+      required:
+      - settings
+      - unregistered_keys
+      properties:
+        settings:
+          type: array
+          items:
+            "$ref": "#/components/schemas/AdminSetting"
+        unregistered_keys:
+          type: array
+          items:
+            type: string
+    AdminSettingEnvelope:
+      type: object
+      required:
+      - setting
+      properties:
+        setting:
+          "$ref": "#/components/schemas/AdminSetting"
+    AdminFeatureFlag:
+      type: object
+      required:
+      - key
+      - description
+      - default
+      - enabled
+      - overridden
+      - rollout
+      properties:
+        key:
+          type: string
+        description:
+          type: string
+        default:
+          type: boolean
+        enabled:
+          type: boolean
+        overridden:
+          type: boolean
+        rollout:
+          type: object
+          additionalProperties: true
+    AdminFeatureFlagList:
+      type: object
+      required:
+      - feature_flags
+      - unregistered_keys
+      properties:
+        feature_flags:
+          type: array
+          items:
+            "$ref": "#/components/schemas/AdminFeatureFlag"
+        unregistered_keys:
+          type: array
+          items:
+            type: string
+    AdminFeatureFlagEnvelope:
+      type: object
+      required:
+      - feature_flag
+      properties:
+        feature_flag:
+          "$ref": "#/components/schemas/AdminFeatureFlag"
+    AdminTranslationString:
+      type: object
+      required:
+      - key
+      - locale
+      - surface
+      - value
+      - overridden
+      properties:
+        key:
+          type: string
+        locale:
+          type: string
+        surface:
+          type: string
+        default:
+          type: string
+          nullable: true
+        value:
+          type: string
+        overridden:
+          type: boolean
+    AdminTranslationStringList:
+      type: object
+      required:
+      - translation_strings
+      properties:
+        translation_strings:
+          type: array
+          items:
+            "$ref": "#/components/schemas/AdminTranslationString"
+    AdminTranslationStringEnvelope:
+      type: object
+      required:
+      - translation_string
+      properties:
+        translation_string:
+          "$ref": "#/components/schemas/AdminTranslationString"
+    AdminThemeToken:
+      type: object
+      required:
+      - token_name
+      - default
+      - value
+      - overridden
+      properties:
+        token_name:
+          type: string
+        default:
+          type: string
+        value:
+          type: string
+        overridden:
+          type: boolean
+    AdminThemeOverrideList:
+      type: object
+      required:
+      - themes
+      properties:
+        themes:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              "$ref": "#/components/schemas/AdminThemeToken"
+    AdminThemeOverrideEnvelope:
+      type: object
+      required:
+      - override
+      properties:
+        override:
+          "$ref": "#/components/schemas/AdminThemeToken"
+    ThemeOverridePalette:
+      type: object
+      required:
+      - light
+      - dark
+      properties:
+        light:
+          type: object
+          additionalProperties:
+            type: string
+        dark:
+          type: object
+          additionalProperties:
+            type: string
     PhoneVerification:
       type: object
       required:

@@ -26,6 +26,7 @@ const me = {
     has_password: false,
     has_passkey: false,
     phone_verified: false,
+    is_admin: false,
   },
 };
 

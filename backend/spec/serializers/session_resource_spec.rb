@@ -32,6 +32,6 @@ RSpec.describe SessionResource do
 
     expect(json.fetch("user").fetch("phone")).to eq("1555")
     expect(json.fetch("user").fetch("phone_verified")).to be(true)
-    expect(json.fetch("account")).to have_key("bio")
+    expect(json.fetch("user")).to have_key("is_admin")
   end
 end

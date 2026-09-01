@@ -58,4 +58,21 @@ RSpec.describe FeatureFlag do
       expect(described_class.enabled?(:not_a_real_flag)).to be(false)
     end
   end
+
+  describe ".listed" do
+    it "includes the code default when no row exists" do
+      row = described_class.listed.find { |entry| entry.fetch("key") == "webrtc_calls" }
+
+      expect(row.fetch("default")).to be(false)
+      expect(row.fetch("overridden")).to be(false)
+    end
+  end
+
+  describe ".unregistered_keys" do
+    it "reports rows whose key is not in the registry" do
+      described_class.create!(key: "typo_flag", description: "typo", enabled: true)
+
+      expect(described_class.unregistered_keys).to eq([ "typo_flag" ])
+    end
+  end
 end

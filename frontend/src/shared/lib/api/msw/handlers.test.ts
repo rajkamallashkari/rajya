@@ -1,6 +1,15 @@
+import { SEMANTIC_DEFAULTS } from "@/shared/lib/theme/constants";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../client";
-import { actorLabel, handlerMap, handlers, resetAiHelpers, resetFiledReports, resetPreferences } from "./handlers";
+import {
+  actorLabel,
+  handlerMap,
+  handlers,
+  resetAdminConfig,
+  resetAiHelpers,
+  resetFiledReports,
+  resetPreferences,
+} from "./handlers";
 import {
   MESSAGE_STAMP,
   messagingStore,
@@ -18,6 +27,10 @@ const expectedPaths = [
   "/api/v1/admin/bot_requests",
   "/api/v1/admin/bot_requests/{id}/approve",
   "/api/v1/admin/bot_requests/{id}/decline",
+  "/api/v1/admin/feature_flags",
+  "/api/v1/admin/settings",
+  "/api/v1/admin/theme_overrides",
+  "/api/v1/admin/translation_strings",
   "/api/v1/admin/users/{user_id}/verify_phone",
   "/api/v1/ai/rewrite",
   "/api/v1/ai/translate_text",
@@ -126,6 +139,7 @@ const expectedPaths = [
   "/api/v1/sticker_packs/{sticker_pack_id}/stickers",
   "/api/v1/sticker_packs/{sticker_pack_id}/stickers/{id}",
   "/api/v1/style_profile",
+  "/api/v1/theme_overrides",
   "/api/v1/users/me",
   "/api/v1/users/me/complete_onboarding",
   "/api/v1/users/me/email",
@@ -157,6 +171,7 @@ describe("MSW handlers", () => {
     resetFiledReports();
     resetAiHelpers();
     resetPreferences();
+    resetAdminConfig();
   });
 
   it("serves every generated path with typed bodies", async () => {
@@ -354,6 +369,120 @@ describe("MSW handlers", () => {
       body: { reason: "Too thin" },
     });
     expect(declined.data?.status).toBe("declined");
+    const adminSettings = await client.GET("/api/v1/admin/settings");
+    expect(adminSettings.data?.settings[0]?.key).toBe("message_edit_window");
+    const patchedSetting = await client.PATCH("/api/v1/admin/settings", {
+      body: { key: "message_edit_window", value: 60 },
+    });
+    expect(patchedSetting.data?.setting.overridden).toBe(true);
+    const unknownSetting = await client.PATCH("/api/v1/admin/settings", {
+      body: { key: "unknown_key", value: 1 },
+    });
+    expect(unknownSetting.data?.setting.key).toBe("unknown_key");
+    const missingSettingKey = await client.PATCH("/api/v1/admin/settings", {
+      body: { value: 1 },
+    });
+    expect(missingSettingKey.data?.setting.key).toBe("message_edit_window");
+    const resetSetting = await client.DELETE("/api/v1/admin/settings", {
+      params: { query: { key: "message_edit_window" } },
+    });
+    expect(resetSetting.data?.setting.overridden).toBe(false);
+    const missingReset = await client.DELETE("/api/v1/admin/settings", {
+      params: { query: { key: "missing" } },
+    });
+    expect(missingReset.data?.setting.key).toBe("message_edit_window");
+    const flags = await client.GET("/api/v1/admin/feature_flags");
+    expect(flags.data?.feature_flags[0]?.key).toBe("webrtc_calls");
+    const patchedFlag = await client.PATCH("/api/v1/admin/feature_flags", {
+      body: { key: "webrtc_calls", enabled: true, rollout: { percentage: 10 } },
+    });
+    expect(patchedFlag.data?.feature_flag.enabled).toBe(true);
+    const flagWithoutRollout = await client.PATCH("/api/v1/admin/feature_flags", {
+      body: { key: "webrtc_calls", enabled: false },
+    });
+    expect(flagWithoutRollout.data?.feature_flag.rollout).toEqual({});
+    const missingFlag = await client.PATCH("/api/v1/admin/feature_flags", {
+      body: { key: "missing", enabled: true, rollout: {} },
+    });
+    expect(missingFlag.data?.feature_flag.key).toBe("webrtc_calls");
+    const strings = await client.GET("/api/v1/admin/translation_strings", {
+      params: { query: { q: "not_found", surface: "errors" } },
+    });
+    expect(strings.data?.translation_strings).toHaveLength(1);
+    const emptyStrings = await client.GET("/api/v1/admin/translation_strings", {
+      params: { query: { q: "zzz", surface: "missing" } },
+    });
+    expect(emptyStrings.data?.translation_strings).toEqual([]);
+    const emptyQuery = await client.GET("/api/v1/admin/translation_strings");
+    expect(emptyQuery.data?.translation_strings.length).toBeGreaterThan(0);
+    const patchedString = await client.PATCH("/api/v1/admin/translation_strings", {
+      body: { key: "errors.not_found", locale: "en", value: "Gone" },
+    });
+    expect(patchedString.data?.translation_string.value).toBe("Gone");
+    const noValue = await client.PATCH("/api/v1/admin/translation_strings", {
+      body: { key: "errors.not_found" },
+    });
+    expect(noValue.data?.translation_string.key).toBe("errors.not_found");
+    const missingStringPatch = await client.PATCH("/api/v1/admin/translation_strings", {
+      body: { key: "missing", value: "Nope" },
+    });
+    expect(missingStringPatch.data?.translation_string.key).toBe("errors.not_found");
+    const resetString = await client.DELETE("/api/v1/admin/translation_strings", {
+      params: { query: { key: "errors.not_found", locale: "en" } },
+    });
+    expect(resetString.data?.translation_string.overridden).toBe(false);
+    const resetOptionalString = await client.DELETE("/api/v1/admin/translation_strings", {
+      params: { query: { key: "admin.optional", locale: "en" } },
+    });
+    expect(resetOptionalString.data?.translation_string.value).toBe("Optional");
+    const missingStringReset = await client.DELETE("/api/v1/admin/translation_strings", {
+      params: { query: { key: "missing" } },
+    });
+    expect(missingStringReset.data?.translation_string.key).toBe("errors.not_found");
+    const themes = await client.GET("/api/v1/admin/theme_overrides");
+    expect(themes.data?.themes.light).toHaveLength(1);
+    const contrast = await client.PATCH("/api/v1/admin/theme_overrides", {
+      body: {
+        theme: "light",
+        token_name: "--text-primary",
+        value: SEMANTIC_DEFAULTS.light["--surface-app"],
+      },
+    });
+    expect(contrast.response.status).toBe(422);
+    const lightToken = await client.PATCH("/api/v1/admin/theme_overrides", {
+      body: {
+        theme: "light",
+        token_name: "--text-primary",
+        value: SEMANTIC_DEFAULTS.light["--text-secondary"],
+      },
+    });
+    expect(lightToken.data?.override.overridden).toBe(true);
+    const darkToken = await client.PATCH("/api/v1/admin/theme_overrides", {
+      body: {
+        theme: "dark",
+        token_name: "--text-primary",
+        value: SEMANTIC_DEFAULTS.dark["--text-secondary"],
+      },
+    });
+    expect(darkToken.data?.override.value).toBe(SEMANTIC_DEFAULTS.dark["--text-secondary"]);
+    const palettes = await client.GET("/api/v1/theme_overrides");
+    expect(palettes.data?.light["--text-primary"]).toBe(
+      SEMANTIC_DEFAULTS.light["--text-secondary"],
+    );
+    const unknownToken = await client.PATCH("/api/v1/admin/theme_overrides", {
+      body: { theme: "light", token_name: "--missing", value: SEMANTIC_DEFAULTS.light["--accent"] },
+    });
+    expect(unknownToken.data?.override.token_name).toBe("--text-primary");
+    const missingToken = await client.PATCH("/api/v1/admin/theme_overrides", {
+      body: { theme: "light", value: SEMANTIC_DEFAULTS.light["--accent"] },
+    });
+    expect(missingToken.data?.override.token_name).toBe("--text-primary");
+    const missingValue = await client.PATCH("/api/v1/admin/theme_overrides", {
+      body: { theme: "light", token_name: "--text-primary" },
+    });
+    expect(missingValue.data?.override.token_name).toBe("--text-primary");
+    const resetThemes = await client.DELETE("/api/v1/admin/theme_overrides");
+    expect(resetThemes.data?.themes.light?.[0]?.overridden).toBe(false);
     const rewrite = await client.POST("/api/v1/ai/rewrite", {
       body: { instruction: "Rewrite this draft", text: "hey" },
     });

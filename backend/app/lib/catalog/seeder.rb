@@ -28,14 +28,7 @@ module Catalog
     end
 
     def flatten(hash, prefix = nil)
-      hash.each_with_object({}) do |(nested_key, value), out|
-        key = prefix ? "#{prefix}.#{nested_key}" : nested_key.to_s
-        if value.is_a?(Hash)
-          out.merge!(flatten(value, key))
-        else
-          out[key] = value.to_s
-        end
-      end
+      Catalog::Flat.from_hash(hash, prefix)
     end
   end
 end

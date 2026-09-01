@@ -185,7 +185,19 @@ Rails.application.routes.draw do
             post :decline
           end
         end
+        get "settings", to: "settings#index"
+        patch "settings", to: "settings#update"
+        delete "settings", to: "settings#destroy"
+        get "feature_flags", to: "feature_flags#index"
+        patch "feature_flags", to: "feature_flags#update"
+        get "translation_strings", to: "translation_strings#index"
+        patch "translation_strings", to: "translation_strings#update"
+        delete "translation_strings", to: "translation_strings#destroy"
+        get "theme_overrides", to: "theme_overrides#index"
+        patch "theme_overrides", to: "theme_overrides#update"
+        delete "theme_overrides", to: "theme_overrides#destroy"
       end
+      resource :theme_overrides, only: :show
     end
   end
 end

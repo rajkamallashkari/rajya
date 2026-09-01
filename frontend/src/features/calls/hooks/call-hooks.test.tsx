@@ -2,7 +2,11 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useCallElapsed, formatElapsed } from "@/features/calls/hooks/use-call-elapsed";
 import { useCanFlipCamera } from "@/features/calls/hooks/use-can-flip-camera";
-import { cornerPosition, nearestCorner, useCornerSnap } from "@/features/calls/hooks/use-corner-snap";
+import {
+  cornerPosition,
+  nearestCorner,
+  useCornerSnap,
+} from "@/features/calls/hooks/use-corner-snap";
 import { useDraggable } from "@/features/calls/hooks/use-draggable";
 import { useSwipeUp } from "@/features/calls/hooks/use-swipe-up";
 import { CALL_PIP_HEIGHT_PX, CALL_PIP_WIDTH_PX } from "@/features/calls/model/constants";
@@ -42,9 +46,15 @@ describe("call hooks", () => {
     expect(nearestCorner({ x: 10, y: 500 }, 120, 160)).toBe("bottom-left");
     expect(nearestCorner({ x: 700, y: 500 }, 120, 160)).toBe("bottom-right");
     expect(cornerPosition("top-left", CALL_PIP_WIDTH_PX, CALL_PIP_HEIGHT_PX).x).toBe(12);
-    expect(cornerPosition("top-right", CALL_PIP_WIDTH_PX, CALL_PIP_HEIGHT_PX).x).toBeGreaterThan(12);
-    expect(cornerPosition("bottom-left", CALL_PIP_WIDTH_PX, CALL_PIP_HEIGHT_PX).y).toBeGreaterThan(12);
-    expect(cornerPosition("bottom-right", CALL_PIP_WIDTH_PX, CALL_PIP_HEIGHT_PX).y).toBeGreaterThan(12);
+    expect(cornerPosition("top-right", CALL_PIP_WIDTH_PX, CALL_PIP_HEIGHT_PX).x).toBeGreaterThan(
+      12,
+    );
+    expect(cornerPosition("bottom-left", CALL_PIP_WIDTH_PX, CALL_PIP_HEIGHT_PX).y).toBeGreaterThan(
+      12,
+    );
+    expect(cornerPosition("bottom-right", CALL_PIP_WIDTH_PX, CALL_PIP_HEIGHT_PX).y).toBeGreaterThan(
+      12,
+    );
     const { result } = renderHook(() => useCornerSnap("top-left"));
     const node = document.createElement("div");
     Object.defineProperty(node, "offsetWidth", { value: 120 });
@@ -69,7 +79,7 @@ describe("call hooks", () => {
     });
     expect(result.current.didDrag()).toBe(true);
     act(() => {
-      result.current.dragHandlers.onPointerUp({} as never);
+      result.current.dragHandlers.onPointerUp();
     });
     expect(result.current.corner).toBe("bottom-right");
     act(() => {
@@ -93,7 +103,7 @@ describe("call hooks", () => {
     result.current.elRef.current = null;
     act(() => {
       result.current.dragHandlers.onPointerMove({ clientX: 500, clientY: 400 } as never);
-      result.current.dragHandlers.onPointerUp({} as never);
+      result.current.dragHandlers.onPointerUp();
     });
     result.current.elRef.current = node;
     act(() => {
@@ -112,8 +122,8 @@ describe("call hooks", () => {
     });
     act(() => {
       result.current.dragHandlers.onPointerMove({ clientX: 2, clientY: 2 } as never);
-      result.current.dragHandlers.onPointerCancel({} as never);
-      result.current.dragHandlers.onPointerUp({} as never);
+      result.current.dragHandlers.onPointerCancel();
+      result.current.dragHandlers.onPointerUp();
     });
   });
 
@@ -139,7 +149,7 @@ describe("call hooks", () => {
     });
     expect(result.current.isDragging).toBe(true);
     act(() => {
-      result.current.dragHandlers.onPointerUp({} as never);
+      result.current.dragHandlers.onPointerUp();
       result.current.elRef.current = null;
       window.dispatchEvent(new Event("resize"));
       result.current.dragHandlers.onPointerMove({ clientX: 0, clientY: 0 } as never);

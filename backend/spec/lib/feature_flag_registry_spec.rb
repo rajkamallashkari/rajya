@@ -20,4 +20,10 @@ RSpec.describe FeatureFlagRegistry do
     expect(described_class.default_for(:voice_transcription)).to be(true)
     expect(described_class.default_for(:gif_search)).to be(false)
   end
+
+  it "reports unregistered database rows" do
+    FeatureFlag.create!(key: "typo_flag", description: "typo", enabled: true)
+
+    expect(described_class.unregistered_keys).to eq([ "typo_flag" ])
+  end
 end

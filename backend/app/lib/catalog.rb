@@ -15,7 +15,34 @@ module Catalog
       Rails.cache.delete(cache_key(key, locale))
     end
 
+    def listing(locale:, query: nil, surface: nil)
+      defaults = Catalog::Flat.locale_defaults(locale)
+      rows = TranslationString.where(locale: locale).index_by(&:key)
+      needle = query.to_s.strip.downcase
+      prefix = surface.to_s.strip
+      (defaults.keys | rows.keys).sort.filter_map do |key|
+        default = defaults[key]
+        row = rows[key]
+        value = row&.value || default
+        next if prefix.present? && key.split(".").first != prefix
+        next if needle.present? && !catalogue_match?(key, value, default, needle)
+
+        {
+          "key" => key,
+          "locale" => locale,
+          "surface" => key.split(".").first,
+          "default" => default,
+          "value" => value,
+          "overridden" => row&.updated_by_user_id.present?
+        }
+      end
+    end
+
     private
+
+    def catalogue_match?(key, value, default, needle)
+      [ key, value, default ].compact.any? { |part| part.to_s.downcase.include?(needle) }
+    end
 
     def cache_key(key, locale)
       "#{CACHE_PREFIX}/#{locale}/#{key}"

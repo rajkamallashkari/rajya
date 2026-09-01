@@ -21,4 +21,20 @@ describe("PreferencesThemeBridge", () => {
       expect(document.documentElement.dataset.wallpaper).toBe("none");
     });
   });
+
+  it("applies the dark palette overlay when the resolved theme is dark", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <ThemeProvider input={{ ...defaultThemeInput(), theme: "dark" }}>
+          <PreferencesThemeBridge>
+            <p>{"ready"}</p>
+          </PreferencesThemeBridge>
+        </ThemeProvider>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains("dark")).toBe(true);
+    });
+  });
 });

@@ -53,6 +53,16 @@ RSpec.describe Settings do
     end
   end
 
+  describe ".listed" do
+    it "includes the current value and overridden flag" do
+      AppSetting.create!(key: "message_edit_window", value: 60, category: "messaging")
+      row = described_class.listed.find { |entry| entry.fetch("key") == "message_edit_window" }
+
+      expect(row.fetch("value")).to eq(60)
+      expect(row.fetch("overridden")).to be(true)
+    end
+  end
+
   describe ".coerce" do
     it "coerces integers, floats and booleans" do
       expect(described_class.send(:coerce, "3", { type: :integer })).to eq(3)

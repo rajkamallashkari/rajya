@@ -1,5 +1,8 @@
 import type { components } from "@/shared/lib/api/schema";
-import type { PreferenceAppearance, PreferenceDocument } from "@/shared/lib/config/preferences-registry";
+import type {
+  PreferenceAppearance,
+  PreferenceDocument,
+} from "@/shared/lib/config/preferences-registry";
 import preferencesRegistry from "@/shared/lib/config/preferences-registry.json";
 import {
   ACCENT_BOOT_HEX,
@@ -28,13 +31,14 @@ export function deepMerge(
   const next: Record<string, unknown> = { ...base };
   for (const [key, value] of Object.entries(overlay)) {
     const current = next[key];
-    next[key] =
-      isPlainObject(current) && isPlainObject(value) ? deepMerge(current, value) : value;
+    next[key] = isPlainObject(current) && isPlainObject(value) ? deepMerge(current, value) : value;
   }
   return next;
 }
 
-export function preferenceAppearance(document: PreferenceDocument | undefined): PreferenceAppearance {
+export function preferenceAppearance(
+  document: PreferenceDocument | undefined,
+): PreferenceAppearance {
   const defaults = preferencesRegistry.defaults.appearance as PreferenceAppearance;
   const raw = document?.appearance;
   if (!isPlainObject(raw)) {
@@ -80,6 +84,7 @@ export function mapPreferencesToTheme(
   fonts: FontConfig[],
   accents: AccentConfig[],
   resolved: ResolvedTheme,
+  overrides: ApplyThemeInput["adminOverrides"] = {},
 ): ApplyThemeInput {
   const appearance = preferenceAppearance(document);
   const accentId = appearance.split_accents
@@ -91,7 +96,7 @@ export function mapPreferencesToTheme(
   const font = fonts.find((row) => row.id === appearance.font_config_id);
   return {
     accentHex: accent?.hex ?? ACCENT_BOOT_HEX,
-    adminOverrides: {},
+    adminOverrides: overrides,
     appearance: appearanceTokensFromDocument(appearance),
     density: appearance.density,
     fontFamily: font?.font_family_value ?? DEFAULT_FONT_FAMILY,

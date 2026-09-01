@@ -23,6 +23,18 @@ module Settings
       AppSetting.where.not(key: Registry.keys.map(&:to_s)).order(:key).pluck(:key)
     end
 
+    def listed
+      payload = registry_payload
+      overridden = AppSetting.where(key: Registry.keys.map(&:to_s)).pluck(:key).to_set
+      Registry.keys.map do |key|
+        payload.fetch(key.to_s).merge(
+          "key" => key.to_s,
+          "value" => fetch(key),
+          "overridden" => overridden.include?(key.to_s)
+        )
+      end
+    end
+
     def registry_payload
       Registry.entries.each_with_object({}) do |(key, definition), payload|
         payload[key.to_s] = {

@@ -67,7 +67,14 @@ function VideoTile({
             fill ? "" : "min-h-[var(--space-16)]",
           )}
         >
-          <Avatar className={fill ? "h-[var(--space-16)] w-[var(--space-16)]" : "h-[var(--space-12)] w-[var(--space-12)]"} name={name} />
+          <Avatar
+            className={
+              fill
+                ? "h-[var(--space-16)] w-[var(--space-16)]"
+                : "h-[var(--space-12)] w-[var(--space-12)]"
+            }
+            name={name}
+          />
         </div>
       )}
       {showLabel ? (
@@ -124,8 +131,7 @@ export function VideoCallView() {
         const screen = remoteScreenStreams[accountId];
         return {
           accountId,
-          name:
-            accountId === initiatorId ? (initiatorName || t("calls.remote")) : t("calls.remote"),
+          name: accountId === initiatorId ? initiatorName || t("calls.remote") : t("calls.remote"),
           stream: screen ?? stream,
           videoOn: remoteMedia[accountId]?.camOn ?? true,
         };
@@ -150,10 +156,10 @@ export function VideoCallView() {
   const mainIsLocal = pipSwapped;
   const localFeed = localStream;
   const mainStream = mainIsLocal ? localFeed : (primaryRemote?.stream ?? null);
-  const mainName = mainIsLocal ? myName : (primaryRemote?.name || t("calls.remote"));
+  const mainName = mainIsLocal ? myName : primaryRemote?.name || t("calls.remote");
   const mainVideoOn = mainIsLocal ? camOn || isScreenSharing : (primaryRemote?.videoOn ?? true);
   const pipStream = mainIsLocal ? (primaryRemote?.stream ?? null) : localFeed;
-  const pipName = mainIsLocal ? (primaryRemote?.name || t("calls.remote")) : myName;
+  const pipName = mainIsLocal ? primaryRemote?.name || t("calls.remote") : myName;
   const pipVideoOn = mainIsLocal ? (primaryRemote?.videoOn ?? true) : camOn || isScreenSharing;
 
   return (
@@ -171,7 +177,10 @@ export function VideoCallView() {
           chromeVisible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
         )}
       >
-        <div aria-live="polite" className="rounded-[var(--radius-md)] bg-[var(--call-label-bg)] px-[var(--space-3)] py-[var(--space-1_5)]">
+        <div
+          aria-live="polite"
+          className="rounded-[var(--radius-md)] bg-[var(--call-label-bg)] px-[var(--space-3)] py-[var(--space-1_5)]"
+        >
           <p className="text-[length:var(--text-sm)] [font-weight:var(--font-weight-emphasis)]">
             {t("calls.title_video")}
           </p>
@@ -200,7 +209,11 @@ export function VideoCallView() {
             />
             <VideoTile
               fill
-              highlight={!mainIsLocal && Boolean(primaryRemote) && activeSpeakerId === primaryRemote.accountId}
+              highlight={
+                !mainIsLocal &&
+                primaryRemote !== undefined &&
+                activeSpeakerId === primaryRemote.accountId
+              }
               label={mainName}
               mirror={mainIsLocal && !isScreenSharing}
               name={mainName}

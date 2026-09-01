@@ -76,5 +76,9 @@ describe("mapPreferencesToTheme", () => {
     const missing = mapPreferencesToTheme(undefined, [], [], "dark");
     expect(missing.fontFamily).toBe("inherit");
     expect(missing.userSetsAccent).toBe(false);
+    const overlay = { "--text-primary": ACCENT_BOOT_HEX } as const;
+    expect(mapPreferencesToTheme(undefined, [], [], "dark", overlay).adminOverrides).toEqual(
+      overlay,
+    );
   });
 });

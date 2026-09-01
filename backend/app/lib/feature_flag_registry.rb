@@ -80,5 +80,9 @@ module FeatureFlagRegistry
     def keys
       DEFINITIONS.keys
     end
+
+    def unregistered_keys
+      FeatureFlag.where.not(key: keys.map(&:to_s)).order(:key).pluck(:key)
+    end
   end
 end

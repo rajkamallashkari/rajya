@@ -8,5 +8,6 @@ RSpec.describe MeResource do
     expect(json.fetch("account").fetch("username")).to eq(user.account.username)
     expect(json.fetch("user").fetch("phone")).to eq("1555")
     expect(json.fetch("user").fetch("phone_verified")).to be(true)
+    expect(json.fetch("user").fetch("is_admin")).to be(false)
   end
 end

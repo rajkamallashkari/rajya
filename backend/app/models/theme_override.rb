@@ -11,14 +11,26 @@ class ThemeOverride < ApplicationRecord
 
   after_commit { Theme::Overrides.invalidate(theme) }
 
+  def contrast_pair
+    return { "token" => "--accent", "against" => "#{Theme::Contrast::WHITE} / #{Theme::Contrast::NEAR_BLACK}" } if token_name == "--accent"
+
+    { "token" => token_name, "against" => Theme::Tokens.pair_for(token_name) }
+  end
+
   private
+
+  def contrast_message(token, against)
+    Catalog.t("errors.models.theme_override.contrast", token: token, against: against)
+  end
 
   def contrast_is_sufficient
     return if value.blank? || token_name.blank? || theme.blank?
     return unless Theme::Tokens.overridable?(token_name)
 
     if token_name == "--accent"
-      errors.add(:value, Catalog.t("errors.models.theme_override.contrast")) unless Theme::Contrast.accent_readable?(value)
+      unless Theme::Contrast.accent_readable?(value)
+        errors.add(:value, contrast_message("--accent", "#{Theme::Contrast::WHITE} / #{Theme::Contrast::NEAR_BLACK}"))
+      end
       return
     end
 
@@ -29,6 +41,6 @@ class ThemeOverride < ApplicationRecord
     palette[token_name] = value
     return if Theme::Contrast.sufficient?(palette[token_name], palette[partner])
 
-    errors.add(:value, Catalog.t("errors.models.theme_override.contrast"))
+    errors.add(:value, contrast_message(token_name, partner))
   end
 end

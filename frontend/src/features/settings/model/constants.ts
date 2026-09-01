@@ -1,6 +1,6 @@
 export const SETTINGS_PANELS = ["appearance", "chats", "devices", "stickers"] as const;
 export type SettingsSectionId = (typeof SETTINGS_PANELS)[number];
-export type SettingsPanelId = SettingsSectionId | "hub";
+export type SettingsPanelId = SettingsSectionId | "hub" | "admin";
 
 export const EXPORT_FORMATS = ["json", "txt", "html"] as const;
 export type ExportFormat = (typeof EXPORT_FORMATS)[number];

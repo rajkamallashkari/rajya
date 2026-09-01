@@ -10,7 +10,7 @@ export function RemoteAudioSink() {
 
   useEffect(() => {
     Object.entries(remoteStreams).forEach(([id, stream]) => {
-      bindAudioElement(refs.current[Number(id)], stream, speakerVolume, (el) => {
+      bindAudioElement(refs.current[Number(id)]!, stream, speakerVolume, (el) => {
         void applyAudioOutputToElement(el);
       });
     });

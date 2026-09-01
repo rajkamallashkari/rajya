@@ -9,18 +9,26 @@ RSpec.describe ThemeOverride do
     override = build(:theme_override, token_name: "--text-primary", value: "#EFF6FF")
 
     expect(override).not_to be_valid
-    expect(override.errors[:value]).to include(Catalog.t("errors.models.theme_override.contrast"))
+    expect(override.errors[:value].join).to include("--text-primary vs --surface-app")
   end
 
   it "rejects an accent that cannot produce readable contrast text" do
     override = build(:theme_override, token_name: "--accent", value: "#777777")
 
     expect(override).not_to be_valid
-    expect(override.errors[:value]).to include(Catalog.t("errors.models.theme_override.contrast"))
+    expect(override.errors[:value].join).to include("--accent")
   end
 
   it "accepts a readable accent" do
     expect(build(:theme_override, token_name: "--accent", value: "#4F46E5")).to be_valid
+  end
+
+  it "describes the contrast pair for accent and text tokens" do
+    accent = build(:theme_override, token_name: "--accent")
+    text = build(:theme_override, token_name: "--text-primary")
+
+    expect(accent.contrast_pair.fetch("against")).to include(Theme::Contrast::WHITE)
+    expect(text.contrast_pair).to eq("token" => "--text-primary", "against" => "--surface-app")
   end
 
   it "skips contrast pairing for tokens that are not body text" do

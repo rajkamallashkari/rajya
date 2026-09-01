@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 12.3 |
-| **Next session** | 12.4 |
+| **Last completed** | 12.4 |
+| **Next session** | 12.5 |
 | **Phase** | P12 — Settings & admin |
-| **Sessions remaining in phase** | 3 (12.4–12.6) |
+| **Sessions remaining in phase** | 2 (12.5–12.6) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 12.4 — The four configuration editors: settings, feature flags, strings, colours**
+**Session 12.5 — Admin shell, users, transcripts, bots, impersonation, audit, dashboards**
 
-Deliverable: The four configuration editors: settings from the registry, feature flags with rollout, the string catalogue, and colour tokens with contrast checking (NR-6, NR-48)
+Deliverable: Admin shell, user management, transcript viewer, bot approvals, impersonation, audit log, dashboards
 
-Docs: SCHEMA §8 in full including the constants table; DESIGN_SYSTEM §8.2, DS-9; TARGET §7.1, §7.2
+Docs: TARGET §7 (all); SCHEMA §8 (`audit_events`); AUDIT §1.10, §5 (F-10), D-2, Q-14, NR-5, NR-7
 
-Legacy to read: `cognify/app/controllers/api/v1/admin/accents_controller.rb`, `app/models/font_config.rb`, `global_accent_config.rb` — the only existing admin-editable design data
+Legacy to read: `cognify/app/controllers/admin/admin_controller.rb` and its ERB views — read to inventory capabilities, then discard entirely
 
 ---
 
@@ -81,6 +81,7 @@ Legacy to read: `cognify/app/controllers/api/v1/admin/accents_controller.rb`, `a
 | 12.1 | Preferences registry, migration of every setting, generated types | `Preferences.define` validates the SCHEMA §7 JSONB document (appearance, locale, privacy, chat, ai, four-scope notifications). GET/PATCH `/api/v1/preferences` deep-merges without a migration; unknown keys 422. Generated `preferences-registry.json` + `.d.ts`. Typography stays −5…+5 (NR-13); style-profile consent still defaults off (F-11). Settings panels wait for 12.2. |
 | 12.2 | Settings panels: typography sliders, quick reactions, and the full personalisation surface | Appearance settings (theme, split accents, fonts, −5…+5 sliders, density, corners, timestamps, autoplay, skin tone, six quick reactions) write the preferences document; `PreferencesThemeBridge` is the only `setInput` writer. Per-conversation wallpaper (NR-42) lives on the membership. Playwright: theme, wallpaper, and all four sliders apply live. Devices/Chats/export/Stickers wait for 12.3. |
 | 12.3 | Remaining user panels: Devices (NR-44), Chats with saved replies and nicknames, export (NR-32), Stickers | Settings hub opens Appearance, Chats, Devices, and Stickers. Devices lists sessions with per-`jti` revoke and sign-out-others (NR-44). Chats writes transcription/link-preview prefs, CRUD for saved replies (NR-25) and private nicknames (NR-41), and export jobs with format/media/download (NR-32). Stickers lists published packs and lets the owner create/add/remove. Admin pack UI waits for 12.6. |
+| 12.4 | Four configuration editors: settings, feature flags, strings, colours | Admin-only editors expose registered settings, rollout-aware feature flags, live string-catalogue overrides, and semantic colour tokens with per-token/global reset and API contrast failures (NR-6, NR-48). Public authenticated theme palettes merge into `applyTheme`; unknown setting/flag rows are reported and writes remain registry-gated. |
 
 ---
 

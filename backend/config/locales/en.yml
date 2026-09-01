@@ -131,9 +131,15 @@ en:
       app_setting:
         below_min: "is below the registered minimum"
         above_max: "is above the registered maximum"
+        unknown_key: "is not a registered setting"
         wrong_type: "does not match the registered type"
+      feature_flag:
+        unknown_key: "is not a registered feature flag"
+      translation_string:
+        blank: "can't be blank"
       theme_override:
-        contrast: "would drop contrast below WCAG AA against its paired token"
+        contrast: "would drop contrast below WCAG AA (%{token} vs %{against})"
+        primitive: "is not a semantic token"
 
   mailers:
     moderation:

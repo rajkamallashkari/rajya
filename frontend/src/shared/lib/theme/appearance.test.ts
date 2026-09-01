@@ -79,7 +79,7 @@ describe("appearance", () => {
     expect(parseWallpaper(null)).toBeNull();
     expect(parseWallpaper("dusk")).toBeNull();
     expect(parseWallpaper([])).toBeNull();
-    expect(parseWallpaper({}).preset).toBe("none");
+    expect(parseWallpaper({})?.preset).toBe("none");
     expect(parseWallpaper({ preset: "mist", dim: 0.2, blur: 0.4 })?.preset).toBe("mist");
     expect(wallpaperLayerStyle({ preset: "none", dim: 0, blur: 0 })["--wallpaper-image"]).toBe(
       WALLPAPER_IMAGES.none,

@@ -16,4 +16,8 @@ class SessionUserResource < ApplicationResource
   attribute :phone_verified do
     object.phone_verified_at.present?
   end
+
+  attribute :is_admin do
+    object.is_admin?
+  end
 end

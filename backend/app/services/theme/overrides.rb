@@ -21,6 +21,23 @@ module Theme
         palette
       end
 
+      def admin_listing
+        Theme::Tokens::THEMES.index_with { |theme| tokens_for(theme) }
+      end
+
+      def tokens_for(theme)
+        palette = palette_for(theme)
+        defaults = Theme::Tokens.defaults_for(theme)
+        Theme::Tokens::OVERRIDABLE.map do |token|
+          {
+            "token_name" => token,
+            "default" => defaults.fetch(token),
+            "value" => palette.fetch(token),
+            "overridden" => palette.fetch(token) != defaults.fetch(token)
+          }
+        end
+      end
+
       private
 
       def cache_key(theme)

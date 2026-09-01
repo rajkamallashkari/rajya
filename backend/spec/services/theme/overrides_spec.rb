@@ -13,4 +13,11 @@ RSpec.describe Theme::Overrides do
 
     expect(described_class.fetch(:light).fetch("--text-primary")).to eq("#020617")
   end
+
+  it "lists semantic tokens for the admin editor" do
+    tokens = described_class.tokens_for("light")
+
+    expect(tokens.map { |row| row.fetch("token_name") }).to include("--text-primary")
+    expect(described_class.admin_listing).to have_key("dark")
+  end
 end

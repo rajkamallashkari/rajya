@@ -1,16 +1,14 @@
-import { ChevronRight, MessageSquare, Monitor, Palette, Sticker } from "lucide-react";
+import { ChevronRight, MessageSquare, Monitor, Palette, Shield, Sticker } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { LayerHeader } from "@/app/navigation/layer-header";
+import { AdminConfigPanel, useMe } from "@/features/admin";
 import { AppearancePanel } from "@/features/settings/components/appearance-panel";
 import { ChatsPanel } from "@/features/settings/components/chats-panel";
 import { DevicesPanel } from "@/features/settings/components/devices-panel";
 import { StickersPanel } from "@/features/settings/components/stickers-panel";
 import { WallpaperPicker } from "@/features/settings/components/wallpaper-picker";
-import {
-  SETTINGS_PANELS,
-  type SettingsSectionId,
-} from "@/features/settings/model/constants";
+import { SETTINGS_PANELS, type SettingsSectionId } from "@/features/settings/model/constants";
 import { useShellStore } from "@/features/settings/store/shell-store";
 import { Button } from "@/shared/ui";
 import { ICON_CLASS, WEIGHT_EMPHASIS } from "@/shared/ui/metrics";
@@ -38,7 +36,9 @@ export function SettingsPanel() {
       ? t("shell.settings")
       : panel === "stickers"
         ? t("settings.sticker_packs.title")
-        : t(`settings.${panel}`);
+        : panel === "admin"
+          ? t("admin.title")
+          : t(`settings.${panel}`);
 
   return (
     <div
@@ -61,6 +61,7 @@ export function SettingsPanel() {
         {panel === "chats" ? <ChatsPanel /> : null}
         {panel === "devices" ? <DevicesPanel /> : null}
         {panel === "stickers" ? <StickersPanel /> : null}
+        {panel === "admin" ? <AdminConfigPanel /> : null}
       </div>
     </div>
   );
@@ -69,6 +70,8 @@ export function SettingsPanel() {
 function SettingsHub(): ReactNode {
   const { t } = useTranslation();
   const setSettingsPanel = useShellStore((state) => state.setSettingsPanel);
+  const me = useMe();
+  const isAdmin = me.data?.user.is_admin === true;
   return (
     <nav aria-label={t("settings.title")} className="flex flex-col">
       {SETTINGS_PANELS.map((section) => {
@@ -91,6 +94,20 @@ function SettingsHub(): ReactNode {
           </Button>
         );
       })}
+      {isAdmin ? (
+        <Button
+          className="h-auto w-full justify-between px-[var(--space-list-x)] py-[var(--space-list-y)]"
+          onClick={() => setSettingsPanel("admin")}
+          type="button"
+          variant="ghost"
+        >
+          <span className="flex min-w-0 items-center gap-[var(--control-gap)]">
+            <Shield aria-hidden="true" className={ICON_CLASS} />
+            <span className={WEIGHT_EMPHASIS}>{t("admin.title")}</span>
+          </span>
+          <ChevronRight aria-hidden="true" className={ICON_CLASS} />
+        </Button>
+      ) : null}
     </nav>
   );
 }

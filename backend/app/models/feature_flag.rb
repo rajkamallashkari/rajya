@@ -29,6 +29,25 @@ class FeatureFlag < ApplicationRecord
       Rails.cache.delete(cache_key(key))
     end
 
+    def unregistered_keys
+      FeatureFlagRegistry.unregistered_keys
+    end
+
+    def listed
+      rows = where(key: FeatureFlagRegistry.keys.map(&:to_s)).index_by { |row| row.key.to_s }
+      FeatureFlagRegistry.keys.map do |key|
+        row = rows[key.to_s]
+        {
+          "key" => key.to_s,
+          "description" => FeatureFlagRegistry.description_for(key),
+          "default" => FeatureFlagRegistry.default_for(key),
+          "enabled" => row.nil? ? FeatureFlagRegistry.default_for(key) : row.enabled?,
+          "overridden" => row.present?,
+          "rollout" => row&.rollout || {}
+        }
+      end
+    end
+
     private
 
     def cache_key(key)

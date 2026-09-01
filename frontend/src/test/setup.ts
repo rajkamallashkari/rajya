@@ -14,7 +14,7 @@ import { resetCallStore } from "@/features/calls/store/call-store";
 import { resetShellStore } from "@/features/settings/store/shell-store";
 import { resetCatchUpScheduler } from "@/shared/lib/realtime/catch-up";
 import { installTestCable } from "@/test/fake-cable";
-import { resetAiHelpers, resetPreferences } from "@/shared/lib/api/msw/handlers";
+import { resetAdminConfig, resetAiHelpers, resetPreferences } from "@/shared/lib/api/msw/handlers";
 import { resetMessagingStore } from "@/shared/lib/api/msw/messaging-store";
 import { _testReset as resetLayerStack } from "@/shared/lib/navigation/layer-stack";
 import { resetLayerStore } from "@/shared/lib/navigation/layer-store";
@@ -48,6 +48,7 @@ afterEach(() => {
   resetMessagingStore();
   resetAiHelpers();
   resetPreferences();
+  resetAdminConfig();
 });
 
 afterAll(() => {

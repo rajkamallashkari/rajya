@@ -132,7 +132,7 @@ RSpec.configure do |config|
             },
             SessionUser: {
               type: :object,
-              required: %w[id onboarded has_password has_passkey phone_verified],
+              required: %w[id onboarded has_password has_passkey phone_verified is_admin],
               properties: {
                 id: { type: :integer },
                 email: { type: :string, nullable: true },
@@ -140,7 +140,8 @@ RSpec.configure do |config|
                 onboarded: { type: :boolean },
                 has_password: { type: :boolean },
                 has_passkey: { type: :boolean },
-                phone_verified: { type: :boolean }
+                phone_verified: { type: :boolean },
+                is_admin: { type: :boolean }
               }
             },
             Me: {
@@ -210,6 +211,118 @@ RSpec.configure do |config|
               required: %w[accent_configs],
               properties: {
                 accent_configs: { type: :array, items: { "$ref" => "#/components/schemas/AccentConfig" } }
+              }
+            },
+            AdminSetting: {
+              type: :object,
+              required: %w[key type category default description value overridden],
+              properties: {
+                key: { type: :string },
+                type: { type: :string },
+                category: { type: :string },
+                default: {},
+                description: { type: :string },
+                min: { type: :number, nullable: true },
+                max: { type: :number, nullable: true },
+                allow_nil: { type: :boolean },
+                value: {},
+                overridden: { type: :boolean }
+              },
+              additionalProperties: true
+            },
+            AdminSettingList: {
+              type: :object,
+              required: %w[settings unregistered_keys],
+              properties: {
+                settings: { type: :array, items: { "$ref" => "#/components/schemas/AdminSetting" } },
+                unregistered_keys: { type: :array, items: { type: :string } }
+              }
+            },
+            AdminSettingEnvelope: {
+              type: :object,
+              required: %w[setting],
+              properties: { setting: { "$ref" => "#/components/schemas/AdminSetting" } }
+            },
+            AdminFeatureFlag: {
+              type: :object,
+              required: %w[key description default enabled overridden rollout],
+              properties: {
+                key: { type: :string },
+                description: { type: :string },
+                default: { type: :boolean },
+                enabled: { type: :boolean },
+                overridden: { type: :boolean },
+                rollout: { type: :object, additionalProperties: true }
+              }
+            },
+            AdminFeatureFlagList: {
+              type: :object,
+              required: %w[feature_flags unregistered_keys],
+              properties: {
+                feature_flags: { type: :array, items: { "$ref" => "#/components/schemas/AdminFeatureFlag" } },
+                unregistered_keys: { type: :array, items: { type: :string } }
+              }
+            },
+            AdminFeatureFlagEnvelope: {
+              type: :object,
+              required: %w[feature_flag],
+              properties: { feature_flag: { "$ref" => "#/components/schemas/AdminFeatureFlag" } }
+            },
+            AdminTranslationString: {
+              type: :object,
+              required: %w[key locale surface value overridden],
+              properties: {
+                key: { type: :string },
+                locale: { type: :string },
+                surface: { type: :string },
+                default: { type: :string, nullable: true },
+                value: { type: :string },
+                overridden: { type: :boolean }
+              }
+            },
+            AdminTranslationStringList: {
+              type: :object,
+              required: %w[translation_strings],
+              properties: {
+                translation_strings: { type: :array, items: { "$ref" => "#/components/schemas/AdminTranslationString" } }
+              }
+            },
+            AdminTranslationStringEnvelope: {
+              type: :object,
+              required: %w[translation_string],
+              properties: { translation_string: { "$ref" => "#/components/schemas/AdminTranslationString" } }
+            },
+            AdminThemeToken: {
+              type: :object,
+              required: %w[token_name default value overridden],
+              properties: {
+                token_name: { type: :string },
+                default: { type: :string },
+                value: { type: :string },
+                overridden: { type: :boolean }
+              }
+            },
+            AdminThemeOverrideList: {
+              type: :object,
+              required: %w[themes],
+              properties: {
+                themes: {
+                  type: :object,
+                  additionalProperties: { type: :array, items: { "$ref" => "#/components/schemas/AdminThemeToken" } }
+                }
+              }
+            },
+            AdminThemeOverrideEnvelope: {
+              type: :object,
+              required: %w[override],
+              properties: { override: { "$ref" => "#/components/schemas/AdminThemeToken" } }
+            },
+            ThemeOverridePalette: {
+              type: :object,
+              required: %w[light dark],
+              properties: {
+                light: { type: :object, additionalProperties: { type: :string } },
+                dark: { type: :object, additionalProperties: { type: :string } }
               }
             },
             PhoneVerification: {
