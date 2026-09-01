@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
 import "@/test/memory-storage";
-import { setAccessSession } from "@/features/auth/model/access-session";
+import { setAccessSession, endImpersonation } from "@/features/auth/model/access-session";
 import { resetAccountsStore } from "@/features/auth/store/accounts-store";
 import { resetLockStore } from "@/features/auth/store/lock-store";
 import { initI18n } from "@/shared/lib/i18n";
@@ -32,6 +32,7 @@ afterEach(() => {
   FakeAudio.reset();
   window.history.replaceState({}, "", "/");
   window.localStorage.clear();
+  endImpersonation();
   setAccessSession(null);
   resetLockStore();
   resetAccountsStore();

@@ -149,7 +149,8 @@ RSpec.configure do |config|
               required: %w[account user],
               properties: {
                 account: { "$ref" => "#/components/schemas/Account" },
-                user: { "$ref" => "#/components/schemas/SessionUser" }
+                user: { "$ref" => "#/components/schemas/SessionUser" },
+                impersonation: { "$ref" => "#/components/schemas/AdminImpersonation", nullable: true }
               }
             },
             UsernameAvailability: {
@@ -316,6 +317,131 @@ RSpec.configure do |config|
               type: :object,
               required: %w[override],
               properties: { override: { "$ref" => "#/components/schemas/AdminThemeToken" } }
+            },
+            AdminUser: {
+              type: :object,
+              required: %w[id is_admin phone_verified account],
+              properties: {
+                id: { type: :integer },
+                email: { type: :string, nullable: true },
+                is_admin: { type: :boolean },
+                phone_verified: { type: :boolean },
+                created_at: { type: :string, format: :"date-time" },
+                account: { "$ref" => "#/components/schemas/Account" }
+              }
+            },
+            AdminUserList: {
+              type: :object,
+              required: %w[users],
+              properties: {
+                users: { type: :array, items: { "$ref" => "#/components/schemas/AdminUser" } }
+              }
+            },
+            AdminConversation: {
+              type: :object,
+              required: %w[id kind member_count],
+              properties: {
+                id: { type: :integer },
+                kind: { type: :string },
+                title: { type: :string, nullable: true },
+                last_activity_at: { type: :string, format: :"date-time" },
+                member_count: { type: :integer }
+              }
+            },
+            AdminUserDetail: {
+              type: :object,
+              required: %w[user conversations],
+              properties: {
+                user: { "$ref" => "#/components/schemas/AdminUser" },
+                conversations: { type: :array, items: { "$ref" => "#/components/schemas/AdminConversation" } }
+              }
+            },
+            AdminAuditEvent: {
+              type: :object,
+              required: %w[id action metadata created_at],
+              properties: {
+                id: { type: :integer },
+                admin_user_id: { type: :integer, nullable: true },
+                action: { type: :string },
+                target_type: { type: :string, nullable: true },
+                target_id: { type: :integer, nullable: true },
+                metadata: { type: :object, additionalProperties: true },
+                ip_address: { type: :string, nullable: true },
+                created_at: { type: :string, format: :"date-time" },
+                impersonated_account: { "$ref" => "#/components/schemas/Account", nullable: true }
+              }
+            },
+            AdminAuditEventList: {
+              type: :object,
+              required: %w[audit_events],
+              properties: {
+                audit_events: { type: :array, items: { "$ref" => "#/components/schemas/AdminAuditEvent" } }
+              }
+            },
+            AdminDashboardBucket: {
+              type: :object,
+              required: %w[service_name status used_bytes capacity_bytes priority],
+              properties: {
+                service_name: { type: :string },
+                status: { type: :string },
+                used_bytes: { type: :integer },
+                capacity_bytes: { type: :integer },
+                priority: { type: :integer }
+              }
+            },
+            AdminDashboardUsage: {
+              type: :object,
+              required: %w[capability status count],
+              properties: {
+                capability: { type: :string },
+                status: { type: :string },
+                count: { type: :integer },
+                prompt_tokens: { type: :integer, nullable: true },
+                completion_tokens: { type: :integer, nullable: true }
+              }
+            },
+            AdminDashboard: {
+              type: :object,
+              required: %w[buckets quotas ai_usage jobs],
+              properties: {
+                buckets: { type: :array, items: { "$ref" => "#/components/schemas/AdminDashboardBucket" } },
+                quotas: { type: :object, additionalProperties: true },
+                ai_usage: { type: :array, items: { "$ref" => "#/components/schemas/AdminDashboardUsage" } },
+                jobs: { type: :object, additionalProperties: true }
+              }
+            },
+            AdminPromptTemplate: {
+              type: :object,
+              required: %w[capability template default overridden],
+              properties: {
+                capability: { type: :string },
+                version: { type: :integer, nullable: true },
+                template: { type: :string },
+                active: { type: :boolean },
+                default: { type: :string },
+                overridden: { type: :boolean }
+              }
+            },
+            AdminPromptTemplateList: {
+              type: :object,
+              required: %w[prompt_templates],
+              properties: {
+                prompt_templates: { type: :array, items: { "$ref" => "#/components/schemas/AdminPromptTemplate" } }
+              }
+            },
+            AdminPromptTemplateEnvelope: {
+              type: :object,
+              required: %w[prompt_template],
+              properties: { prompt_template: { "$ref" => "#/components/schemas/AdminPromptTemplate" } }
+            },
+            AdminImpersonation: {
+              type: :object,
+              required: %w[impersonator_id account_id display_name],
+              properties: {
+                impersonator_id: { type: :integer },
+                account_id: { type: :integer },
+                display_name: { type: :string }
+              }
             },
             ThemeOverridePalette: {
               type: :object,

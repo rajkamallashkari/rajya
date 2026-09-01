@@ -5,7 +5,7 @@
 # then rejects (F-6, NR-44).
 module Auth
   class Identity
-    Context = Struct.new(:user, :account, :session, keyword_init: true)
+    Context = Struct.new(:user, :account, :session, :impersonator_id, keyword_init: true)
 
     BEARER = "Bearer"
 
@@ -33,19 +33,36 @@ module Auth
         return unless payload.key?("credentials_epoch")
         return unless user.credentials_epoch == payload["credentials_epoch"].to_i
 
-        account = user.account
-        return if account.deactivated?
-        return unless payload["account_id"].to_i == account.id
-
         jti = payload["jti"]
         return if RevokedJtis.blocked?(jti)
 
         session = user.sessions.find_by(jti: jti)
         return if session.nil? || !session.usable?
 
+        impersonator_id = payload["impersonator_id"]
+        if impersonator_id.present?
+          return impersonation_context(user, session, payload, impersonator_id)
+        end
+
+        account = user.account
+        return if account.deactivated?
+        return unless payload["account_id"].to_i == account.id
+
         Context.new(user: user, account: account, session: session)
       rescue Token::DecodeError
         nil
+      end
+
+      private
+
+      def impersonation_context(user, session, payload, impersonator_id)
+        return unless user.is_admin?
+        return unless impersonator_id.to_i == user.id
+
+        account = Account.find_by(id: payload["account_id"].to_i)
+        return if account.nil?
+
+        Context.new(user: user, account: account, session: session, impersonator_id: user.id)
       end
     end
   end

@@ -24,13 +24,20 @@ const expectedPaths = [
   "/api/v1/accounts/username",
   "/api/v1/accounts/{id}",
   "/api/v1/accent_configs",
+  "/api/v1/admin/audit_events",
   "/api/v1/admin/bot_requests",
   "/api/v1/admin/bot_requests/{id}/approve",
   "/api/v1/admin/bot_requests/{id}/decline",
+  "/api/v1/admin/conversations/{conversation_id}/messages",
+  "/api/v1/admin/dashboard",
   "/api/v1/admin/feature_flags",
+  "/api/v1/admin/impersonation",
+  "/api/v1/admin/prompt_templates",
   "/api/v1/admin/settings",
   "/api/v1/admin/theme_overrides",
   "/api/v1/admin/translation_strings",
+  "/api/v1/admin/users",
+  "/api/v1/admin/users/{id}",
   "/api/v1/admin/users/{user_id}/verify_phone",
   "/api/v1/ai/rewrite",
   "/api/v1/ai/translate_text",
@@ -265,6 +272,17 @@ describe("MSW handlers", () => {
     expect(googleRemoved.data?.ok).toBe(true);
     const me = await client.GET("/api/v1/users/me");
     expect(me.data?.user.phone_verified).toBe(false);
+    const adminMe = await fetch("http://rajya.test/api/v1/users/me", {
+      headers: { Authorization: "Bearer admin-token" },
+    });
+    expect(((await adminMe.json()) as { user: { is_admin: boolean } }).user.is_admin).toBe(true);
+    const impersonatedMe = await fetch("http://rajya.test/api/v1/users/me", {
+      headers: { Authorization: "Bearer impersonation-token" },
+    });
+    expect(
+      ((await impersonatedMe.json()) as { impersonation: { display_name: string } }).impersonation
+        .display_name,
+    ).toBe("Peer");
     const patched = await client.PATCH("/api/v1/users/me", { body: { display_name: "Ada" } });
     expect(patched.data?.account.username).toBe("ada");
     const deactivated = await client.DELETE("/api/v1/users/me");
@@ -359,7 +377,7 @@ describe("MSW handlers", () => {
     });
     expect(withdrawn.data?.ok).toBe(true);
     const adminListed = await client.GET("/api/v1/admin/bot_requests");
-    expect(adminListed.data?.bot_requests).toEqual([]);
+    expect(adminListed.data?.bot_requests[0]?.status).toBe("pending");
     const approved = await client.POST("/api/v1/admin/bot_requests/{id}/approve", {
       params: { path: { id: 1 } },
     });
@@ -369,6 +387,63 @@ describe("MSW handlers", () => {
       body: { reason: "Too thin" },
     });
     expect(declined.data?.status).toBe("declined");
+    const adminUsers = await client.GET("/api/v1/admin/users", {
+      params: { query: { q: "peer" } },
+    });
+    expect(adminUsers.data?.users[0]?.account.display_name).toBe("Peer");
+    const allAdminUsers = await client.GET("/api/v1/admin/users");
+    expect(allAdminUsers.data?.users).toHaveLength(3);
+    const adminUser = await client.GET("/api/v1/admin/users/{id}", { params: { path: { id: 2 } } });
+    expect(adminUser.data?.user.phone_verified).toBe(true);
+    const missingAdminUser = await client.GET("/api/v1/admin/users/{id}", {
+      params: { path: { id: 99 } },
+    });
+    expect(missingAdminUser.response.status).toBe(404);
+    const transcript = await client.GET("/api/v1/admin/conversations/{conversation_id}/messages", {
+      params: { path: { conversation_id: 1 }, query: { before: 50, after: 1 } },
+    });
+    expect(transcript.data?.messages.length).toBeGreaterThan(0);
+    const missingTranscript = await client.GET(
+      "/api/v1/admin/conversations/{conversation_id}/messages",
+      { params: { path: { conversation_id: 99 } } },
+    );
+    expect(missingTranscript.response.status).toBe(404);
+    const impersonation = await client.POST("/api/v1/admin/impersonation", {
+      body: { account_id: 2 },
+    });
+    expect(impersonation.data?.token).toBe("impersonation-token");
+    const impersonationDefault = await client.POST("/api/v1/admin/impersonation", { body: {} });
+    expect(impersonationDefault.data?.account.id).toBe(2);
+    const impersonationSelf = await client.POST("/api/v1/admin/impersonation", {
+      body: { account_id: 1 },
+    });
+    expect(impersonationSelf.data?.account.id).toBe(1);
+    const stopImpersonation = await client.DELETE("/api/v1/admin/impersonation");
+    expect(stopImpersonation.data?.ok).toBe(true);
+    const audit = await client.GET("/api/v1/admin/audit_events");
+    expect(audit.data?.audit_events).toHaveLength(2);
+    const filteredAudit = await client.GET("/api/v1/admin/audit_events", {
+      params: { query: { action_name: "transcript.read" } },
+    });
+    expect(filteredAudit.data?.audit_events).toHaveLength(1);
+    const dashboard = await client.GET("/api/v1/admin/dashboard");
+    expect(dashboard.data?.buckets[0]?.service_name).toBe("r2");
+    const prompts = await client.GET("/api/v1/admin/prompt_templates");
+    expect(prompts.data?.prompt_templates[0]?.capability).toBe("bot_reply");
+    const patchedPrompt = await client.PATCH("/api/v1/admin/prompt_templates", {
+      body: { capability: "bot_reply", template: "Be brief." },
+    });
+    expect(patchedPrompt.data?.prompt_template.overridden).toBe(true);
+    const defaultPrompt = await client.PATCH("/api/v1/admin/prompt_templates", { body: {} });
+    expect(defaultPrompt.data?.prompt_template.capability).toBe("bot_reply");
+    const rewritePrompt = await client.PATCH("/api/v1/admin/prompt_templates", {
+      body: { capability: "rewrite", template: "Shorter." },
+    });
+    expect(rewritePrompt.data?.prompt_template.version).toBe(1);
+    const missingPrompt = await client.PATCH("/api/v1/admin/prompt_templates", {
+      body: { capability: "missing" },
+    });
+    expect(missingPrompt.data?.prompt_template.capability).toBe("bot_reply");
     const adminSettings = await client.GET("/api/v1/admin/settings");
     expect(adminSettings.data?.settings[0]?.key).toBe("message_edit_window");
     const patchedSetting = await client.PATCH("/api/v1/admin/settings", {

@@ -3,7 +3,7 @@ module Api
     class UsersController < ApplicationController
       def show
         authorize current_user, policy_class: UsersPolicy
-        render_result(Users::Show.call(user: current_user), serializer: MeResource)
+        render_result(Users::Show.call(user: current_user, account: current_account), serializer: MeResource)
       end
 
       def update

@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 12.4 |
-| **Next session** | 12.5 |
+| **Last completed** | 12.5 |
+| **Next session** | 12.6 |
 | **Phase** | P12 — Settings & admin |
-| **Sessions remaining in phase** | 2 (12.5–12.6) |
+| **Sessions remaining in phase** | 1 (12.6) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 12.5 — Admin shell, users, transcripts, bots, impersonation, audit, dashboards**
+**Session 12.6 — Moderation queue and sticker pack admin**
 
-Deliverable: Admin shell, user management, transcript viewer, bot approvals, impersonation, audit log, dashboards
+Deliverable: Moderation queue (NR-39) admin side, plus sticker pack management (NR-28) with size caps
 
-Docs: TARGET §7 (all); SCHEMA §8 (`audit_events`); AUDIT §1.10, §5 (F-10), D-2, Q-14, NR-5, NR-7
+Docs: SCHEMA §12.11, §12.5, S-19, S-21
 
-Legacy to read: `cognify/app/controllers/admin/admin_controller.rb` and its ERB views — read to inventory capabilities, then discard entirely
+Legacy to read: None — new features
 
 ---
 
@@ -82,6 +82,7 @@ Legacy to read: `cognify/app/controllers/admin/admin_controller.rb` and its ERB 
 | 12.2 | Settings panels: typography sliders, quick reactions, and the full personalisation surface | Appearance settings (theme, split accents, fonts, −5…+5 sliders, density, corners, timestamps, autoplay, skin tone, six quick reactions) write the preferences document; `PreferencesThemeBridge` is the only `setInput` writer. Per-conversation wallpaper (NR-42) lives on the membership. Playwright: theme, wallpaper, and all four sliders apply live. Devices/Chats/export/Stickers wait for 12.3. |
 | 12.3 | Remaining user panels: Devices (NR-44), Chats with saved replies and nicknames, export (NR-32), Stickers | Settings hub opens Appearance, Chats, Devices, and Stickers. Devices lists sessions with per-`jti` revoke and sign-out-others (NR-44). Chats writes transcription/link-preview prefs, CRUD for saved replies (NR-25) and private nicknames (NR-41), and export jobs with format/media/download (NR-32). Stickers lists published packs and lets the owner create/add/remove. Admin pack UI waits for 12.6. |
 | 12.4 | Four configuration editors: settings, feature flags, strings, colours | Admin-only editors expose registered settings, rollout-aware feature flags, live string-catalogue overrides, and semantic colour tokens with per-token/global reset and API contrast failures (NR-6, NR-48). Public authenticated theme palettes merge into `applyTheme`; unknown setting/flag rows are reported and writes remain registry-gated. |
+| 12.5 | Admin shell, users, transcripts, bots, impersonation, audit, dashboards | In-app React admin (NR-5) gated by `users.is_admin`. Distinct impersonation JWT (NR-7 / D-2) with a non-dismissible banner, every impersonated mutation audited first, and `/me` still the admin. Transcripts escape markup (F-10). 403s on every admin endpoint. Playwright: impersonate → banner → Exit. |
 
 ---
 

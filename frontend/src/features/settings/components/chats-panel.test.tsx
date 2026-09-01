@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { MemoryRouter } from "react-router";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
@@ -12,7 +13,11 @@ import { server } from "@/test/msw";
 import { testSession } from "@/test/access-session";
 
 function wrap(ui: ReactNode) {
-  return <AppProviders>{ui}</AppProviders>;
+  return (
+    <AppProviders>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </AppProviders>
+  );
 }
 
 const readyJob = {
@@ -97,10 +102,16 @@ describe("ChatsPanel", () => {
         }),
       ),
       http.get("*/api/v1/saved_replies", () =>
-        HttpResponse.json({ error: { code: "fail", message: "fail", details: {} } }, { status: 500 }),
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
       ),
       http.get("*/api/v1/contact_nicknames", () =>
-        HttpResponse.json({ error: { code: "fail", message: "fail", details: {} } }, { status: 500 }),
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
       ),
     );
     render(wrap(<ChatsPanel />));

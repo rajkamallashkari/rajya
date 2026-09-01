@@ -12,16 +12,17 @@ module Auth
     ExpiredError = Class.new(DecodeError)
 
     class << self
-      def encode(user, jti:, expires_at: nil)
+      def encode(user, jti:, expires_at: nil, account_id: nil, impersonator_id: nil)
         exp = expires_at || Settings.fetch(:session_lifetime).seconds.from_now
         payload = {
           sub: user.id,
-          account_id: user.account_id,
+          account_id: account_id || user.account_id,
           credentials_epoch: user.credentials_epoch,
           jti: jti.to_s,
           iat: Time.current.to_i,
           exp: exp.to_i
         }
+        payload[:impersonator_id] = impersonator_id if impersonator_id
         JWT.encode(payload, secret, ALGORITHM)
       end
 

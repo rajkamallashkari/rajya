@@ -1,2 +1,10 @@
 export { AdminConfigPanel } from "./components/admin-config-panel";
-export { useMe, useThemeOverridePalette } from "./api/queries";
+export { AdminAuditPanel } from "./components/admin-audit-panel";
+export { AdminBotsPanel } from "./components/admin-bots-panel";
+export { AdminDashboardPanel } from "./components/admin-dashboard-panel";
+export { AdminPromptsPanel } from "./components/admin-prompts-panel";
+export { AdminShell } from "./components/admin-shell";
+export { AdminTranscriptPanel } from "./components/admin-transcript-panel";
+export { AdminUserDetailPanel } from "./components/admin-user-detail-panel";
+export { AdminUsersPanel } from "./components/admin-users-panel";
+export { useMe, useStopImpersonation, useThemeOverridePalette } from "./api/queries";

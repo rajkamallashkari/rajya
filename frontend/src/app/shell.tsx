@@ -18,6 +18,7 @@ import { getMessage } from "@/features/conversations/api/http";
 import { useConversations } from "@/features/conversations/api/queries";
 import { conversationTitle } from "@/features/conversations/model/title";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
+import { useStopImpersonation } from "@/features/admin";
 import { useShellStore } from "@/features/settings/store/shell-store";
 import { useMobileViewport } from "@/shared/hooks/use-mobile-viewport";
 import { useShortcuts } from "@/shared/hooks/use-shortcuts";
@@ -28,7 +29,7 @@ export function AppShell() {
   const { t } = useTranslation();
   const searchRef = useRef<HTMLInputElement>(null);
   const impersonatingName = useShellStore((state) => state.impersonatingName);
-  const setImpersonatingName = useShellStore((state) => state.setImpersonatingName);
+  const stopImpersonation = useStopImpersonation();
   const popLayer = useLayerStore((state) => state.popLayer);
   const openConversation = useLayerStore((state) => state.openConversation);
   const hasConversation = useLayerStore((state) =>
@@ -66,11 +67,15 @@ export function AppShell() {
     if (!conversationId) {
       return;
     }
-    const listed = conversations.data?.conversations.find((row) => String(row.id) === conversationId);
+    const listed = conversations.data?.conversations.find(
+      (row) => String(row.id) === conversationId,
+    );
     openConversation(
       conversationLayer(
         conversationId,
-        listed ? conversationTitle(listed, t("conversations.untitled")) : t("conversations.untitled"),
+        listed
+          ? conversationTitle(listed, t("conversations.untitled"))
+          : t("conversations.untitled"),
         params.messageId,
       ),
     );
@@ -83,7 +88,9 @@ export function AppShell() {
     }
     void getMessage(Number(messageId))
       .then((message) => {
-        navigate(`/c/${String(message.conversation_id)}/m/${String(message.id)}`, { replace: true });
+        navigate(`/c/${String(message.conversation_id)}/m/${String(message.id)}`, {
+          replace: true,
+        });
       })
       .catch(() => undefined);
   }, [navigate, params.conversationId, params.messageId]);
@@ -122,7 +129,7 @@ export function AppShell() {
   return (
     <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[var(--surface-app)] text-[var(--text-primary)]">
       {impersonatingName ? (
-        <ImpersonationBanner name={impersonatingName} onExit={() => setImpersonatingName(null)} />
+        <ImpersonationBanner name={impersonatingName} onExit={stopImpersonation} />
       ) : null}
       <OfflineBanner />
       <TopCallBar />
@@ -144,10 +151,7 @@ export function AppShell() {
                 return <SettingsPanel />;
               }
               return (
-                <ProfilePanel
-                  accountId={layer.accountId}
-                  conversationId={layer.conversationId}
-                />
+                <ProfilePanel accountId={layer.accountId} conversationId={layer.conversationId} />
               );
             }}
           />

@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { MemoryRouter } from "react-router";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
@@ -12,7 +13,11 @@ import { server } from "@/test/msw";
 import { testSession } from "@/test/access-session";
 
 function wrap(ui: ReactNode) {
-  return <AppProviders>{ui}</AppProviders>;
+  return (
+    <AppProviders>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </AppProviders>
+  );
 }
 
 const ownedPack = {
@@ -47,20 +52,26 @@ describe("StickersPanel", () => {
   it("manages owned packs and stickers", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     setAccessSession(testSession());
-    server.use(http.get("*/api/v1/sticker_packs", () => HttpResponse.json({ sticker_packs: [ownedPack] })));
+    server.use(
+      http.get("*/api/v1/sticker_packs", () => HttpResponse.json({ sticker_packs: [ownedPack] })),
+    );
     render(wrap(<StickersPanel />));
     expect(await screen.findByText("Waves")).toBeInTheDocument();
     expect(screen.getByText("plain")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.settings.sticker_packs.create }));
     await user.type(screen.getByPlaceholderText(en.settings.sticker_packs.name), "Cats");
     await user.click(screen.getByRole("combobox", { name: en.settings.sticker_packs.kind }));
-    await user.click(await screen.findByRole("option", { name: en.settings.sticker_packs.kind_emoji }));
+    await user.click(
+      await screen.findByRole("option", { name: en.settings.sticker_packs.kind_emoji }),
+    );
     await user.click(screen.getByRole("button", { name: en.settings.sticker_packs.create }));
     const file = new File(["x"], "wave.png", { type: "image/png" });
     await user.upload(screen.getByLabelText(en.settings.sticker_packs.add), file);
     await user.type(screen.getByPlaceholderText(en.settings.sticker_packs.shortcode), "wave2");
     await user.upload(screen.getByLabelText(en.settings.sticker_packs.add), file);
-    await user.click(screen.getAllByRole("button", { name: en.settings.sticker_packs.remove_sticker })[0]!);
+    await user.click(
+      screen.getAllByRole("button", { name: en.settings.sticker_packs.remove_sticker })[0]!,
+    );
     await user.click(screen.getByRole("button", { name: en.settings.sticker_packs.delete }));
   });
 

@@ -1,11 +1,12 @@
 module Bots
   module Requests
     class Approve < ApplicationOperation
-      def call(admin:, request:)
+      def call(admin:, request:, ip: nil)
         return failure(:forbidden) unless admin.is_admin?
         return failure(:not_found) if request.nil?
         return failure(:conflict) unless request.pending?
 
+        Audit::Record.call(admin: admin, action: "bot_request.approve", target: request, ip: ip)
         affected = nil
         BotRequest.transaction do
           affected = request.edit_kind? ? apply_edit!(request) : build_bot!(request)

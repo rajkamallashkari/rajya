@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ACCOUNTS_STORAGE_KEY } from "@/features/auth/model/account-token";
-import { getAccessSession } from "@/features/auth/model/access-session";
+import { beginImpersonation, endImpersonation, getAccessSession } from "@/features/auth/model/access-session";
 import { resetAccountsStore, useAccountsStore, type StoredAccount } from "./accounts-store";
 
 function account(id: number, overrides: Partial<StoredAccount> = {}): StoredAccount {
@@ -86,8 +86,26 @@ describe("accounts store", () => {
     useAccountsStore.getState().hydrate();
     expect(useAccountsStore.getState().accounts.map((row) => row.id)).toEqual([6]);
     expect(useAccountsStore.getState().activeAccountId).toBe(6);
+    expect(getAccessSession()?.token).toBe("tok-6");
 
     resetAccountsStore();
     expect(window.localStorage.getItem(ACCOUNTS_STORAGE_KEY)).toBeNull();
+  });
+
+  it("does not overwrite the impersonation token when hydrating", () => {
+    useAccountsStore.getState().upsertAccount(account(1));
+    beginImpersonation({
+      accountId: 2,
+      displayName: "Peer",
+      hasPasskey: false,
+      hasPassword: true,
+      onboarded: true,
+      token: "impersonation-token",
+      username: "user2",
+    });
+    useAccountsStore.getState().hydrate();
+    useAccountsStore.getState().setActive(1);
+    expect(getAccessSession()?.token).toBe("impersonation-token");
+    endImpersonation();
   });
 });

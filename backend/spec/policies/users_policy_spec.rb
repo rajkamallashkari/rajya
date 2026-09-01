@@ -24,4 +24,15 @@ RSpec.describe UsersPolicy do
 
     expect(policy).not_to be_show
   end
+
+  it "allows an admin to keep /me while impersonating (NR-7)" do
+    admin = create(:user, :admin)
+    policy = described_class.new(create(:user).account, admin)
+
+    expect(policy).to be_show
+  end
+
+  it "forbids a bot account" do
+    expect(described_class.new(create(:account, :bot_kind), user)).not_to be_show
+  end
 end

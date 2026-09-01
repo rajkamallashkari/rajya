@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { MemoryRouter } from "react-router";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
@@ -10,7 +11,11 @@ import { en } from "@/shared/lib/i18n/catalog";
 import { server } from "@/test/msw";
 
 function wrap(ui: ReactNode) {
-  return <AppProviders>{ui}</AppProviders>;
+  return (
+    <AppProviders>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </AppProviders>
+  );
 }
 
 describe("DevicesPanel", () => {

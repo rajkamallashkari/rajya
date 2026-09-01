@@ -6,6 +6,12 @@ export type AdminFeatureFlag = components["schemas"]["AdminFeatureFlag"];
 export type AdminTranslationString = components["schemas"]["AdminTranslationString"];
 export type AdminThemeToken = components["schemas"]["AdminThemeToken"];
 export type ThemeOverridePalette = components["schemas"]["ThemeOverridePalette"];
+export type AdminUser = components["schemas"]["AdminUser"];
+export type AdminUserDetail = components["schemas"]["AdminUserDetail"];
+export type AdminAuditEvent = components["schemas"]["AdminAuditEvent"];
+export type AdminDashboard = components["schemas"]["AdminDashboard"];
+export type AdminPromptTemplate = components["schemas"]["AdminPromptTemplate"];
+export type BotRequest = components["schemas"]["BotRequest"];
 
 export async function listAdminSettings() {
   return unwrap(
@@ -120,5 +126,117 @@ export async function getThemeOverridePalette() {
   return unwrap(
     await apiClient().GET("/api/v1/theme_overrides", { headers: bearerHeaders() }),
     "theme_overrides_failed",
+  );
+}
+
+export async function listAdminUsers(q?: string) {
+  return unwrap(
+    await apiClient().GET("/api/v1/admin/users", {
+      headers: bearerHeaders(),
+      params: { query: q ? { q } : {} },
+    }),
+    "admin_users_failed",
+  );
+}
+
+export async function getAdminUser(id: number) {
+  return unwrap(
+    await apiClient().GET("/api/v1/admin/users/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "admin_user_failed",
+  );
+}
+
+export async function listAdminTranscript(
+  conversationId: number,
+  query?: { before?: number; after?: number },
+) {
+  return unwrap(
+    await apiClient().GET("/api/v1/admin/conversations/{conversation_id}/messages", {
+      headers: bearerHeaders(),
+      params: { path: { conversation_id: conversationId }, query: query ?? {} },
+    }),
+    "admin_transcript_failed",
+  );
+}
+
+export async function startAdminImpersonation(account_id: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/admin/impersonation", {
+      headers: bearerHeaders(),
+      body: { account_id },
+    }),
+    "admin_impersonation_failed",
+  );
+}
+
+export async function stopAdminImpersonation() {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/admin/impersonation", { headers: bearerHeaders() }),
+    "admin_impersonation_failed",
+  );
+}
+
+export async function listAdminAuditEvents(action_name?: string) {
+  return unwrap(
+    await apiClient().GET("/api/v1/admin/audit_events", {
+      headers: bearerHeaders(),
+      params: { query: action_name ? { action_name } : {} },
+    }),
+    "admin_audit_failed",
+  );
+}
+
+export async function getAdminDashboard() {
+  return unwrap(
+    await apiClient().GET("/api/v1/admin/dashboard", { headers: bearerHeaders() }),
+    "admin_dashboard_failed",
+  );
+}
+
+export async function listAdminPromptTemplates() {
+  return unwrap(
+    await apiClient().GET("/api/v1/admin/prompt_templates", { headers: bearerHeaders() }),
+    "admin_prompts_failed",
+  );
+}
+
+export async function updateAdminPromptTemplate(capability: string, template: string) {
+  return unwrap(
+    await apiClient().PATCH("/api/v1/admin/prompt_templates", {
+      headers: bearerHeaders(),
+      body: { capability, template },
+    }),
+    "admin_prompts_failed",
+  );
+}
+
+export async function listAdminBotRequests() {
+  return unwrap(
+    await apiClient().GET("/api/v1/admin/bot_requests", { headers: bearerHeaders() }),
+    "admin_bots_failed",
+  );
+}
+
+export async function approveAdminBotRequest(id: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/admin/bot_requests/{id}/approve", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "admin_bots_failed",
+  );
+}
+
+export async function declineAdminBotRequest(id: number, reason?: string) {
+  return unwrap(
+    await apiClient().POST("/api/v1/admin/bot_requests/{id}/decline", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+      body: reason ? { reason } : {},
+    }),
+    "admin_bots_failed",
   );
 }

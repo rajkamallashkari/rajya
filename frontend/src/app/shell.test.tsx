@@ -52,7 +52,9 @@ describe("AppShell", () => {
     expect(document.querySelector("[data-settings-panel]")).not.toBeNull();
     window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
     await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
-    expect(useShellStore.getState().impersonatingName).toBeNull();
+    await waitFor(() => {
+      expect(useShellStore.getState().impersonatingName).toBeNull();
+    });
     expect(await screen.findByRole("button", { name: en.shell.open_profile })).toBeInTheDocument();
     expect(useLayerStore.getState().layers).toEqual([
       expect.objectContaining({ conversationId: "1", kind: "conversation" }),

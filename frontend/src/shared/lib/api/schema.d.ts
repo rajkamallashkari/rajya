@@ -463,6 +463,322 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List users */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminUserList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Show a user and their conversations */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description shown */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminUserDetail"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/conversations/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read any conversation transcript */
+        get: {
+            parameters: {
+                query?: {
+                    before?: number;
+                    after?: number;
+                };
+                header?: never;
+                path: {
+                    conversation_id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MessagePage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/impersonation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start impersonating an account */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        account_id?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description started */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Session"];
+                    };
+                };
+            };
+        };
+        /** Stop impersonation */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description stopped */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Ok"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/audit_events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List audit events */
+        get: {
+            parameters: {
+                query?: {
+                    action_name?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAuditEventList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin dashboards */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description shown */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminDashboard"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/prompt_templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List prompt templates */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminPromptTemplateList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Create a new prompt template version */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        capability?: string;
+                        template?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminPromptTemplateEnvelope"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/v1/messages/{id}/translate": {
         parameters: {
             query?: never;
@@ -7265,6 +7581,7 @@ export interface components {
         Me: {
             account: components["schemas"]["Account"];
             user: components["schemas"]["SessionUser"];
+            impersonation?: components["schemas"]["AdminImpersonation"];
         };
         UsernameAvailability: {
             available: boolean;
@@ -7368,6 +7685,90 @@ export interface components {
         };
         AdminThemeOverrideEnvelope: {
             override: components["schemas"]["AdminThemeToken"];
+        };
+        AdminUser: {
+            id: number;
+            email?: string | null;
+            is_admin: boolean;
+            phone_verified: boolean;
+            /** Format: date-time */
+            created_at?: string;
+            account: components["schemas"]["Account"];
+        };
+        AdminUserList: {
+            users: components["schemas"]["AdminUser"][];
+        };
+        AdminConversation: {
+            id: number;
+            kind: string;
+            title?: string | null;
+            /** Format: date-time */
+            last_activity_at?: string;
+            member_count: number;
+        };
+        AdminUserDetail: {
+            user: components["schemas"]["AdminUser"];
+            conversations: components["schemas"]["AdminConversation"][];
+        };
+        AdminAuditEvent: {
+            id: number;
+            admin_user_id?: number | null;
+            action: string;
+            target_type?: string | null;
+            target_id?: number | null;
+            metadata: {
+                [key: string]: unknown;
+            };
+            ip_address?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            impersonated_account?: components["schemas"]["Account"];
+        };
+        AdminAuditEventList: {
+            audit_events: components["schemas"]["AdminAuditEvent"][];
+        };
+        AdminDashboardBucket: {
+            service_name: string;
+            status: string;
+            used_bytes: number;
+            capacity_bytes: number;
+            priority: number;
+        };
+        AdminDashboardUsage: {
+            capability: string;
+            status: string;
+            count: number;
+            prompt_tokens?: number | null;
+            completion_tokens?: number | null;
+        };
+        AdminDashboard: {
+            buckets: components["schemas"]["AdminDashboardBucket"][];
+            quotas: {
+                [key: string]: unknown;
+            };
+            ai_usage: components["schemas"]["AdminDashboardUsage"][];
+            jobs: {
+                [key: string]: unknown;
+            };
+        };
+        AdminPromptTemplate: {
+            capability: string;
+            version?: number | null;
+            template: string;
+            active?: boolean;
+            default: string;
+            overridden: boolean;
+        };
+        AdminPromptTemplateList: {
+            prompt_templates: components["schemas"]["AdminPromptTemplate"][];
+        };
+        AdminPromptTemplateEnvelope: {
+            prompt_template: components["schemas"]["AdminPromptTemplate"];
+        };
+        AdminImpersonation: {
+            impersonator_id: number;
+            account_id: number;
+            display_name: string;
         };
         ThemeOverridePalette: {
             light: {

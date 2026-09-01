@@ -1,8 +1,9 @@
 import { ChevronRight, MessageSquare, Monitor, Palette, Shield, Sticker } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
+import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { LayerHeader } from "@/app/navigation/layer-header";
-import { AdminConfigPanel, useMe } from "@/features/admin";
+import { useMe } from "@/features/admin";
 import { AppearancePanel } from "@/features/settings/components/appearance-panel";
 import { ChatsPanel } from "@/features/settings/components/chats-panel";
 import { DevicesPanel } from "@/features/settings/components/devices-panel";
@@ -36,9 +37,7 @@ export function SettingsPanel() {
       ? t("shell.settings")
       : panel === "stickers"
         ? t("settings.sticker_packs.title")
-        : panel === "admin"
-          ? t("admin.title")
-          : t(`settings.${panel}`);
+        : t(`settings.${panel}`);
 
   return (
     <div
@@ -61,7 +60,6 @@ export function SettingsPanel() {
         {panel === "chats" ? <ChatsPanel /> : null}
         {panel === "devices" ? <DevicesPanel /> : null}
         {panel === "stickers" ? <StickersPanel /> : null}
-        {panel === "admin" ? <AdminConfigPanel /> : null}
       </div>
     </div>
   );
@@ -96,16 +94,17 @@ function SettingsHub(): ReactNode {
       })}
       {isAdmin ? (
         <Button
+          asChild
           className="h-auto w-full justify-between px-[var(--space-list-x)] py-[var(--space-list-y)]"
-          onClick={() => setSettingsPanel("admin")}
-          type="button"
           variant="ghost"
         >
-          <span className="flex min-w-0 items-center gap-[var(--control-gap)]">
-            <Shield aria-hidden="true" className={ICON_CLASS} />
-            <span className={WEIGHT_EMPHASIS}>{t("admin.title")}</span>
-          </span>
-          <ChevronRight aria-hidden="true" className={ICON_CLASS} />
+          <Link to="/admin">
+            <span className="flex min-w-0 items-center gap-[var(--control-gap)]">
+              <Shield aria-hidden="true" className={ICON_CLASS} />
+              <span className={WEIGHT_EMPHASIS}>{t("admin.title")}</span>
+            </span>
+            <ChevronRight aria-hidden="true" className={ICON_CLASS} />
+          </Link>
         </Button>
       ) : null}
     </nav>

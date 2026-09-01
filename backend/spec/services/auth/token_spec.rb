@@ -16,6 +16,16 @@ RSpec.describe Auth::Token do
       expect(payload["jti"]).to eq(jti)
     end
 
+    it "embeds impersonator_id and an overridden account_id" do
+      other = create(:account)
+      payload = described_class.decode(
+        described_class.encode(user, jti: jti, account_id: other.id, impersonator_id: user.id)
+      )
+
+      expect(payload["account_id"].to_i).to eq(other.id)
+      expect(payload["impersonator_id"].to_i).to eq(user.id)
+    end
+
     it "embeds an explicit expires_at" do
       exp = 1.hour.from_now
       payload = described_class.decode(described_class.encode(user, jti: jti, expires_at: exp))

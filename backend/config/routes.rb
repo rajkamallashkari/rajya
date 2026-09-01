@@ -179,6 +179,13 @@ Rails.application.routes.draw do
       resources :contact_nicknames, only: %i[index update destroy], param: :account_id
       namespace :admin do
         post "users/:user_id/verify_phone", to: "phone_verifications#create"
+        resources :users, only: %i[index show]
+        get "conversations/:conversation_id/messages", to: "transcripts#index"
+        resource :impersonation, only: %i[create destroy]
+        resources :audit_events, only: :index
+        resource :dashboard, only: :show
+        get "prompt_templates", to: "prompt_templates#index"
+        patch "prompt_templates", to: "prompt_templates#update"
         resources :bot_requests, only: :index do
           member do
             post :approve

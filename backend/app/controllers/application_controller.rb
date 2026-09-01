@@ -11,6 +11,7 @@ class ApplicationController < ActionController::API
   # this stays armed from the first one.
   before_action :capture_client_context
   before_action :authenticate!, unless: :skip_authentication?
+  around_action :audit_impersonated_write, unless: :skip_authentication?
   after_action :verify_authorized, unless: :skip_authorization?
   after_action :verify_policy_scoped, if: :index_action?
 
@@ -39,6 +40,14 @@ class ApplicationController < ActionController::API
     @current_session
   end
 
+  def current_impersonator_id
+    @current_impersonator_id
+  end
+
+  def impersonating?
+    current_impersonator_id.present?
+  end
+
   def capture_client_context
     Auth::RequestContext.ip = request.remote_ip
     Auth::RequestContext.user_agent = request.user_agent
@@ -50,7 +59,9 @@ class ApplicationController < ActionController::API
       @current_user = context.user
       @current_account = context.account
       @current_session = context.session
+      @current_impersonator_id = context.impersonator_id
       context.session.touch_last_seen!
+      log_request_identities
       return
     end
 
@@ -89,7 +100,46 @@ class ApplicationController < ActionController::API
   end
 
   def serializer_params
-    { current_account: current_account, current_jti: current_session&.jti }
+    {
+      current_account: current_account,
+      current_jti: current_session&.jti,
+      impersonator_id: current_impersonator_id
+    }
+  end
+
+  def log_request_identities
+    Rails.logger.info(
+      {
+        event: "auth.identities",
+        user_id: current_user.id,
+        account_id: current_account.id,
+        impersonator_id: current_impersonator_id
+      }.compact.to_json
+    )
+  end
+
+  def audit_impersonated_write
+    unless impersonating? && mutating_request? && !impersonation_controller?
+      yield
+      return
+    end
+
+    Audit::Record.call(
+      admin: current_user,
+      action: "#{controller_path}##{action_name}",
+      impersonated_account: current_account,
+      metadata: { "method" => request.request_method, "path" => request.path },
+      ip: request.remote_ip
+    )
+    yield
+  end
+
+  def mutating_request?
+    !request.get? && !request.head?
+  end
+
+  def impersonation_controller?
+    controller_path == "api/v1/admin/impersonations"
   end
 
   def render_error(code, details: {})

@@ -24,6 +24,7 @@ import {
   accountSearchHits,
   conversationSearchHits,
   patchMessage,
+  peerAccount,
   reactStoredMessage,
   setConversationTicks,
   tombstoneMessage,
@@ -167,7 +168,31 @@ const contactNickname = {
   account: session.account,
 } satisfies ContactNicknameBody;
 const contactNicknameList = { nicknames: [contactNickname] } satisfies ContactNicknameListBody;
-const meResponse = () => HttpResponse.json(me);
+
+function bearerToken(request: Request): string {
+  return request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+}
+
+function meBodyFor(token: string): MeBody {
+  if (token === "admin-token") {
+    return {
+      account: session.account,
+      user: { ...session.user, is_admin: true, onboarded: true },
+    };
+  }
+  if (token === "impersonation-token") {
+    return {
+      account: peerAccount(2, "Peer"),
+      user: { ...session.user, is_admin: true, onboarded: true },
+      impersonation: { impersonator_id: 1, account_id: 2, display_name: "Peer" },
+    };
+  }
+  return me;
+}
+
+function meResponse({ request }: { request: Request }) {
+  return HttpResponse.json(meBodyFor(bearerToken(request)));
+}
 
 const accepted = { accepted: true } satisfies AcceptedBody;
 const ok = { ok: true } satisfies OkBody;
@@ -216,6 +241,129 @@ const nimbusBot = {
     shared_memory: true,
   },
 };
+
+const pendingBotRequest = {
+  id: 1,
+  kind: "create" as const,
+  status: "pending" as const,
+  payload: { bio: "Sky", name: "Nimbus", persona_prompt: "A".repeat(80), username: "nimbus" },
+  requester_account_id: 1,
+  created_at: MESSAGE_STAMP,
+};
+
+const namelessBotRequest = {
+  id: 3,
+  kind: "create" as const,
+  status: "pending" as const,
+  payload: {},
+  requester_account_id: 1,
+  created_at: MESSAGE_STAMP,
+};
+
+const editBotRequest = {
+  ...pendingBotRequest,
+  id: 2,
+  kind: "edit" as const,
+  payload: { username: "nimbus" },
+};
+
+function listedAdminUsers(q?: string | null) {
+  const rows = [
+    {
+      id: 1,
+      email: "ada@example.com",
+      is_admin: true,
+      phone_verified: false,
+      created_at: MESSAGE_STAMP,
+      account: session.account,
+    },
+    {
+      id: 2,
+      email: "peer@example.com",
+      is_admin: false,
+      phone_verified: true,
+      created_at: MESSAGE_STAMP,
+      account: peerAccount(2, "Peer"),
+    },
+    {
+      id: 3,
+      email: null,
+      is_admin: false,
+      phone_verified: false,
+      created_at: MESSAGE_STAMP,
+      account: peerAccount(3, "No Email"),
+    },
+  ];
+  const needle = q?.trim().toLowerCase();
+  if (!needle) {
+    return rows;
+  }
+  return rows.filter((row) =>
+    `${row.email ?? ""} ${row.account.display_name} ${row.account.username}`
+      .toLowerCase()
+      .includes(needle),
+  );
+}
+
+let promptTemplates = [
+  {
+    capability: "bot_reply",
+    version: 1,
+    template: "You are helpful.",
+    active: true,
+    default: "You are helpful.",
+    overridden: false,
+  },
+  {
+    capability: "rewrite",
+    version: null,
+    template: "Rewrite this.",
+    active: true,
+    default: "Rewrite this.",
+    overridden: false,
+  },
+];
+
+const dashboardBody = {
+  buckets: [
+    {
+      service_name: "r2",
+      status: "ok",
+      used_bytes: 10,
+      capacity_bytes: 100,
+      priority: 1,
+    },
+  ],
+  quotas: { storage_bytes: 100, object: { nested: true } },
+  ai_usage: [
+    { capability: "bot_reply", status: "ok", count: 3, prompt_tokens: 10, completion_tokens: 4 },
+  ],
+  jobs: { failed: 0, pending: 1 },
+};
+
+const auditEvents = [
+  {
+    id: 1,
+    admin_user_id: 1,
+    action: "impersonation.start",
+    target_type: "Account",
+    target_id: 2,
+    metadata: { account_id: 2 },
+    ip_address: "127.0.0.1",
+    created_at: MESSAGE_STAMP,
+    impersonated_account: peerAccount(2, "Peer"),
+  },
+  {
+    id: 2,
+    admin_user_id: 1,
+    action: "transcript.read",
+    target_type: "Conversation",
+    target_id: 1,
+    metadata: {},
+    ip_address: null,
+    created_at: MESSAGE_STAMP,
+  },
+];
 
 let styleProfileState = {
   enabled: false,
@@ -341,6 +489,24 @@ export function resetAdminConfig() {
     dark: [{ ...adminDarkToken }],
   };
   themePalette = { light: {}, dark: {} };
+  promptTemplates = [
+    {
+      capability: "bot_reply",
+      version: 1,
+      template: "You are helpful.",
+      active: true,
+      default: "You are helpful.",
+      overridden: false,
+    },
+    {
+      capability: "rewrite",
+      version: null,
+      template: "Rewrite this.",
+      active: true,
+      default: "Rewrite this.",
+      overridden: false,
+    },
+  ];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -624,7 +790,7 @@ export const handlerMap = {
     if (request.method === "DELETE") {
       return HttpResponse.json(ok);
     }
-    return meResponse();
+    return meResponse({ request });
   }),
   "/api/v1/users/me/complete_onboarding": http.post(
     "*/api/v1/users/me/complete_onboarding",
@@ -1532,7 +1698,7 @@ export const handlerMap = {
     HttpResponse.json({ ok: true }),
   ),
   "/api/v1/admin/bot_requests": http.get("*/api/v1/admin/bot_requests", () =>
-    HttpResponse.json({ bot_requests: [] }),
+    HttpResponse.json({ bot_requests: [pendingBotRequest, editBotRequest, namelessBotRequest] }),
   ),
   "/api/v1/admin/bot_requests/{id}/approve": http.post(
     "*/api/v1/admin/bot_requests/:id/approve",
@@ -1676,6 +1842,89 @@ export const handlerMap = {
         return HttpResponse.json({ themes: adminThemes });
       }
       return HttpResponse.json({ themes: adminThemes });
+    },
+  ),
+  "/api/v1/admin/users": http.get("*/api/v1/admin/users", ({ request }) => {
+    const q = new URL(request.url).searchParams.get("q");
+    return HttpResponse.json({ users: listedAdminUsers(q) });
+  }),
+  "/api/v1/admin/users/{id}": http.get("*/api/v1/admin/users/:id", ({ params }) => {
+    const user = listedAdminUsers().find((row) => row.id === Number(params.id));
+    if (!user) {
+      return jsonError(404);
+    }
+    return HttpResponse.json({
+      user,
+      conversations: messagingStore().conversations.map((conversation) => ({
+        id: conversation.id,
+        kind: conversation.kind,
+        title: conversation.title,
+        last_activity_at: conversation.last_activity_at,
+        member_count: conversation.members.length,
+      })),
+    });
+  }),
+  "/api/v1/admin/conversations/{conversation_id}/messages": http.get(
+    "*/api/v1/admin/conversations/:conversation_id/messages",
+    ({ params, request }) => {
+      const conversation = findConversation(Number(params.conversation_id));
+      if (!conversation) {
+        return jsonError(404);
+      }
+      const url = new URL(request.url);
+      const before = url.searchParams.get("before");
+      const after = url.searchParams.get("after");
+      const page = pageFor(Number(params.conversation_id), {
+        before: before ? Number(before) : undefined,
+        after: after ? Number(after) : undefined,
+      });
+      return HttpResponse.json(page);
+    },
+  ),
+  "/api/v1/admin/impersonation": http.all("*/api/v1/admin/impersonation", async ({ request }) => {
+    if (request.method === "DELETE") {
+      return HttpResponse.json(ok);
+    }
+    const body = (await request.json()) as { account_id?: number };
+    const accountId = body.account_id ?? 2;
+    return HttpResponse.json({
+      token: "impersonation-token",
+      account: accountId === 1 ? session.account : peerAccount(accountId, "Peer"),
+      user: { ...session.user, is_admin: true, onboarded: true },
+    });
+  }),
+  "/api/v1/admin/audit_events": http.get("*/api/v1/admin/audit_events", ({ request }) => {
+    const actionName = new URL(request.url).searchParams.get("action_name");
+    return HttpResponse.json({
+      audit_events: actionName
+        ? auditEvents.filter((row) => row.action === actionName)
+        : auditEvents,
+    });
+  }),
+  "/api/v1/admin/dashboard": http.get("*/api/v1/admin/dashboard", () =>
+    HttpResponse.json(dashboardBody),
+  ),
+  "/api/v1/admin/prompt_templates": http.all(
+    "*/api/v1/admin/prompt_templates",
+    async ({ request }) => {
+      if (request.method === "PATCH") {
+        const body = (await request.json()) as { capability?: string; template?: string };
+        const capability = body.capability ?? "bot_reply";
+        promptTemplates = promptTemplates.map((row) =>
+          row.capability === capability
+            ? {
+                ...row,
+                template: body.template ?? row.template,
+                overridden: true,
+                version: (row.version ?? 0) + 1,
+              }
+            : row,
+        );
+        const prompt_template =
+          promptTemplates.find((row) => row.capability === capability) ?? promptTemplates[0];
+        return HttpResponse.json({ prompt_template });
+      }
+      return HttpResponse.json({ prompt_templates: promptTemplates });
     },
   ),
   "/api/v1/theme_overrides": http.get("*/api/v1/theme_overrides", () =>

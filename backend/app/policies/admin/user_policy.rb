@@ -10,8 +10,20 @@ module Admin
       @record = record
     end
 
-    def verify_phone?
-      user.is_admin?
-    end
+  def verify_phone?
+    user.is_admin?
+  end
+
+  def index?
+    user.is_admin?
+  end
+
+  def show?
+    user.is_admin?
+  end
+
+  def impersonate?
+    user.is_admin?
+  end
   end
 end

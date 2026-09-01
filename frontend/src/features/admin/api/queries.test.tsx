@@ -8,16 +8,28 @@ import { Button } from "@/shared/ui/button";
 import { testSession } from "@/test/access-session";
 import { server } from "@/test/msw";
 import {
+  useAdminAuditEvents,
+  useAdminBotRequests,
+  useAdminDashboard,
   useAdminFeatureFlags,
+  useAdminPromptTemplates,
   useAdminSettings,
   useAdminThemeOverrides,
+  useAdminTranscript,
   useAdminTranslationStrings,
+  useAdminUser,
+  useAdminUsers,
+  useApproveAdminBotRequest,
+  useDeclineAdminBotRequest,
   useMe,
   useResetAdminSetting,
   useResetAdminThemeOverrides,
   useResetAdminTranslationString,
+  useStartImpersonation,
+  useStopImpersonation,
   useThemeOverridePalette,
   useUpdateAdminFeatureFlag,
+  useUpdateAdminPromptTemplate,
   useUpdateAdminSetting,
   useUpdateAdminThemeOverride,
   useUpdateAdminTranslationString,
@@ -165,6 +177,100 @@ describe("admin queries", () => {
     await user.click(await screen.findByRole("button", { name: "string" }));
     await waitFor(() => {
       expect(document.querySelector("[data-strings]")?.textContent).toBe("0");
+    });
+  });
+});
+
+function ShellHarness() {
+  const users = useAdminUsers("peer");
+  const user = useAdminUser(2);
+  const skipped = useAdminUser(0);
+  const transcript = useAdminTranscript(1);
+  const audit = useAdminAuditEvents("transcript.read");
+  const dashboard = useAdminDashboard();
+  const prompts = useAdminPromptTemplates();
+  const bots = useAdminBotRequests();
+  const updatePrompt = useUpdateAdminPromptTemplate();
+  const approve = useApproveAdminBotRequest();
+  const decline = useDeclineAdminBotRequest();
+  const start = useStartImpersonation();
+  const stop = useStopImpersonation();
+  return (
+    <div>
+      <p data-users="">{users.data?.users.length ?? 0}</p>
+      <p data-user="">{user.data?.user.account.display_name ?? ""}</p>
+      <p data-skipped="">{String(skipped.fetchStatus)}</p>
+      <p data-transcript="">{transcript.data?.messages.length ?? 0}</p>
+      <p data-audit="">{audit.data?.audit_events.length ?? 0}</p>
+      <p data-dashboard="">{dashboard.data?.buckets.length ?? 0}</p>
+      <p data-prompts="">{prompts.data?.prompt_templates.length ?? 0}</p>
+      <p data-bots="">{bots.data?.bot_requests.length ?? 0}</p>
+      <Button
+        onClick={() => updatePrompt.mutate({ capability: "bot_reply", template: "Hi" })}
+        type="button"
+      >
+        prompt
+      </Button>
+      <Button onClick={() => approve.mutate(1)} type="button">
+        approve
+      </Button>
+      <Button onClick={() => decline.mutate({ id: 1 })} type="button">
+        decline
+      </Button>
+      <Button onClick={() => decline.mutate({ id: 1, reason: "Too thin" })} type="button">
+        decline-reason
+      </Button>
+      <Button onClick={() => start.mutate(2)} type="button">
+        impersonate
+      </Button>
+      <Button onClick={stop} type="button">
+        stop
+      </Button>
+    </div>
+  );
+}
+
+describe("admin shell queries", () => {
+  it("loads shell resources and writes impersonation and bot decisions", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    render(
+      <AppProviders>
+        <ShellHarness />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(document.querySelector("[data-users]")?.textContent).toBe("1");
+      expect(document.querySelector("[data-user]")?.textContent).toBe("Peer");
+      expect(document.querySelector("[data-dashboard]")?.textContent).toBe("1");
+      expect(document.querySelector("[data-bots]")?.textContent).toBe("3");
+    });
+    await user.click(screen.getByRole("button", { name: "prompt" }));
+    await user.click(screen.getByRole("button", { name: "approve" }));
+    await user.click(screen.getByRole("button", { name: "decline" }));
+    await user.click(screen.getByRole("button", { name: "decline-reason" }));
+    await user.click(screen.getByRole("button", { name: "impersonate" }));
+    await user.click(screen.getByRole("button", { name: "stop" }));
+    await waitFor(() => {
+      expect(document.querySelector("[data-prompts]")?.textContent).toBe("2");
+    });
+  });
+
+  it("restores the original session when stop impersonation fails", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    server.use(
+      http.delete("*/api/v1/admin/impersonation", () => HttpResponse.json({}, { status: 500 })),
+    );
+    render(
+      <AppProviders>
+        <ShellHarness />
+      </AppProviders>,
+    );
+    await user.click(await screen.findByRole("button", { name: "impersonate" }));
+    await user.click(screen.getByRole("button", { name: "stop" }));
+    await waitFor(() => {
+      expect(document.querySelector("[data-user]")?.textContent).toBe("Peer");
     });
   });
 });

@@ -1,5 +1,10 @@
 import { create } from "zustand";
-import { getAccessSession, setAccessSession, type AccessSession } from "@/features/auth/model/access-session";
+import {
+  getAccessSession,
+  isImpersonating,
+  setAccessSession,
+  type AccessSession,
+} from "@/features/auth/model/access-session";
 import { ACCOUNTS_STORAGE_KEY, isJwtExpired } from "@/features/auth/model/account-token";
 import { useLockStore } from "@/features/auth/store/lock-store";
 import { rememberedAccountIds } from "@/shared/lib/db/account-db";
@@ -38,6 +43,9 @@ function toSession(account: StoredAccount): AccessSession {
 }
 
 function applyActive(account: StoredAccount | undefined): void {
+  if (isImpersonating()) {
+    return;
+  }
   const previousId = getAccessSession()?.accountId;
   setAccessSession(account ? toSession(account) : null);
   useLockStore.getState().syncWithActiveAccount();
@@ -103,22 +111,29 @@ function snapshot(): Pick<AccountsState, "accounts" | "activeAccountId"> {
   return readStored();
 }
 
+function activateStored(accounts: StoredAccount[], activeAccountId: number | null): void {
+  applyActive(accounts.find((account) => account.id === activeAccountId));
+}
+
 function commit(
   accounts: StoredAccount[],
   activeAccountId: number | null,
 ): Pick<AccountsState, "accounts" | "activeAccountId"> {
   persist(accounts, activeAccountId);
-  applyActive(accounts.find((account) => account.id === activeAccountId));
+  activateStored(accounts, activeAccountId);
   return { accounts, activeAccountId };
 }
 
+const initial = snapshot();
+activateStored(initial.accounts, initial.activeAccountId);
+
 export const useAccountsStore = create<AccountsState>((set, get) => ({
-  ...snapshot(),
+  ...initial,
 
   hydrate: () => {
     const next = snapshot();
     persist(next.accounts, next.activeAccountId);
-    applyActive(next.accounts.find((account) => account.id === next.activeAccountId));
+    activateStored(next.accounts, next.activeAccountId);
     set(next);
   },
 

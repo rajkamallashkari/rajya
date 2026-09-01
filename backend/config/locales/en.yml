@@ -135,6 +135,9 @@ en:
         wrong_type: "does not match the registered type"
       feature_flag:
         unknown_key: "is not a registered feature flag"
+      prompt_template:
+        blank: "can't be blank"
+        unknown_capability: "is not a registered prompt capability"
       translation_string:
         blank: "can't be blank"
       theme_override:

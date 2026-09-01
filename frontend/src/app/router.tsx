@@ -4,6 +4,17 @@ import { GalleryPage } from "@/app/dev/gallery-page";
 import { AccountsDevPage } from "@/app/dev/accounts-page";
 import { RouteErrorBoundary } from "@/app/error-boundaries/error-boundary";
 import { AppShell } from "@/app/shell";
+import {
+  AdminAuditPanel,
+  AdminBotsPanel,
+  AdminConfigPanel,
+  AdminDashboardPanel,
+  AdminPromptsPanel,
+  AdminShell,
+  AdminTranscriptPanel,
+  AdminUserDetailPanel,
+  AdminUsersPanel,
+} from "@/features/admin";
 import { InvitePage } from "@/features/conversations/components/invite-page";
 
 function ShellRoute() {
@@ -38,6 +49,14 @@ function InviteRoute() {
   );
 }
 
+function AdminRoute() {
+  return (
+    <RouteErrorBoundary>
+      <AdminShell />
+    </RouteErrorBoundary>
+  );
+}
+
 export const appRoutes = [
   { path: "/", element: <ShellRoute /> },
   { path: "/c/:conversationId", element: <ShellRoute /> },
@@ -46,6 +65,20 @@ export const appRoutes = [
   { path: "/invite/:token", element: <InviteRoute /> },
   { path: "/dev/gallery", element: <GalleryRoute /> },
   { path: "/dev/accounts", element: <AccountsRoute /> },
+  {
+    path: "/admin",
+    element: <AdminRoute />,
+    children: [
+      { index: true, element: <AdminDashboardPanel /> },
+      { path: "users", element: <AdminUsersPanel /> },
+      { path: "users/:userId", element: <AdminUserDetailPanel /> },
+      { path: "conversations/:conversationId", element: <AdminTranscriptPanel /> },
+      { path: "bots", element: <AdminBotsPanel /> },
+      { path: "audit", element: <AdminAuditPanel /> },
+      { path: "config", element: <AdminConfigPanel /> },
+      { path: "prompts", element: <AdminPromptsPanel /> },
+    ],
+  },
 ];
 
 export function createRouter() {

@@ -25,6 +25,8 @@ describe("banners", () => {
     const onExit = vi.fn();
     render(<ImpersonationBanner name="Ada" onExit={onExit} />);
     expect(screen.getByRole("alert")).toHaveTextContent("Viewing as Ada");
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: en.ui.close })).toBeNull();
     await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
     expect(onExit).toHaveBeenCalled();
   });

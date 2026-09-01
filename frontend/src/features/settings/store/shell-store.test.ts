@@ -7,8 +7,8 @@ describe("useShellStore", () => {
     expect(useShellStore.getState().impersonatingName).toBe("Ada");
     useShellStore.getState().setImpersonatingName(null);
     expect(useShellStore.getState().impersonatingName).toBeNull();
-    useShellStore.getState().setSettingsPanel("admin");
-    expect(useShellStore.getState().settingsPanel).toBe("admin");
+    useShellStore.getState().setSettingsPanel("chats");
+    expect(useShellStore.getState().settingsPanel).toBe("chats");
     useShellStore.getState().setSettingsPanel("devices");
     expect(useShellStore.getState().settingsPanel).toBe("devices");
     resetShellStore();

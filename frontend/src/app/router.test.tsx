@@ -26,4 +26,14 @@ describe("AppRouter", () => {
     );
     expect(await screen.findByRole("button", { name: en.invites.sign_in })).toBeInTheDocument();
   });
+
+  it("renders the admin shell", async () => {
+    const router = createMemoryRouter(appRoutes, { initialEntries: ["/admin"] });
+    render(
+      <AppProviders>
+        <RouterProvider router={router} />
+      </AppProviders>,
+    );
+    expect(await screen.findByText(en.admin.forbidden)).toBeInTheDocument();
+  });
 });

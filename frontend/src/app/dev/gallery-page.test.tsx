@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/messages/model/highlight", () => ({
@@ -16,16 +16,20 @@ import {
 import { AppProviders } from "@/app/providers";
 import { appRoutes, createRouter } from "@/app/router";
 import { en } from "@/shared/lib/i18n/catalog";
-import { conversationLayer, settingsLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
+import {
+  conversationLayer,
+  settingsLayer,
+  useLayerStore,
+} from "@/shared/lib/navigation/layer-store";
 
 describe("GalleryPage", () => {
-  it(
-    "renders every primitive section and switches theme and density",
-    async () => {
+  it("renders every primitive section and switches theme and density", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     render(
       <AppProviders>
-        <GalleryPage />
+        <MemoryRouter>
+          <GalleryPage />
+        </MemoryRouter>
       </AppProviders>,
     );
     expect(screen.getByRole("heading", { name: en.gallery.title })).toBeInTheDocument();
@@ -113,9 +117,7 @@ describe("GalleryPage", () => {
     expect(document.querySelector("[data-media-gallery]")).not.toBeNull();
     await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
     await user.click(screen.getByRole("button", { name: en.lists.error_retry }));
-  },
-  15_000,
-);
+  }, 15_000);
 });
 
 describe("gallery route", () => {
@@ -128,7 +130,9 @@ describe("gallery route", () => {
     window.dispatchEvent(new Event("resize"));
     render(
       <AppProviders>
-        <GalleryPage />
+        <MemoryRouter>
+          <GalleryPage />
+        </MemoryRouter>
       </AppProviders>,
     );
     useLayerStore.getState().openConversation(conversationLayer("ada", "Ada"));
@@ -141,7 +145,7 @@ describe("gallery route", () => {
   it("is registered on the app router", () => {
     expect(createRouter()).toBeTruthy();
     expect(appRoutes.some((route) => route.path === "/dev/gallery")).toBe(true);
-    expect(appRoutes.some((route) => route.path === "/dev/accounts")).toBe(true);
+    expect(appRoutes.some((route) => route.path === "/admin")).toBe(true);
     expect(appRoutes.some((route) => route.path === "/c/:conversationId/m/:messageId")).toBe(true);
     expect(appRoutes.some((route) => route.path === "/m/:messageId")).toBe(true);
   });

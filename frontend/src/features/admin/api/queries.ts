@@ -1,19 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  approveAdminBotRequest,
+  declineAdminBotRequest,
+  getAdminDashboard,
+  getAdminUser,
   getThemeOverridePalette,
+  listAdminAuditEvents,
+  listAdminBotRequests,
   listAdminFeatureFlags,
+  listAdminPromptTemplates,
   listAdminSettings,
   listAdminThemeOverrides,
+  listAdminTranscript,
   listAdminTranslationStrings,
+  listAdminUsers,
   resetAdminSetting,
   resetAdminThemeOverrides,
   resetAdminTranslationString,
+  startAdminImpersonation,
+  stopAdminImpersonation,
   updateAdminFeatureFlag,
+  updateAdminPromptTemplate,
   updateAdminSetting,
   updateAdminThemeOverride,
   updateAdminTranslationString,
 } from "@/features/admin/api/http";
 import { adminKeys } from "@/features/admin/api/keys";
+import { startImpersonation, stopImpersonationLocally } from "@/features/admin/model/impersonation";
 import { fetchMe } from "@/features/auth/api/identity";
 import { i18n } from "@/shared/lib/i18n";
 
@@ -153,4 +166,115 @@ export function useResetAdminThemeOverrides() {
       void queryClient.invalidateQueries({ queryKey: adminKeys.themePalette() });
     },
   });
+}
+
+export function useAdminUsers(q?: string) {
+  return useQuery({
+    queryFn: () => listAdminUsers(q),
+    queryKey: adminKeys.users(q),
+  });
+}
+
+export function useAdminUser(id: number) {
+  return useQuery({
+    enabled: Number.isFinite(id) && id > 0,
+    queryFn: () => getAdminUser(id),
+    queryKey: adminKeys.user(id),
+  });
+}
+
+export function useAdminTranscript(conversationId: number) {
+  return useQuery({
+    enabled: Number.isFinite(conversationId) && conversationId > 0,
+    queryFn: () => listAdminTranscript(conversationId),
+    queryKey: adminKeys.transcript(conversationId),
+  });
+}
+
+export function useAdminAuditEvents(actionName?: string) {
+  return useQuery({
+    queryFn: () => listAdminAuditEvents(actionName),
+    queryKey: adminKeys.audit(actionName),
+  });
+}
+
+export function useAdminDashboard() {
+  return useQuery({
+    queryFn: getAdminDashboard,
+    queryKey: adminKeys.dashboard(),
+  });
+}
+
+export function useAdminPromptTemplates() {
+  return useQuery({
+    queryFn: listAdminPromptTemplates,
+    queryKey: adminKeys.prompts(),
+  });
+}
+
+export function useUpdateAdminPromptTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ capability, template }: { capability: string; template: string }) =>
+      updateAdminPromptTemplate(capability, template),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.prompts() });
+    },
+  });
+}
+
+export function useAdminBotRequests() {
+  return useQuery({
+    queryFn: listAdminBotRequests,
+    queryKey: adminKeys.bots(),
+  });
+}
+
+export function useApproveAdminBotRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: approveAdminBotRequest,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.bots() });
+    },
+  });
+}
+
+export function useDeclineAdminBotRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
+      declineAdminBotRequest(id, reason),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.bots() });
+    },
+  });
+}
+
+export function useStartImpersonation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: startAdminImpersonation,
+    onSuccess: (payload) => {
+      startImpersonation(payload);
+      void queryClient.invalidateQueries();
+    },
+  });
+}
+
+export function useStopImpersonation() {
+  const queryClient = useQueryClient();
+  return () => {
+    void (async () => {
+      try {
+        await stopAdminImpersonation();
+      } catch {
+        stopImpersonationLocally();
+        await queryClient.invalidateQueries();
+        return;
+      }
+      stopImpersonationLocally();
+      await queryClient.invalidateQueries();
+    })();
+  };
 }

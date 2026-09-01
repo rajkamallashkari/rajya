@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { MemoryRouter } from "react-router";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
@@ -16,7 +17,11 @@ import { testSession } from "@/test/access-session";
 import { server } from "@/test/msw";
 
 function wrap(ui: ReactNode) {
-  return <AppProviders>{ui}</AppProviders>;
+  return (
+    <AppProviders>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </AppProviders>
+  );
 }
 
 describe("AppearancePanel", () => {
@@ -42,7 +47,9 @@ describe("AppearancePanel", () => {
     });
     await user.click(screen.getByRole("button", { name: "Inter" }));
     await waitFor(() => {
-      expect(document.documentElement.style.getPropertyValue("--app-font-family")).toContain("Inter");
+      expect(document.documentElement.style.getPropertyValue("--app-font-family")).toContain(
+        "Inter",
+      );
     });
     await user.click(screen.getByRole("button", { name: en.appearance.corner.square }));
     await waitFor(() => {
@@ -88,13 +95,19 @@ describe("AppearancePanel", () => {
     letterSpacing.focus();
     await user.keyboard("{End}");
     await waitFor(() => {
-      expect(document.documentElement.style.getPropertyValue("--app-letter-spacing")).toBe("0.04em");
+      expect(document.documentElement.style.getPropertyValue("--app-letter-spacing")).toBe(
+        "0.04em",
+      );
     });
     await user.click(screen.getByRole("button", { name: en.appearance.density_option.compact }));
     await waitFor(() => {
-      expect(document.documentElement.style.getPropertyValue("--space-list-y")).toBe("var(--space-2)");
+      expect(document.documentElement.style.getPropertyValue("--space-list-y")).toBe(
+        "var(--space-2)",
+      );
     });
-    const slot = screen.getByRole("textbox", { name: en.settings.quick_reaction_slot.replace("{{n}}", "1") });
+    const slot = screen.getByRole("textbox", {
+      name: en.settings.quick_reaction_slot.replace("{{n}}", "1"),
+    });
     await user.clear(slot);
     await user.type(slot, "🎉");
     expect(slot).toHaveValue("🎉");
@@ -106,16 +119,18 @@ describe("SettingsPanel", () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     render(wrap(<SettingsPanel />));
     expect(document.querySelector("[data-settings-panel]")).not.toBeNull();
-    expect(document.querySelector("[data-settings-section]")?.getAttribute("data-settings-section")).toBe(
-      "hub",
-    );
+    expect(
+      document.querySelector("[data-settings-section]")?.getAttribute("data-settings-section"),
+    ).toBe("hub");
     await user.click(screen.getByRole("button", { name: en.settings.appearance }));
-    expect(await screen.findByRole("button", { name: en.appearance.theme_option.dark })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: en.appearance.theme_option.dark }),
+    ).toBeInTheDocument();
     expect(document.querySelector("[data-appearance-panel]")).not.toBeNull();
     await user.click(screen.getByRole("button", { name: en.shell.back }));
-    expect(document.querySelector("[data-settings-section]")?.getAttribute("data-settings-section")).toBe(
-      "hub",
-    );
+    expect(
+      document.querySelector("[data-settings-section]")?.getAttribute("data-settings-section"),
+    ).toBe("hub");
   });
 
   it("hides catalogue pickers when the APIs return nothing", async () => {
@@ -175,7 +190,9 @@ describe("WallpaperPicker", () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     setAccessSession(testSession());
     render(wrap(<WallpaperPicker conversationId={1} />));
-    expect(await screen.findByRole("button", { name: en.wallpaper.use_default })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: en.wallpaper.use_default }),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.wallpaper.presets.dusk }));
     await user.click(screen.getByRole("button", { name: en.wallpaper.use_default }));
   });

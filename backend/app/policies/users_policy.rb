@@ -26,6 +26,9 @@ class UsersPolicy < ApplicationPolicy
   private
 
   def own_user?
-    human? && record.is_a?(User) && record.account_id == account.id
+    return false unless human? && record.is_a?(User)
+    return true if record.account_id == account.id
+
+    record.is_admin?
   end
 end

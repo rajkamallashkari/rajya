@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
+import { MemoryRouter } from "react-router";
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { SettingsPanel } from "./settings-panel";
@@ -9,7 +9,11 @@ import { en } from "@/shared/lib/i18n/catalog";
 import { server } from "@/test/msw";
 
 function wrap(ui: ReactNode) {
-  return <AppProviders>{ui}</AppProviders>;
+  return (
+    <AppProviders>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </AppProviders>
+  );
 }
 
 const adminMe = {
@@ -32,20 +36,13 @@ describe("SettingsPanel admin", () => {
       expect(screen.getByRole("button", { name: en.settings.appearance })).toBeInTheDocument();
     });
     expect(screen.queryByRole("button", { name: en.admin.title })).toBeNull();
+    expect(screen.queryByRole("link", { name: en.admin.title })).toBeNull();
   });
 
-  it("opens the configuration editors for admins", async () => {
-    const user = userEvent.setup({ pointerEventsCheck: 0 });
+  it("links admins to the admin shell", async () => {
     server.use(http.all("*/api/v1/users/me", () => HttpResponse.json(adminMe)));
     render(wrap(<SettingsPanel />));
-    await user.click(await screen.findByRole("button", { name: en.admin.title }));
-    expect(document.querySelector("[data-admin-config]")).not.toBeNull();
-    expect(
-      document.querySelector("[data-settings-section]")?.getAttribute("data-settings-section"),
-    ).toBe("admin");
-    await user.click(screen.getByRole("button", { name: en.shell.back }));
-    expect(
-      document.querySelector("[data-settings-section]")?.getAttribute("data-settings-section"),
-    ).toBe("hub");
+    const link = await screen.findByRole("link", { name: en.admin.title });
+    expect(link).toHaveAttribute("href", "/admin");
   });
 });

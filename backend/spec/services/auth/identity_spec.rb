@@ -88,8 +88,60 @@ RSpec.describe Auth::Identity do
     end
 
     it "returns nil when account_id does not match the user's account" do
-      token = signed("sub" => user.id, "account_id" => 0, "credentials_epoch" => user.credentials_epoch,
-                     "jti" => SecureRandom.uuid)
+      issued = Auth::Session.issue(user)
+      jti = Auth::Token.decode(issued.token).fetch("jti")
+      token = Auth::Token.encode(user, jti: jti, expires_at: 1.day.from_now, account_id: 0)
+
+      expect(described_class.resolve(token)).to be_nil
+    end
+
+    it "resolves an impersonation token to the admin user and impersonated account (NR-7)" do
+      admin = create(:user, :admin)
+      target = create(:user)
+      issued = Auth::Session.issue(admin)
+      jti = Auth::Token.decode(issued.token).fetch("jti")
+      token = Auth::Token.encode(
+        admin, jti: jti, expires_at: 1.day.from_now, account_id: target.account_id, impersonator_id: admin.id
+      )
+      context = described_class.resolve(token)
+
+      expect(context.user).to eq(admin)
+      expect(context.account).to eq(target.account)
+      expect(context.impersonator_id).to eq(admin.id)
+    end
+
+    it "returns nil when impersonator_id is present but the user is not an admin" do
+      issued = Auth::Session.issue(user)
+      jti = Auth::Token.decode(issued.token).fetch("jti")
+      token = Auth::Token.encode(
+        user, jti: jti, expires_at: 1.day.from_now, account_id: create(:account).id, impersonator_id: user.id
+      )
+
+      expect(described_class.resolve(token)).to be_nil
+    end
+
+    it "returns nil when the impersonated account is missing" do
+      admin = create(:user, :admin)
+      issued = Auth::Session.issue(admin)
+      jti = Auth::Token.decode(issued.token).fetch("jti")
+      token = Auth::Token.encode(
+        admin, jti: jti, expires_at: 1.day.from_now, account_id: 0, impersonator_id: admin.id
+      )
+
+      expect(described_class.resolve(token)).to be_nil
+    end
+
+    it "returns nil when impersonator_id does not match the authenticating user" do
+      admin = create(:user, :admin)
+      issued = Auth::Session.issue(admin)
+      jti = Auth::Token.decode(issued.token).fetch("jti")
+      token = signed(
+        "sub" => admin.id,
+        "account_id" => create(:account).id,
+        "credentials_epoch" => admin.credentials_epoch,
+        "jti" => jti,
+        "impersonator_id" => create(:user, :admin).id
+      )
 
       expect(described_class.resolve(token)).to be_nil
     end
