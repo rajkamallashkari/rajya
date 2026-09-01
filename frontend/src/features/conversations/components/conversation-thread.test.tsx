@@ -7,6 +7,7 @@ import {
   bindNumericId,
   ConversationThread,
   buildMessageMenuActions,
+  jumpRestoreTop,
   nextInfoId,
   pollResultsId,
   pollVotePayload,
@@ -735,6 +736,9 @@ describe("conversation layers", () => {
     expect(nextInfoId(true, 4)).toBe(4);
     expect(nextInfoId(false, 4)).toBeNull();
     const numeric = vi.fn();
+    expect(jumpRestoreTop(40, null)).toBe(40);
+    expect(jumpRestoreTop(null, { scrollTop: 12 })).toBe(12);
+    expect(jumpRestoreTop(null, null)).toBe(0);
     bindNumericId(numeric)("12", ["2"]);
     expect(numeric).toHaveBeenCalledWith(12, ["2"]);
     expect(savedReplyViews(undefined)).toEqual([]);
@@ -920,16 +924,19 @@ describe("conversation layers", () => {
     expect(useSearchStore.getState().chatOpen).toBe(false);
     const scroller = document.querySelector("[data-layer-scroll='15']") as HTMLDivElement;
     Object.defineProperty(scroller, "scrollTop", { configurable: true, writable: true, value: 40 });
+    fireEvent.scroll(scroller);
     await user.click(screen.getByRole("button", { name: en.search.open }));
     await user.type(screen.getByLabelText(en.search.in_chat), SEARCH_FIXTURE_NEEDLE);
     await waitFor(() => {
       expect(useLayerStore.getState().layers[0]?.focusMessageId).toBeTruthy();
     });
     expect(useSearchStore.getState().chatOpen).toBe(true);
-    useSearchStore.getState().pushJump({ conversationId: "15", scrollTop: 40 });
+    expect(useSearchStore.getState().jumpStack[0]?.scrollTop).toBe(40);
     await user.click(screen.getByRole("button", { name: en.shell.back }));
     await waitFor(() => {
-      expect(scroller.scrollTop).toBe(40);
+      expect(
+        (document.querySelector("[data-layer-scroll='15']") as HTMLDivElement).scrollTop,
+      ).toBe(40);
     });
     await user.click(screen.getByLabelText(en.search.in_chat));
     await user.keyboard("{Enter}");

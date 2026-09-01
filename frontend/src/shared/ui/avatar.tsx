@@ -51,6 +51,7 @@ export function Avatar({ src, name, presence, className }: AvatarProps) {
     <AvatarPrimitive.Root
       className={cn("relative inline-flex shrink-0 rounded-[var(--radius-full)]", SIZE, className)}
       aria-label={label}
+      role="img"
     >
       {src ? (
         <AvatarPrimitive.Image src={src} alt={label} className={cn(FACE, "object-cover")} />

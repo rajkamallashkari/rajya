@@ -130,6 +130,7 @@ describe("AdminShell", () => {
     expect(document.querySelector("[data-admin-chip]")).not.toBeNull();
     expect(screen.getByText(/storage_bytes/)).toBeInTheDocument();
     expect(screen.getByText(/nested/)).toBeInTheDocument();
+    expect(screen.getByText(en.admin.disk)).toBeInTheDocument();
     await user.click(screen.getByRole("link", { name: en.admin.settings }));
     expect(await screen.findByRole("textbox", { name: "message_edit_window" })).toBeInTheDocument();
   });

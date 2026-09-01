@@ -191,6 +191,10 @@ module Settings
         type: :integer, category: :media, default: 80, min: 1, max: 100,
         description: "Percent of bucket capacity that triggers an admin alert (S-5)."
       },
+      capacity_alert_cooldown: {
+        type: :integer, category: :media, default: 86_400, min: 60, max: 604_800,
+        description: "Seconds between repeated admin capacity alert emails (S-5)."
+      },
       export_artefact_ttl: {
         type: :integer, category: :media, default: 604_800, min: 60, max: 2_592_000,
         description: "Seconds an export artefact remains downloadable (NR-32, 7 days)."

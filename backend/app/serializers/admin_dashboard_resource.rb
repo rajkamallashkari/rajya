@@ -11,5 +11,5 @@ class AdminDashboardResource < ApplicationResource
     end
   end
 
-  attributes :quotas, :ai_usage, :jobs
+  attributes :quotas, :ai_usage, :jobs, :disk
 end

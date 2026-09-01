@@ -1,5 +1,6 @@
 import { apiClient, bearerHeaders, unwrap } from "@/features/auth/api/http";
 import { getAccessSession } from "@/features/auth/model/access-session";
+import { apiOrigin } from "@/shared/lib/api/origin";
 import type { components } from "@/shared/lib/api/schema";
 
 export type Call = components["schemas"]["Call"];
@@ -81,7 +82,7 @@ export type UnloadCallAction = "cancel" | "decline" | "hangup";
 export function endCallOnUnload(callId: number, action: UnloadCallAction): void {
   const token = getAccessSession()?.token;
   try {
-    void fetch(`${window.location.origin}/api/v1/calls/${String(callId)}/${action}`, {
+    void fetch(`${apiOrigin()}/api/v1/calls/${String(callId)}/${action}`, {
       method: "POST",
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),

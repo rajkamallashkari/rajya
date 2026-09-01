@@ -38,7 +38,7 @@ export function AdminShell(): ReactNode {
         <Badge data-admin-chip="" variant="accent">
           {t("admin.title")}
         </Badge>
-        <p className={WEIGHT_EMPHASIS}>{t("admin.title")}</p>
+        <h1 className={WEIGHT_EMPHASIS}>{t("admin.title")}</h1>
         <Button asChild className="ml-auto" size="sm" variant="ghost">
           <Link to="/">{t("admin.back_to_chats")}</Link>
         </Button>
@@ -66,7 +66,7 @@ export function AdminShell(): ReactNode {
           ))}
         </nav>
       ) : null}
-      <div className="min-h-0 flex-1 overflow-y-auto px-[var(--space-list-x)] py-[var(--space-4)]">
+      <main className="min-h-0 flex-1 overflow-y-auto px-[var(--space-list-x)] py-[var(--space-4)]">
         {me.isPending || me.isError ? (
           <ListView onRetry={() => void me.refetch()} status={status}>
             {null}
@@ -76,7 +76,7 @@ export function AdminShell(): ReactNode {
         ) : (
           <EmptyState title={t("admin.forbidden")} />
         )}
-      </div>
+      </main>
     </div>
   );
 }

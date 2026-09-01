@@ -48,6 +48,7 @@ export type SettingKey =
   | "waveform_peak_count"
   | "image_variant_dimensions"
   | "capacity_alert_threshold"
+  | "capacity_alert_cooldown"
   | "export_artefact_ttl"
   | "gallery_page_size"
   | "gif_search_limit"

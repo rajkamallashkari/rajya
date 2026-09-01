@@ -41,6 +41,12 @@ module Rajya
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
 
+    # API-only skips CSP / Permissions-Policy in the default stack; F-31
+    # still requires them on every HTTP response (Pages: public/_headers).
+    require_relative "../app/lib/security_headers"
+    config.middleware.use ActionDispatch::ContentSecurityPolicy::Middleware
+    config.middleware.use SecurityHeaders::Middleware
+
     # The full target schema is one migration (CONVENTIONS.md §4); every table,
     # FK, CHECK and index in SCHEMA_DESIGN.md, plus generated columns (tsvector),
     # HNSW/GIN indexes and the pgvector column type. schema.rb cannot express

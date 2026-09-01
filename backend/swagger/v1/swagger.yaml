@@ -5569,6 +5569,28 @@ components:
         completion_tokens:
           type: integer
           nullable: true
+    AdminDashboardDisk:
+      type: object
+      required:
+      - path
+      - used_bytes
+      - total_bytes
+      - percent
+      - ok
+      - alerting
+      properties:
+        path:
+          type: string
+        used_bytes:
+          type: integer
+        total_bytes:
+          type: integer
+        percent:
+          type: integer
+        ok:
+          type: boolean
+        alerting:
+          type: boolean
     AdminDashboard:
       type: object
       required:
@@ -5576,6 +5598,7 @@ components:
       - quotas
       - ai_usage
       - jobs
+      - disk
       properties:
         buckets:
           type: array
@@ -5591,6 +5614,8 @@ components:
         jobs:
           type: object
           additionalProperties: true
+        disk:
+          "$ref": "#/components/schemas/AdminDashboardDisk"
     AdminPromptTemplate:
       type: object
       required:

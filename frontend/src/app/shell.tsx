@@ -128,7 +128,8 @@ export function AppShell() {
   });
 
   return (
-    <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[var(--surface-app)] text-[var(--text-primary)]">
+    <main className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[var(--surface-app)] text-[var(--text-primary)]">
+      <h1 className="sr-only">{t("brand.logo_alt")}</h1>
       {impersonatingName ? (
         <ImpersonationBanner name={impersonatingName} onExit={stopImpersonation} />
       ) : null}
@@ -158,6 +159,6 @@ export function AppShell() {
           />
         </ListErrorBoundary>
       </div>
-    </div>
+    </main>
   );
 }

@@ -145,6 +145,13 @@ en:
         primitive: "is not a semantic token"
 
   mailers:
+    ops:
+      capacity:
+        subject: "Rajya capacity alert (%{percent}%)"
+        headline: "Storage is approaching the alert threshold"
+        bucket: "R2 bucket %{name} is at %{percent}% of capacity."
+        disk: "Disk %{path} is at %{percent}% of capacity."
+        footer: "S-5 keeps everything; free space or add a bucket before the volume fills."
     moderation:
       report:
         subject: "New Rajya report (#%{id})"

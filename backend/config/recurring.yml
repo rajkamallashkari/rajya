@@ -37,6 +37,10 @@ production:
     class: StorageBuckets::HealthJob
     queue: background
     schedule: every hour at minute 7
+  alert_capacity:
+    class: Monitoring::CapacityAlertJob
+    queue: background
+    schedule: every hour at minute 23
   expire_stale_calls:
     class: Calls::ExpireStaleJob
     queue: default

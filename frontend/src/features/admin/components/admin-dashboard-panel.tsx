@@ -47,6 +47,13 @@ export function AdminDashboardPanel(): ReactNode {
             </p>
           ))}
         </section>
+        <section className="flex flex-col gap-[var(--control-gap)]">
+          <h2 className={WEIGHT_EMPHASIS}>{t("admin.disk")}</h2>
+          <p>
+            {data?.disk?.path} {displayMetric(data?.disk?.percent)}{" "}
+            {displayMetric(data?.disk?.alerting)}
+          </p>
+        </section>
       </div>
     </ListView>
   );

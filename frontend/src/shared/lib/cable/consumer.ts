@@ -1,5 +1,6 @@
 import { createConsumer } from "@rails/actioncable";
 import { getAccessSession } from "@/features/auth/model/access-session";
+import { apiOrigin, cableHttpToWs } from "@/shared/lib/api/origin";
 
 export interface CableHandlers {
   connected?: () => void;
@@ -30,9 +31,8 @@ function defaultFactory(url: () => string): CableConsumer {
 }
 
 export function cableUrl(): string {
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const token = getAccessSession()?.token;
-  const base = `${protocol}//${window.location.host}/cable`;
+  const base = `${cableHttpToWs(apiOrigin())}/cable`;
   return token ? `${base}?token=${encodeURIComponent(token)}` : base;
 }
 

@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 13.1 |
-| **Next session** | 13.2 |
+| **Last completed** | 13.2 |
+| **Next session** | 13.3 |
 | **Phase** | P13 — Launch readiness |
-| **Sessions remaining in phase** | 2 (13.2–13.3) |
+| **Sessions remaining in phase** | 1 (13.3) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 13.2 — CSP, axe, backups, monitoring**
+**Session 13.3 — Final preservation and configurability walk**
 
-Deliverable: CSP and Permissions Policy across **Pages + Tunnel API + R2 + OSM + Tenor**, axe in CI, backups, monitoring
+Deliverable: every `AUDIT_REPORT.md` §1 feature, all 114 `BR-n`, NR-1…NR-48, and the §8 constants sweep
 
-Docs: TARGET §1 (cross-origin), §4.7, §8; §5 (F-31)
+Docs: **AUDIT §1 in full**; SCHEMA §8; GAP §14; MASTER_PLAN §6
 
-Legacy to read: `cognify/config/initializers/content_security_policy.rb`, `permissions_policy.rb` — both currently commented out
+Legacy to read: None — verification only
 
 ---
 
@@ -85,6 +85,7 @@ Legacy to read: `cognify/config/initializers/content_security_policy.rb`, `permi
 | 12.5 | Admin shell, users, transcripts, bots, impersonation, audit, dashboards | In-app React admin (NR-5) gated by `users.is_admin`. Distinct impersonation JWT (NR-7 / D-2) with a non-dismissible banner, every impersonated mutation audited first, and `/me` still the admin. Transcripts escape markup (F-10). 403s on every admin endpoint. Playwright: impersonate → banner → Exit. |
 | 12.6 | Moderation queue (NR-39) admin side, plus sticker pack management (NR-28) with size caps | Reports inbox filters by status, subject type, and age; dismiss/warn/remove/deactivate each write `audit_events` first. System sticker packs (create, publish, reorder, add/remove) charge S-19 caps to the global bucket. Playwright: triage a report. |
 | 13.1 | PWA, service worker, code splitting, virtualization, performance; Rajya brand | Manifest/title/`rajya-v1` SW cache; logos. Lazy settings/admin/calls/picker/bot builder/map (barrels no longer pin those chunks). `GroupedVirtuoso` thread with scroll anchoring and jump-to-latest. Playwright: installable manifest. |
+| 13.2 | CSP, Permissions-Policy, axe in CI, backups, monitoring | Enforced CSP + Permissions-Policy on the API and Pages (`connect-src` covers Pages, Tunnel/Cable, R2, OSM, Tenor). Playwright axe on public + admin routes. Postgres dump/restore drill in CI. Sentry-optional error reporting, disk/R2 capacity mail at 80%, admin dashboard disk + Solid Queue counts. |
 
 ---
 

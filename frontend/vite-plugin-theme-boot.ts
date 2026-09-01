@@ -27,8 +27,27 @@ export function themeBootPlugin(): Plugin {
   return {
     name: "rajya-theme-boot",
     async transformIndexHtml(html) {
-      const script = await bundleThemeBoot();
-      return html.replace("<!--theme-boot-->", `<script>${script}</script>`);
+      return html.replace("<!--theme-boot-->", `<script src="/theme-boot.js"></script>`);
+    },
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.split("?")[0];
+        if (url !== "/theme-boot.js") {
+          next();
+          return;
+        }
+        void bundleThemeBoot().then((script) => {
+          res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+          res.end(script);
+        });
+      });
+    },
+    async generateBundle() {
+      this.emitFile({
+        type: "asset",
+        fileName: "theme-boot.js",
+        source: await bundleThemeBoot(),
+      });
     },
   };
 }

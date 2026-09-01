@@ -77,6 +77,7 @@ import {
 import { MS_PER_SECOND } from "@/features/conversations/model/constants";
 import { enqueueAndFlush } from "@/shared/lib/outbox/processor";
 import { sendOutboxMessage } from "@/shared/lib/outbox/send";
+import { apiOrigin } from "@/shared/lib/api/origin";
 import { realtimeKeys } from "@/shared/lib/realtime/keys";
 
 type MessagePageParam = { after?: number; before?: number };
@@ -330,7 +331,7 @@ export function useSendMessage(conversationId: number) {
               body: entry.body,
               clientNonce: entry.id,
               conversationId: entry.conversationId,
-              origin: window.location.origin,
+              origin: apiOrigin(),
               replyToMessageId: entry.replyToMessageId,
               silent: entry.silent,
               token: session.token,

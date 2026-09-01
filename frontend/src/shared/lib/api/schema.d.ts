@@ -8244,6 +8244,14 @@ export interface components {
             prompt_tokens?: number | null;
             completion_tokens?: number | null;
         };
+        AdminDashboardDisk: {
+            path: string;
+            used_bytes: number;
+            total_bytes: number;
+            percent: number;
+            ok: boolean;
+            alerting: boolean;
+        };
         AdminDashboard: {
             buckets: components["schemas"]["AdminDashboardBucket"][];
             quotas: {
@@ -8253,6 +8261,7 @@ export interface components {
             jobs: {
                 [key: string]: unknown;
             };
+            disk: components["schemas"]["AdminDashboardDisk"];
         };
         AdminPromptTemplate: {
             capability: string;

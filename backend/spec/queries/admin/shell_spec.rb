@@ -64,16 +64,36 @@ RSpec.describe Admin::AuditEventsQuery do
 end
 
 RSpec.describe Admin::DashboardQuery do
-  it "rolls up buckets, quotas, usage, and jobs" do
+  it "rolls up buckets, quotas, usage, and jobs" do # rubocop:disable RSpec/MultipleExpectations -- dashboard contract
     create(:storage_bucket, service_name: "q", used_bytes: 4, capacity_bytes: 10)
     create(:storage_quota, used_bytes: 4, quota_bytes: 10)
     create(:ai_usage_event, capability: "rewrite", status: "failed", prompt_tokens: 1, completion_tokens: 0)
+    allow(Monitoring::Disk).to receive(:sample).and_return(
+      Monitoring::Disk::Sample.new(path: "/", used_bytes: 1, total_bytes: 10, percent: 10, ok: true)
+    )
 
     report = described_class.call
     expect(report.buckets.first.service_name).to eq("q")
     expect(report.quotas.fetch("used_bytes")).to eq(4)
     expect(report.ai_usage.first.fetch("status")).to eq("failed")
-    expect(report.jobs).to include("ready", "failed", "processes")
+    expect(report.jobs).to include("ready", "failed", "processes", "scheduled")
+  end
+
+  it "marks disk alerting from the capacity threshold" do
+    allow(Monitoring::Disk).to receive(:sample).and_return(
+      Monitoring::Disk::Sample.new(path: "/", used_bytes: 1, total_bytes: 10, percent: 10, ok: true)
+    )
+    expect(described_class.call.disk.fetch("alerting")).to be(false)
+
+    allow(Monitoring::Disk).to receive(:sample).and_return(
+      Monitoring::Disk::Sample.new(path: "/", used_bytes: 9, total_bytes: 10, percent: 90, ok: true)
+    )
+    expect(described_class.call.disk.fetch("alerting")).to be(true)
+
+    allow(Monitoring::Disk).to receive(:sample).and_return(
+      Monitoring::Disk::Sample.new(path: "/", used_bytes: 0, total_bytes: 0, percent: 0, ok: false)
+    )
+    expect(described_class.call.disk.fetch("alerting")).to be(false)
   end
 end
 # rubocop:enable RSpec/MultipleDescribes

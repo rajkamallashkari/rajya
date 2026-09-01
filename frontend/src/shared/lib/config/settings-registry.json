@@ -424,6 +424,15 @@
     "max": 100,
     "allow_nil": false
   },
+  "capacity_alert_cooldown": {
+    "type": "integer",
+    "category": "media",
+    "default": 86400,
+    "description": "Seconds between repeated admin capacity alert emails (S-5).",
+    "min": 60,
+    "max": 604800,
+    "allow_nil": false
+  },
   "export_artefact_ttl": {
     "type": "integer",
     "category": "media",

@@ -111,12 +111,49 @@ Tunnel using the same `docker-compose.yml`. Do not block local work on cloud.
 
 ### Postgres backup → R2
 
-Until automation lands with the live DB:
+Compose runs `backup` as a sidecar: `pg_dump -Fc` every 24h into a volume,
+pruned after `BACKUP_RETENTION_DAYS` (default 14). When `R2_ENDPOINT` is set and
+`rclone` is on the image path, dumps are copied to `r2:rajya-backups`.
 
-1. `pg_dump -Fc` into `ops/backups/`.
-2. Sync dumps to an R2 bucket (rclone or `wrangler`).
-3. Restore check: `./ops/backups/restore.sh /path/to.dump rajya_scratch` then
-   diff schema against production (P0 DoD).
+Restore drill (CI runs this against the test database). Client tools must be
+Postgres 17; if the host `pg_dump` is older, the scripts run
+`pgvector/pgvector:pg17` via Docker. Use a dump directory Docker can mount
+(the repo `tmp/` path, not macOS `/var/folders`):
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@localhost:55432/rajya_development \
+  ./ops/backups/drill.sh
+```
+
+Manual restore into a scratch database:
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@localhost:55432/rajya_production \
+  ./ops/backups/restore.sh /path/to.dump rajya_scratch
+```
+
+Then diff schema (`pg_dump --schema-only`) against production before promoting.
+
+### Monitoring
+
+- **Uptime:** point UptimeRobot (or equivalent) at `GET /health` on the Tunnel
+  hostname. `/up` is liveness only and will stay green while Postgres is down.
+- **Errors:** set `SENTRY_DSN` (API) and `VITE_SENTRY_DSN` (Pages build). Both
+  ends no-op when unset. Unhandled exceptions are logged either way.
+- **Jobs:** the in-app admin dashboard (`/admin`) is the Solid Queue dashboard —
+  ready/failed/scheduled/process counts.
+- **Capacity (S-5):** `Monitoring::CapacityAlertJob` mails admins when an R2
+  bucket or the disk at `DISK_ALERT_PATH` (default `/`) reaches
+  `capacity_alert_threshold` (80%). Repeat mail is gated by
+  `capacity_alert_cooldown`.
+
+### Content Security Policy
+
+Enforced on the API (Rails) and on Pages (`frontend/public/_headers`).
+`connect-src` includes Pages, the Tunnel API / Cable (`wss:`), R2, OSM tiles,
+and Tenor. Permissions-Policy grants `camera`, `microphone`, `display-capture`,
+and `geolocation` to self. Set `VITE_API_ORIGIN` / `API_ORIGIN` to the Tunnel
+hostname when it is not a `*.trycloudflare.com` URL.
 
 ### Web Push (session 10.2)
 

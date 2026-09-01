@@ -400,14 +400,27 @@ RSpec.configure do |config|
                 completion_tokens: { type: :integer, nullable: true }
               }
             },
+            AdminDashboardDisk: {
+              type: :object,
+              required: %w[path used_bytes total_bytes percent ok alerting],
+              properties: {
+                path: { type: :string },
+                used_bytes: { type: :integer },
+                total_bytes: { type: :integer },
+                percent: { type: :integer },
+                ok: { type: :boolean },
+                alerting: { type: :boolean }
+              }
+            },
             AdminDashboard: {
               type: :object,
-              required: %w[buckets quotas ai_usage jobs],
+              required: %w[buckets quotas ai_usage jobs disk],
               properties: {
                 buckets: { type: :array, items: { "$ref" => "#/components/schemas/AdminDashboardBucket" } },
                 quotas: { type: :object, additionalProperties: true },
                 ai_usage: { type: :array, items: { "$ref" => "#/components/schemas/AdminDashboardUsage" } },
-                jobs: { type: :object, additionalProperties: true }
+                jobs: { type: :object, additionalProperties: true },
+                disk: { "$ref" => "#/components/schemas/AdminDashboardDisk" }
               }
             },
             AdminPromptTemplate: {

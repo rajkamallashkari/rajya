@@ -1,6 +1,6 @@
 require "rails_helper"
 
-# rubocop:disable RSpec/MultipleDescribes -- Alba snapshots for the admin shell
+# rubocop:disable RSpec/MultipleDescribes, RSpec/ExampleLength -- Alba snapshots for the admin shell
 RSpec.describe AdminUserListResource do
   it "serializes users" do
     user = create(:user)
@@ -55,13 +55,15 @@ RSpec.describe AdminDashboardResource do
       buckets: [ bucket ],
       quotas: { "accounts" => 1 },
       ai_usage: [ { "capability" => "bot_reply", "status" => "success", "count" => 1 } ],
-      jobs: { "ready" => 0 }
+      jobs: { "ready" => 0 },
+      disk: { "path" => "/", "percent" => 40, "alerting" => false }
     )
     json = described_class.new(report).to_h
 
     expect(json.fetch("buckets").first.fetch("service_name")).to eq("ser")
     expect(json.fetch("quotas").fetch("accounts")).to eq(1)
     expect(json.fetch("jobs").fetch("ready")).to eq(0)
+    expect(json.fetch("disk").fetch("path")).to eq("/")
   end
 end
 
@@ -80,4 +82,4 @@ RSpec.describe AdminPromptTemplateResource do
     expect(json.fetch("prompt_template").fetch("capability")).to eq("bot_reply")
   end
 end
-# rubocop:enable RSpec/MultipleDescribes
+# rubocop:enable RSpec/MultipleDescribes, RSpec/ExampleLength

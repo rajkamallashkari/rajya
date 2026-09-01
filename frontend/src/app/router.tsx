@@ -3,7 +3,12 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import { RouteErrorBoundary } from "@/app/error-boundaries/error-boundary";
 import { AppShell } from "@/app/shell";
 import { InvitePage } from "@/features/conversations/components/invite-page";
-import { lazyAdmin, loadAccountsPage, loadGalleryPage, type AdminTreeExport } from "@/shared/lib/chunks";
+import {
+  lazyAdmin,
+  loadAccountsPage,
+  loadGalleryPage,
+  type AdminTreeExport,
+} from "@/shared/lib/chunks";
 import { ChunkFallback } from "@/shared/ui/chunk-fallback";
 
 const GalleryPage = lazy(() => loadGalleryPage().then((mod) => ({ default: mod.GalleryPage })));
@@ -22,7 +27,7 @@ function ShellRoute() {
 function GalleryRoute() {
   return (
     <RouteErrorBoundary>
-      <Suspend>
+      <Suspend asPage>
         <GalleryPage />
       </Suspend>
     </RouteErrorBoundary>
@@ -32,7 +37,7 @@ function GalleryRoute() {
 function AccountsRoute() {
   return (
     <RouteErrorBoundary>
-      <Suspend>
+      <Suspend asPage>
         <AccountsDevPage />
       </Suspend>
     </RouteErrorBoundary>
@@ -47,14 +52,14 @@ function InviteRoute() {
   );
 }
 
-function Suspend({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<ChunkFallback />}>{children}</Suspense>;
+function Suspend({ children, asPage = false }: { asPage?: boolean; children: ReactNode }) {
+  return <Suspense fallback={<ChunkFallback asPage={asPage} />}>{children}</Suspense>;
 }
 
-function adminPage(name: AdminTreeExport) {
+function adminPage(name: AdminTreeExport, asPage = false) {
   const Panel = lazyAdmin(name);
   return (
-    <Suspend>
+    <Suspend asPage={asPage}>
       <Panel />
     </Suspend>
   );
@@ -70,7 +75,7 @@ export const appRoutes = [
   { path: "/dev/accounts", element: <AccountsRoute /> },
   {
     path: "/admin",
-    element: adminPage("AdminRoute"),
+    element: adminPage("AdminRoute", true),
     children: [
       { index: true, element: adminPage("AdminDashboardPanel") },
       { path: "users", element: adminPage("AdminUsersPanel") },

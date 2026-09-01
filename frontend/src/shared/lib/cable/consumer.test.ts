@@ -26,7 +26,12 @@ describe("cable consumer", () => {
     const original = window.location;
     Object.defineProperty(window, "location", {
       configurable: true,
-      value: { ...original, protocol: "https:", host: "rajya.pages.dev" },
+      value: {
+        ...original,
+        protocol: "https:",
+        host: "rajya.pages.dev",
+        origin: "https://rajya.pages.dev",
+      },
     });
     expect(cableUrl()).toBe("wss://rajya.pages.dev/cable");
     Object.defineProperty(window, "location", { configurable: true, value: original });

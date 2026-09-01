@@ -1,8 +1,9 @@
 import { getAccessSession } from "@/features/auth/model/access-session";
 import { createApiClient } from "@/shared/lib/api/client";
+import { apiOrigin } from "@/shared/lib/api/origin";
 
 export function apiClient() {
-  return createApiClient(window.location.origin);
+  return createApiClient(apiOrigin());
 }
 
 export function bearerHeaders(): Record<string, string> {

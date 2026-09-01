@@ -439,6 +439,7 @@ describe("MSW handlers", () => {
     expect(filteredAudit.data?.audit_events).toHaveLength(1);
     const dashboard = await client.GET("/api/v1/admin/dashboard");
     expect(dashboard.data?.buckets[0]?.service_name).toBe("r2");
+    expect(dashboard.data?.disk.path).toBe("/");
     const prompts = await client.GET("/api/v1/admin/prompt_templates");
     expect(prompts.data?.prompt_templates[0]?.capability).toBe("bot_reply");
     const patchedPrompt = await client.PATCH("/api/v1/admin/prompt_templates", {

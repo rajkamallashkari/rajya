@@ -62,7 +62,7 @@ export function AccountsDevPage() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] flex-col gap-[var(--space-4)] bg-[var(--surface-app)] p-[var(--space-6)] text-[var(--text-primary)]">
+    <main className="flex min-h-[100dvh] flex-col gap-[var(--space-4)] bg-[var(--surface-app)] p-[var(--space-6)] text-[var(--text-primary)]">
       <h1 className="text-[length:var(--text-lg)] font-semibold">{t("auth.accounts.title")}</h1>
       <div className="flex flex-wrap gap-[var(--control-gap)]">
         <Button
@@ -110,6 +110,6 @@ export function AccountsDevPage() {
           ))
         )}
       </div>
-    </div>
+    </main>
   );
 }

@@ -52,23 +52,29 @@ export function InvitePage() {
 
   if (!token || preview.isError) {
     return (
-      <div className="flex min-h-full items-center justify-center p-[var(--space-6)]" data-invite-page="">
+      <main
+        className="flex min-h-full items-center justify-center p-[var(--space-6)]"
+        data-invite-page=""
+      >
         <div className="flex w-full max-w-[var(--sheet-min-height)] flex-col items-center gap-[var(--space-4)] text-center">
-          <p className="[font-weight:var(--font-weight-emphasis)]">{t("invites.invalid_title")}</p>
+          <h1 className="[font-weight:var(--font-weight-emphasis)]">
+            {t("invites.invalid_title")}
+          </h1>
           <p className="text-[var(--text-secondary)]">{t("invites.invalid")}</p>
           <Button onClick={() => navigate("/")} type="button" variant="secondary">
             {t("invites.go_home")}
           </Button>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (preview.isPending || !preview.data) {
     return (
-      <div className="flex min-h-full items-center justify-center" data-invite-page="">
+      <main className="flex min-h-full items-center justify-center" data-invite-page="">
+        <h1 className="sr-only">{t("app.loading")}</h1>
         <ListView status="loading">{null}</ListView>
-      </div>
+      </main>
     );
   }
 
@@ -84,7 +90,10 @@ export function InvitePage() {
   };
 
   return (
-    <div className="flex min-h-full items-center justify-center p-[var(--space-6)]" data-invite-page="">
+    <main
+      className="flex min-h-full items-center justify-center p-[var(--space-6)]"
+      data-invite-page=""
+    >
       <div className="flex w-full max-w-[var(--sheet-min-height)] flex-col gap-[var(--space-4)]">
         <div className="flex flex-col items-center gap-[var(--space-3)]">
           <Avatar name={data.title} src={data.avatar_url} />
@@ -94,7 +103,9 @@ export function InvitePage() {
           {data.kind === "channel" ? (
             <p className="text-[var(--text-secondary)]">{t("invites.channel")}</p>
           ) : null}
-          <p className="text-[var(--text-secondary)]">{t("invites.members", { count: data.member_count })}</p>
+          <p className="text-[var(--text-secondary)]">
+            {t("invites.members", { count: data.member_count })}
+          </p>
         </div>
         {data.pending_request ? (
           <p className="text-[var(--text-secondary)]">{t("invites.pending_notice")}</p>
@@ -105,7 +116,9 @@ export function InvitePage() {
         {!data.usable && !data.already_member ? (
           <p className="text-[var(--status-danger)]">{t("invites.inactive")}</p>
         ) : null}
-        {join.isError ? <p className="text-[var(--status-danger)]">{t("invites.join_failed")}</p> : null}
+        {join.isError ? (
+          <p className="text-[var(--status-danger)]">{t("invites.join_failed")}</p>
+        ) : null}
         {canJoin && signedIn ? (
           <Button
             disabled={join.isPending || data.pending_request}
@@ -130,6 +143,6 @@ export function InvitePage() {
           {t("invites.go_home")}
         </Button>
       </div>
-    </div>
+    </main>
   );
 }

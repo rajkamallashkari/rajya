@@ -338,7 +338,15 @@ const dashboardBody = {
   ai_usage: [
     { capability: "bot_reply", status: "ok", count: 3, prompt_tokens: 10, completion_tokens: 4 },
   ],
-  jobs: { failed: 0, pending: 1 },
+  jobs: { failed: 0, pending: 1, ready: 1, scheduled: 0, processes: 1 },
+  disk: {
+    path: "/",
+    used_bytes: 40,
+    total_bytes: 100,
+    percent: 40,
+    ok: true,
+    alerting: false,
+  },
 };
 
 const auditEvents = [

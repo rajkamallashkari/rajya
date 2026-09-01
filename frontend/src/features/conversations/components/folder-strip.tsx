@@ -1,7 +1,11 @@
 import { useState, type DragEvent, type FormEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ConversationFolder } from "@/features/conversations/api/http";
-import { folderTabValue, moveFolderId, parseFolderTab } from "@/features/conversations/model/folders";
+import {
+  folderTabValue,
+  moveFolderId,
+  parseFolderTab,
+} from "@/features/conversations/model/folders";
 import { Badge, Button, Input } from "@/shared/ui";
 
 export function FolderStrip({
@@ -51,32 +55,40 @@ export function FolderStrip({
     <div
       className="flex items-center gap-[var(--space-1)] overflow-x-auto px-[var(--space-list-x)] pb-[var(--space-list-y)]"
       data-folder-strip=""
-      role="tablist"
     >
-      <TabButton
-        label={t("conversations.folders.all")}
-        onSelect={() => onTabChange("all")}
-        selected={tab === "all"}
-        value="all"
-      />
-      <TabButton
-        label={t("conversations.folders.unread")}
-        onSelect={() => onTabChange("unread")}
-        selected={tab === "unread"}
-        value="unread"
-      />
-      {folders.map((folder) => (
+      <div className="flex items-center gap-[var(--space-1)]" role="tablist">
         <TabButton
-          key={folder.id}
-          draggable
-          label={folder.name}
-          onDragStart={(event) => event.dataTransfer.setData("text/folder-id", String(folder.id))}
-          onDrop={(event) => onDrop(folder.id, event)}
-          onSelect={() => onTabChange(folderTabValue({ kind: "folder", id: folder.id }))}
-          selected={parsed.kind === "folder" && parsed.id === folder.id}
-          value={folderTabValue({ kind: "folder", id: folder.id })}
+          label={t("conversations.folders.all")}
+          onSelect={() => onTabChange("all")}
+          selected={tab === "all"}
+          value="all"
         />
-      ))}
+        <TabButton
+          label={t("conversations.folders.unread")}
+          onSelect={() => onTabChange("unread")}
+          selected={tab === "unread"}
+          value="unread"
+        />
+        {folders.map((folder) => (
+          <TabButton
+            key={folder.id}
+            draggable
+            label={folder.name}
+            onDragStart={(event) => event.dataTransfer.setData("text/folder-id", String(folder.id))}
+            onDrop={(event) => onDrop(folder.id, event)}
+            onSelect={() => onTabChange(folderTabValue({ kind: "folder", id: folder.id }))}
+            selected={parsed.kind === "folder" && parsed.id === folder.id}
+            value={folderTabValue({ kind: "folder", id: folder.id })}
+          />
+        ))}
+        <TabButton
+          label={t("conversations.folders.archived")}
+          onSelect={() => onTabChange("archived")}
+          selected={tab === "archived"}
+          unreadCount={archivedUnread}
+          value="archived"
+        />
+      </div>
       {creating ? (
         <form className="flex items-center gap-[var(--space-1)]" onSubmit={onSubmit}>
           <Input
@@ -94,22 +106,10 @@ export function FolderStrip({
         </Button>
       )}
       {parsed.kind === "folder" ? (
-        <Button
-          onClick={() => onDestroy(parsed.id)}
-          size="sm"
-          type="button"
-          variant="ghost"
-        >
+        <Button onClick={() => onDestroy(parsed.id)} size="sm" type="button" variant="ghost">
           {t("conversations.folders.delete")}
         </Button>
       ) : null}
-      <TabButton
-        label={t("conversations.folders.archived")}
-        onSelect={() => onTabChange("archived")}
-        selected={tab === "archived"}
-        unreadCount={archivedUnread}
-        value="archived"
-      />
     </div>
   );
 }

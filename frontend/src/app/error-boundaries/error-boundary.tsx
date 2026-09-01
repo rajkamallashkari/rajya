@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from "react";
 import { i18n } from "@/shared/lib/i18n";
+import { reportError } from "@/shared/lib/monitoring/errors";
 import { Button } from "@/shared/ui/button";
 
 export type ErrorBoundaryLevel = "app" | "route" | "list";
@@ -20,7 +21,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return { hasError: true };
   }
 
-  public componentDidCatch(): void {
+  public componentDidCatch(error: Error): void {
+    reportError(error, { level: this.props.level });
     this.setState({ hasError: true });
   }
 

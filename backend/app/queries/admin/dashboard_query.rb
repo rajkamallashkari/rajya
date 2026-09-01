@@ -2,14 +2,15 @@
 # dashboard (TARGET §7.4). Reads only.
 module Admin
   class DashboardQuery < ApplicationQuery
-    Report = Struct.new(:buckets, :quotas, :ai_usage, :jobs, keyword_init: true)
+    Report = Struct.new(:buckets, :quotas, :ai_usage, :jobs, :disk, keyword_init: true)
 
     def call
       Report.new(
         buckets: StorageBucket.order(:priority, :id).to_a,
         quotas: quota_rollups,
         ai_usage: usage_rollups,
-        jobs: job_rollups
+        jobs: job_rollups,
+        disk: disk_rollup
       )
     end
 
@@ -48,7 +49,21 @@ module Admin
       {
         "ready" => SolidQueue::ReadyExecution.count,
         "failed" => SolidQueue::FailedExecution.count,
+        "scheduled" => SolidQueue::ScheduledExecution.count,
         "processes" => SolidQueue::Process.count
+      }
+    end
+
+    def disk_rollup
+      sample = Monitoring::Disk.sample
+      threshold = ::Settings.fetch(:capacity_alert_threshold)
+      {
+        "path" => sample.path,
+        "used_bytes" => sample.used_bytes,
+        "total_bytes" => sample.total_bytes,
+        "percent" => sample.percent,
+        "ok" => sample.ok,
+        "alerting" => sample.ok && sample.percent >= threshold
       }
     end
   end

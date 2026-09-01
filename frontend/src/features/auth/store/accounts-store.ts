@@ -7,6 +7,7 @@ import {
 } from "@/features/auth/model/access-session";
 import { ACCOUNTS_STORAGE_KEY, isJwtExpired } from "@/features/auth/model/account-token";
 import { useLockStore } from "@/features/auth/store/lock-store";
+import { apiOrigin } from "@/shared/lib/api/origin";
 import { rememberedAccountIds } from "@/shared/lib/db/account-db";
 import { clearAuthCache, setAuthCache } from "@/shared/lib/db/auth-cache";
 
@@ -52,7 +53,7 @@ function applyActive(account: StoredAccount | undefined): void {
   if (account) {
     void setAuthCache(account.id, {
       accountId: account.id,
-      apiUrl: window.location.origin,
+      apiUrl: apiOrigin(),
       token: account.token,
     });
     return;

@@ -1,5 +1,5 @@
 import { Calendar, Phone, Search, Video } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { getAccessSession } from "@/features/auth/model/access-session";
 import {
@@ -257,6 +257,9 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const debouncedSearch = useDebouncedValue(searchQuery, SEARCH_DEBOUNCE_MS);
   const conversationSearch = useConversationSearch(conversationId, debouncedSearch, searchFilters);
   const jumpedQuery = useRef("");
+  const originScrollTop = useRef<number | null>(null);
+  const [restoreEpoch, setRestoreEpoch] = useState(0);
+  const [restoreScrollTop, setRestoreScrollTop] = useState<number | null>(null);
   const mobile = useMobileViewport();
   const [draft, setDraft] = useState("");
   const [provisional, setProvisional] = useState(false);
@@ -294,6 +297,9 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
 
   useEffect(() => {
     jumpedQuery.current = "";
+    originScrollTop.current = null;
+    setRestoreEpoch(0);
+    setRestoreScrollTop(null);
     resetSearchStore();
   }, [conversationId]);
 
@@ -316,6 +322,21 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
     [conversationSearch.data?.messages],
   );
 
+  const pushJumpFromScroller = useCallback((): void => {
+    const scrollTop = jumpRestoreTop(originScrollTop.current, scroller.current);
+    originScrollTop.current = null;
+    useSearchStore.getState().pushJump({
+      conversationId: String(conversationId),
+      scrollTop,
+    });
+  }, [conversationId]);
+
+  const restoreThreadScroll = (scrollTop: number): void => {
+    openConversation(conversationLayer(String(conversationId), title));
+    setRestoreScrollTop(scrollTop);
+    setRestoreEpoch((current) => current + 1);
+  };
+
   useEffect(() => {
     const first = searchHits[0];
     const jumpKey = `${debouncedSearch}|${serializeFilters(searchFilters)}`;
@@ -324,18 +345,14 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
     }
     jumpedQuery.current = jumpKey;
     setMatchIndex(0);
-    if (scroller.current) {
-      useSearchStore.getState().pushJump({
-        conversationId: String(conversationId),
-        scrollTop: scroller.current.scrollTop,
-      });
-    }
+    pushJumpFromScroller();
     openConversation(conversationLayer(String(conversationId), title, String(first.message_id)));
   }, [
     chatOpen,
     conversationId,
     debouncedSearch,
     openConversation,
+    pushJumpFromScroller,
     searchFilters,
     searchHits,
     searchMode,
@@ -345,15 +362,14 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const onThreadBack = (): void => {
     const restored = useSearchStore.getState().handleBack();
     if (restored && restored !== "closed") {
-      openConversation(conversationLayer(String(conversationId), title));
-      requestAnimationFrame(() => {
-        if (scroller.current) {
-          scroller.current.scrollTop = restored.scrollTop;
-        }
-      });
+      restoreThreadScroll(restored.scrollTop);
       return;
     }
     if (restored === "closed") {
+      if (originScrollTop.current != null) {
+        restoreThreadScroll(originScrollTop.current);
+        originScrollTop.current = null;
+      }
       return;
     }
     popLayer();
@@ -361,12 +377,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
 
   const jumpToHit = (messageId: number, index: number): void => {
     setMatchIndex(index);
-    if (scroller.current) {
-      useSearchStore.getState().pushJump({
-        conversationId: String(conversationId),
-        scrollTop: scroller.current.scrollTop,
-      });
-    }
+    pushJumpFromScroller();
     openConversation(conversationLayer(String(conversationId), title, String(messageId)));
   };
 
@@ -428,7 +439,14 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
                 </IconButton>
               </>
             ) : null}
-            <IconButton aria-label={t("search.open")} onClick={openChatSearch} type="button">
+            <IconButton
+              aria-label={t("search.open")}
+              onClick={() => {
+                originScrollTop.current = jumpRestoreTop(null, scroller.current);
+                openChatSearch();
+              }}
+              type="button"
+            >
               <Search className="h-[var(--icon-size)] w-[var(--icon-size)]" />
             </IconButton>
             <IconButton
@@ -450,12 +468,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
       <JumpDateSheet
         onJump={(iso) => {
           setDateOpen(false);
-          if (scroller.current) {
-            useSearchStore.getState().pushJump({
-              conversationId: String(conversationId),
-              scrollTop: scroller.current.scrollTop,
-            });
-          }
+          pushJumpFromScroller();
           openConversation(conversationLayer(String(conversationId), title));
           void listMessages(conversationId, { around_at: iso }).then((page) => {
             const pivot = page.meta.pivot_id;
@@ -555,6 +568,8 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
             viewerId={viewerId}
           />
         )}
+        restoreEpoch={restoreEpoch}
+        restoreScrollTop={restoreScrollTop}
         scrollerRef={scroller}
       />
       {conversation.slow_mode_seconds > 0 ? (
@@ -808,6 +823,10 @@ function ThreadRunView({
       side={side}
     />
   );
+}
+
+export function jumpRestoreTop(origin: number | null, node: { scrollTop: number } | null): number {
+  return origin ?? node?.scrollTop ?? 0;
 }
 
 export function bindNumericId<T extends unknown[]>(

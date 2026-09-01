@@ -40,7 +40,15 @@ export const GroupedVirtuoso = forwardRef(function GroupedVirtuoso(
   onRange.current = rangeChanged;
   const onFollow = useRef(followOutput);
   onFollow.current = followOutput;
+  followOutput?.(true);
+  followOutput?.(false);
+  const scrollerNode = useRef<HTMLDivElement | null>(null);
   useImperativeHandle(ref, () => ({
+    scrollTo: (location: ScrollToOptions) => {
+      if (scrollerNode.current != null && location.top != null) {
+        scrollerNode.current.scrollTop = location.top;
+      }
+    },
     scrollToIndex: () => undefined,
   }));
   useEffect(() => {
@@ -64,7 +72,10 @@ export const GroupedVirtuoso = forwardRef(function GroupedVirtuoso(
         }
         atBottomStateChange?.(true);
       }}
-      ref={(node) => scrollerRef?.(node)}
+      ref={(node) => {
+        scrollerNode.current = node;
+        scrollerRef?.(node);
+      }}
       style={style}
     >
       {Header ? <Header /> : null}
