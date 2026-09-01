@@ -6,6 +6,10 @@ RSpec.describe Settings do
       expect(described_class.fetch(:message_edit_window)).to eq(900)
     end
 
+    it "defaults receipt_debounce to 400 ms (BR-109)" do
+      expect(described_class.fetch(:receipt_debounce)).to eq(400)
+    end
+
     it "returns the DB override without a restart" do
       AppSetting.create!(key: "message_edit_window", value: 120, category: "messaging")
 

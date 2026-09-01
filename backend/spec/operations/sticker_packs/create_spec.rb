@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe StickerPacks::Create do
-  it "creates an unpublished pack for the acting account" do
+  it "creates an unpublished pack for the acting account (NR-28)" do
     account = create(:user).account
     result = described_class.call(account: account, name: " Waves ", kind: "sticker")
 

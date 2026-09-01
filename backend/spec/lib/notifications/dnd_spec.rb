@@ -14,7 +14,7 @@ RSpec.describe Notifications::Dnd do
     expect(described_class.active?(settings: settings("dnd_enabled" => false), timezone: "UTC", at: at)).to be(false)
   end
 
-  it "evaluates the window in the account timezone rather than the server's (F-21)" do
+  it "evaluates the window in the account timezone rather than the server's (F-21, BR-100)" do
     Time.use_zone("UTC") do
       # 17:00 UTC == 22:30 IST on Monday 12 Jan 2026.
       at = Time.utc(2026, 1, 12, 17, 0, 0)

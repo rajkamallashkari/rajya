@@ -48,4 +48,15 @@ RSpec.describe Messages::Pin do
 
     expect(described_class.call(message: message, actor: member.account).error_code).to eq(:forbidden)
   end
+
+  it "keeps the pin after the pinner leaves the group (BR-24)" do
+    owner = create(:user)
+    member = create(:user)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ member.account ])
+    message = Messages::Send.call(conversation: conversation, sender: member.account, body: "Pin me").value
+    described_class.call(message: message, actor: member.account)
+    Conversations::Leave.call(account: member.account, conversation: conversation)
+
+    expect(conversation.pinned_messages.reload).to exist
+  end
 end

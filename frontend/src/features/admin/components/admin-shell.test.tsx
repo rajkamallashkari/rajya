@@ -123,7 +123,7 @@ describe("AdminShell", () => {
     expect(await screen.findByRole("button", { name: en.lists.error_retry })).toBeInTheDocument();
   });
 
-  it("shows the admin chip, dashboard, and configuration editors", async () => {
+  it("shows the admin chip, dashboard, and configuration editors (NR-5)", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     renderAdmin("/admin");
     expect(await screen.findByText(/r2/)).toBeInTheDocument();

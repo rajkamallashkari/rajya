@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe Conversations::Leave do
-  it "lets a member leave and writes member_left (SCHEMA §3.2)" do
+  it "lets a member leave and writes member_left (SCHEMA §3.2, changes BR-49)" do
     owner = create(:user)
     member = create(:user)
     conversation = create_talk(kind: "group", owner: owner.account, members: [ member.account ])

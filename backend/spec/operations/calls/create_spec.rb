@@ -78,7 +78,7 @@ RSpec.describe Calls::Create do
       .to eq(:validation_failed)
   end
 
-  it "rejects an oversized group" do
+  it "rejects an oversized group (BR-62)" do
     initiator, _callee, _conversation = pair
     members = create_list(:user, Settings.fetch(:mesh_participant_cap))
     group = create_talk(kind: "group", owner: initiator.account, members: members.map(&:account))

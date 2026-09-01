@@ -34,7 +34,7 @@ RSpec.describe Messages::Edit do
     expect(described_class.call(message: bot_msg, editor: bot, body: "X").error_code).to eq(:forbidden)
   end
 
-  it "rejects an edit after the configured window (BR-2)" do
+    it "rejects an edit after the configured window (BR-2, changes BR-106)" do
     user, message = setup
     stub_setting(:message_edit_window, 1)
     message.update_columns(created_at: 2.seconds.ago)

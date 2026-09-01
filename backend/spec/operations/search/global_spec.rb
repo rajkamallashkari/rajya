@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe Search::Global do
-  it "returns empty payloads below the minimum length and hits when long enough" do
+  it "returns empty payloads below the minimum length and hits when long enough (BR-112)" do
     user = create(:user)
     conversation = create_direct_between(user.account, create(:account, display_name: "Needle Peer"))
     create(:message, conversation: conversation, sender_account: user.account, body: "needle body")

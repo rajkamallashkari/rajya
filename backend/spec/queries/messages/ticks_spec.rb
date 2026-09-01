@@ -19,7 +19,7 @@ RSpec.describe Messages::Ticks do
     let(:conversation) { create_direct_between(sender.account, peer.account) }
     let(:message) { Messages::Send.call(conversation: conversation, sender: sender.account, body: "Hi").value }
 
-    it "is sent on server acknowledgement (NR-2)" do
+    it "is sent on server acknowledgement (NR-2, changes BR-29)" do
       expect(tick(message, sender.account)).to eq("sent")
     end
 
@@ -50,7 +50,7 @@ RSpec.describe Messages::Ticks do
       expect(tick(message.reload, sender.account)).to eq("delivered")
     end
 
-    it "stays delivered until every active human recipient has read" do
+    it "stays delivered until every active human recipient has read (changes BR-39)" do
       view!(alice.account, conversation, message.position)
       deliver!(bob.account, conversation, message.position)
       expect(tick(message.reload, sender.account)).to eq("delivered")
@@ -58,7 +58,7 @@ RSpec.describe Messages::Ticks do
       expect(tick(message.reload, sender.account)).to eq("read")
     end
 
-    it "ignores a bot member so the group is not stalled (S-9)" do
+    it "ignores a bot member so the group is not stalled (S-9, changes BR-41)" do
       bot = create(:bot)
       group = create_talk(kind: "group", owner: sender.account, members: [ alice.account, bot.account ])
       prompt = Messages::Send.call(conversation: group, sender: sender.account, body: "Hi").value

@@ -27,7 +27,7 @@ describe("InviteManager", () => {
     expect(screen.getByText(en.invites.no_requests)).toBeInTheDocument();
   });
 
-  it("creates, copies, shows a QR, and revokes an invite", async () => {
+  it("creates, copies, shows a QR, and revokes an invite (NR-38)", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {

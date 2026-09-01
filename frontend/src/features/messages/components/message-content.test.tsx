@@ -47,7 +47,7 @@ describe("MessageContent", () => {
     expect(container).toHaveTextContent("<b>html</b>");
   });
 
-  it("hides spoilers until tapped and remounts hidden on reset", async () => {
+  it("hides spoilers until tapped and remounts hidden on reset (NR-18)", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<MessageContent body="see ||secret|| now" resetKey="one" />);
     const spoiler = screen.getByRole("button", { name: en.messages.spoiler.hidden });

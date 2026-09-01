@@ -193,7 +193,7 @@ describe("message queries", () => {
     });
   });
 
-  it("rolls send, react, pin, and save back when the mutation fails", async () => {
+  it("rolls send, react, pin, and save back when the mutation fails (BR-114)", async () => {
     const user = userEvent.setup();
     setAccessSession(testSession());
     server.use(

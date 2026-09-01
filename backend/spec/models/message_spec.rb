@@ -1,6 +1,13 @@
 require "rails_helper"
 
 RSpec.describe Message do
+  it "requires position and revision (changes BR-32)" do
+    blank = build(:message, position: nil)
+    expect(blank).not_to be_valid
+    expect(blank.errors[:position]).to be_present
+    expect(build(:message, revision: nil)).not_to be_valid
+  end
+
   it "is valid as a plain text message from a sender" do
     expect(build(:message)).to be_valid
   end

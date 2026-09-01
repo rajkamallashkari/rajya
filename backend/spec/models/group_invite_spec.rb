@@ -26,7 +26,7 @@ RSpec.describe GroupInvite do
     expect(expired).not_to be_usable
   end
 
-  it "redeems atomically until max_uses is reached (F-14)" do
+  it "redeems atomically until max_uses is reached (F-14, changes BR-58)" do
     invite = create(:group_invite, max_uses: 1, uses_count: 0)
 
     expect(described_class.redeem!(invite.id)).to be(true)

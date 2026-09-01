@@ -26,7 +26,7 @@ RSpec.describe Notifications::Resolve do
     described_class.call(account: account, conversation: conversation, message: message)
   end
 
-  it "requires message so mentions-only cannot evaluate an empty body (F-9)" do
+  it "requires message so mentions-only cannot evaluate an empty body (F-9, BR-102)" do
     recipient, _sender, conversation, _message = setup
     expect(described_class.instance_method(:call).parameters).to include([ :keyreq, :message ])
     expect { described_class.call(account: recipient.account, conversation: conversation) }.to raise_error(ArgumentError)

@@ -25,7 +25,7 @@ function wrap(ui: ReactNode) {
 }
 
 describe("AppearancePanel", () => {
-  it("writes token-backed appearance settings", async () => {
+  it("writes token-backed appearance settings (NR-13)", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     render(wrap(<AppearancePanel />));
     await screen.findByRole("button", { name: "Cyber Indigo" });

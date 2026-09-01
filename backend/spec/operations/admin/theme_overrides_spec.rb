@@ -19,7 +19,7 @@ RSpec.describe Admin::ThemeOverrides do
   end
 
   describe Admin::ThemeOverrides::Upsert do
-    it "stores a contrast-safe override" do
+    it "stores a contrast-safe override (NR-48)" do
       result = described_class.call(admin: admin, theme: "light", token_name: "--text-primary", value: "#0F172A")
 
       expect(result).to be_success

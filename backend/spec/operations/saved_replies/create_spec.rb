@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe SavedReplies::Create do
-  it "creates a shortcut for the account" do
+  it "creates a shortcut for the account (NR-25)" do
     account = create(:user).account
     result = described_class.call(account: account, shortcut: " /OMW ", body: " On my way ")
 

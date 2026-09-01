@@ -23,7 +23,7 @@ import {
 import { en } from "@/shared/lib/i18n/catalog";
 
 describe("picker model", () => {
-  it("tones, caps recents, and filters lists", () => {
+  it("tones, caps recents, and filters lists (BR-113)", () => {
     expect(applySkinTone("🔥", 2)).toBe("🔥");
     expect(applySkinTone("👍", 0)).toBe("👍");
     expect(applySkinTone("👍", 2)).toContain("👍");

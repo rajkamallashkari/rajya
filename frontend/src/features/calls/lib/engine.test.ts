@@ -146,7 +146,7 @@ describe("webrtc engine", () => {
     __test.cleanupAllPeers();
   });
 
-  it("restarts ICE on failed iceconnectionstate and drops after the bound (F-32)", async () => {
+  it("restarts ICE on failed iceconnectionstate and drops after the bound (F-32, BR-70)", async () => {
     const { __test, setSignalingSender } = await import("./engine");
     const sent: Array<[string, Record<string, unknown>]> = [];
     setSignalingSender((action, data) => sent.push([action, data]));

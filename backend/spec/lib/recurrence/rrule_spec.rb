@@ -5,7 +5,7 @@ RSpec.describe Recurrence::Rrule do
     described_class.parse(rule)
   end
 
-  it "parses FREQ, INTERVAL, and BYDAY" do
+  it "parses FREQ, INTERVAL, and BYDAY (NR-26)" do
     expect(parsed("FREQ=DAILY;INTERVAL=2")).to have_attributes(freq: "DAILY", interval: 2)
     expect(parsed("RRULE:FREQ=WEEKLY;BYDAY=MO,WE")).to have_attributes(byday: [ 1, 3 ])
   end

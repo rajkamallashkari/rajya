@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe ContactNickname do
-  it "is valid when the owner and target are different accounts" do
+  it "is valid when the owner and target are different accounts (NR-41)" do
     expect(build(:contact_nickname)).to be_valid
   end
 

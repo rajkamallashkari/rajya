@@ -5,7 +5,7 @@ RSpec.describe Gifs::Search do
     Gifs::Tenor::Result.new(id: "t1", title: "Party", preview_url: "https://cdn.example/p.gif", gif_url: "https://cdn.example/g.gif")
   end
 
-  it "returns mapped hits when the flag is on" do
+  it "returns mapped hits when the flag is on (NR-29)" do
     account = create(:user).account
     create(:feature_flag, key: "gif_search", description: FeatureFlagRegistry.description_for(:gif_search), enabled: true)
     client = instance_double(Gifs::Tenor, search: [ hit ])

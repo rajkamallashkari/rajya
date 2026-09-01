@@ -9,7 +9,7 @@ RSpec.describe Attachments::IssueUrl do
     ActiveStorage::Current.reset
   end
 
-  it "issues a short-lived URL for an attached file" do
+  it "issues a short-lived URL for an attached file (BR-93)" do
     attachment = create(:attachment)
     attachment.file.attach(
       io: StringIO.new("img"), filename: "pic.png", content_type: "image/png"

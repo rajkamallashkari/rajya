@@ -12,7 +12,7 @@ RSpec.describe Ai::PromptAssembler do
     Messages::Send.call(conversation: conversation, sender: sender, body: body, **attrs).value
   end
 
-  it "includes the persona, template, and last context-window turns" do
+  it "includes the persona, template, and last context-window turns (BR-74)" do
     user, bot, conversation = bot_dm
     stub_setting(:ai_context_window, 2, category: "ai")
     send_text(conversation, user.account, "one")

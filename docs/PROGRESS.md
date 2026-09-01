@@ -10,22 +10,21 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 13.2 |
-| **Next session** | 13.3 |
-| **Phase** | P13 — Launch readiness |
-| **Sessions remaining in phase** | 1 (13.3) |
+| **Last completed** | 13.3 |
+| **Next session** | — (roadmap complete) |
+| **Phase** | Complete |
+| **Sessions remaining in phase** | 0 |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 13.3 — Final preservation and configurability walk**
+**Roadmap complete.** There is no further `MASTER_PLAN.md` §5 session. Follow-up is
+review, commit, and the remaining P13 manual DoD rows (real-device install/push,
+locked-phone notification, 10k-message jank on hardware).
 
-Deliverable: every `AUDIT_REPORT.md` §1 feature, all 114 `BR-n`, NR-1…NR-48, and the §8 constants sweep
-
-Docs: **AUDIT §1 in full**; SCHEMA §8; GAP §14; MASTER_PLAN §6
-
-Legacy to read: None — verification only
+Recorded verification gaps (not cut in GAP §14): link-preview unfurl (BR-20 / BR-97)
+and client receipt debounce (BR-109). See `docs/PRESERVATION.md`.
 
 ---
 
@@ -86,6 +85,7 @@ Legacy to read: None — verification only
 | 12.6 | Moderation queue (NR-39) admin side, plus sticker pack management (NR-28) with size caps | Reports inbox filters by status, subject type, and age; dismiss/warn/remove/deactivate each write `audit_events` first. System sticker packs (create, publish, reorder, add/remove) charge S-19 caps to the global bucket. Playwright: triage a report. |
 | 13.1 | PWA, service worker, code splitting, virtualization, performance; Rajya brand | Manifest/title/`rajya-v1` SW cache; logos. Lazy settings/admin/calls/picker/bot builder/map (barrels no longer pin those chunks). `GroupedVirtuoso` thread with scroll anchoring and jump-to-latest. Playwright: installable manifest. |
 | 13.2 | CSP, Permissions-Policy, axe in CI, backups, monitoring | Enforced CSP + Permissions-Policy on the API and Pages (`connect-src` covers Pages, Tunnel/Cable, R2, OSM, Tenor). Playwright axe on public + admin routes. Postgres dump/restore drill in CI. Sentry-optional error reporting, disk/R2 capacity mail at 80%, admin dashboard disk + Solid Queue counts. |
+| 13.3 | Final preservation and configurability walk | `docs/PRESERVATION.md` + `docs/ARCHITECTURE.md`. Spec walk over AUDIT §1, BR-1…114, NR-1…48, NR-F seams, and SCHEMA §8. Recorded gaps: link-preview unfurl (BR-20/97); receipt debounce unused on the client (BR-109). |
 
 ---
 

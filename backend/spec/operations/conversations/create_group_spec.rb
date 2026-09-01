@@ -46,7 +46,7 @@ RSpec.describe Conversations::CreateGroup do
     expect(conversation.conversation_memberships.count).to eq(Settings.fetch(:min_members))
   end
 
-  it "rejects too few members, a missing account, and a cap breach" do
+  it "rejects too few members, a missing account, and a cap breach (BR-54)" do
     creator = create(:user).account
     expect(described_class.call(creator: creator, kind: "group", account_ids: [], title: "X",
                                 description: nil).error_code).to eq(:validation_failed)

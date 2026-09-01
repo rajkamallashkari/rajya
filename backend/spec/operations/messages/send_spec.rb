@@ -62,7 +62,7 @@ RSpec.describe Messages::Send do
       .to eq(:validation_failed)
   end
 
-  it "rejects a missing reply, a cross-conversation reply, and a channel member" do
+  it "rejects a missing reply, a cross-conversation reply, and a channel member (BR-9, BR-56)" do
     user, conversation = setup
     other = create_talk(kind: "group", owner: create(:user).account, members: [ create(:account) ])
     foreign = create(:message, conversation: other)

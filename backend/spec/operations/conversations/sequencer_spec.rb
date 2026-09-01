@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe Conversations::Sequencer do
-  it "allocates gapless positions and independent revisions" do
+  it "allocates gapless positions and independent revisions (BR-31)" do
     conversation = create(:conversation)
     first = described_class.next_send!(conversation.id)
     mutation = described_class.next_revision!(conversation.id)

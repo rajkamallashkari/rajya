@@ -28,7 +28,7 @@ RSpec.describe Ai::Runner do
     expect(AiUsageEvent.last).to have_attributes(capability: "transcribe", status: "success", account: account)
   end
 
-  it "falls through the chain on 429 and records a fallback usage event" do
+  it "falls through the chain on 429 and records a fallback usage event (BR-73)" do
     first = Ai::ModelRegistry::Entry.new(provider: "groq", model: "llama-a")
     second = Ai::ModelRegistry::Entry.new(provider: "ollama", model: "llama-b")
     groq = instance_double(Ai::Providers::Groq, chat: :quota_exhausted)

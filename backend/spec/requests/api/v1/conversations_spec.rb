@@ -560,7 +560,7 @@ end
 RSpec.describe "Conversation receipts", type: :request do
   # rubocop:disable RSpec/VariableName, RSpec/EmptyExampleGroup, RSpec/MultipleMemoizedHelpers
   path "/api/v1/conversations/{id}/receipts" do
-    post "Advance delivery or view watermarks" do
+    post "Advance delivery or view watermarks (changes BR-38)" do
       tags "Conversations"
       consumes "application/json"
       produces "application/json"

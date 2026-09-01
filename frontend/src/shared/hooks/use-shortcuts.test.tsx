@@ -25,7 +25,7 @@ function Harness({
 }
 
 describe("useShortcuts", () => {
-  it("dispatches pop, search, and edit, and ignores typing and menus", () => {
+  it("dispatches pop, search, and edit, and ignores typing and menus (NR-46)", () => {
     const onEditLast = vi.fn();
     const onFocusSearch = vi.fn();
     const onPopLayer = vi.fn();

@@ -33,7 +33,7 @@ RSpec.describe ConversationMembership do
     expect(orphan.errors[:role]).not_to include("bots cannot be admin or owner")
   end
 
-  it "exposes role helpers" do
+  it "exposes role helpers (BR-48)" do
     owner = build(:conversation_membership, :owner)
     member = build(:conversation_membership)
 
