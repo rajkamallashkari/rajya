@@ -8,7 +8,9 @@ import { AdminAuditPanel } from "./admin-audit-panel";
 import { AdminBotsPanel } from "./admin-bots-panel";
 import { AdminConfigPanel } from "./admin-config-panel";
 import { AdminDashboardPanel } from "./admin-dashboard-panel";
+import { AdminPacksPanel } from "./admin-packs-panel";
 import { AdminPromptsPanel } from "./admin-prompts-panel";
+import { AdminReportDetailPanel, AdminReportsPanel } from "./admin-reports-panel";
 import { AdminShell } from "./admin-shell";
 import { AdminTranscriptPanel } from "./admin-transcript-panel";
 import { AdminUserDetailPanel } from "./admin-user-detail-panel";
@@ -46,6 +48,9 @@ function AdminRoutes() {
         <Route element={<AdminAuditPanel />} path="audit" />
         <Route element={<AdminConfigPanel />} path="config" />
         <Route element={<AdminPromptsPanel />} path="prompts" />
+        <Route element={<AdminReportsPanel />} path="reports" />
+        <Route element={<AdminReportDetailPanel />} path="reports/:reportId" />
+        <Route element={<AdminPacksPanel />} path="packs" />
       </Route>
     </Routes>
   );
@@ -172,6 +177,17 @@ describe("AdminShell", () => {
     });
   });
 
+  it("triages a report and manages sticker packs", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    renderAdmin("/admin/reports");
+    expect(await screen.findByText("Peer")).toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: /Peer/ }));
+    await user.click(await screen.findByRole("button", { name: en.admin.dismiss }));
+    await user.click(screen.getByRole("link", { name: en.admin.packs }));
+    expect(await screen.findByText("Waves")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.admin.publish }));
+  });
+
   it("exits impersonation from the admin banner", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     useShellStore.setState({ impersonatingName: "Peer" });
@@ -203,6 +219,8 @@ describe("AdminShell", () => {
       http.get("*/api/v1/admin/bot_requests", () => HttpResponse.json({}, { status: 500 })),
       http.get("*/api/v1/admin/audit_events", () => HttpResponse.json({}, { status: 500 })),
       http.get("*/api/v1/admin/prompt_templates", () => HttpResponse.json({}, { status: 500 })),
+      http.get("*/api/v1/admin/reports", () => HttpResponse.json({}, { status: 500 })),
+      http.get("*/api/v1/admin/sticker_packs", () => HttpResponse.json({}, { status: 500 })),
     );
     renderAdmin("/admin");
     await user.click(await screen.findByRole("button", { name: en.lists.error_retry }));
@@ -213,6 +231,10 @@ describe("AdminShell", () => {
     await user.click(screen.getByRole("link", { name: en.admin.audit }));
     await user.click(await screen.findByRole("button", { name: en.lists.error_retry }));
     await user.click(screen.getByRole("link", { name: en.admin.prompts }));
+    await user.click(await screen.findByRole("button", { name: en.lists.error_retry }));
+    await user.click(screen.getByRole("link", { name: en.admin.reports }));
+    await user.click(await screen.findByRole("button", { name: en.lists.error_retry }));
+    await user.click(screen.getByRole("link", { name: en.admin.packs }));
     await user.click(await screen.findByRole("button", { name: en.lists.error_retry }));
   });
 

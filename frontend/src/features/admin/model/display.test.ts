@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { displayMetric, queryListStatus } from "./display";
+import { displayMetric, parseReportAgeHours, queryListStatus } from "./display";
+import { REPORT_AGE_HOURS } from "./constants";
 
 describe("admin display helpers", () => {
   it("stringifies primitives, blanks nulls, and json-encodes objects", () => {
@@ -16,5 +17,9 @@ describe("admin display helpers", () => {
     expect(queryListStatus(false, true, true)).toBe("error");
     expect(queryListStatus(false, false, true)).toBe("empty");
     expect(queryListStatus(false, false, false)).toBe("ready");
+    expect(parseReportAgeHours("day")).toBe(REPORT_AGE_HOURS.day);
+    expect(parseReportAgeHours("week")).toBe(REPORT_AGE_HOURS.week);
+    expect(parseReportAgeHours("month")).toBe(REPORT_AGE_HOURS.month);
+    expect(parseReportAgeHours("all")).toBeUndefined();
   });
 });

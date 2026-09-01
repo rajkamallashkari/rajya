@@ -21,4 +21,18 @@ RSpec.describe StickerPacks::RemoveSticker do
     sticker = create(:sticker)
     expect(described_class.call(sticker: sticker, actor: create(:user).account).error_code).to eq(:forbidden)
   end
+
+  it "lets an admin remove a system sticker without charging a user (S-19)" do
+    admin = create(:user, :admin)
+    pack = create(:sticker_pack, :system)
+    create(:storage_bucket, service_name: "test")
+    blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new("img"), filename: "s.png", content_type: "image/png")
+    sticker = StickerPacks::AddSticker.call(
+      pack: pack, actor: admin.account, signed_id: blob.signed_id, shortcode: "wave"
+    ).value
+
+    expect(described_class.call(sticker: sticker, actor: admin.account)).to be_success
+    expect(Sticker.where(id: sticker.id)).not_to exist
+    expect(StorageQuota.ensure_for!(admin.account).used_bytes).to eq(0)
+  end
 end

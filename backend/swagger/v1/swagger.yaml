@@ -310,6 +310,330 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/ThemeOverridePalette"
+  "/api/v1/admin/reports":
+    get:
+      summary: List the moderation queue
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: subject_type
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: max_age_hours
+        in: query
+        required: false
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminReportList"
+  "/api/v1/admin/reports/{id}":
+    get:
+      summary: Show a report with subject context
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: shown
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminReport"
+  "/api/v1/admin/reports/{id}/dismiss":
+    post:
+      summary: Dismiss a report
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: dismissed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminReport"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+  "/api/v1/admin/reports/{id}/warn":
+    post:
+      summary: Warn the reported account
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: actioned
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminReport"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+  "/api/v1/admin/reports/{id}/remove_content":
+    post:
+      summary: Remove reported content
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: actioned
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminReport"
+  "/api/v1/admin/reports/{id}/deactivate_account":
+    post:
+      summary: Deactivate the reported account
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: actioned
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AdminReport"
+  "/api/v1/admin/sticker_packs":
+    get:
+      summary: List system sticker packs
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/StickerPackList"
+    post:
+      summary: Create a system sticker pack
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/StickerPack"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                kind:
+                  type: string
+                  enum:
+                  - sticker
+                  - emoji
+                slug:
+                  type: string
+                position:
+                  type: integer
+  "/api/v1/admin/sticker_packs/reorder":
+    patch:
+      summary: Reorder system sticker packs
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: reordered
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/StickerPackList"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: integer
+  "/api/v1/admin/sticker_packs/{id}":
+    patch:
+      summary: Update a system sticker pack
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/StickerPack"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                position:
+                  type: integer
+                published:
+                  type: boolean
+    delete:
+      summary: Delete a system sticker pack
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: deleted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
+  "/api/v1/admin/sticker_packs/{sticker_pack_id}/stickers":
+    post:
+      summary: Add a sticker to a system pack
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: sticker_pack_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Sticker"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                signed_id:
+                  type: string
+                shortcode:
+                  type: string
+                position:
+                  type: integer
+  "/api/v1/admin/sticker_packs/{sticker_pack_id}/stickers/{id}":
+    delete:
+      summary: Remove a sticker from a system pack
+      tags:
+      - Admin
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: sticker_pack_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: deleted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
   "/api/v1/admin/users":
     get:
       summary: List users
@@ -5297,6 +5621,94 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/AdminPromptTemplate"
+    AdminReportSubject:
+      type: object
+      required:
+      - type
+      - id
+      - label
+      properties:
+        type:
+          type: string
+          enum:
+          - message
+          - account
+          - conversation
+          - bot
+        id:
+          type: integer
+        label:
+          type: string
+        body:
+          type: string
+          nullable: true
+        conversation_id:
+          type: integer
+          nullable: true
+        account_id:
+          type: integer
+          nullable: true
+    AdminReport:
+      type: object
+      required:
+      - id
+      - subject_type
+      - subject_id
+      - reason
+      - status
+      - created_at
+      - reporter
+      - subject
+      properties:
+        id:
+          type: integer
+        subject_type:
+          type: string
+          enum:
+          - message
+          - account
+          - conversation
+          - bot
+        subject_id:
+          type: integer
+        reason:
+          type: string
+        details:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum:
+          - pending
+          - reviewing
+          - actioned
+          - dismissed
+        resolution_note:
+          type: string
+          nullable: true
+        reviewed_by_user_id:
+          type: integer
+          nullable: true
+        reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        reporter:
+          "$ref": "#/components/schemas/Account"
+        subject:
+          "$ref": "#/components/schemas/AdminReportSubject"
+    AdminReportList:
+      type: object
+      required:
+      - reports
+      properties:
+        reports:
+          type: array
+          items:
+            "$ref": "#/components/schemas/AdminReport"
     AdminPromptTemplateEnvelope:
       type: object
       required:

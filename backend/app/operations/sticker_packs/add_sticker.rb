@@ -24,11 +24,7 @@ module StickerPacks
     private
 
     def allowed?(pack, actor)
-      return false if actor.blank?
-      return true if pack.owner_account_id == actor.id
-      return false unless pack.system?
-
-      actor.user&.is_admin?
+      Access.allowed?(pack, actor)
     end
 
     def quota_allows?(pack, blob)

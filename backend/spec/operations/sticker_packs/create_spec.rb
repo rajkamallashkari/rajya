@@ -17,4 +17,16 @@ RSpec.describe StickerPacks::Create do
     expect(described_class.call(account: account, name: "B", kind: "emoji", slug: "same").error_code)
       .to eq(:validation_failed)
   end
+
+  it "lets an admin create a system pack and rejects a member (S-19)" do
+    admin = create(:user, :admin)
+    member = create(:user)
+    result = described_class.call(account: admin.account, name: "System", kind: "sticker", system: true)
+
+    expect(result.value).to be_system
+    expect(described_class.call(account: member.account, name: "Nope", kind: "sticker", system: true).error_code)
+      .to eq(:forbidden)
+    expect(described_class.call(account: create(:account), name: "Nope", kind: "sticker", system: true).error_code)
+      .to eq(:forbidden)
+  end
 end

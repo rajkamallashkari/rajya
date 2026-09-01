@@ -4,7 +4,13 @@ export const adminKeys = {
   dashboard: () => ["admin-dashboard"] as const,
   flags: () => ["admin-flags"] as const,
   me: () => ["me"] as const,
+  packs: () => ["admin-sticker-packs"] as const,
   prompts: () => ["admin-prompts"] as const,
+  report: (id: number) => ["admin-report", id] as const,
+  reportRoot: () => ["admin-report"] as const,
+  reports: (filters: { status?: string; subjectType?: string; maxAgeHours?: number }) =>
+    ["admin-reports", filters] as const,
+  reportsRoot: () => ["admin-reports"] as const,
   settings: () => ["admin-settings"] as const,
   strings: (query: { q?: string; surface?: string }) => ["admin-strings", query] as const,
   stringsRoot: () => ["admin-strings"] as const,

@@ -12,6 +12,9 @@ export type AdminAuditEvent = components["schemas"]["AdminAuditEvent"];
 export type AdminDashboard = components["schemas"]["AdminDashboard"];
 export type AdminPromptTemplate = components["schemas"]["AdminPromptTemplate"];
 export type BotRequest = components["schemas"]["BotRequest"];
+export type AdminReport = components["schemas"]["AdminReport"];
+export type StickerPack = components["schemas"]["StickerPack"];
+export type Sticker = components["schemas"]["Sticker"];
 
 export async function listAdminSettings() {
   return unwrap(
@@ -238,5 +241,143 @@ export async function declineAdminBotRequest(id: number, reason?: string) {
       body: reason ? { reason } : {},
     }),
     "admin_bots_failed",
+  );
+}
+
+export async function listAdminReports(query?: {
+  max_age_hours?: number;
+  status?: string;
+  subject_type?: string;
+}) {
+  return unwrap(
+    await apiClient().GET("/api/v1/admin/reports", {
+      headers: bearerHeaders(),
+      params: { query: query ?? {} },
+    }),
+    "admin_reports_failed",
+  );
+}
+
+export async function getAdminReport(id: number) {
+  return unwrap(
+    await apiClient().GET("/api/v1/admin/reports/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "admin_reports_failed",
+  );
+}
+
+export async function dismissAdminReport(id: number, note?: string) {
+  return unwrap(
+    await apiClient().POST("/api/v1/admin/reports/{id}/dismiss", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+      body: note ? { note } : {},
+    }),
+    "admin_reports_failed",
+  );
+}
+
+export async function warnAdminReport(id: number, note?: string) {
+  return unwrap(
+    await apiClient().POST("/api/v1/admin/reports/{id}/warn", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+      body: note ? { note } : {},
+    }),
+    "admin_reports_failed",
+  );
+}
+
+export async function removeAdminReportContent(id: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/admin/reports/{id}/remove_content", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "admin_reports_failed",
+  );
+}
+
+export async function deactivateAdminReportAccount(id: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/admin/reports/{id}/deactivate_account", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "admin_reports_failed",
+  );
+}
+
+export async function listAdminStickerPacks() {
+  return unwrap(
+    await apiClient().GET("/api/v1/admin/sticker_packs", { headers: bearerHeaders() }),
+    "admin_packs_failed",
+  );
+}
+
+export async function createAdminStickerPack(name: string, kind: "sticker" | "emoji") {
+  return unwrap(
+    await apiClient().POST("/api/v1/admin/sticker_packs", {
+      headers: bearerHeaders(),
+      body: { name, kind },
+    }),
+    "admin_packs_failed",
+  );
+}
+
+export async function updateAdminStickerPack(
+  id: number,
+  body: { name?: string; position?: number; published?: boolean },
+) {
+  return unwrap(
+    await apiClient().PATCH("/api/v1/admin/sticker_packs/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+      body,
+    }),
+    "admin_packs_failed",
+  );
+}
+
+export async function destroyAdminStickerPack(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/admin/sticker_packs/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "admin_packs_failed",
+  );
+}
+
+export async function reorderAdminStickerPacks(ids: number[]) {
+  return unwrap(
+    await apiClient().PATCH("/api/v1/admin/sticker_packs/reorder", {
+      headers: bearerHeaders(),
+      body: { ids },
+    }),
+    "admin_packs_failed",
+  );
+}
+
+export async function addAdminSticker(packId: number, signedId: string, shortcode: string) {
+  return unwrap(
+    await apiClient().POST("/api/v1/admin/sticker_packs/{sticker_pack_id}/stickers", {
+      headers: bearerHeaders(),
+      params: { path: { sticker_pack_id: packId } },
+      body: { signed_id: signedId, shortcode },
+    }),
+    "admin_packs_failed",
+  );
+}
+
+export async function removeAdminSticker(packId: number, id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/admin/sticker_packs/{sticker_pack_id}/stickers/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { sticker_pack_id: packId, id } },
+    }),
+    "admin_packs_failed",
   );
 }

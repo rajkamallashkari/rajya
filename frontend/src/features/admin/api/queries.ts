@@ -1,19 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  addAdminSticker,
   approveAdminBotRequest,
+  createAdminStickerPack,
+  deactivateAdminReportAccount,
   declineAdminBotRequest,
+  destroyAdminStickerPack,
+  dismissAdminReport,
   getAdminDashboard,
+  getAdminReport,
   getAdminUser,
   getThemeOverridePalette,
   listAdminAuditEvents,
   listAdminBotRequests,
   listAdminFeatureFlags,
   listAdminPromptTemplates,
+  listAdminReports,
   listAdminSettings,
+  listAdminStickerPacks,
   listAdminThemeOverrides,
   listAdminTranscript,
   listAdminTranslationStrings,
   listAdminUsers,
+  removeAdminReportContent,
+  removeAdminSticker,
+  reorderAdminStickerPacks,
   resetAdminSetting,
   resetAdminThemeOverrides,
   resetAdminTranslationString,
@@ -22,8 +33,10 @@ import {
   updateAdminFeatureFlag,
   updateAdminPromptTemplate,
   updateAdminSetting,
+  updateAdminStickerPack,
   updateAdminThemeOverride,
   updateAdminTranslationString,
+  warnAdminReport,
 } from "@/features/admin/api/http";
 import { adminKeys } from "@/features/admin/api/keys";
 import { startImpersonation, stopImpersonationLocally } from "@/features/admin/model/impersonation";
@@ -247,6 +260,157 @@ export function useDeclineAdminBotRequest() {
       declineAdminBotRequest(id, reason),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: adminKeys.bots() });
+    },
+  });
+}
+
+export function useAdminReports(filters: {
+  maxAgeHours?: number;
+  status?: string;
+  subjectType?: string;
+}) {
+  return useQuery({
+    queryFn: () =>
+      listAdminReports({
+        max_age_hours: filters.maxAgeHours,
+        status: filters.status,
+        subject_type: filters.subjectType,
+      }),
+    queryKey: adminKeys.reports(filters),
+  });
+}
+
+export function useAdminReport(id: number) {
+  return useQuery({
+    enabled: Number.isFinite(id) && id > 0,
+    queryFn: () => getAdminReport(id),
+    queryKey: adminKeys.report(id),
+  });
+}
+
+function invalidateReports(queryClient: ReturnType<typeof useQueryClient>): void {
+  void queryClient.invalidateQueries({ queryKey: adminKeys.reportsRoot() });
+  void queryClient.invalidateQueries({ queryKey: adminKeys.reportRoot() });
+}
+
+function useReportMutation(
+  mutationFn: (args: { id: number; note?: string }) => ReturnType<typeof dismissAdminReport>,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSettled: () => {
+      invalidateReports(queryClient);
+    },
+  });
+}
+
+export function useDismissAdminReport() {
+  return useReportMutation(({ id, note }) => dismissAdminReport(id, note));
+}
+
+export function useWarnAdminReport() {
+  return useReportMutation(({ id, note }) => warnAdminReport(id, note));
+}
+
+export function useRemoveAdminReportContent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: removeAdminReportContent,
+    onSettled: () => {
+      invalidateReports(queryClient);
+    },
+  });
+}
+
+export function useDeactivateAdminReportAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deactivateAdminReportAccount,
+    onSettled: () => {
+      invalidateReports(queryClient);
+    },
+  });
+}
+
+export function useAdminStickerPacks() {
+  return useQuery({
+    queryFn: listAdminStickerPacks,
+    queryKey: adminKeys.packs(),
+  });
+}
+
+export function useCreateAdminStickerPack() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ kind, name }: { kind: "sticker" | "emoji"; name: string }) =>
+      createAdminStickerPack(name, kind),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.packs() });
+    },
+  });
+}
+
+export function useUpdateAdminStickerPack() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      body,
+      id,
+    }: {
+      body: { name?: string; position?: number; published?: boolean };
+      id: number;
+    }) => updateAdminStickerPack(id, body),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.packs() });
+    },
+  });
+}
+
+export function useDestroyAdminStickerPack() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: destroyAdminStickerPack,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.packs() });
+    },
+  });
+}
+
+export function useReorderAdminStickerPacks() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: reorderAdminStickerPacks,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.packs() });
+    },
+  });
+}
+
+export function useAddAdminSticker() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      packId,
+      shortcode,
+      signedId,
+    }: {
+      packId: number;
+      shortcode: string;
+      signedId: string;
+    }) => addAdminSticker(packId, signedId, shortcode),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.packs() });
+    },
+  });
+}
+
+export function useRemoveAdminSticker() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, packId }: { id: number; packId: number }) => removeAdminSticker(packId, id),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.packs() });
     },
   });
 }

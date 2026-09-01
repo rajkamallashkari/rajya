@@ -192,6 +192,18 @@ Rails.application.routes.draw do
             post :decline
           end
         end
+        resources :reports, only: %i[index show] do
+          member do
+            post :dismiss
+            post :warn
+            post :remove_content
+            post :deactivate_account
+          end
+        end
+        resources :sticker_packs, only: %i[index create update destroy] do
+          collection { patch :reorder }
+          resources :stickers, only: %i[create destroy], controller: "sticker_pack_stickers"
+        end
         get "settings", to: "settings#index"
         patch "settings", to: "settings#update"
         delete "settings", to: "settings#destroy"

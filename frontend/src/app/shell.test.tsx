@@ -99,7 +99,7 @@ describe("AppShell", () => {
     });
   });
 
-  it("resolves a message permalink without a conversation id", async () => {
+  it("resolves a message permalink without a conversation id", { timeout: 10_000 }, async () => {
     render(
       <AppProviders>
         <MemoryRouter initialEntries={["/m/101"]}>

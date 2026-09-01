@@ -2,7 +2,7 @@ module StickerPacks
   class RemoveSticker < ApplicationOperation
     def call(sticker:, actor:)
       pack = sticker.sticker_pack
-      return failure(:forbidden) unless actor && pack.owner_account_id == actor.id
+      return failure(:forbidden) unless Access.allowed?(pack, actor)
 
       blob = sticker.blob
       sticker.destroy!

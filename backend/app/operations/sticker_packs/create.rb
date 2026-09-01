@@ -1,10 +1,11 @@
 module StickerPacks
   class Create < ApplicationOperation
-    def call(account:, name:, kind:, slug: nil, position: 0)
+    def call(account:, name:, kind:, slug: nil, position: 0, system: false)
       return failure(:forbidden) if account.blank?
+      return failure(:forbidden) if system && !account.user&.is_admin?
 
       pack = StickerPack.new(
-        owner_account: account,
+        owner_account: system ? nil : account,
         name: name.to_s.strip,
         kind: kind.to_s.strip,
         slug: normalize_slug(slug, name),

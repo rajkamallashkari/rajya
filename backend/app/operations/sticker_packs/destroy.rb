@@ -1,7 +1,7 @@
 module StickerPacks
   class Destroy < ApplicationOperation
     def call(pack:, actor:)
-      return failure(:forbidden) unless actor && pack.owner_account_id == actor.id
+      return failure(:forbidden) unless Access.allowed?(pack, actor)
 
       blobs = pack.stickers.includes(:blob).map(&:blob)
       account = pack.owner_account

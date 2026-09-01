@@ -13,15 +13,25 @@ import {
   useAdminDashboard,
   useAdminFeatureFlags,
   useAdminPromptTemplates,
+  useAdminReport,
+  useAdminReports,
   useAdminSettings,
   useAdminThemeOverrides,
   useAdminTranscript,
+  useAdminStickerPacks,
   useAdminTranslationStrings,
   useAdminUser,
   useAdminUsers,
   useApproveAdminBotRequest,
+  useCreateAdminStickerPack,
+  useDeactivateAdminReportAccount,
   useDeclineAdminBotRequest,
+  useDestroyAdminStickerPack,
+  useDismissAdminReport,
   useMe,
+  useRemoveAdminReportContent,
+  useRemoveAdminSticker,
+  useReorderAdminStickerPacks,
   useResetAdminSetting,
   useResetAdminThemeOverrides,
   useResetAdminTranslationString,
@@ -31,8 +41,11 @@ import {
   useUpdateAdminFeatureFlag,
   useUpdateAdminPromptTemplate,
   useUpdateAdminSetting,
+  useUpdateAdminStickerPack,
   useUpdateAdminThemeOverride,
   useUpdateAdminTranslationString,
+  useWarnAdminReport,
+  useAddAdminSticker,
 } from "./queries";
 
 function Harness() {
@@ -230,6 +243,69 @@ function ShellHarness() {
   );
 }
 
+function ModerationHarness() {
+  const reports = useAdminReports({ status: "pending", subjectType: "message", maxAgeHours: 24 });
+  const openReports = useAdminReports({});
+  const report = useAdminReport(1);
+  const skipped = useAdminReport(0);
+  const packs = useAdminStickerPacks();
+  const dismiss = useDismissAdminReport();
+  const warn = useWarnAdminReport();
+  const removeContent = useRemoveAdminReportContent();
+  const deactivate = useDeactivateAdminReportAccount();
+  const create = useCreateAdminStickerPack();
+  const update = useUpdateAdminStickerPack();
+  const destroy = useDestroyAdminStickerPack();
+  const reorder = useReorderAdminStickerPacks();
+  const add = useAddAdminSticker();
+  const remove = useRemoveAdminSticker();
+  return (
+    <div>
+      <p data-reports="">{reports.data?.reports.length ?? 0}</p>
+      <p data-open-reports="">{openReports.data?.reports.length ?? 0}</p>
+      <p data-report="">{report.data?.reason ?? ""}</p>
+      <p data-skipped-report="">{String(skipped.fetchStatus)}</p>
+      <p data-packs="">{packs.data?.sticker_packs.length ?? 0}</p>
+      <Button onClick={() => dismiss.mutate({ id: 1, note: "ok" })} type="button">
+        dismiss
+      </Button>
+      <Button onClick={() => dismiss.mutate({ id: 1 })} type="button">
+        dismiss-empty
+      </Button>
+      <Button onClick={() => warn.mutate({ id: 1 })} type="button">
+        warn
+      </Button>
+      <Button onClick={() => removeContent.mutate(1)} type="button">
+        remove
+      </Button>
+      <Button onClick={() => deactivate.mutate(1)} type="button">
+        deactivate
+      </Button>
+      <Button onClick={() => create.mutate({ kind: "emoji", name: "Dogs" })} type="button">
+        create-pack
+      </Button>
+      <Button onClick={() => update.mutate({ body: { published: true }, id: 1 })} type="button">
+        publish
+      </Button>
+      <Button onClick={() => destroy.mutate(1)} type="button">
+        destroy-pack
+      </Button>
+      <Button onClick={() => reorder.mutate([2, 1])} type="button">
+        reorder
+      </Button>
+      <Button
+        onClick={() => add.mutate({ packId: 1, shortcode: "wave2", signedId: "signed" })}
+        type="button"
+      >
+        add-sticker
+      </Button>
+      <Button onClick={() => remove.mutate({ id: 1, packId: 1 })} type="button">
+        remove-sticker
+      </Button>
+    </div>
+  );
+}
+
 describe("admin shell queries", () => {
   it("loads shell resources and writes impersonation and bot decisions", async () => {
     const user = userEvent.setup();
@@ -271,6 +347,38 @@ describe("admin shell queries", () => {
     await user.click(screen.getByRole("button", { name: "stop" }));
     await waitFor(() => {
       expect(document.querySelector("[data-user]")?.textContent).toBe("Peer");
+    });
+  });
+});
+
+describe("admin moderation queries", () => {
+  it("loads reports and packs and invalidates after writes", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    render(
+      <AppProviders>
+        <ModerationHarness />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(document.querySelector("[data-reports]")?.textContent).toBe("1");
+      expect(document.querySelector("[data-report]")?.textContent).toBe("spam");
+      expect(document.querySelector("[data-packs]")?.textContent).toBe("2");
+      expect(document.querySelector("[data-skipped-report]")?.textContent).toBe("idle");
+    });
+    await user.click(screen.getByRole("button", { name: "dismiss" }));
+    await user.click(screen.getByRole("button", { name: "dismiss-empty" }));
+    await user.click(screen.getByRole("button", { name: "warn" }));
+    await user.click(screen.getByRole("button", { name: "remove" }));
+    await user.click(screen.getByRole("button", { name: "deactivate" }));
+    await user.click(screen.getByRole("button", { name: "create-pack" }));
+    await user.click(screen.getByRole("button", { name: "publish" }));
+    await user.click(screen.getByRole("button", { name: "destroy-pack" }));
+    await user.click(screen.getByRole("button", { name: "reorder" }));
+    await user.click(screen.getByRole("button", { name: "add-sticker" }));
+    await user.click(screen.getByRole("button", { name: "remove-sticker" }));
+    await waitFor(() => {
+      expect(document.querySelector("[data-open-reports]")?.textContent).toBe("1");
     });
   });
 });

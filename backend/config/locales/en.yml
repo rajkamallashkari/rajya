@@ -152,6 +152,11 @@ en:
         headline: "A report is waiting in the queue"
         body: "Hi %{name}, a %{subject_type} was reported as %{reason}."
         footer: "Open the admin moderation queue to review it."
+      warning:
+        subject: "A warning from Rajya moderation"
+        headline: "A moderator sent you a warning"
+        body: "Hi %{name}, a report about your activity (%{reason}) was reviewed. Please follow Rajya's rules."
+        footer: "Further reports can lead to content being removed or your account being deactivated."
     auth:
       magic_link:
         subject: "Sign in to Rajya"

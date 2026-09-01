@@ -12,6 +12,8 @@ const NAV = [
   { end: true, key: "dashboard", to: "/admin" },
   { end: false, key: "users", to: "/admin/users" },
   { end: false, key: "bots", to: "/admin/bots" },
+  { end: false, key: "reports", to: "/admin/reports" },
+  { end: false, key: "packs", to: "/admin/packs" },
   { end: false, key: "audit", to: "/admin/audit" },
   { end: false, key: "settings", to: "/admin/config" },
   { end: false, key: "prompts", to: "/admin/prompts" },

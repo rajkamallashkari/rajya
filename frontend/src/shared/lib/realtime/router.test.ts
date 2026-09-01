@@ -92,6 +92,10 @@ describe("routeRealtimeEvent", () => {
       deps,
     );
     await routeRealtimeEvent(
+      { type: "moderation_warning", report_id: 1, reason: "spam" },
+      deps,
+    );
+    await routeRealtimeEvent(
       {
         type: "typing",
         conversation_id: 1,

@@ -83,6 +83,7 @@ export async function routeRealtimeEvent(
       deps.cache.setQueryData(realtimeKeys.presence(event.account_id), event.online);
       return;
     case "report_created":
+    case "moderation_warning":
       return;
     case "receipts_updated": {
       const viewerId = getAccessSession()?.accountId;

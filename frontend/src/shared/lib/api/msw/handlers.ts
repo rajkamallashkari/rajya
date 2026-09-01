@@ -569,6 +569,36 @@ const stickerPack = {
   stickers: [stickerItem],
   updated_at: MESSAGE_STAMP,
 };
+const stickerPackTwo = {
+  ...stickerPack,
+  id: 2,
+  name: "Cats",
+  position: 1,
+  published_at: null,
+  slug: "cats",
+  stickers: [] as (typeof stickerItem)[],
+};
+const adminReport = {
+  created_at: MESSAGE_STAMP,
+  details: "note",
+  id: 1,
+  reason: "spam",
+  reporter: peerAccount(2, "Peer"),
+  resolution_note: null as string | null,
+  reviewed_at: null as string | null,
+  reviewed_by_user_id: null as number | null,
+  status: "pending" as const,
+  subject: {
+    account_id: 2,
+    body: "spam text",
+    conversation_id: 1,
+    id: 101,
+    label: "Peer",
+    type: "message" as const,
+  },
+  subject_id: 101,
+  subject_type: "message" as const,
+};
 const gifItem = {
   id: "tenor-1",
   preview_url: "https://media.test/gif.gif",
@@ -1926,6 +1956,85 @@ export const handlerMap = {
       }
       return HttpResponse.json({ prompt_templates: promptTemplates });
     },
+  ),
+  "/api/v1/admin/reports": http.get("*/api/v1/admin/reports", ({ request }) => {
+    const params = new URL(request.url).searchParams;
+    const status = params.get("status");
+    const subjectType = params.get("subject_type");
+    let reports = [adminReport];
+    if (status) {
+      reports = reports.filter((row) => row.status === status);
+    }
+    if (subjectType) {
+      reports = reports.filter((row) => row.subject_type === subjectType);
+    }
+    return HttpResponse.json({ reports });
+  }),
+  "/api/v1/admin/reports/{id}": http.get("*/api/v1/admin/reports/:id", ({ params }) => {
+    if (Number(params.id) !== 1) {
+      return jsonError(404);
+    }
+    return HttpResponse.json(adminReport);
+  }),
+  "/api/v1/admin/reports/{id}/dismiss": http.post(
+    "*/api/v1/admin/reports/:id/dismiss",
+    async ({ request }) => {
+      const body = (await request.json()) as { note?: string };
+      return HttpResponse.json({
+        ...adminReport,
+        resolution_note: body.note ?? null,
+        status: "dismissed",
+      });
+    },
+  ),
+  "/api/v1/admin/reports/{id}/warn": http.post("*/api/v1/admin/reports/:id/warn", () =>
+    HttpResponse.json({ ...adminReport, status: "actioned" }),
+  ),
+  "/api/v1/admin/reports/{id}/remove_content": http.post(
+    "*/api/v1/admin/reports/:id/remove_content",
+    () => HttpResponse.json({ ...adminReport, status: "actioned" }),
+  ),
+  "/api/v1/admin/reports/{id}/deactivate_account": http.post(
+    "*/api/v1/admin/reports/:id/deactivate_account",
+    () => HttpResponse.json({ ...adminReport, status: "actioned" }),
+  ),
+  "/api/v1/admin/sticker_packs": http.all("*/api/v1/admin/sticker_packs", async ({ request }) => {
+    if (request.method === "POST") {
+      const body = (await request.json()) as { kind?: "emoji" | "sticker"; name?: string };
+      return HttpResponse.json(
+        {
+          ...stickerPackTwo,
+          kind: body.kind ?? "sticker",
+          name: body.name ?? stickerPackTwo.name,
+        },
+        { status: 201 },
+      );
+    }
+    return HttpResponse.json({ sticker_packs: [stickerPack, stickerPackTwo] });
+  }),
+  "/api/v1/admin/sticker_packs/reorder": http.patch("*/api/v1/admin/sticker_packs/reorder", () =>
+    HttpResponse.json({ sticker_packs: [stickerPackTwo, stickerPack] }),
+  ),
+  "/api/v1/admin/sticker_packs/{id}": http.all(
+    "*/api/v1/admin/sticker_packs/:id",
+    async ({ request }) => {
+      if (request.method === "PATCH") {
+        const body = (await request.json()) as { published?: boolean };
+        return HttpResponse.json({
+          ...stickerPack,
+          published_at: body.published === false ? null : MESSAGE_STAMP,
+        });
+      }
+      return HttpResponse.json(ok);
+    },
+  ),
+  "/api/v1/admin/sticker_packs/{sticker_pack_id}/stickers": http.post(
+    "*/api/v1/admin/sticker_packs/:sticker_pack_id/stickers",
+    () => HttpResponse.json(stickerItem, { status: 201 }),
+  ),
+  "/api/v1/admin/sticker_packs/{sticker_pack_id}/stickers/{id}": http.delete(
+    "*/api/v1/admin/sticker_packs/:sticker_pack_id/stickers/:id",
+    okResponse,
   ),
   "/api/v1/theme_overrides": http.get("*/api/v1/theme_overrides", () =>
     HttpResponse.json(themePalette),

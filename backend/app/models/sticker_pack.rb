@@ -14,6 +14,7 @@ class StickerPack < ApplicationRecord
 
   scope :published, -> { where.not(published_at: nil) }
   scope :owned_by, ->(account) { where(owner_account_id: account.id) }
+  scope :system, -> { where(owner_account_id: nil) }
 
   def system?
     owner_account_id.nil?

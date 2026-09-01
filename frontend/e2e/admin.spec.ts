@@ -27,3 +27,30 @@ test("impersonates a user, shows the banner, and exits", async ({ page }) => {
   await page.getByRole("button", { name: "Exit" }).click();
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
+
+test("triages a report from the admin queue", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "rajya:accounts",
+      JSON.stringify({
+        accounts: [
+          {
+            displayName: "Ada",
+            hasPasskey: false,
+            hasPassword: true,
+            id: 1,
+            onboarded: true,
+            token: "admin-token",
+            username: "ada",
+          },
+        ],
+        activeAccountId: 1,
+      }),
+    );
+  });
+  await page.goto("/admin/reports");
+  await page.getByRole("link", { name: /Peer/ }).click();
+  await expect(page.getByText("spam text")).toBeVisible();
+  await page.getByRole("button", { name: "Dismiss" }).click();
+  await expect(page.getByRole("button", { name: "Dismiss" })).toBeVisible();
+});

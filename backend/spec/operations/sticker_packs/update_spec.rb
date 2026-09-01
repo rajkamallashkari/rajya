@@ -17,6 +17,16 @@ RSpec.describe StickerPacks::Update do
     expect(described_class.call(pack: pack, actor: create(:user).account, name: "X").error_code).to eq(:forbidden)
   end
 
+  it "lets an admin publish and reorder a system pack" do
+    admin = create(:user, :admin)
+    pack = create(:sticker_pack, :system, name: "Old")
+    result = described_class.call(pack: pack, actor: admin.account, name: "New", position: 4, published: true)
+
+    expect(result.value).to have_attributes(name: "New", position: 4)
+    expect(result.value).to be_published
+    expect(described_class.call(pack: pack, actor: create(:user).account, name: "X").error_code).to eq(:forbidden)
+  end
+
   it "rejects an overlong name" do
     user = create(:user)
     pack = create(:sticker_pack, owner_account: user.account)

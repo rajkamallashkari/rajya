@@ -15,6 +15,7 @@ export interface RealtimePayloads {
   message_reacted: { conversation_id: number; message_id: number };
   message_reminder: { id: number };
   message_unpinned: { conversation_id: number; message_id: number };
+  moderation_warning: { account_id?: number; report_id: number; reason: string };
   phone_verified: { account_id?: number; phone?: string };
   poll_closed: { conversation_id: number; message_id: number };
   poll_voted: { conversation_id: number; message_id: number };
@@ -72,6 +73,7 @@ export const REALTIME_EVENT_TYPES = [
   "message_reacted",
   "message_reminder",
   "message_unpinned",
+  "moderation_warning",
   "phone_verified",
   "poll_closed",
   "poll_voted",
@@ -220,6 +222,12 @@ const PARSERS: { [Type in ListedType]: (data: Record<string, unknown>) => Realti
   message_reacted: (data) => parseMessageEvent("message_reacted", data),
   message_reminder: (data) => ({ type: "message_reminder", id: requireNumber(data, "id") }),
   message_unpinned: (data) => parseMessageEvent("message_unpinned", data),
+  moderation_warning: (data) => ({
+    type: "moderation_warning",
+    account_id: optionalNumber(data, "account_id"),
+    report_id: requireNumber(data, "report_id"),
+    reason: optionalString(data, "reason") ?? "",
+  }),
   phone_verified: (data) => ({
     type: "phone_verified",
     account_id: optionalNumber(data, "account_id"),

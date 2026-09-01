@@ -24,6 +24,7 @@ module Realtime
     presence
     receipts_updated
     report_created
+    moderation_warning
     sidebar_update
     typing
   ].freeze + Calls::SIGNALING_EVENTS

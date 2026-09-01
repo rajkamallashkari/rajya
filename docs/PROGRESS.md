@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 12.5 |
-| **Next session** | 12.6 |
-| **Phase** | P12 — Settings & admin |
-| **Sessions remaining in phase** | 1 (12.6) |
+| **Last completed** | 12.6 |
+| **Next session** | 13.1 |
+| **Phase** | P13 — Launch readiness |
+| **Sessions remaining in phase** | 3 (13.1–13.3) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 12.6 — Moderation queue and sticker pack admin**
+**Session 13.1 — PWA, service worker, code splitting**
 
-Deliverable: Moderation queue (NR-39) admin side, plus sticker pack management (NR-28) with size caps
+Deliverable: PWA, service worker, code splitting, virtualization, performance; **Rajya** manifest/title/SW cache name; logo assets
 
-Docs: SCHEMA §12.11, §12.5, S-19, S-21
+Docs: TARGET §5.6, §8; DESIGN_SYSTEM §7, §11
 
-Legacy to read: None — new features
+Legacy to read: `botverse/vite.config.ts`, `botverse/public/`, `botverse/src/assets/images/logo_*.png`
 
 ---
 
@@ -83,6 +83,7 @@ Legacy to read: None — new features
 | 12.3 | Remaining user panels: Devices (NR-44), Chats with saved replies and nicknames, export (NR-32), Stickers | Settings hub opens Appearance, Chats, Devices, and Stickers. Devices lists sessions with per-`jti` revoke and sign-out-others (NR-44). Chats writes transcription/link-preview prefs, CRUD for saved replies (NR-25) and private nicknames (NR-41), and export jobs with format/media/download (NR-32). Stickers lists published packs and lets the owner create/add/remove. Admin pack UI waits for 12.6. |
 | 12.4 | Four configuration editors: settings, feature flags, strings, colours | Admin-only editors expose registered settings, rollout-aware feature flags, live string-catalogue overrides, and semantic colour tokens with per-token/global reset and API contrast failures (NR-6, NR-48). Public authenticated theme palettes merge into `applyTheme`; unknown setting/flag rows are reported and writes remain registry-gated. |
 | 12.5 | Admin shell, users, transcripts, bots, impersonation, audit, dashboards | In-app React admin (NR-5) gated by `users.is_admin`. Distinct impersonation JWT (NR-7 / D-2) with a non-dismissible banner, every impersonated mutation audited first, and `/me` still the admin. Transcripts escape markup (F-10). 403s on every admin endpoint. Playwright: impersonate → banner → Exit. |
+| 12.6 | Moderation queue (NR-39) admin side, plus sticker pack management (NR-28) with size caps | Reports inbox filters by status, subject type, and age; dismiss/warn/remove/deactivate each write `audit_events` first. System sticker packs (create, publish, reorder, add/remove) charge S-19 caps to the global bucket. Playwright: triage a report. |
 
 ---
 

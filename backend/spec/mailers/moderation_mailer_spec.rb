@@ -20,4 +20,15 @@ RSpec.describe ModerationMailer do
 
     expect(mail.subject).to eq(Catalog.t("mailers.moderation.report.subject_flagged", id: report.id))
   end
+
+  it "warns the reported account" do
+    user = create(:user, email: "target@example.com")
+    report = create(:report)
+
+    mail = described_class.warning(user: user, report: report)
+
+    expect(mail.to).to eq([ "target@example.com" ])
+    expect(mail.subject).to eq(Catalog.t("mailers.moderation.warning.subject"))
+    expect(mail.body.encoded).to include(report.reason)
+  end
 end

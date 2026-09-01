@@ -429,6 +429,43 @@ RSpec.configure do |config|
                 prompt_templates: { type: :array, items: { "$ref" => "#/components/schemas/AdminPromptTemplate" } }
               }
             },
+            AdminReportSubject: {
+              type: :object,
+              required: %w[type id label],
+              properties: {
+                type: { type: :string, enum: %w[message account conversation bot] },
+                id: { type: :integer },
+                label: { type: :string },
+                body: { type: :string, nullable: true },
+                conversation_id: { type: :integer, nullable: true },
+                account_id: { type: :integer, nullable: true }
+              }
+            },
+            AdminReport: {
+              type: :object,
+              required: %w[id subject_type subject_id reason status created_at reporter subject],
+              properties: {
+                id: { type: :integer },
+                subject_type: { type: :string, enum: %w[message account conversation bot] },
+                subject_id: { type: :integer },
+                reason: { type: :string },
+                details: { type: :string, nullable: true },
+                status: { type: :string, enum: %w[pending reviewing actioned dismissed] },
+                resolution_note: { type: :string, nullable: true },
+                reviewed_by_user_id: { type: :integer, nullable: true },
+                reviewed_at: { type: :string, format: :"date-time", nullable: true },
+                created_at: { type: :string, format: :"date-time" },
+                reporter: { "$ref" => "#/components/schemas/Account" },
+                subject: { "$ref" => "#/components/schemas/AdminReportSubject" }
+              }
+            },
+            AdminReportList: {
+              type: :object,
+              required: %w[reports],
+              properties: {
+                reports: { type: :array, items: { "$ref" => "#/components/schemas/AdminReport" } }
+              }
+            },
             AdminPromptTemplateEnvelope: {
               type: :object,
               required: %w[prompt_template],

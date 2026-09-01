@@ -1,20 +1,31 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as apiClient from "@/shared/lib/api/client";
 import {
+  addAdminSticker,
   approveAdminBotRequest,
+  createAdminStickerPack,
+  deactivateAdminReportAccount,
   declineAdminBotRequest,
+  destroyAdminStickerPack,
+  dismissAdminReport,
   getAdminDashboard,
+  getAdminReport,
   getAdminUser,
   getThemeOverridePalette,
   listAdminAuditEvents,
   listAdminBotRequests,
   listAdminFeatureFlags,
   listAdminPromptTemplates,
+  listAdminReports,
   listAdminSettings,
+  listAdminStickerPacks,
   listAdminThemeOverrides,
   listAdminTranscript,
   listAdminTranslationStrings,
   listAdminUsers,
+  removeAdminReportContent,
+  removeAdminSticker,
+  reorderAdminStickerPacks,
   resetAdminSetting,
   resetAdminThemeOverrides,
   resetAdminTranslationString,
@@ -23,8 +34,10 @@ import {
   updateAdminFeatureFlag,
   updateAdminPromptTemplate,
   updateAdminSetting,
+  updateAdminStickerPack,
   updateAdminThemeOverride,
   updateAdminTranslationString,
+  warnAdminReport,
 } from "./http";
 
 const get = vi.fn();
@@ -134,5 +147,32 @@ describe("admin configuration API", () => {
     await expect(approveAdminBotRequest(1)).resolves.toEqual({ id: 1 });
     await expect(declineAdminBotRequest(1, "Too thin")).resolves.toEqual({ id: 1 });
     await expect(declineAdminBotRequest(1)).resolves.toEqual({ id: 1 });
+    get.mockResolvedValue({ data: { reports: [] } });
+    await expect(listAdminReports({ status: "pending" })).resolves.toEqual({ reports: [] });
+    await expect(listAdminReports()).resolves.toEqual({ reports: [] });
+    get.mockResolvedValue({ data: { id: 1, status: "pending" } });
+    await expect(getAdminReport(1)).resolves.toMatchObject({ id: 1 });
+    post.mockResolvedValue({ data: { status: "dismissed" } });
+    await expect(dismissAdminReport(1, "ok")).resolves.toEqual({ status: "dismissed" });
+    await expect(dismissAdminReport(1)).resolves.toEqual({ status: "dismissed" });
+    post.mockResolvedValue({ data: { status: "actioned" } });
+    await expect(warnAdminReport(1, "ok")).resolves.toEqual({ status: "actioned" });
+    await expect(warnAdminReport(1)).resolves.toEqual({ status: "actioned" });
+    await expect(removeAdminReportContent(1)).resolves.toEqual({ status: "actioned" });
+    await expect(deactivateAdminReportAccount(1)).resolves.toEqual({ status: "actioned" });
+    get.mockResolvedValue({ data: { sticker_packs: [] } });
+    await expect(listAdminStickerPacks()).resolves.toEqual({ sticker_packs: [] });
+    post.mockResolvedValue({ data: { name: "Waves" } });
+    await expect(createAdminStickerPack("Waves", "sticker")).resolves.toEqual({ name: "Waves" });
+    patch.mockResolvedValue({ data: { published_at: "t" } });
+    await expect(updateAdminStickerPack(1, { published: true })).resolves.toEqual({
+      published_at: "t",
+    });
+    await expect(reorderAdminStickerPacks([2, 1])).resolves.toEqual({ published_at: "t" });
+    post.mockResolvedValue({ data: { shortcode: "wave" } });
+    await expect(addAdminSticker(1, "signed", "wave")).resolves.toEqual({ shortcode: "wave" });
+    del.mockResolvedValue({ data: { ok: true } });
+    await expect(removeAdminSticker(1, 2)).resolves.toEqual({ ok: true });
+    await expect(destroyAdminStickerPack(1)).resolves.toEqual({ ok: true });
   });
 });

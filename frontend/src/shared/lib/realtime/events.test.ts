@@ -125,6 +125,19 @@ describe("realtime events", () => {
       auto_flagged: true,
     });
     expect(
+      parseRealtimeEvent({ type: "moderation_warning", report_id: 4, reason: "spam", account_id: 2 }),
+    ).toEqual({
+      type: "moderation_warning",
+      report_id: 4,
+      reason: "spam",
+      account_id: 2,
+    });
+    expect(parseRealtimeEvent({ type: "moderation_warning", report_id: 4 })).toEqual({
+      type: "moderation_warning",
+      report_id: 4,
+      reason: "",
+    });
+    expect(
       parseRealtimeEvent({
         type: "typing",
         conversation_id: 1,

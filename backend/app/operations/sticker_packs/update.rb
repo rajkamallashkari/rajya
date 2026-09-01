@@ -1,7 +1,7 @@
 module StickerPacks
   class Update < ApplicationOperation
     def call(pack:, actor:, name: nil, position: nil, published: nil)
-      return failure(:forbidden) unless actor && pack.owner_account_id == actor.id
+      return failure(:forbidden) unless Access.allowed?(pack, actor)
 
       pack.name = name.to_s.strip if name
       pack.position = position.to_i unless position.nil?
