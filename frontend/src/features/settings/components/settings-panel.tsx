@@ -3,7 +3,7 @@ import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { LayerHeader } from "@/app/navigation/layer-header";
-import { useMe } from "@/features/admin";
+import { useMe } from "@/features/admin/api/queries";
 import { AppearancePanel } from "@/features/settings/components/appearance-panel";
 import { ChatsPanel } from "@/features/settings/components/chats-panel";
 import { DevicesPanel } from "@/features/settings/components/devices-panel";

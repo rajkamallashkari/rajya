@@ -10,22 +10,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 12.6 |
-| **Next session** | 13.1 |
+| **Last completed** | 13.1 |
+| **Next session** | 13.2 |
 | **Phase** | P13 — Launch readiness |
-| **Sessions remaining in phase** | 3 (13.1–13.3) |
+| **Sessions remaining in phase** | 2 (13.2–13.3) |
 
 ---
 
 ## Next session brief (agent: read §5 of MASTER_PLAN.md for the full row)
 
-**Session 13.1 — PWA, service worker, code splitting**
+**Session 13.2 — CSP, axe, backups, monitoring**
 
-Deliverable: PWA, service worker, code splitting, virtualization, performance; **Rajya** manifest/title/SW cache name; logo assets
+Deliverable: CSP and Permissions Policy across **Pages + Tunnel API + R2 + OSM + Tenor**, axe in CI, backups, monitoring
 
-Docs: TARGET §5.6, §8; DESIGN_SYSTEM §7, §11
+Docs: TARGET §1 (cross-origin), §4.7, §8; §5 (F-31)
 
-Legacy to read: `botverse/vite.config.ts`, `botverse/public/`, `botverse/src/assets/images/logo_*.png`
+Legacy to read: `cognify/config/initializers/content_security_policy.rb`, `permissions_policy.rb` — both currently commented out
 
 ---
 
@@ -84,6 +84,7 @@ Legacy to read: `botverse/vite.config.ts`, `botverse/public/`, `botverse/src/ass
 | 12.4 | Four configuration editors: settings, feature flags, strings, colours | Admin-only editors expose registered settings, rollout-aware feature flags, live string-catalogue overrides, and semantic colour tokens with per-token/global reset and API contrast failures (NR-6, NR-48). Public authenticated theme palettes merge into `applyTheme`; unknown setting/flag rows are reported and writes remain registry-gated. |
 | 12.5 | Admin shell, users, transcripts, bots, impersonation, audit, dashboards | In-app React admin (NR-5) gated by `users.is_admin`. Distinct impersonation JWT (NR-7 / D-2) with a non-dismissible banner, every impersonated mutation audited first, and `/me` still the admin. Transcripts escape markup (F-10). 403s on every admin endpoint. Playwright: impersonate → banner → Exit. |
 | 12.6 | Moderation queue (NR-39) admin side, plus sticker pack management (NR-28) with size caps | Reports inbox filters by status, subject type, and age; dismiss/warn/remove/deactivate each write `audit_events` first. System sticker packs (create, publish, reorder, add/remove) charge S-19 caps to the global bucket. Playwright: triage a report. |
+| 13.1 | PWA, service worker, code splitting, virtualization, performance; Rajya brand | Manifest/title/`rajya-v1` SW cache; logos. Lazy settings/admin/calls/picker/bot builder/map (barrels no longer pin those chunks). `GroupedVirtuoso` thread with scroll anchoring and jump-to-latest. Playwright: installable manifest. |
 
 ---
 

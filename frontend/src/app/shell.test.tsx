@@ -49,7 +49,9 @@ describe("AppShell", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Ada");
     expect(screen.queryByRole("dialog")).toBeNull();
     await user.click(screen.getByRole("button", { name: en.shell.settings }));
-    expect(document.querySelector("[data-settings-panel]")).not.toBeNull();
+    await waitFor(() => {
+      expect(document.querySelector("[data-settings-panel]")).not.toBeNull();
+    });
     window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
     await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
     await waitFor(() => {
@@ -110,11 +112,14 @@ describe("AppShell", () => {
         </MemoryRouter>
       </AppProviders>,
     );
-    await waitFor(() => {
-      expect(useLayerStore.getState().layers[0]).toEqual(
-        expect.objectContaining({ conversationId: "1", focusMessageId: "101" }),
-      );
-    });
+    await waitFor(
+      () => {
+        expect(useLayerStore.getState().layers[0]).toEqual(
+          expect.objectContaining({ conversationId: "1", focusMessageId: "101" }),
+        );
+      },
+      { timeout: 8_000 },
+    );
   });
 
   it("ignores a missing message permalink", async () => {

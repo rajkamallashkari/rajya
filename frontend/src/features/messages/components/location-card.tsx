@@ -1,5 +1,5 @@
 import { MapPin } from "lucide-react";
-import { useMemo } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   LOCATION_TILE_REQUEST_CAP,
@@ -7,8 +7,11 @@ import {
   openStreetMapLink,
   tilesForLocation,
 } from "@/features/messages/model/osm-tiles";
+import { loadLocationMap } from "@/shared/lib/chunks";
 import { Button } from "@/shared/ui";
 import { ICON_CLASS, WEIGHT_EMPHASIS } from "@/shared/ui/metrics";
+
+const LocationMap = lazy(() => loadLocationMap().then((mod) => ({ default: mod.LocationMap })));
 
 export interface LocationView {
   accuracyM: number | null;
@@ -38,36 +41,22 @@ export function LocationCard({
       data-tile-cap={LOCATION_TILE_REQUEST_CAP}
       data-tile-count={tiles.length}
     >
-      <div
-        className="relative min-h-[var(--space-16)] overflow-hidden bg-[var(--surface-hover)]"
-        style={
-          tiles.length > 0
-            ? {
-                aspectRatio: "1 / 1",
-                display: "grid",
-                gridTemplateColumns: `repeat(2, ${String(OSM_TILE_SIZE)}px)`,
-              }
-            : undefined
-        }
-      >
-        {tiles.length > 0 ? (
-          tiles.map((tile) => (
-            <img
-              alt=""
-              className="h-full w-full object-cover"
-              height={OSM_TILE_SIZE}
-              key={tile.url}
-              src={tile.url}
-              width={OSM_TILE_SIZE}
-            />
-          ))
-        ) : (
-          <div className="chat-wallpaper flex min-h-[var(--space-16)] items-center justify-center">
-            <MapPin aria-hidden="true" className={ICON_CLASS} />
-            <span className="sr-only">{t("location.map")}</span>
-          </div>
-        )}
-      </div>
+      {tiles.length > 0 ? (
+        <Suspense
+          fallback={
+            <div className="flex min-h-[var(--space-16)] items-center justify-center">
+              <MapPin aria-hidden="true" className={ICON_CLASS} />
+            </div>
+          }
+        >
+          <LocationMap size={OSM_TILE_SIZE} tiles={tiles} />
+        </Suspense>
+      ) : (
+        <div className="chat-wallpaper flex min-h-[var(--space-16)] items-center justify-center">
+          <MapPin aria-hidden="true" className={ICON_CLASS} />
+          <span className="sr-only">{t("location.map")}</span>
+        </div>
+      )}
       <div className="flex flex-col gap-[var(--space-1)] p-[var(--space-3)]">
         {location.label ? <p className={WEIGHT_EMPHASIS}>{location.label}</p> : null}
         <p className="text-[var(--text-secondary)]">{coords}</p>

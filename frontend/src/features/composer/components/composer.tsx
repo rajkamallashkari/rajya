@@ -1,5 +1,7 @@
 import { Calendar, Mic, Paperclip, Send, Sparkles } from "lucide-react";
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useRef,
@@ -8,7 +10,6 @@ import {
   type KeyboardEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { PickerSheet } from "@/features/composer/components/picker-sheet";
 import {
   ComposerAttachmentChips,
   ComposerScheduleBar,
@@ -36,6 +37,7 @@ import {
 } from "@/features/composer/model/picker";
 import { selectVoicePeaks } from "@/features/composer/model/waveform";
 import { usePressHold } from "@/shared/hooks/use-press-hold";
+import { loadPickerSheet } from "@/shared/lib/chunks";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { cn } from "@/shared/lib/cn";
 import { Button, DismissLayer, IconButton, Textarea } from "@/shared/ui";
@@ -47,6 +49,8 @@ import {
 } from "@/shared/ui/metrics";
 
 export type { ComposerAttachment };
+
+const PickerSheet = lazy(() => loadPickerSheet().then((mod) => ({ default: mod.PickerSheet })));
 
 export interface ComposerSendPayload {
   silent: boolean;
@@ -438,30 +442,34 @@ export function Composer({
           </>
         )}
       </form>
-      <PickerSheet
-        gifUnavailable={gifUnavailable}
-        gifs={gifs}
-        initialTab={pickerTab}
-        onGifQueryChange={onGifQueryChange}
-        onOpenChange={setPickerOpen}
-        onPickEmoji={(emoji) => setText(`${text}${emoji}`)}
-        onPickGif={(gif) => {
-          setPickerOpen(false);
-          onPickGif?.(gif);
-        }}
-        onPickReply={(reply) => {
-          setPickerOpen(false);
-          setText(`${reply.body} `);
-        }}
-        onPickSticker={(sticker) => {
-          setPickerOpen(false);
-          onPickSticker?.(sticker);
-        }}
-        open={pickerOpen}
-        remoteGifs={remoteGifs}
-        replies={savedReplies}
-        stickers={stickers}
-      />
+      {pickerOpen ? (
+        <Suspense fallback={null}>
+          <PickerSheet
+            gifUnavailable={gifUnavailable}
+            gifs={gifs}
+            initialTab={pickerTab}
+            onGifQueryChange={onGifQueryChange}
+            onOpenChange={setPickerOpen}
+            onPickEmoji={(emoji) => setText(`${text}${emoji}`)}
+            onPickGif={(gif) => {
+              setPickerOpen(false);
+              onPickGif?.(gif);
+            }}
+            onPickReply={(reply) => {
+              setPickerOpen(false);
+              setText(`${reply.body} `);
+            }}
+            onPickSticker={(sticker) => {
+              setPickerOpen(false);
+              onPickSticker?.(sticker);
+            }}
+            open={pickerOpen}
+            remoteGifs={remoteGifs}
+            replies={savedReplies}
+            stickers={stickers}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

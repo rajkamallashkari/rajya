@@ -24,7 +24,7 @@ describe("BotDirectorySheet", () => {
     await waitFor(() => {
       expect(useLayerStore.getState().layers[0]?.kind).toBe("conversation");
     });
-    await user.type(screen.getByRole("textbox", { name: en.bots.name }), "Cedar");
+    await user.type(await screen.findByRole("textbox", { name: en.bots.name }), "Cedar");
     await user.type(screen.getByRole("textbox", { name: en.bots.username }), "cedar_bot");
     await user.type(screen.getByRole("textbox", { name: en.bots.bio }), "A calm helper");
     await user.type(screen.getByRole("textbox", { name: en.bots.persona_prompt }), "A".repeat(80));
@@ -45,7 +45,7 @@ describe("BotDirectorySheet", () => {
       </AppProviders>,
     );
     expect(await screen.findByText(en.bots.empty)).toBeInTheDocument();
-    await user.type(screen.getByRole("textbox", { name: en.bots.persona_prompt }), "short");
+    await user.type(await screen.findByRole("textbox", { name: en.bots.persona_prompt }), "short");
     expect(screen.getByText(en.bots.prompt_too_short.replace("{{count}}", "80"))).toBeInTheDocument();
     fireEvent.submit(document.querySelector("[data-bot-builder]")!);
     expect(screen.queryByText(en.bots.proposed)).toBeNull();

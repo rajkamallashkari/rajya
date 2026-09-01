@@ -1,9 +1,10 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CallOverlays, TopCallBar } from "@/features/calls";
+import { TopCallBar } from "@/features/calls";
 import { AudioDeviceMenu } from "@/features/calls/components/audio-device-menu";
 import { CallControlBar } from "@/features/calls/components/call-control-bar";
+import { CallOverlays } from "@/features/calls/components/call-overlays";
 import { CallParticipantRow } from "@/features/calls/components/call-participant-row";
 import { FloatingVideoOverlay } from "@/features/calls/components/floating-video-overlay";
 import { IncomingCallBanner } from "@/features/calls/components/incoming-call-banner";

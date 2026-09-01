@@ -1,5 +1,5 @@
 import { Calendar, Phone, Search, Video } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { getAccessSession } from "@/features/auth/model/access-session";
 import {
@@ -52,23 +52,20 @@ import {
 import { MessageInfoSheet } from "@/features/conversations/components/message-info-sheet";
 import { ReminderSheet } from "@/features/conversations/components/reminder-sheet";
 import { ReportHost } from "@/features/conversations/components/report-host";
+import { VirtualizedThread } from "@/features/conversations/components/virtualized-thread";
 import { useConversationChannel } from "@/features/conversations/hooks/use-conversation-channel";
 import { useGeneration } from "@/features/conversations/hooks/use-generation";
 import { useTypingIndicators } from "@/features/conversations/hooks/use-typing-indicators";
 import {
   canRegenerateBotReply,
   generationSenderName,
-  type GenerationState,
 } from "@/features/conversations/model/generation";
 import { conversationById, type DemoMessage } from "@/features/conversations/model/demo";
-import { THREAD_LOAD_OLDER_PX } from "@/features/conversations/model/constants";
-import { formatThreadDate, sameCalendarDay } from "@/features/conversations/model/dates";
 import { newClientNonce, parseConversationId } from "@/features/conversations/model/ids";
 import { conversationTitle } from "@/features/conversations/model/title";
-import type { ActivityKind } from "@/features/conversations/model/typing";
+import type { ThreadRun } from "@/features/conversations/model/thread-window";
 import { useGifSearch, useStickerPacks } from "@/features/media/api/queries";
 import {
-  DateDivider,
   MessageContextMenu,
   MessageGroup,
   PollResultsSheet,
@@ -76,11 +73,9 @@ import {
   SelectionToolbar,
   StreamingBubble,
   TypingBubble,
-  groupMessageRuns,
   type MessageMenuActions,
 } from "@/features/messages";
 import { tickStatus } from "@/features/messages/model/ticks";
-import type { GroupableMessage } from "@/features/messages/model/constants";
 import { copyText } from "@/features/messages/model/copy-text";
 import {
   contactViewFromApi,
@@ -275,8 +270,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
     y: number;
   } | null>(null);
   const [reportId, setReportId] = useState<number | null>(null);
-  const scroller = useRef<HTMLDivElement>(null);
-  const stuck = useRef(false);
+  const scroller = useRef<HTMLElement | null>(null);
   const viewerId = getAccessSession()?.accountId ?? 0;
   const listed = page.messages;
   const jumped = jump.data?.messages ?? [];
@@ -306,26 +300,6 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   useEffect(() => {
     useSearchStore.getState().setMembers(conversation?.members ?? []);
   }, [conversation]);
-
-  useEffect(() => {
-    stuck.current = false;
-  }, [conversationId, focusMessageId]);
-
-  useEffect(() => {
-    const node = scroller.current;
-    if (!node || stuck.current || messages.length === 0) {
-      return;
-    }
-    stuck.current = true;
-    if (focusMessageId) {
-      const target = node.querySelector(`[data-message-id="${focusMessageId}"]`);
-      if (target) {
-        target.scrollIntoView({ block: "center" });
-        return;
-      }
-    }
-    node.scrollTop = node.scrollHeight;
-  }, [focusMessageId, messages.length]);
 
   const lastSent = [...messages].reverse().find((message) => message.sender?.id === viewerId);
   const newestPosition = messages.reduce((max, message) => Math.max(max, message.position), 0);
@@ -518,57 +492,71 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           restrictForwarding={Boolean(conversation.restrict_forwarding)}
         />
       ) : null}
-      <div
-        className="flex min-h-0 flex-1 flex-col gap-[var(--space-4)] overflow-y-auto px-[var(--space-list-x)] py-[var(--space-list-y)]"
-        data-layer-scroll={String(conversationId)}
-        onScroll={(event: UIEvent<HTMLDivElement>) => {
-          const node = event.currentTarget;
-          if (
-            node.scrollTop > THREAD_LOAD_OLDER_PX ||
-            !page.hasNextPage ||
-            page.isFetchingNextPage
-          ) {
-            return;
-          }
+      <VirtualizedThread
+        conversationId={String(conversationId)}
+        focusMessageId={focusMessageId}
+        footer={
+          <>
+            {typists.map((typist) => (
+              <TypingBubble
+                activity={typist.activity}
+                key={typist.accountId}
+                senderName={typist.displayName}
+              />
+            ))}
+            {generation ? (
+              <StreamingBubble
+                onCancel={() => {
+                  cancelGeneration(generation.generationId);
+                  cancel.mutate(generation.generationId);
+                }}
+                senderName={generationSenderName(
+                  generation,
+                  conversation,
+                  t("conversations.untitled"),
+                )}
+                text={generation.text}
+              />
+            ) : null}
+          </>
+        }
+        header={
+          <>
+            {isNewBotConversation(conversation, messages) ? <MemoryNotice /> : null}
+            {conversation.unread_count > 1 ? (
+              <SummarizeCard
+                onSummarize={() => {
+                  summarize.mutate("unread", {
+                    onSuccess: (result) => setSummary(result.text),
+                  });
+                }}
+                pending={summarize.isPending}
+                text={summary}
+              />
+            ) : null}
+          </>
+        }
+        hasMoreOlder={Boolean(page.hasNextPage)}
+        loadingOlder={page.isFetchingNextPage}
+        locale={i18n.language}
+        messages={messages}
+        onLoadOlder={() => {
           void page.fetchNextPage();
         }}
-        ref={scroller}
-      >
-        {isNewBotConversation(conversation, messages) ? <MemoryNotice /> : null}
-        {conversation.unread_count > 1 ? (
-          <SummarizeCard
-            onSummarize={() => {
-              summarize.mutate("unread", {
-                onSuccess: (result) => setSummary(result.text),
-              });
-            }}
-            pending={summarize.isPending}
-            text={summary}
+        renderRun={(run) => (
+          <ThreadRunView
+            conversationId={conversationId}
+            onOpenMenu={(id, point) => setMenu({ id, x: point.clientX, y: point.clientY })}
+            onOpenPollResults={(id) => setResultsPollId(pollResultsId(messages, id))}
+            onVote={(id, optionIds) => voteFromThread(messages, id, optionIds, vote.mutate)}
+            run={run}
+            translations={translations}
+            untitled={t("conversations.untitled")}
+            viewerId={viewerId}
           />
-        ) : null}
-        <ThreadMessages
-          conversationId={conversationId}
-          generation={generation}
-          generationName={generationSenderName(
-            generation,
-            conversation,
-            t("conversations.untitled"),
-          )}
-          locale={i18n.language}
-          messages={messages}
-          onCancelGeneration={(generationId) => {
-            cancelGeneration(generationId);
-            cancel.mutate(generationId);
-          }}
-          onOpenMenu={(id, point) => setMenu({ id, x: point.clientX, y: point.clientY })}
-          onOpenPollResults={(id) => setResultsPollId(pollResultsId(messages, id))}
-          onVote={(id, optionIds) => voteFromThread(messages, id, optionIds, vote.mutate)}
-          translations={translations}
-          typists={typists}
-          untitled={t("conversations.untitled")}
-          viewerId={viewerId}
-        />
-      </div>
+        )}
+        scrollerRef={scroller}
+      />
       {conversation.slow_mode_seconds > 0 ? (
         <p
           className="px-[var(--space-list-x)] py-[var(--space-2)] text-[var(--text-secondary)]"
@@ -751,131 +739,74 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   );
 }
 
-function ThreadMessages({
+function ThreadRunView({
   conversationId,
-  generation,
-  generationName,
-  locale,
-  messages,
-  onCancelGeneration,
   onOpenMenu,
   onOpenPollResults,
   onVote,
+  run,
   translations = {},
-  typists,
   untitled,
   viewerId,
 }: {
   conversationId: number;
-  generation: GenerationState | null;
-  generationName: string;
-  locale: string;
-  messages: Message[];
-  onCancelGeneration: (generationId: string) => void;
   onOpenMenu: (id: number, point: { clientX: number; clientY: number }) => void;
   onOpenPollResults: (id: number) => void;
   onVote: (id: number, optionIds: string[]) => void;
+  run: ThreadRun;
   translations?: Record<number, string>;
-  typists: Array<{ accountId: number; activity: ActivityKind; displayName: string }>;
   untitled: string;
   viewerId: number;
 }): ReactNode {
   const { t } = useTranslation();
   const pushLayer = useLayerStore((state) => state.pushLayer);
   const deleted = t("messages.deleted");
-  const runs = useMemo(() => {
-    const groupable: Array<GroupableMessage & { message: Message }> = messages.map((message) => ({
-      createdAt: Date.parse(message.created_at),
-      id: String(message.id),
-      message,
-      senderId:
-        message.kind === "system"
-          ? `system:${String(message.id)}`
-          : String(message.sender?.id ?? 0),
-    }));
-    return groupMessageRuns(groupable).map((run) => ({
-      ...run,
-      messages: run.messages as Array<GroupableMessage & { message: Message }>,
-    }));
-  }, [messages]);
-
+  const first = run.messages[0]!;
+  if (first.kind === "system") {
+    return (
+      <div>
+        {run.messages.map((item) => (
+          <p
+            className="px-[var(--space-4)] py-[var(--space-3)] text-center text-[length:var(--text-sm)] text-[var(--text-tertiary)]"
+            data-message-id={item.id}
+            data-system-message={item.system_event ?? ""}
+            key={item.id}
+          >
+            {item.body}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  const side = first.sender?.id === viewerId ? "sent" : "received";
   return (
-    <>
-      {runs.map((run, index) => {
-        const first = run.messages[0]!.message;
-        const previous = runs[index - 1]?.messages[0]?.message;
-        const divider =
-          !previous || !sameCalendarDay(previous.created_at, first.created_at) ? (
-            <DateDivider label={formatThreadDate(first.created_at, locale)} />
-          ) : null;
-        if (first.kind === "system") {
-          return (
-            <div key={first.id}>
-              {divider}
-              {run.messages.map((item) => (
-                <p
-                  className="px-[var(--space-4)] py-[var(--space-3)] text-center text-[length:var(--text-sm)] text-[var(--text-tertiary)]"
-                  data-message-id={item.id}
-                  data-system-message={item.message.system_event ?? ""}
-                  key={item.id}
-                >
-                  {item.message.body}
-                </p>
-              ))}
-            </div>
-          );
-        }
-        const side = first.sender?.id === viewerId ? "sent" : "received";
-        return (
-          <div key={first.id}>
-            {divider}
-            <MessageGroup
-              messages={run.messages.map((item) => ({
-                attachments: item.message.attachments,
-                body: item.message.deleted ? deleted : (item.message.body ?? ""),
-                contacts: (item.message.contacts ?? []).map(contactViewFromApi),
-                createdAt: item.message.created_at,
-                id: item.id,
-                location: item.message.location
-                  ? locationViewFromApi(item.message.location)
-                  : undefined,
-                poll: item.message.poll ? pollViewFromApi(item.message.poll) : undefined,
-                status: tickStatus(item.message),
-                translation: translations[item.message.id],
-              }))}
-              onOpenContactProfile={(accountId, name) =>
-                pushLayer({
-                  accountId,
-                  conversationId: String(conversationId),
-                  id: `account:${accountId}`,
-                  kind: "profile",
-                  title: name,
-                })
-              }
-              onOpenMenu={bindNumericId(onOpenMenu)}
-              onOpenPollResults={bindNumericId(onOpenPollResults)}
-              onVote={bindNumericId(onVote)}
-              senderName={first.sender?.display_name ?? untitled}
-              side={side}
-            />
-          </div>
-        );
-      })}
-      {typists.map((typist) => (
-        <TypingBubble
-          activity={typist.activity}
-          key={typist.accountId}
-          senderName={typist.displayName}
-        />
-      ))}
-      {generation ? (
-        <StreamingBubble
-          onCancel={() => onCancelGeneration(generation.generationId)}
-          senderName={generationName}
-          text={generation.text}
-        />
-      ) : null}
-    </>
+    <MessageGroup
+      messages={run.messages.map((item) => ({
+        attachments: item.attachments,
+        body: item.deleted ? deleted : (item.body ?? ""),
+        contacts: (item.contacts ?? []).map(contactViewFromApi),
+        createdAt: item.created_at,
+        id: String(item.id),
+        location: item.location ? locationViewFromApi(item.location) : undefined,
+        poll: item.poll ? pollViewFromApi(item.poll) : undefined,
+        status: tickStatus(item),
+        translation: translations[item.id],
+      }))}
+      onOpenContactProfile={(accountId, name) =>
+        pushLayer({
+          accountId,
+          conversationId: String(conversationId),
+          id: `account:${accountId}`,
+          kind: "profile",
+          title: name,
+        })
+      }
+      onOpenMenu={bindNumericId(onOpenMenu)}
+      onOpenPollResults={bindNumericId(onOpenPollResults)}
+      onVote={bindNumericId(onVote)}
+      senderName={first.sender?.display_name ?? untitled}
+      side={side}
+    />
   );
 }
 

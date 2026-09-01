@@ -5,7 +5,11 @@ export const APP_SHELL_URLS = ["/", "/manifest.json", "/favicon.ico"] as const;
 export const IMMUTABLE_ASSET = /\/assets\/.*\.(js|css|woff2?|ttf|otf|eot)(\?.*)?$/;
 export const API_PREFIX = "/api/";
 export const CABLE_PREFIX = "/cable";
+export const ICONS_PREFIX = "/icons/";
+export const MANIFEST_PATH = "/manifest.json";
+export const FAVICON_PATH = "/favicon.ico";
 export const BASE64_GROUP = 4;
+export const SW_OFFLINE_STATUS = 503;
 
 export function isHttpGet(method: string, protocol: string): boolean {
   return method === "GET" && (protocol === "http:" || protocol === "https:");
@@ -17,6 +21,20 @@ export function shouldBypass(pathname: string): boolean {
 
 export function isImmutableAsset(pathname: string): boolean {
   return IMMUTABLE_ASSET.test(pathname);
+}
+
+export function isStaticPublicAsset(pathname: string): boolean {
+  return (
+    pathname.startsWith(ICONS_PREFIX) || pathname === MANIFEST_PATH || pathname === FAVICON_PATH
+  );
+}
+
+export function isNavigationRequest(request: Request): boolean {
+  return request.mode === "navigate";
+}
+
+export function offlineShellResponse(): Response {
+  return new Response("", { status: SW_OFFLINE_STATUS, statusText: "Service Unavailable" });
 }
 
 export function isOwnCache(cacheName: string): boolean {

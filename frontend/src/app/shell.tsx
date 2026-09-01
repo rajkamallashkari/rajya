@@ -7,18 +7,19 @@ import { AppLockOverlay } from "@/features/auth/components/app-lock-overlay";
 import { OnboardingWizard } from "@/features/auth/components/onboarding-wizard";
 import { ListErrorBoundary } from "@/app/error-boundaries/error-boundary";
 import { LayerHost } from "@/app/navigation/layer-host";
+import { SettingsLayer } from "@/app/lazy/settings-layer";
+import { CallHost } from "@/app/lazy/call-host";
 import { ConversationList } from "@/features/conversations/components/conversation-list";
 import { ConversationThread } from "@/features/conversations/components/conversation-thread";
 import { ProfilePanel } from "@/features/conversations/components/profile-panel";
 import { MediaGalleryPanel } from "@/features/media";
-import { SettingsPanel } from "@/features/settings";
-import { CallOverlays, TopCallBar, useSignalingChannel, useWebRTCManager } from "@/features/calls";
+import { TopCallBar, useSignalingChannel, useWebRTCManager } from "@/features/calls";
 import { useAccountChannel } from "@/features/conversations/hooks/use-account-channel";
 import { getMessage } from "@/features/conversations/api/http";
 import { useConversations } from "@/features/conversations/api/queries";
 import { conversationTitle } from "@/features/conversations/model/title";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
-import { useStopImpersonation } from "@/features/admin";
+import { useStopImpersonation } from "@/features/admin/api/queries";
 import { useShellStore } from "@/features/settings/store/shell-store";
 import { useMobileViewport } from "@/shared/hooks/use-mobile-viewport";
 import { useShortcuts } from "@/shared/hooks/use-shortcuts";
@@ -96,7 +97,7 @@ export function AppShell() {
   }, [navigate, params.conversationId, params.messageId]);
 
   useEffect(() => {
-    if (mobile || hasConversation) {
+    if (mobile || hasConversation || params.messageId) {
       return;
     }
     const first = conversations.data?.conversations[0];
@@ -106,7 +107,7 @@ export function AppShell() {
     openConversation(
       conversationLayer(String(first.id), conversationTitle(first, t("conversations.untitled"))),
     );
-  }, [conversations.data, hasConversation, mobile, openConversation, t]);
+  }, [conversations.data, hasConversation, mobile, openConversation, params.messageId, t]);
 
   useShortcuts({
     onPopLayer: () => {
@@ -133,7 +134,7 @@ export function AppShell() {
       ) : null}
       <OfflineBanner />
       <TopCallBar />
-      <CallOverlays />
+      <CallHost />
       <AppLockOverlay />
       {needsOnboarding ? <OnboardingWizard /> : null}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -148,7 +149,7 @@ export function AppShell() {
                 return <MediaGalleryPanel conversationId={layer.conversationId} />;
               }
               if (layer.kind === "settings") {
-                return <SettingsPanel />;
+                return <SettingsLayer />;
               }
               return (
                 <ProfilePanel accountId={layer.accountId} conversationId={layer.conversationId} />

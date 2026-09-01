@@ -593,6 +593,7 @@
       "save": "Create folder",
       "delete": "Remove folder"
     },
+    "jump_to_latest": "Jump to latest",
     "last_message_deleted": "Message deleted",
     "untitled": "Untitled chat",
     "pin": "Pin",

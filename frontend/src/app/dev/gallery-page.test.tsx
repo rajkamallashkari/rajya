@@ -150,23 +150,23 @@ describe("gallery route", () => {
     expect(appRoutes.some((route) => route.path === "/m/:messageId")).toBe(true);
   });
 
-  it("renders the gallery at /dev/gallery", () => {
+  it("renders the gallery at /dev/gallery", async () => {
     const router = createMemoryRouter(appRoutes, { initialEntries: ["/dev/gallery"] });
     render(
       <AppProviders>
         <RouterProvider router={router} />
       </AppProviders>,
     );
-    expect(screen.getByRole("heading", { name: en.gallery.title })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: en.gallery.title })).toBeInTheDocument();
   });
 
-  it("renders accounts at /dev/accounts", () => {
+  it("renders accounts at /dev/accounts", async () => {
     const router = createMemoryRouter(appRoutes, { initialEntries: ["/dev/accounts"] });
     render(
       <AppProviders>
         <RouterProvider router={router} />
       </AppProviders>,
     );
-    expect(screen.getByRole("heading", { name: en.auth.accounts.title })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: en.auth.accounts.title })).toBeInTheDocument();
   });
 });

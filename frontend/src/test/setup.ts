@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
-import { afterAll, afterEach, beforeAll } from "vitest";
+import { afterAll, afterEach, beforeAll, vi } from "vitest";
 import "@/test/memory-storage";
 import { setAccessSession, endImpersonation } from "@/features/auth/model/access-session";
 import { resetAccountsStore } from "@/features/auth/store/accounts-store";
@@ -20,6 +20,8 @@ import { _testReset as resetLayerStack } from "@/shared/lib/navigation/layer-sta
 import { resetLayerStore } from "@/shared/lib/navigation/layer-store";
 import { FakeAudio } from "@/test/fake-audio";
 import { server } from "@/test/msw";
+
+vi.mock("react-virtuoso", () => import("@/test/mock-virtuoso"));
 
 beforeAll(async () => {
   installTestCable();

@@ -8,7 +8,7 @@ import { QrSheet } from "@/features/conversations/components/qr-sheet";
 import { ReportHost } from "@/features/conversations/components/report-host";
 import { conversationById } from "@/features/conversations/model/demo";
 import { parseConversationId } from "@/features/conversations/model/ids";
-import { WallpaperPicker } from "@/features/settings";
+import { WallpaperPicker } from "@/features/settings/components/wallpaper-picker";
 import { canEditInfo, canManageInvites, profileUrl } from "@/features/conversations/model/links";
 import { conversationTitle } from "@/features/conversations/model/title";
 import { copyText } from "@/features/messages/model/copy-text";

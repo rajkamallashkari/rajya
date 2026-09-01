@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { useResolvedTheme, useThemeControls } from "@/app/theme-provider";
 import { useAccentConfigs, useFontConfigs, usePreferences } from "@/features/settings/api/queries";
-import { useThemeOverridePalette } from "@/features/admin";
+import { useThemeOverridePalette } from "@/features/admin/api/queries";
 import {
   asPreferenceDocument,
   mapPreferencesToTheme,

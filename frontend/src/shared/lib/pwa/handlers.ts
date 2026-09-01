@@ -2,6 +2,9 @@ import {
   APP_SHELL_URLS,
   isHttpGet,
   isImmutableAsset,
+  isNavigationRequest,
+  isStaticPublicAsset,
+  offlineShellResponse,
   OUTBOX_SYNC_TAG,
   shouldBypass,
   staleCaches,
@@ -73,12 +76,18 @@ export async function networkFirst(
       await cache.put(request, response.clone());
     }
     return response;
-  } catch (error) {
+  } catch {
     const cached = await cache.match(request);
     if (cached) {
       return cached;
     }
-    throw error;
+    if (isNavigationRequest(request)) {
+      const shell = await cache.match(APP_SHELL_URLS[0]);
+      if (shell) {
+        return shell;
+      }
+    }
+    return offlineShellResponse();
   }
 }
 
@@ -91,7 +100,7 @@ export function handleFetch(
   if (!isHttpGet(event.request.method, url.protocol) || shouldBypass(url.pathname)) {
     return false;
   }
-  if (isImmutableAsset(url.pathname)) {
+  if (isImmutableAsset(url.pathname) || isStaticPublicAsset(url.pathname)) {
     event.respondWith(cacheFirst(event.request, cacheStorage, fetchImpl));
     return true;
   }

@@ -1,5 +1,5 @@
+import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
-import { BotBuilderForm } from "@/features/bots/components/bot-builder-form";
 import { StyleProfileConsent } from "@/features/bots/components/style-profile-consent";
 import { useBots, useStartDirectChat } from "@/features/bots/api/queries";
 import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
@@ -11,6 +11,12 @@ import {
 } from "@/shared/ui/bottom-sheet";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/empty-state";
+import { ChunkFallback } from "@/shared/ui/chunk-fallback";
+import { loadBotBuilderForm } from "@/shared/lib/chunks";
+
+const BotBuilderForm = lazy(() =>
+  loadBotBuilderForm().then((mod) => ({ default: mod.BotBuilderForm })),
+);
 
 export function BotDirectorySheet({
   onOpenChange,
@@ -57,7 +63,9 @@ export function BotDirectorySheet({
               </Button>
             </div>
           ))}
-          <BotBuilderForm />
+          <Suspense fallback={<ChunkFallback />}>
+            <BotBuilderForm />
+          </Suspense>
           <StyleProfileConsent />
         </div>
       </BottomSheetContent>

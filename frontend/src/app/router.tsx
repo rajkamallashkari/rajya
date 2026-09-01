@@ -1,24 +1,15 @@
-import { useState } from "react";
+import { Suspense, lazy, useState, type ReactNode } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router";
-import { GalleryPage } from "@/app/dev/gallery-page";
-import { AccountsDevPage } from "@/app/dev/accounts-page";
 import { RouteErrorBoundary } from "@/app/error-boundaries/error-boundary";
 import { AppShell } from "@/app/shell";
-import {
-  AdminAuditPanel,
-  AdminBotsPanel,
-  AdminConfigPanel,
-  AdminDashboardPanel,
-  AdminPacksPanel,
-  AdminPromptsPanel,
-  AdminReportDetailPanel,
-  AdminReportsPanel,
-  AdminShell,
-  AdminTranscriptPanel,
-  AdminUserDetailPanel,
-  AdminUsersPanel,
-} from "@/features/admin";
 import { InvitePage } from "@/features/conversations/components/invite-page";
+import { lazyAdmin, loadAccountsPage, loadGalleryPage, type AdminTreeExport } from "@/shared/lib/chunks";
+import { ChunkFallback } from "@/shared/ui/chunk-fallback";
+
+const GalleryPage = lazy(() => loadGalleryPage().then((mod) => ({ default: mod.GalleryPage })));
+const AccountsDevPage = lazy(() =>
+  loadAccountsPage().then((mod) => ({ default: mod.AccountsDevPage })),
+);
 
 function ShellRoute() {
   return (
@@ -31,7 +22,9 @@ function ShellRoute() {
 function GalleryRoute() {
   return (
     <RouteErrorBoundary>
-      <GalleryPage />
+      <Suspend>
+        <GalleryPage />
+      </Suspend>
     </RouteErrorBoundary>
   );
 }
@@ -39,7 +32,9 @@ function GalleryRoute() {
 function AccountsRoute() {
   return (
     <RouteErrorBoundary>
-      <AccountsDevPage />
+      <Suspend>
+        <AccountsDevPage />
+      </Suspend>
     </RouteErrorBoundary>
   );
 }
@@ -52,11 +47,16 @@ function InviteRoute() {
   );
 }
 
-function AdminRoute() {
+function Suspend({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<ChunkFallback />}>{children}</Suspense>;
+}
+
+function adminPage(name: AdminTreeExport) {
+  const Panel = lazyAdmin(name);
   return (
-    <RouteErrorBoundary>
-      <AdminShell />
-    </RouteErrorBoundary>
+    <Suspend>
+      <Panel />
+    </Suspend>
   );
 }
 
@@ -70,19 +70,19 @@ export const appRoutes = [
   { path: "/dev/accounts", element: <AccountsRoute /> },
   {
     path: "/admin",
-    element: <AdminRoute />,
+    element: adminPage("AdminRoute"),
     children: [
-      { index: true, element: <AdminDashboardPanel /> },
-      { path: "users", element: <AdminUsersPanel /> },
-      { path: "users/:userId", element: <AdminUserDetailPanel /> },
-      { path: "conversations/:conversationId", element: <AdminTranscriptPanel /> },
-      { path: "bots", element: <AdminBotsPanel /> },
-      { path: "reports", element: <AdminReportsPanel /> },
-      { path: "reports/:reportId", element: <AdminReportDetailPanel /> },
-      { path: "packs", element: <AdminPacksPanel /> },
-      { path: "audit", element: <AdminAuditPanel /> },
-      { path: "config", element: <AdminConfigPanel /> },
-      { path: "prompts", element: <AdminPromptsPanel /> },
+      { index: true, element: adminPage("AdminDashboardPanel") },
+      { path: "users", element: adminPage("AdminUsersPanel") },
+      { path: "users/:userId", element: adminPage("AdminUserDetailPanel") },
+      { path: "conversations/:conversationId", element: adminPage("AdminTranscriptPanel") },
+      { path: "bots", element: adminPage("AdminBotsPanel") },
+      { path: "reports", element: adminPage("AdminReportsPanel") },
+      { path: "reports/:reportId", element: adminPage("AdminReportDetailPanel") },
+      { path: "packs", element: adminPage("AdminPacksPanel") },
+      { path: "audit", element: adminPage("AdminAuditPanel") },
+      { path: "config", element: adminPage("AdminConfigPanel") },
+      { path: "prompts", element: adminPage("AdminPromptsPanel") },
     ],
   },
 ];

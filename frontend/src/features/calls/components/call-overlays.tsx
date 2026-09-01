@@ -20,12 +20,12 @@ export function CallOverlays() {
   }, [error, setError]);
 
   return (
-    <>
+    <div className="contents" data-call-overlays="">
       <IncomingCallBanner />
       <VoiceCallView />
       <VideoCallView />
       <FloatingVideoOverlay />
       <RemoteAudioSink />
-    </>
+    </div>
   );
 }

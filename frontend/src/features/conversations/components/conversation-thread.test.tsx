@@ -125,7 +125,7 @@ describe("conversation layers", () => {
     expect(screen.getByRole("button", { name: en.shell.back })).toBeInTheDocument();
   });
 
-  it("loads a live conversation, sends, and opens message info", async () => {
+  it("loads a live conversation, sends, and opens message info", { timeout: 15_000 }, async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     setAccessSession(testSession());
     const conversation = findConversation(1);

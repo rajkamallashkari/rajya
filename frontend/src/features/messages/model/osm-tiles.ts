@@ -2,7 +2,7 @@ import registry from "@/shared/lib/config/settings-registry.json";
 
 const DEGREES_HALF = 180;
 const DEGREES_FULL = 360;
-const TILE_GRID = 2;
+export const OSM_TILE_GRID = 2;
 const TILE_ORIGIN = 1;
 
 export const LOCATION_TILE_REQUEST_CAP = registry.location_tile_request_cap.default as number;
@@ -28,12 +28,12 @@ export function remainingOsmTileBudget(cap: number = LOCATION_TILE_REQUEST_CAP):
 }
 
 export function latLngToTile(latitude: number, longitude: number, zoom: number): { x: number; y: number } {
-  const n = TILE_GRID ** zoom;
+  const n = OSM_TILE_GRID ** zoom;
   const x = Math.floor(((longitude + DEGREES_HALF) / DEGREES_FULL) * n);
   const latRad = (latitude * Math.PI) / DEGREES_HALF;
   const y = Math.floor(
     ((TILE_ORIGIN - Math.log(Math.tan(latRad) + TILE_ORIGIN / Math.cos(latRad)) / Math.PI) /
-      TILE_GRID) *
+      OSM_TILE_GRID) *
       n,
   );
   return { x: wrapTile(x, n), y: clampTile(y, n) };
@@ -49,7 +49,7 @@ export function tilesForLocation(
   cap: number = LOCATION_TILE_REQUEST_CAP,
 ): TileCoord[] {
   const center = latLngToTile(latitude, longitude, OSM_TILE_ZOOM);
-  const n = TILE_GRID ** OSM_TILE_ZOOM;
+  const n = OSM_TILE_GRID ** OSM_TILE_ZOOM;
   const coords = [
     { x: center.x, y: center.y },
     { x: wrapTile(center.x + 1, n), y: center.y },

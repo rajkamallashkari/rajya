@@ -2,6 +2,7 @@
   "name": "Rajya",
   "short_name": "Rajya",
   "description": "Rajya",
+  "id": "/",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -9,6 +10,8 @@
   "theme_color": "#0E1621",
   "scope": "/",
   "lang": "en",
+  "categories": ["productivity", "social"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-192.png",

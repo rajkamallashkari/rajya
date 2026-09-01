@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { PickerSheet, SlashCommandMenu } from "@/features/composer";
+import { SlashCommandMenu } from "@/features/composer";
+import { PickerSheet } from "@/features/composer/components/picker-sheet";
 import { QrSheet, ReportSheet } from "@/features/conversations";
 import {
   ContactCard,

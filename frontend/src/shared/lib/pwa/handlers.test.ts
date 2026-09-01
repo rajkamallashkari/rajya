@@ -100,11 +100,25 @@ describe("pwa handlers", () => {
     });
     expect(await offline.text()).toBe("offline");
 
-    await expect(
-      networkFirst(new Request("https://app.test/missing"), createCaches().caches, async () => {
+    const missing = await networkFirst(
+      new Request("https://app.test/missing"),
+      createCaches().caches,
+      async () => {
         throw new Error("offline");
-      }),
-    ).rejects.toThrow("offline");
+      },
+    );
+    expect(missing.status).toBe(503);
+
+    const navigateRequest = new Request("https://app.test/c/1");
+    Object.defineProperty(navigateRequest, "mode", { configurable: true, value: "navigate" });
+    const navigated = await networkFirst(
+      navigateRequest,
+      createCaches({ "/": new Response("shell") }).caches,
+      async () => {
+        throw new Error("offline");
+      },
+    );
+    expect(await navigated.text()).toBe("shell");
   });
 
   it("routes fetch/install/activate events", async () => {
@@ -129,6 +143,13 @@ describe("pwa handlers", () => {
         { request: new Request("https://app.test/assets/app.js"), respondWith },
         caches,
         async () => new Response("js", { status: 200 }),
+      ),
+    ).toBe(true);
+    expect(
+      handleFetch(
+        { request: new Request("https://app.test/icons/icon-192.png"), respondWith },
+        caches,
+        async () => new Response("icon", { status: 200 }),
       ),
     ).toBe(true);
     expect(

@@ -320,7 +320,7 @@ describe("Composer", () => {
     expect(screen.queryByRole("button", { name: en.picker.title })).toBeNull();
     await user.type(screen.getByRole("textbox"), "/sticker");
     await user.click(screen.getByRole("option", { name: /sticker/i }));
-    expect(screen.getByText(en.picker.title)).toBeInTheDocument();
+    expect(await screen.findByText(en.picker.title)).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: en.picker.stickers }));
     await user.click(screen.getByRole("button", { name: "wave" }));
     expect(onPickSticker).toHaveBeenCalled();
