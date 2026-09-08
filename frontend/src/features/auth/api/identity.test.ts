@@ -5,14 +5,24 @@ import {
   checkUsername,
   fetchAccount,
   fetchMe,
+  loginWithGoogle,
   loginWithPassword,
   registerWithPassword,
+  requestMagicLink,
+  requestOtp,
   setPassword,
   updateProfile,
+  verifyMagicLink,
+  verifyOtp,
 } from "./identity";
 import { createBlock, destroyBlock, listBlocks } from "./blocks";
 import { fetchPhoneVerification, issuePhoneVerification } from "./phone";
-import { fetchRegistrationOptions, registerPasskey } from "./passkeys";
+import {
+  fetchAuthenticationOptions,
+  fetchRegistrationOptions,
+  registerPasskey,
+  authenticatePasskey,
+} from "./passkeys";
 
 const get = vi.fn();
 const post = vi.fn();
@@ -81,6 +91,11 @@ describe("identity APIs", () => {
         password_confirmation: "password12",
       }),
     ).resolves.toMatchObject({ token: "jwt" });
+    await expect(loginWithGoogle("gis")).resolves.toMatchObject({ token: "jwt" });
+    await expect(requestOtp("ada@example.com")).resolves.toMatchObject({ token: "jwt" });
+    await expect(verifyOtp("ada@example.com", "123456")).resolves.toMatchObject({ token: "jwt" });
+    await expect(requestMagicLink("ada@example.com")).resolves.toMatchObject({ token: "jwt" });
+    await expect(verifyMagicLink("tok")).resolves.toMatchObject({ token: "jwt" });
   });
 
   it("issues and polls phone verification", async () => {
@@ -116,5 +131,25 @@ describe("identity APIs", () => {
         response: { attestationObject: "ao", clientDataJSON: "cd" },
       }),
     ).resolves.toMatchObject({ id: 1 });
+    post.mockResolvedValue({ data: { challenge: "YQ", nonce: "n" } });
+    await expect(fetchAuthenticationOptions()).resolves.toEqual({ challenge: "YQ", nonce: "n" });
+    await expect(fetchAuthenticationOptions("ada@example.com")).resolves.toEqual({
+      challenge: "YQ",
+      nonce: "n",
+    });
+    post.mockResolvedValue({ data: { token: "jwt", ...me } });
+    await expect(
+      authenticatePasskey("n", {
+        id: "id",
+        rawId: "raw",
+        type: "public-key",
+        response: {
+          authenticatorData: "ad",
+          clientDataJSON: "cd",
+          signature: "sig",
+          userHandle: null,
+        },
+      }),
+    ).resolves.toMatchObject({ token: "jwt" });
   });
 });

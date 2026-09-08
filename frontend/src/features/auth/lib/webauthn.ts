@@ -107,3 +107,30 @@ export function serializeAttestationCredential(
     },
   };
 }
+
+export function toRequestPublicKey(
+  options: { challenge: string } & Record<string, unknown>,
+): PublicKeyCredentialRequestOptions {
+  const allow = (options.allowCredentials as { type?: string; id: string }[] | undefined) ?? [];
+  return {
+    challenge: base64urlToBuffer(options.challenge),
+    rpId: typeof options.rpId === "string" ? options.rpId : undefined,
+    timeout: typeof options.timeout === "number" ? options.timeout : undefined,
+    userVerification:
+      typeof options.userVerification === "string"
+        ? (options.userVerification as UserVerificationRequirement)
+        : undefined,
+    allowCredentials: allow.map((entry) => ({
+      type: (entry.type ?? "public-key") as PublicKeyCredentialType,
+      id: base64urlToBuffer(entry.id),
+    })),
+  };
+}
+
+export function passkeyNonce(options: { nonce?: string }): string {
+  const nonce = options.nonce?.trim() ?? "";
+  if (nonce.length === 0) {
+    throw new Error("authentication_options_incomplete");
+  }
+  return nonce;
+}

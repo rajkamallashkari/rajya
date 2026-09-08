@@ -63,6 +63,38 @@ export async function loginWithPassword(email: string, password: string) {
   );
 }
 
+export async function loginWithGoogle(code: string) {
+  return unwrap(await apiClient().POST("/auth/google", { body: { code } }), "google_failed");
+}
+
+export async function requestOtp(email: string) {
+  return unwrap(
+    await apiClient().POST("/auth/otp/request", { body: { email } }),
+    "otp_request_failed",
+  );
+}
+
+export async function verifyOtp(email: string, code: string) {
+  return unwrap(
+    await apiClient().POST("/auth/otp/verify", { body: { email, code } }),
+    "otp_verify_failed",
+  );
+}
+
+export async function requestMagicLink(email: string) {
+  return unwrap(
+    await apiClient().POST("/auth/magic_link/request", { body: { email } }),
+    "magic_request_failed",
+  );
+}
+
+export async function verifyMagicLink(token: string) {
+  return unwrap(
+    await apiClient().POST("/auth/magic_link/verify", { body: { token } }),
+    "magic_verify_failed",
+  );
+}
+
 export async function registerWithPassword(body: {
   email: string;
   name: string;

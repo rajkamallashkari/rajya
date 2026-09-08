@@ -67,6 +67,7 @@ function adminPage(name: AdminTreeExport, asPage = false) {
 
 export const appRoutes = [
   { path: "/", element: <ShellRoute /> },
+  { path: "/auth/magic", element: <ShellRoute /> },
   { path: "/c/:conversationId", element: <ShellRoute /> },
   { path: "/c/:conversationId/m/:messageId", element: <ShellRoute /> },
   { path: "/m/:messageId", element: <ShellRoute /> },

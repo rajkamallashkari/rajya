@@ -6,6 +6,7 @@ export const R2_STORAGE = "https://*.r2.cloudflarestorage.com";
 export const R2_PUBLIC = "https://*.r2.dev";
 export const FONTS_CSS = "https://fonts.googleapis.com";
 export const FONTS_FILES = "https://fonts.gstatic.com";
+export const GOOGLE_GIS = "https://accounts.google.com";
 export const TUNNEL_HTTPS = "https://*.trycloudflare.com";
 export const TUNNEL_WSS = "wss://*.trycloudflare.com";
 export const LOCAL_API = "http://localhost:3000";
@@ -41,6 +42,7 @@ export function connectSources(apiOrigin?: string): string[] {
     TENOR_API,
     TENOR_MEDIA,
     FONTS_CSS,
+    GOOGLE_GIS,
     ...extras,
   ];
 }
@@ -53,7 +55,8 @@ export function contentSecurityPolicy(apiOrigin?: string): string {
     "frame-ancestors 'none'",
     "form-action 'self'",
     "manifest-src 'self'",
-    "script-src 'self'",
+    `script-src 'self' ${GOOGLE_GIS}`,
+    `frame-src 'self' ${GOOGLE_GIS}`,
     `style-src 'self' 'unsafe-inline' ${FONTS_CSS}`,
     `font-src 'self' data: ${FONTS_FILES}`,
     `img-src 'self' data: blob: ${R2_STORAGE} ${R2_PUBLIC} ${OSM_TILES} ${TENOR_MEDIA}`,

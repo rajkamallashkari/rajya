@@ -13,6 +13,7 @@ import {
   R2_STORAGE,
   TENOR_API,
   TENOR_MEDIA,
+  GOOGLE_GIS,
 } from "./headers";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -27,6 +28,7 @@ describe("Pages security headers", () => {
     expect(sources).toContain(OSM_TILES);
     expect(sources).toContain(TENOR_API);
     expect(sources).toContain(TENOR_MEDIA);
+    expect(sources).toContain(GOOGLE_GIS);
     expect(cableOriginFromHttp("https://api.example")).toBe("wss://api.example");
     expect(connectSources("https://api.example")).toContain("https://api.example");
     expect(connectSources("https://api.example")).toContain("wss://api.example");

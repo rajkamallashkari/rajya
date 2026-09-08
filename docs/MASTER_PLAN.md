@@ -1,5 +1,10 @@
 # MASTER_PLAN.md — Phased Roadmap
 
+> **Frozen at session 13.3.** The original port is complete.
+> **Shell / chrome revamp (P14):** [`SHELL_PLAN.md`](SHELL_PLAN.md),
+> [`SHELL_PROGRESS.md`](SHELL_PROGRESS.md), visual
+> [`shell-mockup.html`](shell-mockup.html). Do not add P14 rows here.
+
 > **Step 4 of the MASTER_PLAN process.** The execution plan.
 >
 > Grounded in `[AUDIT_REPORT.md](AUDIT_REPORT.md)` (what exists), designed by

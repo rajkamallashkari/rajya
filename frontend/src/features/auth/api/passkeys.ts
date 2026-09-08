@@ -1,4 +1,4 @@
-import type { SerializedAttestation } from "@/features/auth/lib/webauthn";
+import type { SerializedAssertion, SerializedAttestation } from "@/features/auth/lib/webauthn";
 import { apiClient, bearerHeaders, unwrap } from "@/features/auth/api/http";
 
 export async function fetchRegistrationOptions() {
@@ -15,5 +15,23 @@ export async function registerPasskey(nickname: string, credential: SerializedAt
       body: { nickname, credential },
     }),
     "register_passkey_failed",
+  );
+}
+
+export async function fetchAuthenticationOptions(email?: string) {
+  return unwrap(
+    await apiClient().POST("/auth/passkeys/authentication_options", {
+      body: email ? { email } : {},
+    }),
+    "authentication_options_failed",
+  );
+}
+
+export async function authenticatePasskey(nonce: string, credential: SerializedAssertion) {
+  return unwrap(
+    await apiClient().POST("/auth/passkeys/authenticate", {
+      body: { nonce, credential },
+    }),
+    "authenticate_passkey_failed",
   );
 }

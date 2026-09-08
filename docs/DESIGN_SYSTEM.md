@@ -457,31 +457,50 @@ mobile and a corner card on desktop, always above modals.
 
 ---
 
-## §6 Mobile-first navigation (Q-20)
+## §6 Navigation chrome (Q-20, amended P14)
 
-Your model — a chats list as the base, everything stacking above it, native
-swipe-back — is preserved and formalised.
+Primary destinations are **Chats**, **Calls**, and **Profile**. Switching a
+destination replaces the whole main surface. Spec: [`SHELL_TARGET.md`](SHELL_TARGET.md);
+visual: [`shell-mockup.html`](shell-mockup.html). Session 1.4’s “one stack =
+resizable columns” is **withdrawn** for desktop details.
 
 ```mermaid
 flowchart LR
-    Base[Chat list] --> L1[Conversation]
-    L1 --> L2[Profile]
-    L2 --> L3[Shared media]
-    L1 --> L2b[Group info]
-    L2b --> L3b[Add members]
+    Tabs[ChatsCallsProfile]
+    Tabs --> Chats[List plus ChatOrEmpty]
+    Chats --> Overlay[Stack overlay]
+    Overlay --> Nested[Peer profile or settings row]
+    Tabs --> Calls[Call log]
+    Calls --> Contact[Contact profile layer]
+    Tabs --> Profile[Self identity]
+    Profile --> Settings[Settings stack]
 ```
 
-**Contract:**
+**Destinations**
 
-- Every push adds a history entry; browser back and edge-swipe both pop exactly one layer.
+- Desktop: left rail stuck to the left edge, full height.
+- Mobile: bottom bar stuck to the bottom edge, full width, three equal tabs,
+  safe-area padded. Hide the bar while a conversation or stack layer is
+  full-screen; back restores it.
+- Never paint Calls and Profile (or Chats) in the same main surface.
+
+**Chats**
+
+- Always list + chat column or empty welcome. Details are **right overlays**
+  (~420px), Botverse `PanelHost` placement, not a third column that exists
+  only when a layer is open.
+- Compose: header bubble+plus → New message / New group (channel/broadcast
+  disabled Soon). No FABs on the list.
+
+**Layers (inside a destination)**
+
+- Every push adds a history entry; browser back and edge-swipe pop exactly one layer.
 - Layers animate in from the right with `--motion-base`, and follow the finger during a gesture with `--ease-spring`.
 - Scroll position is preserved per layer.
 - A layer beneath a pushed layer stays mounted (so returning is instant) but is `aria-hidden` and inert.
-- Desktop renders the same stack as resizable side-by-side panels — one stack model, two presentations.
+- **Tab switches are not layer pushes.** Returning to Chats restores the last open conversation.
 
-This is currently emergent behaviour. In the target it's one `useLayer` hook, one
-stack store, and a Playwright test asserting the back-button contract, because
-history handling is exactly the kind of thing that regresses invisibly.
+Playwright must assert destination exclusivity and the back-button contract.
 
 ---
 

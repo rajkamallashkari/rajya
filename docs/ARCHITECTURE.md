@@ -63,7 +63,7 @@ Read state: `last_seen_position` always; `last_read_position` only with receipts
 
 ## 6. Frontend
 
-Feature folders under `frontend/src/features/`. Server state is TanStack Query only. Route-level code splitting for settings, admin, calls, picker, bot builder, and the map. The message thread is `GroupedVirtuoso`. Incoming calls: Web Push + service-worker deep link (`?account=`).
+Feature folders under `frontend/src/features/`. Server state is TanStack Query only. Route-level code splitting for settings, admin, calls, picker, bot builder, and the map. The message thread is `GroupedVirtuoso`. Incoming calls: Web Push + service-worker deep link (`?account=`). **Shell chrome (P14)** is specified in [`SHELL_TARGET.md`](SHELL_TARGET.md); as-built list+columns in `LayerHost` are pre-revamp.
 
 ## 7. Runtime configuration (Tier 1)
 

@@ -72,9 +72,26 @@ cd backend && bin/rails db:prepare db:seed
 cd .. && bin/dev
 ```
 
-Open **http://localhost:5173**. Create an account (email + password), skip the passkey
-step, then start a DM from the bot directory. OTP and magic-link mail land in
+Open **http://localhost:5173**. Sign in with Google (when configured), email +
+password, email OTP, a magic link, or a passkey. Skip the passkey onboarding
+step if you used password. OTP and magic-link mail land in
 [Mailpit](http://localhost:8025).
+
+### Google sign-in (two Chrome profiles)
+
+GIS uses the auth-code popup (`POST /auth/google` `{ code }` — JWT stays in the
+body, never a redirect query string). Authorized **redirect URIs are unused**.
+
+1. Create a Google Cloud OAuth client (Web).
+2. Authorized JavaScript origins: `http://localhost:5173` **and**
+   `http://127.0.0.1:5173`.
+3. Put `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in repo-root `.env` (Rails).
+4. Put the **same** client id in `VITE_GOOGLE_CLIENT_ID` in that `.env` (Vite
+   `envDir` is the repo root). If it is unset, the Google button is hidden.
+5. Open the app in two Chrome profiles. Profile A uses Google account A; profile B
+   uses Google account B. Each profile has its own origin storage → two JWTs.
+
+Password register remains valid for agents and CI without Google credentials.
 
 `bin/dev` (repo root) starts Rails `:3000`, the Solid Queue worker, and Vite
 `:5173`. Vite proxies `/api`, `/auth`, and `/cable` to Rails — leave

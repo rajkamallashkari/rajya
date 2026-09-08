@@ -5,6 +5,8 @@ import {
   serializeAssertionCredential,
   serializeAttestationCredential,
   toCreationPublicKey,
+  toRequestPublicKey,
+  passkeyNonce,
 } from "./webauthn";
 
 function bytes(text: string): ArrayBuffer {
@@ -85,6 +87,22 @@ describe("webauthn helpers", () => {
     expect(created.rp.id).toBe("rajya.test");
     expect(created.pubKeyCredParams[0]?.alg).toBe(-7);
     expect(created.excludeCredentials).toHaveLength(1);
+    const request = toRequestPublicKey({
+      challenge: bufferToBase64url(bytes("ch")),
+      rpId: "rajya.test",
+      timeout: 1,
+      userVerification: "required",
+      allowCredentials: [{ id: bufferToBase64url(bytes("ex")) }],
+    });
+    expect(request.rpId).toBe("rajya.test");
+    expect(request.allowCredentials).toHaveLength(1);
+    const requestTyped = toRequestPublicKey({
+      challenge: bufferToBase64url(bytes("ch")),
+      allowCredentials: [{ type: "public-key", id: bufferToBase64url(bytes("ex")) }],
+    });
+    expect(requestTyped.allowCredentials?.[0]?.type).toBe("public-key");
+    expect(passkeyNonce({ challenge: "YQ", nonce: "n" })).toBe("n");
+    expect(() => passkeyNonce({ challenge: "YQ" })).toThrow("authentication_options_incomplete");
     const withParams = toCreationPublicKey({
       challenge: bufferToBase64url(bytes("ch")),
       rp: { name: "Rajya", id: "rajya.test" },

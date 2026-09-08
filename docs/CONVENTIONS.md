@@ -6,6 +6,8 @@
 > Companions: [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md),
 > [`SCHEMA_DESIGN.md`](SCHEMA_DESIGN.md), [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md),
 > [`MASTER_PLAN.md`](MASTER_PLAN.md), [`READINESS_CHECKLIST.md`](READINESS_CHECKLIST.md).
+> **P14 shell sessions:** [`SHELL_PLAN.md`](SHELL_PLAN.md),
+> [`SHELL_PROGRESS.md`](SHELL_PROGRESS.md), [`SHELL_TARGET.md`](SHELL_TARGET.md).
 >
 > Product / repo / URL / identifier token: **Rajya** / `rajya` /
 > `https://rajya.pages.dev` / `rajya`.
@@ -15,10 +17,15 @@
 ## §0 How to use this document
 
 1. Read this file fully before writing code.
-2. Read only the `MASTER_PLAN.md` phase section for the current session — not the whole plan.
-3. Pull the named AUDIT / SCHEMA / DESIGN slices listed in that phase's session brief.
+2. If [`SHELL_PROGRESS.md`](SHELL_PROGRESS.md) has a Next session, read only
+   that row in [`SHELL_PLAN.md`](SHELL_PLAN.md) §5 — not the whole original
+   `MASTER_PLAN.md`. Otherwise read only the `MASTER_PLAN.md` phase section
+   for the current session.
+3. Pull the named AUDIT / SCHEMA / DESIGN / SHELL slices listed in that brief.
 4. If a rule here conflicts with improvisation, **this file wins**.
 5. If a product decision is unclear, **stop and ask** — do not invent.
+6. Shell placement matches [`shell-mockup.html`](shell-mockup.html) and
+   [`SHELL_TARGET.md`](SHELL_TARGET.md). Do not paint two destinations at once.
 
 ---
 
@@ -274,8 +281,10 @@ Do **not** implement:
 - Disappearing messages / timers
 - View-once media
 - Any ephemeral feature that implies screenshot-proof confidentiality (NR-16 / NR-17)
+- Status / stories (NR-F6)
+- Channel or broadcast products (disabled “Soon” menu rows only)
 
-(DS-12 / NR-16 / NR-17 / NR-F11 — cut in Step 5.)
+(DS-12 / NR-16 / NR-17 / NR-F11 / NR-F6 — cut or declined.)
 
 ---
 
@@ -361,7 +370,7 @@ Copy this checklist mentally at the start of every session:
 8. **Never hard-delete messages** via the API (`BR-1` absolute).
 9. **Never invent API fields** — change goes through rswag → OpenAPI → generated client.
 10. **Never edit `legacy/`** from a `rajya` working tree.
-11. **Never implement NR-16 (disappearing) or NR-17 (view-once).**
+11. **Never implement NR-16 (disappearing), NR-17 (view-once), or NR-F6 (Status/stories).**
 12. **Never add a second HTTP client** beside the generated OpenAPI client.
 13. **Never broadcast before commit** — use `Realtime.publish`.
 14. **Comments must not assert behaviour a test does not** (`F-33`) — fix the test or delete the comment.
@@ -375,8 +384,9 @@ Copy this checklist mentally at the start of every session:
 ## §9 Session start template
 
 Do **not** paste a long prompt each time. Attach
-[`SESSION_STARTER.md`](SESSION_STARTER.md) + this file + `MASTER_PLAN.md`, then
-type only the session id (see `SESSION_STARTER.md` for the exact one-liners).
+[`SESSION_STARTER.md`](SESSION_STARTER.md) + this file + `SHELL_PLAN.md` +
+`SHELL_PROGRESS.md` during P14 (or `MASTER_PLAN.md` + `PROGRESS.md` after
+14.8). Type only Continue. or the session id (see `SESSION_STARTER.md`).
 
 When opening a coding session, the Agent should confirm:
 
