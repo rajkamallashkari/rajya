@@ -13,23 +13,16 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 14.7 |
-| **Next session** | 14.8 |
+| **Last completed** | 14.8 |
+| **Next session** | — (P14 complete; resume `MASTER_PLAN.md` / `PROGRESS.md`) |
 | **Phase** | P14 Shell |
-| **Sessions remaining in phase** | 1 |
+| **Sessions remaining in phase** | 0 |
 
 ---
 
 ## Next session brief (agent: read SHELL_PLAN.md §5 for the full row)
 
-**14.8 — Playwright + two-profile DM.**
-
-Playwright (two contexts): sign-in (password always; Google when env present),
-compose New message, DM appears on both sides, tab exclusive, overlay back,
-mobile bar hidden in chat. i18n. RuboCop/Vitest on touched files.
-
-Docs: SHELL_TARGET §7.
-Do not start work beyond this brief.
+**P14 complete.** Further Continue. sessions attach `MASTER_PLAN.md` + `PROGRESS.md` (see `SESSION_STARTER.md`). Do not start MASTER_PLAN work from this file.
 
 ---
 
@@ -45,6 +38,7 @@ Do not start work beyond this brief.
 | 14.5 | Profile tab + inline edit | Self identity with privacy-gated email/phone, inline name/username/bio editing, settings overlay, and long-press/right-click account switching. Removed settings and `/dev/*` controls from Chats. |
 | 14.6 | Calls index + peer profile | Paginated `GET /api/v1/calls` (OpenAPI, Pundit scope, operation, serializer). Calls tab is a log; row click opens peer or group profile overlay, not self profile. Live call overlays stay global. |
 | 14.7 | Settings stack completeness | Hub rows over existing APIs: notifications, privacy, security, display, AI, starred, scheduled, chats, devices, stickers, bots, accounts. `GET /api/v1/saved_messages` for starred. Privacy flags hide Profile email/phone. |
+| 14.8 | Playwright + two-profile DM | Two-context password sign-in, compose New message, DM on both sides. Exclusive tabs, overlay back, mobile bar hidden in chat. Google GIS skipped unless `VITE_GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_ID` is set for the preview build. |
 
 ---
 

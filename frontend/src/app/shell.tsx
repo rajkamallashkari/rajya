@@ -27,7 +27,7 @@ import { getMessage } from "@/features/conversations/api/http";
 import { useConversations } from "@/features/conversations/api/queries";
 import { conversationTitle } from "@/features/conversations/model/title";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
-import { needsSignIn } from "@/features/auth/model/session-gate";
+import { needsSignIn, SIGN_IN_QUERY } from "@/features/auth/model/session-gate";
 import { useStopImpersonation } from "@/features/admin/api/queries";
 import { useShellStore } from "@/features/settings/store/shell-store";
 import { shouldHideMobileTabBar } from "@/shared/lib/navigation/destinations";
@@ -64,13 +64,17 @@ export function AppShell() {
     const active = state.accounts.find((account) => account.id === state.activeAccountId);
     return active !== undefined && !active.onboarded;
   });
-  const signedOut = useAccountsStore((state) => needsSignIn(state.activeAccountId));
-  const showChrome = !signedOut && !needsOnboarding;
   const conversations = useConversations();
   const activeAccountId = useAccountsStore((state) => state.activeAccountId);
   const chatsOpenedRef = useRef(false);
   const params = useParams();
   const [searchParams] = useSearchParams();
+  const signedOut = needsSignIn(
+    activeAccountId,
+    import.meta.env.VITE_MSW,
+    searchParams.get(SIGN_IN_QUERY) === "1",
+  );
+  const showChrome = !signedOut && !needsOnboarding;
   const navigate = useNavigate();
   useAccountChannel();
   useSignalingChannel();

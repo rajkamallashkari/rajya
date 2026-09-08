@@ -1,4 +1,5 @@
 import { http, HttpResponse, type HttpHandler } from "msw";
+import { DEV_ACCOUNT_B_ID, DEV_ACCOUNT_B_USERNAME } from "@/features/auth/model/dev-accounts";
 import { MS_PER_SECOND } from "@/features/conversations/model/constants";
 import type { components, paths } from "@/shared/lib/api/schema";
 import { publishMswRealtime } from "@/shared/lib/realtime/msw-bridge";
@@ -11,6 +12,7 @@ import preferencesRegistry from "@/shared/lib/config/preferences-registry.json";
 import type { PreferenceDocument } from "@/shared/lib/config/preferences-registry";
 import {
   appendSent,
+  createDirectConversation,
   findConversation,
   findMessage,
   folderRecords,
@@ -205,6 +207,32 @@ function meResponse({ request }: { request: Request }) {
   return HttpResponse.json(meBodyFor(bearerToken(request)));
 }
 
+function sessionForEmail(email: string | undefined): SessionBody {
+  const normalized = email?.trim().toLowerCase() ?? "";
+  if (normalized.startsWith("grace")) {
+    return {
+      token: `dev-${String(DEV_ACCOUNT_B_ID)}`,
+      account: {
+        id: DEV_ACCOUNT_B_ID,
+        username: DEV_ACCOUNT_B_USERNAME,
+        display_name: "Grace",
+        kind: "human",
+        bio: null,
+      },
+      user: {
+        ...session.user,
+        id: DEV_ACCOUNT_B_ID,
+        email: "grace@example.com",
+        onboarded: true,
+      },
+    };
+  }
+  return {
+    ...session,
+    user: { ...session.user, onboarded: true },
+  };
+}
+
 const accepted = { accepted: true } satisfies AcceptedBody;
 const ok = { ok: true } satisfies OkBody;
 const passkey = {
@@ -220,7 +248,10 @@ const webauthnOptions = {
   allowCredentials: [],
 } satisfies WebauthnOptionsBody;
 
-const sessionResponse = () => HttpResponse.json(session);
+const sessionResponse = async ({ request }: { request: Request }) => {
+  const body = (await request.json().catch(() => ({}))) as { email?: string };
+  return HttpResponse.json(sessionForEmail(body.email));
+};
 const acceptedResponse = () => HttpResponse.json(accepted);
 const okResponse = () => HttpResponse.json(ok);
 const webauthnResponse = () => HttpResponse.json(webauthnOptions);
@@ -920,7 +951,7 @@ export const handlerMap = {
   ),
   "/api/v1/accounts/search": http.get("*/api/v1/accounts/search", ({ request }) => {
     const q = new URL(request.url).searchParams.get("q") ?? "";
-    return HttpResponse.json({ accounts: accountSearchHits(q) });
+    return HttpResponse.json({ accounts: accountSearchHits(q, actorIdFromRequest(request)) });
   }),
   "/api/v1/accounts/{id}": http.get("*/api/v1/accounts/:id", () =>
     HttpResponse.json(session.account),
@@ -1034,8 +1065,14 @@ export const handlerMap = {
     }
     return HttpResponse.json(ok);
   }),
-  "/api/v1/conversations": http.all("*/api/v1/conversations", ({ request }) => {
+  "/api/v1/conversations": http.all("*/api/v1/conversations", async ({ request }) => {
     if (request.method === "POST") {
+      const body = (await request.json().catch(() => ({}))) as { account_id?: number };
+      if (typeof body.account_id === "number") {
+        const conversation = createDirectConversation(actorIdFromRequest(request), body.account_id);
+        publishMswRealtime({ type: "sidebar_update", conversation_id: conversation.id });
+        return HttpResponse.json(conversation, { status: 201 });
+      }
       const first = messagingStore().conversations[0];
       return HttpResponse.json(first, { status: 201 });
     }
@@ -1211,7 +1248,7 @@ export const handlerMap = {
     const q = new URL(request.url).searchParams.get("q") ?? "";
     const filters = searchFiltersFromRequest(request.url);
     return HttpResponse.json({
-      accounts: accountSearchHits(q),
+      accounts: accountSearchHits(q, actorIdFromRequest(request)),
       conversations: conversationSearchHits(q),
       messages: messageSearchHits(q, undefined, filters),
       query: q,

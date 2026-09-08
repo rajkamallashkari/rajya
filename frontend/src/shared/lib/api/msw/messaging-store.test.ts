@@ -3,7 +3,9 @@ import {
   appendSent,
   appendSystemEvent,
   buildMessages,
+  createDirectConversation,
   findConversation,
+  findDirectWithPeer,
   findMessage,
   infoFor,
   ingestRemoteMessage,
@@ -16,6 +18,7 @@ import {
   seedPositions,
   setConversationTicks,
   tombstoneMessage,
+  upsertConversation,
   voteStoredPoll,
   closeStoredPoll,
   attachPoll,
@@ -36,9 +39,23 @@ describe("messaging store", () => {
     expect(pageFor(99, { around_at: MESSAGE_STAMP })?.messages).toEqual([]);
     expect(messageSearchHits("ab", 0)).toEqual([]);
     expect(accountSearchHits("x")).toEqual([]);
+    expect(accountSearchHits("grace").some((row) => row.username === "grace")).toBe(true);
+    expect(accountSearchHits("grace", 2).some((row) => row.username === "grace")).toBe(false);
+    expect(accountSearchHits("ada", 2).some((row) => row.username === "ada")).toBe(true);
+    expect(findDirectWithPeer(2)?.id).toBe(1);
+    expect(createDirectConversation(1, 2)?.id).toBe(1);
+    expect(createDirectConversation(99, 43).peer?.id).toBe(43);
+    expect(upsertConversation({ ...findConversation(1)!, title: "Relabeled" }).title).toBe(
+      "Relabeled",
+    );
+    const untitled = findConversation(1)!;
+    untitled.peer = undefined;
+    expect(findDirectWithPeer(2)?.id).toBe(1);
     expect(conversationSearchHits("x")).toEqual([]);
     expect(conversationHitTitle({ title: null } as never)).toBe("");
-    expect(conversationHitTitle({ title: null, peer: { display_name: "Ada" } } as never)).toBe("Ada");
+    expect(conversationHitTitle({ title: null, peer: { display_name: "Ada" } } as never)).toBe(
+      "Ada",
+    );
     seedPositions(9, 0);
     expect(pageFor(9)?.messages).toEqual([]);
     const sent = appendSent(1, "hi");
@@ -73,7 +90,11 @@ describe("messaging store", () => {
     resetMessagingStore();
     expect(findConversation(1)?.id).toBe(1);
     const system = appendSystemEvent(1, "member_left", "Grace left");
-    expect(system).toMatchObject({ kind: "system", system_event: "member_left", body: "Grace left" });
+    expect(system).toMatchObject({
+      kind: "system",
+      system_event: "member_left",
+      body: "Grace left",
+    });
     expect(findConversation(1)?.last_message?.kind).toBe("system");
     const fromAda = appendSent(1, "from-ada");
     setConversationTicks(1, "read", VIEWER.id);
@@ -163,6 +184,16 @@ describe("messaging store", () => {
     const channel = new BroadcastChannel("rajya:msw-store");
     channel.postMessage({ type: "nope" });
     channel.postMessage({ type: "ticks", actorId: 2, conversationId: 1, tick: "read" });
+    channel.postMessage({
+      type: "upsert_conversation",
+      conversation: { ...findConversation(1)!, title: "Synced" },
+    });
+    expect(findConversation(1)?.title).toBe("Synced");
+    channel.postMessage({
+      type: "upsert_conversation",
+      conversation: { ...findConversation(1)!, id: 880 },
+    });
+    expect(findConversation(880)?.id).toBe(880);
     channel.close();
     stop();
     listenForMswStoreSync()();

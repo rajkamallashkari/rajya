@@ -207,6 +207,12 @@ describe("MSW handlers", () => {
     });
     expect(login.data?.token).toBe("test-token");
     expect(login.data?.user.has_password).toBe(true);
+    expect(login.data?.user.onboarded).toBe(true);
+    const graceLogin = await client.POST("/auth/login", {
+      body: { email: "grace@example.com", password: "password12" },
+    });
+    expect(graceLogin.data?.token).toBe("dev-2");
+    expect(graceLogin.data?.account.username).toBe("grace");
     const google = await client.POST("/auth/google", { body: { code: "gis" } });
     expect(google.data?.token).toBe("test-token");
     const register = await client.POST("/auth/register", {
@@ -766,6 +772,15 @@ describe("MSW handlers", () => {
       expect(listed.data?.conversations.length).toBeGreaterThan(0);
       const created = await client.POST("/api/v1/conversations", { body: { kind: "group" } });
       expect(created.data?.id).toBe(1);
+      const existingDirect = await client.POST("/api/v1/conversations", {
+        body: { account_id: 2, kind: "direct" },
+      });
+      expect(existingDirect.data?.id).toBe(1);
+      const freshDirect = await client.POST("/api/v1/conversations", {
+        body: { account_id: 42, kind: "direct" },
+      });
+      expect(freshDirect.data?.kind).toBe("direct");
+      expect(freshDirect.data?.peer?.id).toBe(42);
       const shown = await client.GET("/api/v1/conversations/{id}", { params: { path: { id: 1 } } });
       expect(shown.data?.id).toBe(1);
       const receipts = await client.POST("/api/v1/conversations/{id}/receipts", {
@@ -892,6 +907,10 @@ describe("MSW handlers", () => {
       expect(peopleSearch.data?.accounts.some((row) => row.display_name === "Adele Goldberg")).toBe(
         true,
       );
+      const gracePeople = await client.GET("/api/v1/accounts/search", {
+        params: { query: { q: "grace" } },
+      });
+      expect(gracePeople.data?.accounts.some((row) => row.username === "grace")).toBe(true);
       const emptyPeople = await client.GET("/api/v1/accounts/search", { params: { query: {} } });
       expect(emptyPeople.data?.accounts).toEqual([]);
       expect(messageSearchHits("ab", 0)).toEqual([]);

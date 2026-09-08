@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const googleClientId = process.env.VITE_GOOGLE_CLIENT_ID ?? process.env.GOOGLE_CLIENT_ID ?? "";
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -22,9 +24,14 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "VITE_MSW=1 npm run build && npm run preview",
+    command: "npm run build && npm run preview",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: !process.env.CI,
     timeout: 180000,
+    env: {
+      ...process.env,
+      VITE_MSW: "1",
+      ...(googleClientId.length > 0 ? { VITE_GOOGLE_CLIENT_ID: googleClientId } : {}),
+    },
   },
 });

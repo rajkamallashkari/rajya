@@ -4,14 +4,15 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppProviders } from "@/app/providers";
 import { AppShell } from "@/app/shell";
+import { SIGN_IN_QUERY } from "@/features/auth/model/session-gate";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
-import { resetShellStore, useShellStore } from "@/features/settings/store/shell-store";
 import { ADA_DEMO } from "@/features/conversations/model/demo";
+import { resetSearchStore, useSearchStore } from "@/features/search/store/search-store";
+import { resetShellStore, useShellStore } from "@/features/settings/store/shell-store";
 import { messagingStore } from "@/shared/lib/api/msw/messaging-store";
 import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { settingsLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
-import { resetSearchStore, useSearchStore } from "@/features/search/store/search-store";
 
 function liveToken(): string {
   const encoded = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3_600 }))
@@ -174,6 +175,18 @@ describe("AppShell", () => {
     renderShell();
     expect(screen.getByRole("dialog", { name: en.auth.gate.aria })).toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: en.shell.tabs_aria })).toBeNull();
+  });
+
+  it("shows the gate under MSW when sign-in is requested", () => {
+    useAccountsStore.getState().removeAll();
+    render(
+      <AppProviders>
+        <MemoryRouter initialEntries={[`/?${SIGN_IN_QUERY}=1`]}>
+          <AppShell />
+        </MemoryRouter>
+      </AppProviders>,
+    );
+    expect(screen.getByRole("dialog", { name: en.auth.gate.aria })).toBeInTheDocument();
   });
 
   it("shows onboarding when the active account is not onboarded", () => {

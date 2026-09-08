@@ -8,7 +8,9 @@ describe("needsSignIn", () => {
     expect(needsSignIn(null, "0")).toBe(true);
     expect(needsSignIn(null, "1")).toBe(false);
     expect(needsSignIn(null, "true")).toBe(false);
+    expect(needsSignIn(null, "1", true)).toBe(true);
     expect(needsSignIn(1)).toBe(false);
     expect(needsSignIn(1, "1")).toBe(false);
+    expect(needsSignIn(1, "1", true)).toBe(false);
   });
 });

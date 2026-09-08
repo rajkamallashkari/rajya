@@ -1,4 +1,5 @@
 import type { components } from "@/shared/lib/api/schema";
+import { DEV_ACCOUNT_B_ID, DEV_ACCOUNT_B_USERNAME } from "@/features/auth/model/dev-accounts";
 import { DEMO_CONVERSATIONS } from "@/features/conversations/model/demo";
 import { conversationPermissionDefaults } from "@/features/conversations/model/permissions";
 import {
@@ -26,6 +27,16 @@ export const VIEWER: Account = {
   display_name: "Ada",
   kind: "human",
 };
+
+export const DIRECTORY_HUMANS: Account[] = [
+  VIEWER,
+  {
+    id: DEV_ACCOUNT_B_ID,
+    username: DEV_ACCOUNT_B_USERNAME,
+    display_name: "Grace",
+    kind: "human",
+  },
+];
 
 export const MESSAGE_STAMP = "2026-01-01T12:00:00.000Z";
 
@@ -249,7 +260,13 @@ function windowAround(rows: Message[], pivot: Message): MessagePage {
 
 export function pageFor(
   conversationId: number,
-  query: { after?: number; after_revision?: number; around_at?: string; around_id?: number; before?: number } = {},
+  query: {
+    after?: number;
+    after_revision?: number;
+    around_at?: string;
+    around_id?: number;
+    before?: number;
+  } = {},
 ): MessagePage | null {
   const rows = [...(store.messages[conversationId] ?? [])].sort((a, b) => a.position - b.position);
   if (query.around_id != null) {
@@ -372,14 +389,92 @@ export function conversationHitTitle(row: Conversation): string {
   return row.title ?? row.peer?.display_name ?? "";
 }
 
-export function accountSearchHits(query: string) {
+function accountMatchesNeedle(account: Account, needle: string): boolean {
+  return (
+    account.display_name.toLowerCase().includes(needle) ||
+    account.username.toLowerCase().includes(needle)
+  );
+}
+
+export function accountSearchHits(query: string, actorId = VIEWER.id) {
   const needle = query.trim().toLowerCase();
   if (needle.length < 2) {
     return [];
   }
-  return store.conversations
-    .map((row) => row.peer)
-    .filter((peer): peer is Account => Boolean(peer?.display_name?.toLowerCase().includes(needle)));
+  const seen = new Set<number>();
+  const hits: Account[] = [];
+  for (const account of [...DIRECTORY_HUMANS, ...store.conversations.map((row) => row.peer)]) {
+    if (!account || account.id === actorId || seen.has(account.id)) {
+      continue;
+    }
+    if (!accountMatchesNeedle(account, needle)) {
+      continue;
+    }
+    seen.add(account.id);
+    hits.push(account);
+  }
+  return hits;
+}
+
+export function findDirectWithPeer(accountId: number) {
+  return store.conversations.find(
+    (row) =>
+      row.kind === "direct" &&
+      (row.peer?.id === accountId ||
+        row.members?.some((member) => member.account.id === accountId)),
+  );
+}
+
+function nextConversationId(): number {
+  return Math.max(0, ...store.conversations.map((row) => row.id)) + 1;
+}
+
+function applyConversationUpsert(conversation: Conversation): void {
+  const index = store.conversations.findIndex((row) => row.id === conversation.id);
+  if (index >= 0) {
+    store.conversations[index] = conversation;
+    return;
+  }
+  store.conversations.unshift(conversation);
+  if (!store.messages[conversation.id]) {
+    store.messages[conversation.id] = [];
+  }
+}
+
+export function upsertConversation(conversation: Conversation): Conversation {
+  applyConversationUpsert(conversation);
+  publishMswStore({ type: "upsert_conversation", conversation });
+  return conversation;
+}
+
+export function createDirectConversation(actorId: number, peerId: number): Conversation {
+  const existing = findDirectWithPeer(peerId);
+  if (existing) {
+    return existing;
+  }
+  const actor = DIRECTORY_HUMANS.find((row) => row.id === actorId) ?? VIEWER;
+  const peer =
+    DIRECTORY_HUMANS.find((row) => row.id === peerId) ??
+    peerAccount(peerId, `User ${String(peerId)}`);
+  return upsertConversation({
+    id: nextConversationId(),
+    kind: "direct",
+    title: null,
+    description: null,
+    last_activity_at: MESSAGE_STAMP,
+    unread_count: 0,
+    muted_until: null,
+    archived_at: null,
+    role: "member",
+    ...conversationPermissionDefaults(),
+    peer,
+    members: [
+      { account: actor, role: "member" },
+      { account: peer, role: "member" },
+    ],
+    pinned_at: null,
+    manually_unread_at: null,
+  });
 }
 
 export function conversationSearchHits(query: string) {
@@ -576,7 +671,8 @@ const STORE_CHANNEL = "rajya:msw-store";
 
 type StoreSync =
   | { type: "append"; message: Message }
-  | { type: "ticks"; actorId: number; conversationId: number; tick: "delivered" | "read" };
+  | { type: "ticks"; actorId: number; conversationId: number; tick: "delivered" | "read" }
+  | { type: "upsert_conversation"; conversation: Conversation };
 
 function syncEnabled(): boolean {
   return import.meta.env.VITE_MSW === "1" && typeof BroadcastChannel !== "undefined";
@@ -593,7 +689,13 @@ function publishMswStore(event: StoreSync): void {
 
 export function ingestRemoteMessage(message: Message): void {
   const rows = store.messages[message.conversation_id] ?? [];
-  if (rows.some((row) => row.id === message.id || (message.client_nonce && row.client_nonce === message.client_nonce))) {
+  if (
+    rows.some(
+      (row) =>
+        row.id === message.id ||
+        (message.client_nonce && row.client_nonce === message.client_nonce),
+    )
+  ) {
     return;
   }
   store.messages[message.conversation_id] = [...rows, message];
@@ -621,6 +723,10 @@ export function listenForMswStoreSync(): () => void {
     const payload = event.data;
     if (payload.type === "append") {
       ingestRemoteMessage(payload.message);
+      return;
+    }
+    if (payload.type === "upsert_conversation") {
+      applyConversationUpsert(payload.conversation);
       return;
     }
     if (payload.type === "ticks") {
