@@ -59,7 +59,30 @@ Postgres: `postgres://postgres:postgres@localhost:55432/rajya_development` (host
 Redis: `redis://localhost:6380/0` (host port 6380, not 6379 — same reason)  
 Mailpit SMTP: `localhost:1025` · UI: `http://localhost:8025`
 
-Copy `.env.example` → `.env` when you start Rails (0.2).
+Copy `.env.example` → `.env` (gitignored). Rails and Vite both read that one
+file — do not add `frontend/.env.development`.
+
+---
+
+## Run locally
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+cd backend && bin/rails db:prepare db:seed
+cd .. && bin/dev
+```
+
+Open **http://localhost:5173**. Create an account (email + password), skip the passkey
+step, then start a DM from the bot directory. OTP and magic-link mail land in
+[Mailpit](http://localhost:8025).
+
+`bin/dev` (repo root) starts Rails `:3000`, the Solid Queue worker, and Vite
+`:5173`. Vite proxies `/api`, `/auth`, and `/cable` to Rails — leave
+`VITE_API_ORIGIN` unset locally. `backend/bin/dev` is only Puma. Leave
+`VITE_MSW` unset so the SPA talks to Rails, not browser mocks.
+
+If you previously used mocks, clear site data for `localhost:5173` (or the
+opaque `test-token` in `rajya:accounts` is dropped automatically).
 
 ---
 
@@ -177,23 +200,14 @@ See `docs/BRAND_IDENTIFIERS.md`. Logos live under
 
 ---
 
-## Verify session 0.4
+## Verify
 
 ```bash
 cd frontend
 npm test                  # Vitest + 100% coverage
-npm run lint              # ESLint including the five Rajya rules
-npm run prove:lint        # each deliberate violation fails
-npm run prove:coverage-gate
+npm run lint
 npm run typecheck
 npm run test:e2e          # Playwright (installs Chromium on first run)
-npm run dev               # Vite on http://localhost:5173
 ```
 
 From the repo root, `bin/dev` starts Rails + the worker + Vite.
-
----
-
-## What is deliberately not here yet
-
-P0 foundation sessions 0.1–0.4 are done. Domain UI and auth start in **P1 / P2**.

@@ -156,6 +156,23 @@
       "active": "Active",
       "switch": "Switch to {{name}}"
     },
+    "gate": {
+      "aria": "Sign in to Rajya",
+      "busy": "Working...",
+      "email": "Email",
+      "failed": "Could not sign in. Check your email and password.",
+      "name": "Display name",
+      "password": "Password",
+      "password_confirm": "Confirm password",
+      "password_mismatch": "Passwords do not match.",
+      "register_failed": "Could not create that account.",
+      "submit_login": "Sign in",
+      "submit_register": "Create account",
+      "switch_login": "Already have an account? Sign in",
+      "switch_register": "New here? Create an account",
+      "title_login": "Sign in",
+      "title_register": "Create your account"
+    },
     "profile": {
       "missing": "This profile is not available",
       "missing_description": "The account may be blocked or no longer exist.",

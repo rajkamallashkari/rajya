@@ -79,14 +79,20 @@ describe("accounts store", () => {
     window.localStorage.setItem(
       ACCOUNTS_STORAGE_KEY,
       JSON.stringify({
-        accounts: [account(5, { token: jwt({ exp: 1 }) }), account(6), { id: "bad" }, null, "skip"],
+        accounts: [
+          account(5, { token: jwt({ exp: 1 }) }),
+          account(6, { token: jwt({ exp: Math.floor(Date.now() / 1000) + 60 }) }),
+          { id: "bad" },
+          null,
+          "skip",
+        ],
         activeAccountId: 5,
       }),
     );
     useAccountsStore.getState().hydrate();
     expect(useAccountsStore.getState().accounts.map((row) => row.id)).toEqual([6]);
     expect(useAccountsStore.getState().activeAccountId).toBe(6);
-    expect(getAccessSession()?.token).toBe("tok-6");
+    expect(getAccessSession()?.token).toMatch(/^hdr\./);
 
     resetAccountsStore();
     expect(window.localStorage.getItem(ACCOUNTS_STORAGE_KEY)).toBeNull();

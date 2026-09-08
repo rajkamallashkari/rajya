@@ -4,6 +4,7 @@ module CorsOrigins
   PAGES = "https://rajya.pages.dev"
   LOCALHOST = "http://localhost:5173"
   LOOPBACK = "http://127.0.0.1:5173"
+  PREFLIGHT_MAX_AGE = 600
   TUNNEL = /\Ahttps:\/\/[a-z0-9-]+\.trycloudflare\.com\z/
 
   class << self

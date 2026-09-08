@@ -4023,7 +4023,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Advance delivery or view watermarks */
+        /** Advance delivery or view watermarks (changes BR-38) */
         post: {
             parameters: {
                 query?: never;

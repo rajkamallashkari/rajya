@@ -228,6 +228,10 @@ export function resetFiledReports() {
   filedReports.clear();
 }
 
+export function resetIdentity() {
+  session.user.onboarded = false;
+}
+
 const nimbusBot = {
   id: 1,
   memory_enabled: true,
@@ -832,7 +836,10 @@ export const handlerMap = {
   }),
   "/api/v1/users/me/complete_onboarding": http.post(
     "*/api/v1/users/me/complete_onboarding",
-    meResponse,
+    ({ request }) => {
+      session.user.onboarded = true;
+      return meResponse({ request });
+    },
   ),
   "/api/v1/users/me/email/change": http.post("*/api/v1/users/me/email/change", acceptedResponse),
   "/api/v1/users/me/email/verify": http.post("*/api/v1/users/me/email/verify", meResponse),

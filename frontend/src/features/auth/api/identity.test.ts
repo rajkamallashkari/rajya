@@ -5,6 +5,8 @@ import {
   checkUsername,
   fetchAccount,
   fetchMe,
+  loginWithPassword,
+  registerWithPassword,
   setPassword,
   updateProfile,
 } from "./identity";
@@ -67,6 +69,18 @@ describe("identity APIs", () => {
     await expect(fetchAccount(2)).resolves.toEqual({ account: null, missing: true });
     get.mockResolvedValue({ error: { error: { code: "not_found" } } });
     await expect(fetchAccount(3)).resolves.toEqual({ account: null, missing: true });
+    post.mockResolvedValue({ data: { token: "jwt", ...me } });
+    await expect(loginWithPassword("ada@example.com", "password12")).resolves.toMatchObject({
+      token: "jwt",
+    });
+    await expect(
+      registerWithPassword({
+        email: "ada@example.com",
+        name: "Ada",
+        password: "password12",
+        password_confirmation: "password12",
+      }),
+    ).resolves.toMatchObject({ token: "jwt" });
   });
 
   it("issues and polls phone verification", async () => {

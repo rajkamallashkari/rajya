@@ -1,3 +1,5 @@
+import { shouldStartMsw } from "@/shared/lib/api/msw/flag";
+
 export const ACCOUNTS_STORAGE_KEY = "rajya:accounts";
 
 export const JWT_PARTS = 3;
@@ -12,10 +14,13 @@ function padBase64(base64: string): string {
   return `${base64}${"=".repeat(BASE64_BLOCK - remainder)}`;
 }
 
-export function isJwtExpired(token: string): boolean {
+export function isJwtExpired(
+  token: string,
+  mswFlag: string | undefined = import.meta.env.VITE_MSW,
+): boolean {
   const parts = token.split(".");
   if (parts.length !== JWT_PARTS) {
-    return false;
+    return !shouldStartMsw(mswFlag);
   }
   const payloadPart = parts[1] as string;
   try {

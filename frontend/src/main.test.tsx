@@ -17,7 +17,7 @@ describe("bootstrap", () => {
     const register = vi.fn().mockResolvedValue({ scope: "/" });
     Object.defineProperty(window.navigator, "serviceWorker", {
       configurable: true,
-      value: { register },
+      value: { register, getRegistrations: async () => [] },
     });
     vi.stubGlobal("fetch", async () => ({ ok: false, json: async () => ({}) }));
 

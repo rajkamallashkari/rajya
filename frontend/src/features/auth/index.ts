@@ -1,3 +1,4 @@
+export { AuthGate } from "./components/auth-gate";
 export { AppLockOverlay } from "./components/app-lock-overlay";
 export { OnboardingWizard } from "./components/onboarding-wizard";
 export { PhoneVerifyPanel } from "./components/phone-verify-panel";

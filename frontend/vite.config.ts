@@ -8,8 +8,11 @@ import { pagesHeadersPlugin } from "./vite-plugin-pages-headers";
 import { themeBootPlugin } from "./vite-plugin-theme-boot";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
+const rails = "http://127.0.0.1:3000";
 
 export default defineConfig({
+  // Rails Dotenv and Vite share `rajya/.env`. Do not add frontend/.env.*.
+  envDir: path.join(dir, ".."),
   plugins: [
     react(),
     tailwindcss(),
@@ -35,6 +38,13 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    proxy: {
+      "/api": { target: rails, changeOrigin: true },
+      "/auth": { target: rails, changeOrigin: true },
+      "/cable": { target: rails, ws: true, changeOrigin: true },
+      "/health": { target: rails },
+      "/up": { target: rails },
+    },
     strictPort: true,
   },
   preview: {

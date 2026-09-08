@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ImpersonationBanner } from "@/app/banners/impersonation-banner";
 import { OfflineBanner } from "@/app/banners/offline-banner";
 import { AppLockOverlay } from "@/features/auth/components/app-lock-overlay";
+import { AuthGate } from "@/features/auth/components/auth-gate";
 import { OnboardingWizard } from "@/features/auth/components/onboarding-wizard";
 import { ListErrorBoundary } from "@/app/error-boundaries/error-boundary";
 import { LayerHost } from "@/app/navigation/layer-host";
@@ -19,6 +20,7 @@ import { getMessage } from "@/features/conversations/api/http";
 import { useConversations } from "@/features/conversations/api/queries";
 import { conversationTitle } from "@/features/conversations/model/title";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
+import { needsSignIn } from "@/features/auth/model/session-gate";
 import { useStopImpersonation } from "@/features/admin/api/queries";
 import { useShellStore } from "@/features/settings/store/shell-store";
 import { useMobileViewport } from "@/shared/hooks/use-mobile-viewport";
@@ -43,6 +45,7 @@ export function AppShell() {
     const active = state.accounts.find((account) => account.id === state.activeAccountId);
     return active !== undefined && !active.onboarded;
   });
+  const signedOut = useAccountsStore((state) => needsSignIn(state.activeAccountId));
   const conversations = useConversations();
   const params = useParams();
   const [searchParams] = useSearchParams();
@@ -137,6 +140,7 @@ export function AppShell() {
       <TopCallBar />
       <CallHost />
       <AppLockOverlay />
+      {signedOut ? <AuthGate /> : null}
       {needsOnboarding ? <OnboardingWizard /> : null}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <ListErrorBoundary>

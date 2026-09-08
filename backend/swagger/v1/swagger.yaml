@@ -2494,7 +2494,7 @@ paths:
                 "$ref": "#/components/schemas/Conversation"
   "/api/v1/conversations/{id}/receipts":
     post:
-      summary: Advance delivery or view watermarks
+      summary: Advance delivery or view watermarks (changes BR-38)
       tags:
       - Conversations
       security:

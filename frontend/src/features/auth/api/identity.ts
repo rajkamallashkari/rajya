@@ -55,3 +55,19 @@ export async function fetchAccount(id: number) {
   }
   return { account: result.data, missing: false as const };
 }
+
+export async function loginWithPassword(email: string, password: string) {
+  return unwrap(
+    await apiClient().POST("/auth/login", { body: { email, password } }),
+    "login_failed",
+  );
+}
+
+export async function registerWithPassword(body: {
+  email: string;
+  name: string;
+  password: string;
+  password_confirmation: string;
+}) {
+  return unwrap(await apiClient().POST("/auth/register", { body }), "register_failed");
+}

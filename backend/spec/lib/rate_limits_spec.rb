@@ -25,6 +25,10 @@ RSpec.describe RateLimits do
       expect(described_class.safelisted?(attack_request(path: "/webhooks/whatsapp", http_method: "POST"))).to be(true)
     end
 
+    it "allows CORS preflight so the SPA is not throttled" do
+      expect(described_class.safelisted?(attack_request(path: "/auth/login", http_method: "OPTIONS"))).to be(true)
+    end
+
     it "does not safelist application routes" do
       expect(described_class.safelisted?(attack_request(path: "/auth/login"))).to be(false)
     end

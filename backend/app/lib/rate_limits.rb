@@ -31,7 +31,11 @@ module RateLimits
 
   def safelisted?(req)
     path = req.path
-    path == "/up" || path == "/health" || path.start_with?("/api-docs") || path.start_with?("/webhooks/")
+    req.options? ||
+      path == "/up" ||
+      path == "/health" ||
+      path.start_with?("/api-docs") ||
+      path.start_with?("/webhooks/")
   end
 
   def login_ip(req)

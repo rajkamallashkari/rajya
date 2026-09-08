@@ -8,6 +8,7 @@ import {
   resetAdminConfig,
   resetAiHelpers,
   resetFiledReports,
+  resetIdentity,
   resetPreferences,
 } from "./handlers";
 import {
@@ -188,6 +189,7 @@ describe("MSW handlers", () => {
     resetMessagingStore();
     resetFiledReports();
     resetAiHelpers();
+    resetIdentity();
     resetPreferences();
     resetAdminConfig();
   });
@@ -299,7 +301,7 @@ describe("MSW handlers", () => {
     const deactivated = await client.DELETE("/api/v1/users/me");
     expect(deactivated.data?.ok).toBe(true);
     const onboarded = await client.POST("/api/v1/users/me/complete_onboarding");
-    expect(onboarded.data?.user.onboarded).toBe(false);
+    expect(onboarded.data?.user.onboarded).toBe(true);
     const emailChange = await client.POST("/api/v1/users/me/email/change", {
       body: { email: "new@example.com" },
     });

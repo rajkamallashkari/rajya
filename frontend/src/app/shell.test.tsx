@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppProviders } from "@/app/providers";
 import { AppShell } from "@/app/shell";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
@@ -11,6 +11,29 @@ import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { resetSearchStore, useSearchStore } from "@/features/search/store/search-store";
+
+function liveToken(): string {
+  const encoded = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3_600 }))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+  return `hdr.${encoded}.sig`;
+}
+
+function seedAccount(onboarded = true, id = 1, activate = true): void {
+  useAccountsStore.getState().upsertAccount(
+    {
+      displayName: id === 1 ? "Ada" : "Bob",
+      hasPasskey: false,
+      hasPassword: true,
+      id,
+      onboarded,
+      token: liveToken(),
+      username: id === 1 ? "ada" : "bob",
+    },
+    activate,
+  );
+}
 
 function renderShell(): void {
   render(
@@ -23,6 +46,10 @@ function renderShell(): void {
 }
 
 describe("AppShell", () => {
+  beforeEach(() => {
+    seedAccount();
+  });
+
   afterEach(() => {
     useLayerStore.getState().clearLayers();
     useShellStore.setState({ impersonatingName: null });
@@ -138,16 +165,14 @@ describe("AppShell", () => {
     });
   });
 
+  it("shows the sign-in gate when no account is stored", () => {
+    useAccountsStore.getState().removeAll();
+    renderShell();
+    expect(screen.getByRole("dialog", { name: en.auth.gate.aria })).toBeInTheDocument();
+  });
+
   it("shows onboarding when the active account is not onboarded", () => {
-    useAccountsStore.getState().upsertAccount({
-      displayName: "Ada",
-      hasPasskey: false,
-      hasPassword: true,
-      id: 1,
-      onboarded: false,
-      token: "tok",
-      username: "ada",
-    });
+    seedAccount(false);
     renderShell();
     expect(screen.getByRole("dialog", { name: en.auth.onboarding.aria })).toBeInTheDocument();
   });
@@ -186,27 +211,8 @@ describe("AppShell", () => {
   });
 
   it("activates the account from a push deep-link query", async () => {
-    useAccountsStore.getState().upsertAccount(
-      {
-        displayName: "Ada",
-        hasPasskey: false,
-        hasPassword: true,
-        id: 1,
-        onboarded: true,
-        token: "a",
-        username: "ada",
-      },
-      true,
-    );
-    useAccountsStore.getState().upsertAccount({
-      displayName: "Bob",
-      hasPasskey: false,
-      hasPassword: true,
-      id: 2,
-      onboarded: true,
-      token: "b",
-      username: "bob",
-    });
+    seedAccount();
+    seedAccount(true, 2, false);
     render(
       <AppProviders>
         <MemoryRouter initialEntries={["/c/1?account=2"]}>

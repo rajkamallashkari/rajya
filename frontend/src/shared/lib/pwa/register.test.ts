@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { registerServiceWorkerListeners, type ServiceWorkerScope } from "./register-listeners";
-import { registerServiceWorker } from "./register";
+import { clearServiceWorkers, registerServiceWorker, startServiceWorker } from "./register";
 
 describe("service worker registration", () => {
   it("returns null when service workers are unavailable", async () => {
@@ -14,6 +14,31 @@ describe("service worker registration", () => {
       registerServiceWorker({ serviceWorker: { register } } as unknown as Navigator),
     ).resolves.toEqual({ scope: "/" });
     expect(register).toHaveBeenCalledWith("/sw.js");
+  });
+
+  it("swallows a failed production registration", async () => {
+    const register = vi.fn().mockRejectedValue(new Error("missing"));
+    await expect(
+      registerServiceWorker({ serviceWorker: { register } } as unknown as Navigator),
+    ).resolves.toBeNull();
+  });
+
+  it("clears leftover workers in development and registers only in production", async () => {
+    const unregister = vi.fn().mockResolvedValue(true);
+    const register = vi.fn().mockResolvedValue({ scope: "/" });
+    const registrar = {
+      serviceWorker: {
+        register,
+        getRegistrations: async () => [{ unregister }],
+      },
+    } as unknown as Navigator;
+    await expect(startServiceWorker(registrar, false)).resolves.toBeNull();
+    expect(unregister).toHaveBeenCalled();
+    expect(register).not.toHaveBeenCalled();
+    await expect(startServiceWorker(registrar, true)).resolves.toEqual({ scope: "/" });
+    expect(register).toHaveBeenCalledWith("/sw.js");
+    await expect(clearServiceWorkers({} as Navigator)).resolves.toBeUndefined();
+    await expect(clearServiceWorkers(undefined)).resolves.toBeUndefined();
   });
 
   it("binds install, activate and fetch", () => {

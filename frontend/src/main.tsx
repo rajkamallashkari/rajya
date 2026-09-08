@@ -4,23 +4,23 @@ import { App } from "@/app/App";
 import { startBrowserMocksOrPwa } from "@/shared/lib/api/msw/flag";
 import { initI18n } from "@/shared/lib/i18n";
 import { initErrorReporting } from "@/shared/lib/monitoring/errors";
-import { registerServiceWorker } from "@/shared/lib/pwa/register";
+import { startServiceWorker } from "@/shared/lib/pwa/register";
 import "@/styles/index.css";
 
 export async function mount(root: HTMLElement, mswFlag?: string): Promise<Root> {
-  await initI18n({
-    storage: window.localStorage,
-    fetcher: (url) => window.fetch(url),
-  });
-  await initErrorReporting();
   await startBrowserMocksOrPwa(
     mswFlag ?? import.meta.env.VITE_MSW,
     async () => {
       const { defaultStartMsw } = await import("@/shared/lib/api/msw/start-browser");
       await defaultStartMsw();
     },
-    registerServiceWorker,
+    startServiceWorker,
   );
+  await initI18n({
+    storage: window.localStorage,
+    fetcher: (url) => window.fetch(url),
+  });
+  await initErrorReporting();
   const reactRoot = createRoot(root);
   reactRoot.render(
     <StrictMode>
