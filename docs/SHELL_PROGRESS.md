@@ -13,28 +13,25 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 14.3 |
-| **Next session** | 14.4 |
+| **Last completed** | 14.4 |
+| **Next session** | 14.5 |
 | **Phase** | P14 Shell |
-| **Sessions remaining in phase** | 5 |
+| **Sessions remaining in phase** | 4 |
 
 ---
 
 ## Next session brief (agent: read SHELL_PLAN.md §5 for the full row)
 
-**14.4 — Compose menu + New message / New group.**
+**14.5 — Profile tab + inline edit.**
 
-Replace list FABs and the no-op empty New chat (`setQuery("")`). Header
-compose control (bubble+plus) → menu: New message, New group, Channel/Broadcast
-disabled Soon. New message layer: bots + people (`searchPeople` +
-`useStartDirectChat` / `createConversation`). Selecting a person or bot
-opens/creates the DM and pops the layer. New group uses existing create-group
-operation. Empty-state CTA opens compose. **DoD:** two signed-in humans can
-find each other and start a DM.
+Profile tab: photo, name, username, bio; email/phone only when privacy
+prefs allow. Header **Edit** (inline form, Cancel/Save at bottom) and
+**Settings** (push hub layer). Remove settings gear and `/dev/*` links from
+the Chats header. Account switcher: long-press/right-click on identity.
 
-Docs: SHELL_TARGET §2; SHELL_AUDIT §2.1; legacy
-`legacy/botverse/src/components/sidebar/NewChatPanel.tsx`, Sidebar FABs.
-Do not start 14.5 in this session.
+Docs: SHELL_TARGET §3; SHELL_AUDIT §3 AccountDrawer; legacy `NavBar.tsx`,
+`ProfileContent.tsx`, `ProfileEditPanel.tsx`, `AccountSwitcher.tsx`.
+Do not start 14.6 in this session.
 
 ---
 
@@ -46,6 +43,7 @@ Do not start 14.5 in this session.
 | 14.1 | AuthGate Google GIS + password + OTP/magic/passkey | GIS popup → `POST /auth/google` `{ code }`, JWT in body (F-25). Google button hidden without `VITE_GOOGLE_CLIENT_ID`. OTP/magic/passkey use existing endpoints (server still enforces `passwordless_auth` / `passkey_auth`). `/auth/magic` consumes mailed tokens. Pages CSP allows `accounts.google.com`. |
 | 14.2 | Tab chrome: rail + bottom bar | Destination store Chats / Calls / Profile. Desktop left rail, mobile bottom bar (hidden on nested Chats layers). Exclusive panes; Calls/Profile stubs for 14.5/14.6. |
 | 14.3 | Chats geometry: empty column + overlays | Always list + chat or empty welcome. Desktop details are 420px right overlays, not a third column. Settings overlay the chat pane. Returning from Calls/Profile restores the last conversation. First desktop load opens the most recent chat. |
+| 14.4 | Compose menu + New message / New group | Header bubble+plus menu (channel/broadcast Soon). New message layer: bots + people search; select opens/creates a DM. New group uses existing create-group. Empty-list and welcome CTAs open the same menu. |
 
 ---
 

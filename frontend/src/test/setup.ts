@@ -23,6 +23,7 @@ import {
 import { resetMessagingStore } from "@/shared/lib/api/msw/messaging-store";
 import { _testReset as resetLayerStack } from "@/shared/lib/navigation/layer-stack";
 import { resetLayerStore } from "@/shared/lib/navigation/layer-store";
+import { resetComposeStore } from "@/features/conversations/store/compose-store";
 import { FakeAudio } from "@/test/fake-audio";
 import { server } from "@/test/msw";
 
@@ -47,6 +48,7 @@ afterEach(() => {
   resetOutboxLocks();
   resetOutboxProcessor();
   resetLayerStore();
+  resetComposeStore();
   resetLayerStack();
   resetCatchUpScheduler();
   resetCallStore();

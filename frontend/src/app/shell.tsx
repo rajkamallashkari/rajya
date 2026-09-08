@@ -15,6 +15,8 @@ import { CallHost } from "@/app/lazy/call-host";
 import { ChatsWelcome } from "@/features/conversations/components/chats-welcome";
 import { ConversationList } from "@/features/conversations/components/conversation-list";
 import { ConversationThread } from "@/features/conversations/components/conversation-thread";
+import { NewGroupPanel } from "@/features/conversations/components/new-group-panel";
+import { NewMessagePanel } from "@/features/conversations/components/new-message-panel";
 import { ProfilePanel } from "@/features/conversations/components/profile-panel";
 import { desktopChatHydration } from "@/features/conversations/model/recent";
 import { MediaGalleryPanel } from "@/features/media";
@@ -204,6 +206,12 @@ export function AppShell() {
                   }
                   if (layer.kind === "settings") {
                     return <SettingsLayer />;
+                  }
+                  if (layer.kind === "compose_message") {
+                    return <NewMessagePanel />;
+                  }
+                  if (layer.kind === "compose_group") {
+                    return <NewGroupPanel />;
                   }
                   return (
                     <ProfilePanel

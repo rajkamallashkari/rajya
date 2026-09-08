@@ -19,6 +19,7 @@ import {
   useConversations,
   useConversationCommands,
   useCreateFolder,
+  useCreateGroup,
   useCreateReminder,
   useDestroyFolder,
   useEditMessage,
@@ -546,6 +547,7 @@ describe("message queries", () => {
       const updateReply = useUpdateSavedReply();
       const destroyReply = useDestroySavedReply();
       const commands = useConversationCommands(1);
+      const createGroup = useCreateGroup();
       const remind = useCreateReminder();
       return (
         <div>
@@ -576,6 +578,9 @@ describe("message queries", () => {
           </Button>
           <Button onClick={() => wallpaper.mutate({ id: 1, wallpaper: null })} type="button">
             wallpaper-clear
+          </Button>
+          <Button onClick={() => createGroup.mutate({ account_ids: [2], title: "Crew" })} type="button">
+            create-group
           </Button>
           <Button
             onClick={() => remind.mutate({ messageId: 101, remindAt: "2099-01-01T09:00:00.000Z" })}
@@ -610,6 +615,7 @@ describe("message queries", () => {
     await user.click(screen.getByRole("button", { name: "read-chat" }));
     await user.click(screen.getByRole("button", { name: "wallpaper-chat" }));
     await user.click(screen.getByRole("button", { name: "wallpaper-clear" }));
+    await user.click(screen.getByRole("button", { name: "create-group" }));
     await user.click(screen.getByRole("button", { name: "remind" }));
     await user.click(screen.getByRole("button", { name: "reply-add" }));
     await user.click(screen.getByRole("button", { name: "reply-edit" }));

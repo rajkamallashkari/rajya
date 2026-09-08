@@ -27,7 +27,12 @@ export async function getConversation(id: number) {
   );
 }
 
-export async function createConversation(body: { account_id?: number; kind?: string }) {
+export async function createConversation(body: {
+  account_id?: number;
+  account_ids?: number[];
+  kind?: string;
+  title?: string;
+}) {
   return unwrap(
     await apiClient().POST("/api/v1/conversations", {
       headers: bearerHeaders(),
@@ -428,7 +433,11 @@ export async function listSavedReplies() {
   );
 }
 
-export async function createSavedReply(body: { shortcut: string; body: string; position?: number }) {
+export async function createSavedReply(body: {
+  shortcut: string;
+  body: string;
+  position?: number;
+}) {
   return unwrap(
     await apiClient().POST("/api/v1/saved_replies", {
       headers: bearerHeaders(),

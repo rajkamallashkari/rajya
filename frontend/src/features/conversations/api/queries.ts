@@ -17,6 +17,7 @@ import {
   bulkUnsendMessages,
   cancelGeneration,
   closePoll,
+  createConversation,
   createFolder,
   createMessageReminder,
   createReport,
@@ -115,6 +116,17 @@ export function useConversations(archived = false) {
       return data;
     },
     queryKey: key,
+  });
+}
+
+export function useCreateGroup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { account_ids: number[]; title?: string }) =>
+      createConversation({ account_ids: body.account_ids, kind: "group", title: body.title }),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
+    },
   });
 }
 
@@ -678,7 +690,10 @@ export function useUpdateConversationWallpaper() {
       await queryClient.cancelQueries({ queryKey: conversationKeys.all });
       const previousList = queryClient.getQueryData<{ conversations: Conversation[] }>(listKey);
       const previousDetail = queryClient.getQueryData<Conversation>(conversationKeys.detail(id));
-      queryClient.setQueryData(listKey, patchConversationList(previousList, id, { wallpaper: wallpaper ?? undefined }));
+      queryClient.setQueryData(
+        listKey,
+        patchConversationList(previousList, id, { wallpaper: wallpaper ?? undefined }),
+      );
       queryClient.setQueryData(conversationKeys.detail(id), (current: Conversation | undefined) =>
         current ? { ...current, wallpaper: wallpaper ?? undefined } : current,
       );

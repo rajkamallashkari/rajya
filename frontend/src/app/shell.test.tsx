@@ -342,6 +342,24 @@ describe("AppShell", () => {
     expect(document.querySelector("[data-layer-column='overlay']")).not.toBeNull();
   });
 
+  it("opens New message and New group layers from the compose menu", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 1280,
+    });
+    renderShell();
+    await user.click(screen.getByRole("button", { name: en.compose.new_conversation }));
+    await user.click(await screen.findByRole("menuitem", { name: en.compose.message }));
+    expect(await screen.findByLabelText(en.compose.search)).toBeInTheDocument();
+    expect(document.querySelector("[data-compose-panel='message']")).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: en.shell.back }));
+    await user.click(screen.getByRole("button", { name: en.compose.new_conversation }));
+    await user.click(await screen.findByRole("menuitem", { name: en.compose.group }));
+    expect(document.querySelector("[data-compose-panel='group']")).not.toBeNull();
+  });
+
   it("restores the last conversation when returning from Calls", async () => {
     const user = userEvent.setup();
     Object.defineProperty(window, "innerWidth", {

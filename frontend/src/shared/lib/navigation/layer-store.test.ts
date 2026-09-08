@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  composeGroupLayer,
+  composeMessageLayer,
   conversationLayer,
   layersForOpenConversation,
   partitionLayers,
@@ -83,8 +85,18 @@ describe("layer-store", () => {
     expect(layersForOpenConversation([ada, adaProfile], ada)).toEqual([ada]);
     expect(layersForOpenConversation([ada, adaProfile], team)).toEqual([team]);
     expect(layersForOpenConversation([], ada)).toEqual([ada]);
-    expect(
-      layersForOpenConversation([ada, adaProfile], { ...ada, focusMessageId: "101" }),
-    ).toEqual([{ ...ada, focusMessageId: "101" }]);
+    expect(layersForOpenConversation([ada, adaProfile], { ...ada, focusMessageId: "101" })).toEqual(
+      [{ ...ada, focusMessageId: "101" }],
+    );
+    expect(composeMessageLayer("New message")).toEqual({
+      conversationId: "compose_message",
+      id: "compose_message",
+      kind: "compose_message",
+      title: "New message",
+    });
+    expect(composeGroupLayer("New group").kind).toBe("compose_group");
+    useLayerStore.getState().pushLayer(composeMessageLayer("New message"));
+    useLayerStore.getState().pushLayer(composeGroupLayer("New group"));
+    expect(useLayerStore.getState().layers.map((layer) => layer.kind)).toEqual(["compose_group"]);
   });
 });

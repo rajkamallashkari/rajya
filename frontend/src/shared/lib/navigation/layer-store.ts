@@ -1,7 +1,10 @@
 import { create } from "zustand";
 import { abortAllLayers } from "@/shared/lib/navigation/layer-stack";
 
-export type LayerKind = "conversation" | "gallery" | "profile" | "settings";
+export type LayerKind =
+  "compose_group" | "compose_message" | "conversation" | "gallery" | "profile" | "settings";
+
+const COMPOSE_KINDS = new Set<LayerKind>(["compose_group", "compose_message"]);
 
 export interface LayerEntry {
   accountId?: string;
@@ -45,12 +48,32 @@ export function conversationLayer(
 }
 
 export const SETTINGS_LAYER_ID = "settings";
+export const COMPOSE_MESSAGE_LAYER_ID = "compose_message";
+export const COMPOSE_GROUP_LAYER_ID = "compose_group";
 
 export function settingsLayer(title: string): LayerEntry {
   return {
     conversationId: SETTINGS_LAYER_ID,
     id: SETTINGS_LAYER_ID,
     kind: "settings",
+    title,
+  };
+}
+
+export function composeMessageLayer(title: string): LayerEntry {
+  return {
+    conversationId: COMPOSE_MESSAGE_LAYER_ID,
+    id: COMPOSE_MESSAGE_LAYER_ID,
+    kind: "compose_message",
+    title,
+  };
+}
+
+export function composeGroupLayer(title: string): LayerEntry {
+  return {
+    conversationId: COMPOSE_GROUP_LAYER_ID,
+    id: COMPOSE_GROUP_LAYER_ID,
+    kind: "compose_group",
     title,
   };
 }
@@ -90,7 +113,10 @@ export const useLayerStore = create<LayerState>((set, get) => ({
       if (state.layers.some((entry) => entry.id === layer.id)) {
         return state;
       }
-      return { layers: [...state.layers, layer] };
+      const base = COMPOSE_KINDS.has(layer.kind)
+        ? state.layers.filter((entry) => !COMPOSE_KINDS.has(entry.kind))
+        : state.layers;
+      return { layers: [...base, layer] };
     });
   },
   popLayer: () => {

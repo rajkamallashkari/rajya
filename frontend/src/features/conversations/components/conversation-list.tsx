@@ -17,6 +17,7 @@ import {
   useReorderFolders,
 } from "@/features/conversations/api/queries";
 import { ChatListItem } from "@/features/conversations/components/chat-list-item";
+import { ComposeMenu } from "@/features/conversations/components/compose-menu";
 import { FolderStrip } from "@/features/conversations/components/folder-strip";
 import { lastActivityFromPreview } from "@/features/conversations/model/preview";
 import { useTypingIndicators } from "@/features/conversations/hooks/use-typing-indicators";
@@ -34,13 +35,18 @@ import {
 import { formatMessageTime } from "@/features/messages";
 import { GlobalSearchHits, SearchFilterSheet } from "@/features/search";
 import { useSearchStore } from "@/features/search/store/search-store";
-import { conversationLayer, settingsLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
+import {
+  conversationLayer,
+  settingsLayer,
+  useLayerStore,
+} from "@/shared/lib/navigation/layer-store";
 import { Button } from "@/shared/ui/button";
 import { IconButton } from "@/shared/ui/icon-button";
 import { Input } from "@/shared/ui/input";
 import { ListView, type ListViewStatus } from "@/shared/ui/list-view";
 import { Logo } from "@/shared/ui/logo";
 import { useResolvedTheme } from "@/app/theme-provider";
+import { useComposeStore } from "@/features/conversations/store/compose-store";
 
 const EMPTY_FOLDERS: ConversationFolder[] = [];
 
@@ -54,6 +60,7 @@ export function ConversationList({
   const openConversation = useLayerStore((state) => state.openConversation);
   const pushLayer = useLayerStore((state) => state.pushLayer);
   const layers = useLayerStore((state) => state.layers);
+  const setMenuOpen = useComposeStore((state) => state.setMenuOpen);
   const [query, setQuery] = useState("");
   const [botsOpen, setBotsOpen] = useState(false);
   const setFiltersOpen = useSearchStore((state) => state.setFiltersOpen);
@@ -111,6 +118,7 @@ export function ConversationList({
             {t("app.tagline")}
           </p>
         </div>
+        <ComposeMenu />
         <IconButton
           aria-label={t("shell.settings")}
           onClick={() => pushLayer(settingsLayer(t("shell.settings")))}
@@ -133,10 +141,18 @@ export function ConversationList({
           ref={inputRef}
           value={query}
         />
-        <IconButton aria-label={t("bots.directory")} onClick={() => setBotsOpen(true)} type="button">
+        <IconButton
+          aria-label={t("bots.directory")}
+          onClick={() => setBotsOpen(true)}
+          type="button"
+        >
           <Bot className="h-[var(--icon-size)] w-[var(--icon-size)]" />
         </IconButton>
-        <IconButton aria-label={t("search.filters")} onClick={() => setFiltersOpen(true)} type="button">
+        <IconButton
+          aria-label={t("search.filters")}
+          onClick={() => setFiltersOpen(true)}
+          type="button"
+        >
           <Filter className="h-[var(--icon-size)] w-[var(--icon-size)]" />
         </IconButton>
       </div>
@@ -158,7 +174,7 @@ export function ConversationList({
       <div className="min-h-0 flex-1 overflow-y-auto" data-layer-scroll="base">
         <ListView
           action={
-            <Button onClick={() => setQuery("")} type="button">
+            <Button onClick={() => setMenuOpen(true)} type="button">
               {t("lists.empty_action")}
             </Button>
           }
@@ -241,7 +257,10 @@ function LiveChatRow({
   const { t } = useTranslation();
   const typists = useTypingIndicators(item.id);
   const name = conversationTitle(item, untitled);
-  const preview = lastActivityFromPreview(item.last_message, t("conversations.last_message_deleted"));
+  const preview = lastActivityFromPreview(
+    item.last_message,
+    t("conversations.last_message_deleted"),
+  );
   const lastActivity = typists[0]
     ? { kind: "typing" as const, text: t(`conversations.activity.${typists[0].activity}`) }
     : preview;

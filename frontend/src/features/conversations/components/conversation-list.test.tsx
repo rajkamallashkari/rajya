@@ -42,7 +42,7 @@ describe("ConversationList", () => {
   });
 
   it("filters, opens a conversation, and shows empty when nothing matches", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
     render(
       <AppProviders>
         <MemoryRouter>
@@ -76,6 +76,11 @@ describe("ConversationList", () => {
     await user.type(screen.getByLabelText(en.search.label), "zzz");
     expect(screen.getByText(en.lists.empty_title)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.lists.empty_action }));
+    expect(await screen.findByRole("menuitem", { name: en.compose.message })).toBeInTheDocument();
+    await user.click(screen.getByRole("menuitem", { name: en.compose.message }));
+    expect(useLayerStore.getState().layers.some((layer) => layer.kind === "compose_message")).toBe(
+      true,
+    );
   });
 
   it("pins and marks a conversation unread from the row menu", async () => {
@@ -91,10 +96,14 @@ describe("ConversationList", () => {
     const surface = row.querySelector("[style]") as HTMLElement;
     fireEvent.contextMenu(surface);
     await user.click(screen.getByRole("menuitem", { name: en.conversations.pin }));
-    const rowAfter = (await screen.findByText("Team")).closest("[data-chat-list-item]") as HTMLElement;
+    const rowAfter = (await screen.findByText("Team")).closest(
+      "[data-chat-list-item]",
+    ) as HTMLElement;
     fireEvent.contextMenu(rowAfter.querySelector("[style]") as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: en.conversations.mark_unread }));
-    const ada = (await screen.findByText(ADA_DEMO.name)).closest("[data-chat-list-item]") as HTMLElement;
+    const ada = (await screen.findByText(ADA_DEMO.name)).closest(
+      "[data-chat-list-item]",
+    ) as HTMLElement;
     fireEvent.contextMenu(ada.querySelector("[style]") as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: en.conversations.mark_read }));
   });
@@ -157,7 +166,9 @@ describe("ConversationList", () => {
     await user.click(screen.getByRole("menuitem", { name: en.conversations.archive }));
     await user.click(screen.getByRole("tab", { name: en.conversations.folders.archived }));
     expect(await screen.findByText("Team")).toBeInTheDocument();
-    const archivedRow = (await screen.findByText("Team")).closest("[data-chat-list-item]") as HTMLElement;
+    const archivedRow = (await screen.findByText("Team")).closest(
+      "[data-chat-list-item]",
+    ) as HTMLElement;
     fireEvent.contextMenu(archivedRow.querySelector("[style]") as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: en.conversations.unarchive }));
     await user.click(screen.getByRole("tab", { name: en.conversations.folders.all }));
@@ -174,11 +185,15 @@ describe("ConversationList", () => {
     };
     fireEvent.dragStart(workTab, { dataTransfer: data });
     fireEvent.drop(homeTab, { dataTransfer: data });
-    const ada = (await screen.findByText(ADA_DEMO.name)).closest("[data-chat-list-item]") as HTMLElement;
+    const ada = (await screen.findByText(ADA_DEMO.name)).closest(
+      "[data-chat-list-item]",
+    ) as HTMLElement;
     fireEvent.contextMenu(ada.querySelector("[style]") as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: en.conversations.mute_1h }));
     fireEvent.contextMenu(
-      (await screen.findByText(ADA_DEMO.name)).closest("[data-chat-list-item]")!.querySelector("[style]") as HTMLElement,
+      (await screen.findByText(ADA_DEMO.name))
+        .closest("[data-chat-list-item]")!
+        .querySelector("[style]") as HTMLElement,
     );
     await user.click(screen.getByRole("menuitem", { name: "Work" }));
     await user.click(screen.getByRole("tab", { name: "Work" }));
