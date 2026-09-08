@@ -719,6 +719,8 @@ describe("MSW handlers", () => {
       body: { conversation_id: 1 },
     });
     expect(audio.data?.call?.kind).toBe("audio");
+    const log = await client.GET("/api/v1/calls", { params: { query: { page: 1 } } });
+    expect(log.data?.calls[0]?.conversation_kind).toBe("direct");
     const active = await client.GET("/api/v1/calls/active");
     expect(active.data?.call).toBeUndefined();
     const ice = await client.GET("/api/v1/calls/ice_servers");

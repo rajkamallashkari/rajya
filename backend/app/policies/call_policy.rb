@@ -1,4 +1,8 @@
 class CallPolicy < ApplicationPolicy
+  def index?
+    human?
+  end
+
   def show?
     human? && participant?
   end
@@ -10,6 +14,14 @@ class CallPolicy < ApplicationPolicy
   def screen_share? = show?
   def ice_servers? = human?
   def active? = human?
+
+  class Scope < ApplicationPolicy::Scope
+    def resolve
+      return scope.none unless account&.human?
+
+      scope.where(id: CallParticipant.where(account_id: account.id).select(:call_id))
+    end
+  end
 
   private
 

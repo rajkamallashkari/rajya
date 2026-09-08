@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DIRECT_PARTICIPANT_MAX,
+  CALL_LOG_FIRST_PAGE,
   GROUP_VIDEO_CONSTRAINTS,
   RING_TIMEOUT_MS,
   groupVideoConstraints,
@@ -17,6 +18,7 @@ describe("call constants", () => {
     });
     expect(DIRECT_PARTICIPANT_MAX).toBe(2);
     expect(RING_TIMEOUT_MS).toBe(45_000);
+    expect(CALL_LOG_FIRST_PAGE).toBe(1);
   });
 
   it("treats ringing-outgoing, connecting, and active as live", () => {

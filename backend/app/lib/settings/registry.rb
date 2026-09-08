@@ -318,6 +318,10 @@ module Settings
         type: :integer, category: :calls, default: 20, min: 5, max: 120,
         description: "Seconds between call heartbeats."
       },
+      call_page_size: {
+        type: :integer, category: :calls, default: 50, min: 1, max: 200,
+        description: "Calls per page on the account call log."
+      },
       call_sweep_interval: {
         type: :integer, category: :calls, default: 30, min: 5, max: 300,
         description: "Seconds between sweeps for stale call participants."

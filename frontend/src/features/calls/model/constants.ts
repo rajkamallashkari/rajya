@@ -8,6 +8,7 @@ export const GROUP_VIDEO_RESOLUTION = registry.group_video_resolution.default as
 export const GROUP_VIDEO_FRAME_RATE = registry.group_video_frame_rate.default as number;
 export const STUN_URLS = registry.stun_urls.default as string[];
 export const DIRECT_PARTICIPANT_MAX = 2;
+export const CALL_LOG_FIRST_PAGE = 1;
 export const RING_TIMEOUT_MS = (registry.ring_timeout.default as number) * MS_PER_SECOND;
 export const CALL_PIP_WIDTH_PX = 120;
 export const CALL_PIP_HEIGHT_PX = 160;

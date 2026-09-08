@@ -152,7 +152,7 @@ Rails.application.routes.draw do
       resources :export_jobs, only: %i[index create show] do
         member { get :download }
       end
-      resources :calls, only: %i[create show] do
+      resources :calls, only: %i[index create show] do
         collection do
           get :active
           get :ice_servers

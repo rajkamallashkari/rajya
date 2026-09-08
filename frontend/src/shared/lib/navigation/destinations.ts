@@ -21,5 +21,5 @@ export function shouldHideMobileTabBar({
   if (destination === "chats") {
     return layerCount > 0;
   }
-  return destination === "profile" && nested;
+  return nested;
 }

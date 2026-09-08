@@ -711,6 +711,15 @@
     "max": 120,
     "allow_nil": false
   },
+  "call_page_size": {
+    "type": "integer",
+    "category": "calls",
+    "default": 50,
+    "description": "Calls per page on the account call log.",
+    "min": 1,
+    "max": 200,
+    "allow_nil": false
+  },
   "call_sweep_interval": {
     "type": "integer",
     "category": "calls",

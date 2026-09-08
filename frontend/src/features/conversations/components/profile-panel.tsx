@@ -21,26 +21,34 @@ import { ListView } from "@/shared/ui/list-view";
 export function ProfilePanel({
   accountId,
   conversationId,
+  onBack,
 }: {
   accountId?: string;
   conversationId: string;
+  onBack?: () => void;
 }): ReactNode {
   if (accountId) {
-    return <AccountContactProfile accountId={accountId} />;
+    return <AccountContactProfile accountId={accountId} onBack={onBack} />;
   }
   const liveId = parseConversationId(conversationId);
   if (liveId == null) {
-    return <DemoProfile conversationId={conversationId} />;
+    return <DemoProfile conversationId={conversationId} onBack={onBack} />;
   }
-  return <LiveProfile conversationId={liveId} />;
+  return <LiveProfile conversationId={liveId} onBack={onBack} />;
 }
 
-function AccountContactProfile({ accountId }: { accountId: string }): ReactNode {
+function AccountContactProfile({
+  accountId,
+  onBack,
+}: {
+  accountId: string;
+  onBack?: () => void;
+}): ReactNode {
   const { t } = useTranslation();
   const id = Number(accountId);
   return (
     <div className="flex h-full min-h-0 flex-col bg-[var(--surface-panel)]" data-profile-panel="">
-      <LayerHeader title={t("contact.open_profile")} />
+      <LayerHeader onBack={onBack} title={t("contact.open_profile")} />
       <div className="px-[var(--space-list-x)] py-[var(--space-4)]">
         {Number.isFinite(id) ? <AccountProfile accountId={id} /> : null}
       </div>
@@ -48,16 +56,35 @@ function AccountContactProfile({ accountId }: { accountId: string }): ReactNode 
   );
 }
 
-function DemoProfile({ conversationId }: { conversationId: string }): ReactNode {
+function DemoProfile({
+  conversationId,
+  onBack,
+}: {
+  conversationId: string;
+  onBack?: () => void;
+}): ReactNode {
   const { t } = useTranslation();
   const conversation = conversationById(conversationId);
   if (!conversation) {
     return null;
   }
-  return <ProfileBody conversationId={conversationId} name={conversation.name} subtitle={t("shell.profile_subtitle")} />;
+  return (
+    <ProfileBody
+      conversationId={conversationId}
+      name={conversation.name}
+      onBack={onBack}
+      subtitle={t("shell.profile_subtitle")}
+    />
+  );
 }
 
-function LiveProfile({ conversationId }: { conversationId: number }): ReactNode {
+function LiveProfile({
+  conversationId,
+  onBack,
+}: {
+  conversationId: number;
+  onBack?: () => void;
+}): ReactNode {
   const { t } = useTranslation();
   const query = useConversation(conversationId);
   const [qrPayload, setQrPayload] = useState<string | null>(null);
@@ -81,6 +108,7 @@ function LiveProfile({ conversationId }: { conversationId: number }): ReactNode 
     <ProfileBody
       conversationId={String(conversationId)}
       name={conversationTitle(query.data, t("conversations.untitled"))}
+      onBack={onBack}
       subtitle={t("shell.profile_subtitle")}
     >
       {canManageInvites(query.data.kind, query.data.role) ? (
@@ -136,11 +164,13 @@ function ProfileBody({
   children,
   conversationId,
   name,
+  onBack,
   subtitle,
 }: {
   children?: ReactNode;
   conversationId: string;
   name: string;
+  onBack?: () => void;
   subtitle: string;
 }) {
   const { t } = useTranslation();
@@ -148,25 +178,27 @@ function ProfileBody({
   const liveId = parseConversationId(conversationId);
   return (
     <div className="flex h-full min-h-0 flex-col bg-[var(--surface-panel)]" data-profile-panel="">
-      <LayerHeader title={name} />
+      <LayerHeader onBack={onBack} title={name} />
       <div className="flex flex-col items-center gap-[var(--control-gap)] px-[var(--space-list-x)] py-[var(--space-8)]">
         <Avatar className="size-[var(--space-16)]" name={name} />
         <p className="[font-weight:var(--font-weight-emphasis)]">{name}</p>
         <p className="text-[var(--text-secondary)]">{subtitle}</p>
-        <Button
-          onClick={() =>
-            pushLayer({
-              conversationId,
-              id: `gallery:${conversationId}`,
-              kind: "gallery",
-              title: t("media.gallery_title"),
-            })
-          }
-          type="button"
-          variant="secondary"
-        >
-          {t("media.gallery_title")}
-        </Button>
+        {onBack ? null : (
+          <Button
+            onClick={() =>
+              pushLayer({
+                conversationId,
+                id: `gallery:${conversationId}`,
+                kind: "gallery",
+                title: t("media.gallery_title"),
+              })
+            }
+            type="button"
+            variant="secondary"
+          >
+            {t("media.gallery_title")}
+          </Button>
+        )}
       </div>
       {liveId != null ? (
         <div className="px-[var(--space-list-x)]">

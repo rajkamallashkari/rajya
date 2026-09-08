@@ -20,7 +20,9 @@ describe("useShellStore", () => {
     expect(useShellStore.getState().destination).toBe("chats");
     expect(useShellStore.getState().profileSettingsOpen).toBe(false);
     useShellStore.getState().setProfileSettingsOpen(true);
+    useShellStore.getState().setCallsContact({ conversationId: "9", accountId: "4" });
     useShellStore.getState().setDestination("calls");
     expect(useShellStore.getState().profileSettingsOpen).toBe(false);
+    expect(useShellStore.getState().callsContact).toBeNull();
   });
 });

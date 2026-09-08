@@ -24,11 +24,12 @@ describe("calls http", () => {
     setAccessSession(testSession({ token: "jwt" }));
   });
 
-  it("creates, accepts, declines, cancels, hangs up, and reads the active call", async () => {
+  it("creates, lists, accepts, declines, cancels, hangs up, and reads the active call", async () => {
     const http = await import("./http");
     mockClient.POST.mockResolvedValue({ data: { call: { id: 1 } } });
-    mockClient.GET.mockResolvedValue({ data: { call: null } });
+    mockClient.GET.mockResolvedValue({ data: { calls: [], meta: { has_more: false, page: 1, per_page: 50, total: 0 } } });
     await http.createCall(3, "video");
+    await http.listCalls(1);
     await http.acceptCallRequest(1);
     await http.declineCallRequest(1);
     await http.cancelCallRequest(1);

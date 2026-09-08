@@ -13,24 +13,25 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 14.5 |
-| **Next session** | 14.6 |
+| **Last completed** | 14.6 |
+| **Next session** | 14.7 |
 | **Phase** | P14 Shell |
-| **Sessions remaining in phase** | 3 |
+| **Sessions remaining in phase** | 2 |
 
 ---
 
 ## Next session brief (agent: read SHELL_PLAN.md §5 for the full row)
 
-**14.6 — Calls index + peer profile.**
+**14.7 — Settings stack completeness.**
 
-Add the paginated `GET /api/v1/calls` endpoint with OpenAPI, operation,
-Pundit, and serializer coverage. Calls tab is a log only; row click opens
-the peer profile layer. Keep live call overlays global.
+Settings hub rows matching Botverse `AccountDrawer` (notifications, privacy,
+security, display, AI, starred, scheduled, devices, stickers, chats, bots,
+manage accounts). Each row is a stack layer over existing Rajya panels/APIs.
+Do not invent features. Privacy toggles for profile email/phone must actually
+hide those fields on the Profile tab.
 
-Docs: SHELL_TARGET §4; existing calls table and create/show implementation.
-Do not invent WhatsApp extras beyond log + profile. Do not start 14.7 in this
-session.
+Docs: SHELL_TARGET §3; SHELL_AUDIT §3. Legacy: `legacy/botverse/src/components/sidebar/AccountDrawer.tsx` and the named panels.
+Do not start 14.8 in this session.
 
 ---
 
@@ -44,6 +45,7 @@ session.
 | 14.3 | Chats geometry: empty column + overlays | Always list + chat or empty welcome. Desktop details are 420px right overlays, not a third column. Settings overlay the chat pane. Returning from Calls/Profile restores the last conversation. First desktop load opens the most recent chat. |
 | 14.4 | Compose menu + New message / New group | Header bubble+plus menu (channel/broadcast Soon). New message layer: bots + people search; select opens/creates a DM. New group uses existing create-group. Empty-list and welcome CTAs open the same menu. |
 | 14.5 | Profile tab + inline edit | Self identity with privacy-gated email/phone, inline name/username/bio editing, settings overlay, and long-press/right-click account switching. Removed settings and `/dev/*` controls from Chats. |
+| 14.6 | Calls index + peer profile | Paginated `GET /api/v1/calls` (OpenAPI, Pundit scope, operation, serializer). Calls tab is a log; row click opens peer or group profile overlay, not self profile. Live call overlays stay global. |
 
 ---
 

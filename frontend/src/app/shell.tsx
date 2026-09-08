@@ -7,7 +7,7 @@ import { AppLockOverlay } from "@/features/auth/components/app-lock-overlay";
 import { AuthGate } from "@/features/auth/components/auth-gate";
 import { OnboardingWizard } from "@/features/auth/components/onboarding-wizard";
 import { ListErrorBoundary } from "@/app/error-boundaries/error-boundary";
-import { DestinationStub } from "@/app/navigation/destination-stub";
+import { CallsDestination } from "@/features/calls/components/calls-destination";
 import { LayerHost } from "@/app/navigation/layer-host";
 import { PrimaryNav } from "@/app/navigation/primary-nav";
 import { SettingsLayer } from "@/app/lazy/settings-layer";
@@ -51,11 +51,12 @@ export function AppShell() {
   const layerCount = useLayerStore((state) => state.layers.length);
   const mobile = useMobileViewport();
   const profileSettingsOpen = useShellStore((state) => state.profileSettingsOpen);
+  const callsContact = useShellStore((state) => state.callsContact);
   const hideMobileTabBar = shouldHideMobileTabBar({
     destination,
     layerCount,
     mobile,
-    nested: profileSettingsOpen,
+    nested: profileSettingsOpen || callsContact != null,
   });
   const hydrateAccounts = useAccountsStore((state) => state.hydrate);
   const setActiveAccount = useAccountsStore((state) => state.setActive);
@@ -173,6 +174,10 @@ export function AppShell() {
         useShellStore.getState().setProfileSettingsOpen(false);
         return;
       }
+      if (useShellStore.getState().callsContact) {
+        useShellStore.getState().setCallsContact(null);
+        return;
+      }
       const layers = useLayerStore.getState().layers;
       if (layers.length === 0) {
         return;
@@ -234,7 +239,7 @@ export function AppShell() {
               />
             ) : null}
             {destination === "profile" ? <ProfileDestination /> : null}
-            {destination === "calls" ? <DestinationStub destination="calls" /> : null}
+            {destination === "calls" ? <CallsDestination /> : null}
           </ListErrorBoundary>
         </div>
         {showChrome && mobile && !hideMobileTabBar ? <PrimaryNav placement="bar" /> : null}

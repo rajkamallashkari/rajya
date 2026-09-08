@@ -1,9 +1,63 @@
 require "swagger_helper"
 
 # rubocop:disable RSpec/VariableName
-# rubocop:disable RSpec/EmptyExampleGroup, RSpec/MultipleDescribes, RSpec/MultipleMemoizedHelpers, RSpec/ScatteredSetup -- rswag path groups
+# rubocop:disable RSpec/AnyInstance, RSpec/EmptyExampleGroup, RSpec/MultipleDescribes, RSpec/MultipleMemoizedHelpers, RSpec/ScatteredSetup -- rswag path groups + F-1 stub
 RSpec.describe "Calls", type: :request do
   path "/api/v1/calls" do
+    get "List this account's calls" do
+      tags "Calls"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :page, in: :query, type: :integer, required: false
+
+      response "200", "call log" do
+        schema "$ref" => "#/components/schemas/CallList"
+        let(:user) { create(:user) }
+        let(:peer) { create(:user) }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        before do
+          enable_webrtc_calls!
+          conversation = create_direct_between(user.account, peer.account)
+          call = create(:call, :ended, conversation: conversation, initiator_account: user.account)
+          create(:call_participant, call: call, account: user.account, status: "left")
+          create(:call_participant, call: call, account: peer.account, status: "left")
+        end
+
+        run_test! do |response|
+          body = JSON.parse(response.body)
+          expect(body.fetch("calls").sole.fetch("conversation_kind")).to eq("direct")
+          expect(body.dig("calls", 0, "peer", "id")).to eq(peer.account.id)
+          expect(body.dig("meta", "total")).to eq(1)
+        end
+      end
+
+      response "403", "refused" do
+        schema "$ref" => "#/components/schemas/Error"
+        let(:user) { create(:user) }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        before do
+          enable_webrtc_calls!
+          allow_any_instance_of(CallPolicy).to receive(:index?).and_return(false)
+        end
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).dig("error", "code")).to eq("forbidden")
+        end
+      end
+
+      response "404", "flag off" do
+        schema "$ref" => "#/components/schemas/Error"
+        let(:user) { create(:user) }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).dig("error", "code")).to eq("not_found")
+        end
+      end
+    end
+
     post "Start a call" do
       tags "Calls"
       consumes "application/json"
@@ -351,5 +405,5 @@ RSpec.describe "Calls", type: :request do
     end
   end
 end
-# rubocop:enable RSpec/EmptyExampleGroup, RSpec/MultipleDescribes, RSpec/MultipleMemoizedHelpers, RSpec/ScatteredSetup
+# rubocop:enable RSpec/AnyInstance, RSpec/EmptyExampleGroup, RSpec/MultipleDescribes, RSpec/MultipleMemoizedHelpers, RSpec/ScatteredSetup
 # rubocop:enable RSpec/VariableName

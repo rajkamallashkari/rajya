@@ -1,6 +1,14 @@
 module Api
   module V1
     class CallsController < ApplicationController
+      def index
+        authorize Call
+        render_result(
+          Calls::Index.call(account: current_account, calls: policy_scope(Call), page: params[:page]),
+          serializer: CallListResource
+        )
+      end
+
       def create
         conversation = Conversation.find(params[:conversation_id])
         authorize conversation, :start_call?

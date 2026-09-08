@@ -2421,7 +2421,47 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List this account's calls */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description call log */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CallList"];
+                    };
+                };
+                /** @description refused */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description flag off */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
         put?: never;
         /** Start a call */
         post: {
@@ -8065,6 +8105,28 @@ export interface components {
             ice_servers?: {
                 [key: string]: unknown;
             }[] | null;
+        };
+        CallLogEntry: {
+            id: number;
+            conversation_id: number;
+            conversation_kind: string;
+            initiator_account_id: number;
+            kind: string;
+            status: string;
+            /** Format: date-time */
+            started_at?: string | null;
+            /** Format: date-time */
+            ended_at?: string | null;
+            duration_seconds?: number | null;
+            /** Format: date-time */
+            created_at: string;
+            title?: string | null;
+            peer?: components["schemas"]["Account"];
+            participants: components["schemas"]["CallParticipant"][];
+        };
+        CallList: {
+            calls: components["schemas"]["CallLogEntry"][];
+            meta: components["schemas"]["GalleryPageMeta"];
         };
         IceServers: {
             ice_servers: {

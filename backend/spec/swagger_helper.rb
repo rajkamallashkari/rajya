@@ -117,6 +117,36 @@ RSpec.configure do |config|
                 }
               }
             },
+            CallLogEntry: {
+              type: :object,
+              required: %w[
+                id conversation_id conversation_kind initiator_account_id kind status
+                participants created_at
+              ],
+              properties: {
+                id: { type: :integer },
+                conversation_id: { type: :integer },
+                conversation_kind: { type: :string },
+                initiator_account_id: { type: :integer },
+                kind: { type: :string },
+                status: { type: :string },
+                started_at: { type: :string, format: :"date-time", nullable: true },
+                ended_at: { type: :string, format: :"date-time", nullable: true },
+                duration_seconds: { type: :integer, nullable: true },
+                created_at: { type: :string, format: :"date-time" },
+                title: { type: :string, nullable: true },
+                peer: { "$ref" => "#/components/schemas/Account", nullable: true },
+                participants: { type: :array, items: { "$ref" => "#/components/schemas/CallParticipant" } }
+              }
+            },
+            CallList: {
+              type: :object,
+              required: %w[calls meta],
+              properties: {
+                calls: { type: :array, items: { "$ref" => "#/components/schemas/CallLogEntry" } },
+                meta: { "$ref" => "#/components/schemas/GalleryPageMeta" }
+              }
+            },
             IceServers: {
               type: :object,
               required: %w[ice_servers],

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppProviders } from "@/app/providers";
 import { AppShell } from "@/app/shell";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
-import { useShellStore } from "@/features/settings/store/shell-store";
+import { resetShellStore, useShellStore } from "@/features/settings/store/shell-store";
 import { ADA_DEMO } from "@/features/conversations/model/demo";
 import { messagingStore } from "@/shared/lib/api/msw/messaging-store";
 import { en } from "@/shared/lib/i18n/catalog";
@@ -55,6 +55,7 @@ describe("AppShell", () => {
     useLayerStore.getState().clearLayers();
     useShellStore.setState({ impersonatingName: null });
     resetSearchStore();
+    resetShellStore();
   });
   it("renders the chat list, impersonation banner, shortcuts, and profile tab", async () => {
     const user = userEvent.setup();
@@ -324,8 +325,26 @@ describe("AppShell", () => {
     useShellStore.setState({ destination: "calls" });
     renderShell();
     expect(await screen.findByRole("region", { name: en.shell.calls })).toBeInTheDocument();
+    expect(document.querySelector("[data-call-overlays]")).not.toBeNull();
     await waitFor(() => {
       expect(useLayerStore.getState().layers).toEqual([]);
+    });
+  });
+
+  it("pops the Calls contact overlay without opening self profile", async () => {
+    useShellStore.setState({
+      callsContact: { accountId: "2", conversationId: "1" },
+      destination: "calls",
+    });
+    renderShell();
+    expect(await screen.findByRole("region", { name: en.shell.calls })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.querySelector("[data-account-profile]")).not.toBeNull();
+    });
+    expect(document.querySelector("[data-profile-pane]")).toBeNull();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
+    await waitFor(() => {
+      expect(useShellStore.getState().callsContact).toBeNull();
     });
   });
 

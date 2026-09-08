@@ -4,10 +4,22 @@ import { apiOrigin } from "@/shared/lib/api/origin";
 import type { components } from "@/shared/lib/api/schema";
 
 export type Call = components["schemas"]["Call"];
+export type CallList = components["schemas"]["CallList"];
+export type CallLogEntry = components["schemas"]["CallLogEntry"];
 export type CallEnvelope = components["schemas"]["CallEnvelope"];
 export type CallKind = "audio" | "video";
 export type CallParticipant = components["schemas"]["CallParticipant"];
 export type IceServers = components["schemas"]["IceServers"];
+
+export async function listCalls(page = 1) {
+  return unwrap(
+    await apiClient().GET("/api/v1/calls", {
+      headers: bearerHeaders(),
+      params: { query: { page } },
+    }),
+    "call_list_failed",
+  );
+}
 
 export async function createCall(conversationId: number, kind: CallKind) {
   return unwrap(

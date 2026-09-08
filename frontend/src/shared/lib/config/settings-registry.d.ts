@@ -77,6 +77,7 @@ export type SettingKey =
   | "ring_timeout"
   | "call_heartbeat_timeout"
   | "call_heartbeat_interval"
+  | "call_page_size"
   | "call_sweep_interval"
   | "mesh_participant_cap"
   | "group_video_resolution"

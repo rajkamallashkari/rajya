@@ -6,9 +6,11 @@ import {
 } from "@/shared/lib/navigation/destinations";
 
 export interface ShellState {
+  callsContact: { accountId?: string; conversationId: string } | null;
   destination: ShellDestination;
   impersonatingName: string | null;
   profileSettingsOpen: boolean;
+  setCallsContact: (contact: ShellState["callsContact"]) => void;
   setDestination: (destination: ShellDestination) => void;
   setImpersonatingName: (name: string | null) => void;
   setProfileSettingsOpen: (open: boolean) => void;
@@ -18,8 +20,9 @@ export interface ShellState {
 
 const INITIAL_SHELL: Pick<
   ShellState,
-  "destination" | "impersonatingName" | "profileSettingsOpen" | "settingsPanel"
+  "callsContact" | "destination" | "impersonatingName" | "profileSettingsOpen" | "settingsPanel"
 > = {
+  callsContact: null,
   destination: DEFAULT_SHELL_DESTINATION,
   impersonatingName: null,
   profileSettingsOpen: false,
@@ -28,7 +31,9 @@ const INITIAL_SHELL: Pick<
 
 export const useShellStore = create<ShellState>((set) => ({
   ...INITIAL_SHELL,
-  setDestination: (destination) => set({ destination, profileSettingsOpen: false }),
+  setCallsContact: (callsContact) => set({ callsContact }),
+  setDestination: (destination) =>
+    set({ callsContact: null, destination, profileSettingsOpen: false }),
   setImpersonatingName: (impersonatingName) => set({ impersonatingName }),
   setProfileSettingsOpen: (profileSettingsOpen) => set({ profileSettingsOpen }),
   setSettingsPanel: (settingsPanel) => set({ settingsPanel }),

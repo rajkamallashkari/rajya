@@ -1488,6 +1488,37 @@ paths:
                 reason:
                   type: string
   "/api/v1/calls":
+    get:
+      summary: List this account's calls
+      tags:
+      - Calls
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: call log
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CallList"
+        '403':
+          description: refused
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '404':
+          description: flag off
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
     post:
       summary: Start a call
       tags:
@@ -5110,6 +5141,66 @@ components:
           items:
             type: object
             additionalProperties: true
+    CallLogEntry:
+      type: object
+      required:
+      - id
+      - conversation_id
+      - conversation_kind
+      - initiator_account_id
+      - kind
+      - status
+      - participants
+      - created_at
+      properties:
+        id:
+          type: integer
+        conversation_id:
+          type: integer
+        conversation_kind:
+          type: string
+        initiator_account_id:
+          type: integer
+        kind:
+          type: string
+        status:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        duration_seconds:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        title:
+          type: string
+          nullable: true
+        peer:
+          "$ref": "#/components/schemas/Account"
+          nullable: true
+        participants:
+          type: array
+          items:
+            "$ref": "#/components/schemas/CallParticipant"
+    CallList:
+      type: object
+      required:
+      - calls
+      - meta
+      properties:
+        calls:
+          type: array
+          items:
+            "$ref": "#/components/schemas/CallLogEntry"
+        meta:
+          "$ref": "#/components/schemas/GalleryPageMeta"
     IceServers:
       type: object
       required:

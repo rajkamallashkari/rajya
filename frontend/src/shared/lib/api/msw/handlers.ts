@@ -71,6 +71,10 @@ type CallEnvelopeBody = NonNullable<
   paths["/api/v1/calls"]["post"]["responses"][201]["content"]
 >["application/json"];
 
+type CallListBody = NonNullable<
+  paths["/api/v1/calls"]["get"]["responses"][200]["content"]
+>["application/json"];
+
 type IceServersBody = NonNullable<
   paths["/api/v1/calls/ice_servers"]["get"]["responses"][200]["content"]
 >["application/json"];
@@ -686,6 +690,43 @@ function callEnvelope(
       ],
     },
     ice_servers: iceServersBody.ice_servers,
+  };
+}
+
+function callLogPage(): CallListBody {
+  const grace = peerAccount(2, "Grace");
+  return {
+    calls: [
+      {
+        id: 11,
+        conversation_id: 1,
+        conversation_kind: "direct",
+        initiator_account_id: VIEWER.id,
+        kind: "audio",
+        status: "ended",
+        duration_seconds: 72,
+        created_at: MESSAGE_STAMP,
+        title: grace.display_name,
+        peer: grace,
+        participants: [
+          callParticipant(1, VIEWER.id, "left", false),
+          callParticipant(2, grace.id, "left", false),
+        ],
+      },
+      {
+        id: 12,
+        conversation_id: 2,
+        conversation_kind: "group",
+        initiator_account_id: VIEWER.id,
+        kind: "video",
+        status: "ended",
+        duration_seconds: 180,
+        created_at: MESSAGE_STAMP,
+        title: "Team",
+        participants: [callParticipant(3, VIEWER.id, "left", false)],
+      },
+    ],
+    meta: { page: 1, per_page: 50, total: 2, has_more: false },
   };
 }
 
@@ -2082,7 +2123,10 @@ export const handlerMap = {
   "/api/v1/theme_overrides": http.get("*/api/v1/theme_overrides", () =>
     HttpResponse.json(themePalette),
   ),
-  "/api/v1/calls": http.post("*/api/v1/calls", async ({ request }) => {
+  "/api/v1/calls": http.all("*/api/v1/calls", async ({ request }) => {
+    if (request.method === "GET") {
+      return HttpResponse.json(callLogPage());
+    }
     const body = (await request.json()) as { conversation_id?: number; kind?: string };
     const initiatorId = actorIdFromRequest(request);
     const kind = body.kind ?? "audio";
