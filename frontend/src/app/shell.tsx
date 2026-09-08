@@ -12,9 +12,11 @@ import { LayerHost } from "@/app/navigation/layer-host";
 import { PrimaryNav } from "@/app/navigation/primary-nav";
 import { SettingsLayer } from "@/app/lazy/settings-layer";
 import { CallHost } from "@/app/lazy/call-host";
+import { ChatsWelcome } from "@/features/conversations/components/chats-welcome";
 import { ConversationList } from "@/features/conversations/components/conversation-list";
 import { ConversationThread } from "@/features/conversations/components/conversation-thread";
 import { ProfilePanel } from "@/features/conversations/components/profile-panel";
+import { desktopChatHydration } from "@/features/conversations/model/recent";
 import { MediaGalleryPanel } from "@/features/media";
 import { TopCallBar, useSignalingChannel, useWebRTCManager } from "@/features/calls";
 import { useAccountChannel } from "@/features/conversations/hooks/use-account-channel";
@@ -55,6 +57,8 @@ export function AppShell() {
   const signedOut = useAccountsStore((state) => needsSignIn(state.activeAccountId));
   const showChrome = !signedOut && !needsOnboarding;
   const conversations = useConversations();
+  const activeAccountId = useAccountsStore((state) => state.activeAccountId);
+  const chatsOpenedRef = useRef(false);
   const params = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -65,6 +69,10 @@ export function AppShell() {
   useEffect(() => {
     hydrateAccounts();
   }, [hydrateAccounts]);
+
+  useEffect(() => {
+    chatsOpenedRef.current = false;
+  }, [activeAccountId]);
 
   useEffect(() => {
     const account = Number(searchParams.get("account"));
@@ -108,22 +116,40 @@ export function AppShell() {
   }, [navigate, params.conversationId, params.messageId]);
 
   useEffect(() => {
-    if (destination !== "chats" || mobile || hasConversation || params.messageId) {
+    const action = desktopChatHydration({
+      alreadyAttempted: chatsOpenedRef.current,
+      destination,
+      hasConversation,
+      isError: conversations.isError,
+      isPending: conversations.isPending,
+      layerCount,
+      mobile,
+      permalink: Boolean(params.conversationId || params.messageId),
+      rows: conversations.data?.conversations ?? [],
+    });
+    if (action.kind === "ignore" || action.kind === "wait") {
       return;
     }
-    const first = conversations.data?.conversations[0];
-    if (!first) {
+    chatsOpenedRef.current = true;
+    if (action.kind === "remember" || !action.conversation) {
       return;
     }
     openConversation(
-      conversationLayer(String(first.id), conversationTitle(first, t("conversations.untitled"))),
+      conversationLayer(
+        String(action.conversation.id),
+        conversationTitle(action.conversation, t("conversations.untitled")),
+      ),
     );
   }, [
     conversations.data,
+    conversations.isError,
+    conversations.isPending,
     destination,
     hasConversation,
+    layerCount,
     mobile,
     openConversation,
+    params.conversationId,
     params.messageId,
     t,
   ]);
@@ -168,6 +194,7 @@ export function AppShell() {
             {destination === "chats" ? (
               <LayerHost
                 base={<ConversationList searchRef={searchRef} />}
+                empty={<ChatsWelcome />}
                 renderLayer={(layer) => {
                   if (layer.kind === "conversation") {
                     return <ConversationThread conversationId={layer.conversationId} />;

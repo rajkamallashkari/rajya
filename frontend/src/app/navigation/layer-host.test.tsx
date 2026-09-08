@@ -5,8 +5,11 @@ import { LayerHost } from "./layer-host";
 import { AppProviders } from "@/app/providers";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
 import {
+  DESKTOP_CHAT_COLUMNS,
   LAYER_DEFAULT_COLUMN_WIDTH_PX,
   LAYER_MIN_WIDTH_PX,
+  LAYER_OVERLAY_WIDTH_PX,
+  LAYER_RESIZE_HANDLE_PX,
 } from "@/shared/lib/navigation/constants";
 import { Button } from "@/shared/ui/button";
 
@@ -24,6 +27,13 @@ const profile = {
   title: "Ada Lovelace",
 };
 
+const settings = {
+  conversationId: "settings",
+  id: "settings",
+  kind: "settings" as const,
+  title: "Settings",
+};
+
 function Demo() {
   const pushLayer = useLayerStore((state) => state.pushLayer);
   return (
@@ -33,6 +43,7 @@ function Demo() {
           {"open"}
         </Button>
       }
+      empty={<p data-chats-welcome="">{"welcome"}</p>}
       renderLayer={(layer) => <div data-layer-body={layer.kind}>{layer.title}</div>}
     />
   );
@@ -94,12 +105,16 @@ describe("LayerHost", () => {
     expect(document.querySelector("[data-layer-host]")).toHaveAttribute("data-stack-depth", "2");
   });
 
-  it("resizes the list without pinning the conversation or the detail column", () => {
+  it("resizes the list without shrinking the overlay", () => {
     setDesktopViewport(1280);
     useLayerStore.getState().pushLayer(conversation);
     render(
       <AppProviders>
-        <LayerHost base={<p>{"list"}</p>} renderLayer={(layer) => <p>{layer.title}</p>} />
+        <LayerHost
+          base={<p>{"list"}</p>}
+          empty={<p>{"welcome"}</p>}
+          renderLayer={(layer) => <p>{layer.title}</p>}
+        />
       </AppProviders>,
     );
     const handle = document.querySelector("[data-resize-edge='list']") as HTMLButtonElement;
@@ -124,37 +139,41 @@ describe("LayerHost", () => {
     act(() => {
       useLayerStore.getState().pushLayer(profile);
     });
-    const detail = document.querySelector("[data-layer-column='detail']") as HTMLElement;
-    const detailHandle = document.querySelector("[data-resize-edge='detail']") as HTMLButtonElement;
-    expect(detail).toHaveAttribute("data-column-width", String(LAYER_DEFAULT_COLUMN_WIDTH_PX));
+    const overlay = document.querySelector("[data-layer-column='overlay']") as HTMLElement;
+    expect(overlay).toHaveAttribute("data-column-width", String(LAYER_OVERLAY_WIDTH_PX));
     expect(list).toHaveAttribute("data-column-width", "360");
-    vi.spyOn(detailHandle, "hasPointerCapture").mockImplementation((id) => id === 7);
     mockRect(list, 360);
-    mockRect(detail, 360);
     fireEvent.pointerDown(handle, { pointerId: 9, clientX: 200 });
     fireEvent.pointerMove(handle, { pointerId: 9, clientX: 280 });
     expect(list).toHaveAttribute("data-column-width", "440");
-    expect(detail).toHaveAttribute("data-column-width", String(LAYER_DEFAULT_COLUMN_WIDTH_PX));
-    fireEvent.pointerDown(detailHandle, { pointerId: 7, clientX: 900 });
-    fireEvent.pointerMove(detailHandle, { pointerId: 7, clientX: 860 });
-    expect(detail).toHaveAttribute("data-column-width", "400");
-    expect(list).toHaveAttribute("data-column-width", "440");
-    fireEvent.pointerMove(detailHandle, { pointerId: 7, clientX: 2000 });
-    expect(detail).toHaveAttribute("data-column-width", String(LAYER_MIN_WIDTH_PX));
+    expect(overlay).toHaveAttribute("data-column-width", String(LAYER_OVERLAY_WIDTH_PX));
   });
 
-  it("keeps desktop to three columns and stacks details in the third pane", () => {
+  it("keeps two desktop columns and overlays details over the chat", () => {
     setDesktopViewport(1280);
     render(
       <AppProviders>
-        <LayerHost base={<p>{"list"}</p>} renderLayer={(layer) => <p>{layer.title}</p>} />
+        <LayerHost
+          base={<p>{"list"}</p>}
+          empty={<p data-chats-welcome="">{"welcome"}</p>}
+          renderLayer={(layer) => <p>{layer.title}</p>}
+        />
       </AppProviders>,
     );
     expect(document.querySelector("[data-layer-host]")).toHaveAttribute(
       "data-desktop-columns",
-      "1",
+      String(DESKTOP_CHAT_COLUMNS),
     );
+    expect(document.querySelector("[data-chats-welcome]")).toBeInTheDocument();
     act(() => {
+      useLayerStore.getState().pushLayer(settings);
+    });
+    expect(document.querySelector("[data-chats-welcome]")).toBeInTheDocument();
+    expect(document.querySelector("[data-layer='settings']")).not.toBeNull();
+    expect(document.querySelector("[data-layer-column='overlay']")).toBeInTheDocument();
+    expect(document.querySelector("[data-layer-column='chat']")).toBeInTheDocument();
+    act(() => {
+      useLayerStore.getState().popLayer();
       useLayerStore.getState().openConversation(conversation);
       useLayerStore.getState().pushLayer(profile);
       useLayerStore.getState().pushLayer({
@@ -166,11 +185,11 @@ describe("LayerHost", () => {
     });
     expect(document.querySelector("[data-layer-host]")).toHaveAttribute(
       "data-desktop-columns",
-      "3",
+      String(DESKTOP_CHAT_COLUMNS),
     );
     expect(document.querySelectorAll("[data-layer='conversation']")).toHaveLength(1);
     expect(document.querySelectorAll("[data-layer='profile']")).toHaveLength(2);
-    expect(document.querySelector("[data-layer-column='detail']")).toBeInTheDocument();
+    expect(document.querySelector("[data-layer-column='overlay']")).toBeInTheDocument();
     expect(document.querySelector("[data-layer='base']")).not.toHaveAttribute("inert");
     expect(document.querySelector("[data-layer='conversation']")).not.toHaveAttribute("inert");
     expect(document.querySelector("[data-layer-id='profile:ada']")).toHaveAttribute("inert");
@@ -188,17 +207,16 @@ describe("LayerHost", () => {
       });
     });
     expect(document.querySelectorAll("[data-layer='conversation']")).toHaveLength(1);
-    expect(document.querySelector("[data-layer-column='detail']")).toBeNull();
+    expect(document.querySelector("[data-layer-column='overlay']")).toBeNull();
     expect(document.querySelector("[data-layer-host]")).toHaveAttribute(
       "data-desktop-columns",
-      "2",
+      String(DESKTOP_CHAT_COLUMNS),
     );
   });
 
-  it("fits default column widths when the host cannot keep both defaults", () => {
-    setDesktopViewport(900);
+  it("fits the list when the host is narrower than the default list", () => {
+    setDesktopViewport(641);
     useLayerStore.getState().openConversation(conversation);
-    useLayerStore.getState().pushLayer(profile);
     render(
       <AppProviders>
         <LayerHost base={<p>{"list"}</p>} renderLayer={(layer) => <p>{layer.title}</p>} />
@@ -206,11 +224,7 @@ describe("LayerHost", () => {
     );
     expect(document.querySelector("[data-layer='base']")).toHaveAttribute(
       "data-column-width",
-      "332",
-    );
-    expect(document.querySelector("[data-layer-column='detail']")).toHaveAttribute(
-      "data-column-width",
-      String(LAYER_MIN_WIDTH_PX),
+      String(641 - LAYER_RESIZE_HANDLE_PX - LAYER_MIN_WIDTH_PX),
     );
   });
 });

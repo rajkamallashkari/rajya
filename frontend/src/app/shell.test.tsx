@@ -7,6 +7,7 @@ import { AppShell } from "@/app/shell";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import { useShellStore } from "@/features/settings/store/shell-store";
 import { ADA_DEMO } from "@/features/conversations/model/demo";
+import { messagingStore } from "@/shared/lib/api/msw/messaging-store";
 import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { useLayerStore } from "@/shared/lib/navigation/layer-store";
@@ -64,6 +65,9 @@ describe("AppShell", () => {
     });
     useShellStore.setState({ impersonatingName: "Ada" });
     renderShell();
+    await waitFor(() => {
+      expect(document.querySelector("[data-conversation-thread]")).not.toBeNull();
+    });
     expect(screen.getByAltText(en.brand.logo_alt)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: en.app.gallery })).toHaveAttribute(
       "href",
@@ -316,5 +320,51 @@ describe("AppShell", () => {
     await waitFor(() => {
       expect(useLayerStore.getState().layers).toEqual([]);
     });
+  });
+
+  it("keeps list plus empty welcome and overlays settings instead of replacing the chat pane", async () => {
+    const user = userEvent.setup();
+    messagingStore().conversations.splice(0);
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 1280,
+    });
+    renderShell();
+    expect(await screen.findByText(en.shell.welcome_title)).toBeInTheDocument();
+    expect(document.querySelector("[data-conversation-list]")).not.toBeNull();
+    expect(document.querySelector("[data-conversation-thread]")).toBeNull();
+    await user.click(screen.getByRole("button", { name: en.shell.settings }));
+    await waitFor(() => {
+      expect(document.querySelector("[data-settings-panel]")).not.toBeNull();
+    });
+    expect(document.querySelector("[data-chats-welcome]")).not.toBeNull();
+    expect(document.querySelector("[data-layer-column='overlay']")).not.toBeNull();
+  });
+
+  it("restores the last conversation when returning from Calls", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 1280,
+    });
+    renderShell();
+    await waitFor(() => {
+      expect(useLayerStore.getState().layers).toEqual([
+        expect.objectContaining({ conversationId: "1", kind: "conversation" }),
+      ]);
+    });
+    await user.click(screen.getByRole("button", { name: en.shell.calls }));
+    expect(document.querySelector("[data-conversation-list]")).toBeNull();
+    expect(useLayerStore.getState().layers).toEqual([
+      expect.objectContaining({ conversationId: "1", kind: "conversation" }),
+    ]);
+    await user.click(screen.getByRole("button", { name: en.shell.chats }));
+    expect(document.querySelector("[data-conversation-list]")).not.toBeNull();
+    expect(document.querySelector("[data-conversation-thread]")).not.toBeNull();
+    expect(useLayerStore.getState().layers).toEqual([
+      expect.objectContaining({ conversationId: "1", kind: "conversation" }),
+    ]);
   });
 });

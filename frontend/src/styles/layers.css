@@ -12,10 +12,12 @@
 .layer-host-desktop {
   display: flex;
   flex-direction: row;
+  position: relative;
 }
 
 .layer-base,
-.layer-frame {
+.layer-frame,
+.layer-chat-column {
   min-width: 0;
   min-height: 0;
   height: 100%;
@@ -25,27 +27,35 @@
   flex: 0 0 auto;
 }
 
-.layer-host-desktop .layer-frame:not(.layer-frame-stacked) {
+.layer-chat-column {
+  position: relative;
   flex: 1 1 0;
 }
 
-.layer-detail-column {
-  position: relative;
-  flex: 0 0 auto;
-  min-width: 0;
-  min-height: 0;
+.layer-host-desktop .layer-chat-column > .layer-frame {
+  flex: 1 1 0;
   height: 100%;
 }
 
-.layer-frame-stacked {
+.layer-overlay-stack {
+  pointer-events: none;
   position: absolute;
   inset: 0;
   z-index: var(--z-layer);
-  background: var(--surface-panel);
 }
 
-.layer-host-desktop .layer-frame-stacked {
-  flex: none;
+.layer-frame-overlay {
+  pointer-events: auto;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--layer-overlay-width);
+  max-width: 100%;
+  z-index: var(--z-layer);
+  background: var(--surface-panel);
+  box-shadow: var(--elevation-3);
+  animation: rajya-drawer-right var(--motion-base) var(--ease-spring);
 }
 
 .layer-frame-mobile {

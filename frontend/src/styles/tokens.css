@@ -198,6 +198,7 @@
   --menu-min-width: calc(var(--space-16) * 3);
   --dialog-max-width: calc(var(--space-16) * 6);
   --drawer-width: calc(var(--space-16) * 5);
+  --layer-overlay-width: 420px;
   --toast-width: calc(var(--space-16) * 5);
   --switch-track-width: calc(var(--space-10) + var(--space-2));
   --sheet-handle-width: var(--space-10);

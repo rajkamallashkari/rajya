@@ -346,7 +346,10 @@
     "profile_stub": "Your profile will show here.",
     "profile_subtitle": "Shared media and info",
     "settings": "Settings",
-    "tabs_aria": "Primary"
+    "tabs_aria": "Primary",
+    "welcome_action": "New chat",
+    "welcome_description": "Select a chat from the list or start a new conversation.",
+    "welcome_title": "Welcome to Rajya"
   },
   "lists": {
     "empty_action": "New chat",

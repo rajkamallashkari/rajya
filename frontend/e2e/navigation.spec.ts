@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { EDGE_SWIPE_ZONE_PX } from "../src/shared/lib/navigation/constants";
+import { DESKTOP_CHAT_COLUMNS, EDGE_SWIPE_ZONE_PX } from "../src/shared/lib/navigation/constants";
 
 test.describe("layer navigation", () => {
   test.describe("mobile stack", () => {
@@ -59,7 +59,9 @@ test.describe("layer navigation", () => {
   test.describe("desktop panels", () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
-    test("renders side-by-side panels with independently sized edge columns", async ({ page }) => {
+    test("renders list plus chat with overlays that do not add a third column", async ({
+      page,
+    }) => {
       await page.goto("/");
       await expect(page.locator("[data-layer-host]")).toHaveAttribute(
         "data-presentation",
@@ -69,6 +71,10 @@ test.describe("layer navigation", () => {
       await expect(page.locator("[data-conversation-list]")).toBeVisible();
       await expect(page.locator("[data-conversation-thread]")).toBeVisible();
       await expect(page.locator("[data-layer='base']")).not.toHaveAttribute("inert");
+      await expect(page.locator("[data-layer-host]")).toHaveAttribute(
+        "data-desktop-columns",
+        String(DESKTOP_CHAT_COLUMNS),
+      );
       const list = page.locator("[data-layer='base']");
       const panel = page.locator("[data-layer='conversation']");
       const handle = page.locator("[data-resize-edge='list']");
@@ -89,31 +95,25 @@ test.describe("layer navigation", () => {
       expect(listAfterResize).toBeGreaterThan(listBeforeResize);
 
       const listBeforeProfile = await list.evaluate((node) => node.getBoundingClientRect().width);
+      const chatBeforeProfile = await panel.evaluate((node) => node.getBoundingClientRect().width);
       await page.getByRole("button", { name: "Open profile" }).click();
-      await expect(page.locator("[data-layer-host]")).toHaveAttribute("data-desktop-columns", "3");
-      await expect(page.locator("[data-layer-column='detail']")).toBeVisible();
+      await expect(page.locator("[data-layer-host]")).toHaveAttribute(
+        "data-desktop-columns",
+        String(DESKTOP_CHAT_COLUMNS),
+      );
+      await expect(page.locator("[data-layer-column='overlay']")).toBeVisible();
       await expect(page.locator("[data-conversation-thread]")).toHaveCount(1);
       await expect(page.locator("[data-conversation-list]")).toBeVisible();
       const listAfterProfile = await list.evaluate((node) => node.getBoundingClientRect().width);
+      const chatAfterProfile = await panel.evaluate((node) => node.getBoundingClientRect().width);
       expect(Math.abs(listAfterProfile - listBeforeProfile)).toBeLessThan(3);
-      const detail = page.locator("[data-layer-column='detail']");
-      const detailBefore = await detail.evaluate((node) => node.getBoundingClientRect().width);
-      const listBox = await handle.boundingBox();
-      expect(listBox).toBeTruthy();
-      if (!listBox) {
-        return;
-      }
-      await page.mouse.move(listBox.x + listBox.width / 2, listBox.y + 40);
-      await page.mouse.down();
-      await page.mouse.move(listBox.x + 60, listBox.y + 40, { steps: 8 });
-      await page.mouse.up();
-      const detailAfterListDrag = await detail.evaluate(
-        (node) => node.getBoundingClientRect().width,
-      );
-      expect(Math.abs(detailAfterListDrag - detailBefore)).toBeLessThan(3);
+      expect(Math.abs(chatAfterProfile - chatBeforeProfile)).toBeLessThan(3);
       await page.getByText("Team").click();
       await expect(page.locator("[data-layer-host]")).toHaveAttribute("data-stack-depth", "1");
-      await expect(page.locator("[data-layer-host]")).toHaveAttribute("data-desktop-columns", "2");
+      await expect(page.locator("[data-layer-host]")).toHaveAttribute(
+        "data-desktop-columns",
+        String(DESKTOP_CHAT_COLUMNS),
+      );
       await expect(page.locator("[data-profile-panel]")).toHaveCount(0);
       await expect(page.locator("[data-conversation-thread]")).toHaveCount(1);
       await expect(

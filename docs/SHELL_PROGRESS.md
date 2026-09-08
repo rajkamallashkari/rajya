@@ -13,26 +13,28 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 14.2 |
-| **Next session** | 14.3 |
+| **Last completed** | 14.3 |
+| **Next session** | 14.4 |
 | **Phase** | P14 Shell |
-| **Sessions remaining in phase** | 6 |
+| **Sessions remaining in phase** | 5 |
 
 ---
 
 ## Next session brief (agent: read SHELL_PLAN.md §5 for the full row)
 
-**14.3 — Chats geometry: empty column + overlays.**
+**14.4 — Compose menu + New message / New group.**
 
-Chats destination: always list + chat-or-empty welcome. Desktop details as
-right overlays (~420px), not a column that appears only when a layer exists.
-Settings must not occupy the chat pane. Restore last conversation when returning
-from Calls/Profile. First load: most recent chat if any. Stop auto-open fighting
-empty welcome.
+Replace list FABs and the no-op empty New chat (`setQuery("")`). Header
+compose control (bubble+plus) → menu: New message, New group, Channel/Broadcast
+disabled Soon. New message layer: bots + people (`searchPeople` +
+`useStartDirectChat` / `createConversation`). Selecting a person or bot
+opens/creates the DM and pops the layer. New group uses existing create-group
+operation. Empty-state CTA opens compose. **DoD:** two signed-in humans can
+find each other and start a DM.
 
-Docs: SHELL_TARGET §1.3, §6; SHELL_AUDIT §2; DESIGN_SYSTEM §6; legacy
-`legacy/botverse/src/pages/HomePage.tsx`, `PanelHost.tsx`, `PanelShell.tsx`.
-Do not start 14.4 in this session.
+Docs: SHELL_TARGET §2; SHELL_AUDIT §2.1; legacy
+`legacy/botverse/src/components/sidebar/NewChatPanel.tsx`, Sidebar FABs.
+Do not start 14.5 in this session.
 
 ---
 
@@ -43,6 +45,7 @@ Do not start 14.4 in this session.
 | docs | SHELL_AUDIT / TARGET / GAP / PLAN + mockup | Visual lock: `docs/shell-mockup.html` |
 | 14.1 | AuthGate Google GIS + password + OTP/magic/passkey | GIS popup → `POST /auth/google` `{ code }`, JWT in body (F-25). Google button hidden without `VITE_GOOGLE_CLIENT_ID`. OTP/magic/passkey use existing endpoints (server still enforces `passwordless_auth` / `passkey_auth`). `/auth/magic` consumes mailed tokens. Pages CSP allows `accounts.google.com`. |
 | 14.2 | Tab chrome: rail + bottom bar | Destination store Chats / Calls / Profile. Desktop left rail, mobile bottom bar (hidden on nested Chats layers). Exclusive panes; Calls/Profile stubs for 14.5/14.6. |
+| 14.3 | Chats geometry: empty column + overlays | Always list + chat or empty welcome. Desktop details are 420px right overlays, not a third column. Settings overlay the chat pane. Returning from Calls/Profile restores the last conversation. First desktop load opens the most recent chat. |
 
 ---
 

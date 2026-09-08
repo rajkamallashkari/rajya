@@ -16,9 +16,12 @@ import {
   defaultDesktopColumns,
   fitDesktopColumns,
   widthAfterResize,
-  type DesktopResizeEdge,
 } from "@/shared/lib/navigation/column-layout";
-import { LAYER_MIN_WIDTH_PX } from "@/shared/lib/navigation/constants";
+import {
+  DESKTOP_CHAT_COLUMNS,
+  LAYER_MIN_WIDTH_PX,
+  LAYER_OVERLAY_WIDTH_PX,
+} from "@/shared/lib/navigation/constants";
 import {
   partitionLayers,
   useLayerStore,
@@ -28,20 +31,20 @@ import { Button } from "@/shared/ui/button";
 
 export function LayerHost({
   base,
+  empty,
   renderLayer,
 }: {
   base: ReactNode;
+  empty?: ReactNode;
   renderLayer: (layer: LayerEntry) => ReactNode;
 }): ReactNode {
   const layers = useLayerStore((state) => state.layers);
   const mobile = useMobileViewport();
   const depth = layers.length;
   const { conversation, details } = partitionLayers(layers);
-  const desktopColumns = 1 + (conversation ? 1 : 0) + (details.length > 0 ? 1 : 0);
-  const detailOpen = details.length > 0;
+  const overlayOpen = details.length > 0;
   const hostRef = useRef<HTMLDivElement>(null);
   const baseRef = useRef<HTMLDivElement>(null);
-  const detailRef = useRef<HTMLDivElement>(null);
   const [columns, setColumns] = useState(defaultDesktopColumns);
   usePreserveLayerScroll(baseRef, !(mobile && depth > 0));
 
@@ -54,12 +57,10 @@ export function LayerHost({
       const hostWidth = host.getBoundingClientRect().width || window.innerWidth;
       setColumns((current) => {
         const next = fitDesktopColumns({
-          detailOpen,
-          detailWidth: current.detail,
           hostWidth,
           listWidth: current.list,
         });
-        if (next.list === current.list && next.detail === current.detail) {
+        if (next.list === current.list) {
           return current;
         }
         return next;
@@ -69,15 +70,11 @@ export function LayerHost({
     const observer = new ResizeObserver(apply);
     observer.observe(host);
     return () => observer.disconnect();
-  }, [detailOpen, mobile]);
+  }, [mobile]);
 
   const listStyle = mobile
     ? undefined
     : { flex: `0 0 ${String(columns.list)}px`, minWidth: LAYER_MIN_WIDTH_PX };
-  const detailStyle = {
-    flex: `0 0 ${String(columns.detail)}px`,
-    minWidth: LAYER_MIN_WIDTH_PX,
-  };
 
   return (
     <div
@@ -85,7 +82,7 @@ export function LayerHost({
         "layer-host min-h-0 flex-1",
         mobile ? "layer-host-mobile" : "layer-host-desktop",
       )}
-      data-desktop-columns={mobile ? undefined : desktopColumns}
+      data-desktop-columns={mobile ? undefined : DESKTOP_CHAT_COLUMNS}
       data-layer-host=""
       data-presentation={mobile ? "mobile" : "desktop"}
       data-stack-depth={depth}
@@ -108,69 +105,60 @@ export function LayerHost({
               index={index}
               layer={layer}
               mobile
-              stacked={false}
+              overlay={false}
               top={index === depth - 1}
             >
               {renderLayer(layer)}
             </LayerPanel>
           ))
         : null}
-      {mobile || !conversation ? null : (
+      {mobile ? null : (
         <>
           <PanelResizeHandle
-            edge="list"
             measure={() => ({
-              detailOpen,
-              detailWidth: columns.detail,
               hostWidth: hostRef.current?.getBoundingClientRect().width || window.innerWidth,
-              listWidth: columns.list,
               originWidth: baseRef.current?.getBoundingClientRect().width || columns.list,
             })}
-            onWidth={(list) => setColumns((current) => ({ ...current, list }))}
-          />
-          <LayerPanel
-            index={0}
-            layer={conversation}
-            mobile={false}
-            stacked={false}
-            top={!detailOpen}
-          >
-            {renderLayer(conversation)}
-          </LayerPanel>
-        </>
-      )}
-      {mobile || !detailOpen ? null : (
-        <>
-          <PanelResizeHandle
-            edge="detail"
-            measure={() => ({
-              detailOpen: true,
-              detailWidth: columns.detail,
-              hostWidth: hostRef.current?.getBoundingClientRect().width || window.innerWidth,
-              listWidth: columns.list,
-              originWidth: detailRef.current?.getBoundingClientRect().width || columns.detail,
-            })}
-            onWidth={(detail) => setColumns((current) => ({ ...current, detail }))}
+            onWidth={(list) => setColumns({ list })}
           />
           <div
-            className="layer-detail-column"
-            data-column-width={String(columns.detail)}
-            data-layer-column="detail"
-            ref={detailRef}
-            style={detailStyle}
+            className="layer-chat-column"
+            data-layer-column="chat"
+            style={{ minWidth: LAYER_MIN_WIDTH_PX }}
           >
-            {details.map((layer, index) => (
+            {conversation ? (
               <LayerPanel
-                key={layer.id}
-                index={index + 1}
-                layer={layer}
+                index={0}
+                layer={conversation}
                 mobile={false}
-                stacked
-                top={index === details.length - 1}
+                overlay={false}
+                top={!overlayOpen}
               >
-                {renderLayer(layer)}
+                {renderLayer(conversation)}
               </LayerPanel>
-            ))}
+            ) : (
+              empty
+            )}
+            {overlayOpen ? (
+              <div
+                className="layer-overlay-stack"
+                data-column-width={String(LAYER_OVERLAY_WIDTH_PX)}
+                data-layer-column="overlay"
+              >
+                {details.map((layer, index) => (
+                  <LayerPanel
+                    key={layer.id}
+                    index={index + 1}
+                    layer={layer}
+                    mobile={false}
+                    overlay
+                    top={index === details.length - 1}
+                  >
+                    {renderLayer(layer)}
+                  </LayerPanel>
+                ))}
+              </div>
+            ) : null}
           </div>
         </>
       )}
@@ -183,21 +171,21 @@ function LayerPanel({
   index,
   layer,
   mobile,
-  stacked,
+  overlay,
   top,
 }: {
   children: ReactNode;
   index: number;
   layer: LayerEntry;
   mobile: boolean;
-  stacked: boolean;
+  overlay: boolean;
   top: boolean;
 }): ReactNode {
   const popLayer = useLayerStore((state) => state.popLayer);
   const frameRef = useRef<HTMLElement>(null);
   useLayer(layer.id, mobile || layer.kind !== "conversation", () => popLayer());
   const swipe = useEdgeSwipe(mobile && top, () => window.history.back());
-  const buried = mobile ? !top : stacked && !top;
+  const buried = mobile ? !top : overlay && !top;
   usePreserveLayerScroll(frameRef, !buried);
 
   return (
@@ -206,14 +194,14 @@ function LayerPanel({
       className={cn(
         "layer-frame",
         mobile && "layer-frame-mobile",
-        stacked && "layer-frame-stacked",
+        overlay && "layer-frame-overlay",
       )}
       data-layer={layer.kind}
       data-layer-id={layer.id}
       data-layer-index={index}
       data-layer-top={top ? "true" : "false"}
       ref={frameRef}
-      style={mobile || stacked ? undefined : { minWidth: LAYER_MIN_WIDTH_PX }}
+      style={mobile || overlay ? undefined : { minWidth: LAYER_MIN_WIDTH_PX }}
       onPointerCancel={swipe.onPointerCancel}
       onPointerDown={swipe.onPointerDown}
       onPointerMove={swipe.onPointerMove}
@@ -226,16 +214,11 @@ function LayerPanel({
 }
 
 function PanelResizeHandle({
-  edge,
   measure,
   onWidth,
 }: {
-  edge: DesktopResizeEdge;
   measure: () => {
-    detailOpen: boolean;
-    detailWidth: number;
     hostWidth: number;
-    listWidth: number;
     originWidth: number;
   };
   onWidth: (width: number) => void;
@@ -259,18 +242,14 @@ function PanelResizeHandle({
       }
       const next = widthAfterResize({
         clientX: event.clientX,
-        detailOpen: drag.current.detailOpen,
-        detailWidth: drag.current.detailWidth,
-        edge,
         hostWidth: drag.current.hostWidth,
-        listWidth: drag.current.listWidth,
         originWidth: drag.current.originWidth,
         startX: drag.current.originX,
       });
       setDelta(next);
       onWidth(next);
     },
-    [edge, onWidth],
+    [onWidth],
   );
 
   return (
@@ -278,7 +257,7 @@ function PanelResizeHandle({
       aria-label={t("layers.resize")}
       className="layer-resize"
       data-resize-delta={delta}
-      data-resize-edge={edge}
+      data-resize-edge="list"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       type="button"
