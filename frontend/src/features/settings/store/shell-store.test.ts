@@ -11,7 +11,12 @@ describe("useShellStore", () => {
     expect(useShellStore.getState().settingsPanel).toBe("chats");
     useShellStore.getState().setSettingsPanel("devices");
     expect(useShellStore.getState().settingsPanel).toBe("devices");
+    useShellStore.getState().setDestination("calls");
+    expect(useShellStore.getState().destination).toBe("calls");
+    useShellStore.getState().setDestination("profile");
+    expect(useShellStore.getState().destination).toBe("profile");
     resetShellStore();
     expect(useShellStore.getState().settingsPanel).toBe("hub");
+    expect(useShellStore.getState().destination).toBe("chats");
   });
 });

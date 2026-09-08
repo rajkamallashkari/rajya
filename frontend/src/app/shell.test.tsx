@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -159,22 +159,24 @@ describe("AppShell", () => {
         </MemoryRouter>
       </AppProviders>,
     );
-    expect(await screen.findByText(en.shell.chats)).toBeInTheDocument();
+    expect(await screen.findByRole("navigation", { name: en.shell.tabs_aria })).toBeInTheDocument();
     await waitFor(() => {
       expect(useLayerStore.getState().layers).toEqual([]);
     });
   });
 
-  it("shows the sign-in gate when no account is stored", () => {
+  it("hides primary tabs until the account is signed in and onboarded", () => {
     useAccountsStore.getState().removeAll();
     renderShell();
     expect(screen.getByRole("dialog", { name: en.auth.gate.aria })).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: en.shell.tabs_aria })).toBeNull();
   });
 
   it("shows onboarding when the active account is not onboarded", () => {
     seedAccount(false);
     renderShell();
     expect(screen.getByRole("dialog", { name: en.auth.onboarding.aria })).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: en.shell.tabs_aria })).toBeNull();
   });
 
   it("lets mobile close the conversation back to the list", async () => {
@@ -238,5 +240,81 @@ describe("AppShell", () => {
       </AppProviders>,
     );
     expect(Number.isFinite(Number("nope"))).toBe(false);
+  });
+
+  it("keeps destinations exclusive on the desktop rail", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 1280,
+    });
+    renderShell();
+    expect(screen.getByRole("navigation", { name: en.shell.tabs_aria })).toHaveAttribute(
+      "data-primary-nav",
+      "rail",
+    );
+    expect(document.querySelector("[data-conversation-list]")).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: en.shell.calls }));
+    expect(screen.getByRole("region", { name: en.shell.calls })).toBeInTheDocument();
+    expect(document.querySelector("[data-conversation-list]")).toBeNull();
+    expect(screen.queryByRole("region", { name: en.shell.profile })).toBeNull();
+    await user.click(screen.getByRole("button", { name: en.shell.profile }));
+    expect(screen.getByRole("region", { name: en.shell.profile })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: en.shell.calls })).toBeNull();
+    expect(document.querySelector("[data-conversation-list]")).toBeNull();
+    await user.click(screen.getByRole("button", { name: en.shell.chats }));
+    expect(document.querySelector("[data-conversation-list]")).not.toBeNull();
+  });
+
+  it("shows a full-width mobile bar only on the tab root", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    renderShell();
+    expect(screen.getByRole("navigation", { name: en.shell.tabs_aria })).toHaveAttribute(
+      "data-primary-nav",
+      "bar",
+    );
+    expect(document.querySelector("[data-primary-nav='rail']")).toBeNull();
+    await user.click(await screen.findByText(ADA_DEMO.name));
+    expect(useLayerStore.getState().layers).toHaveLength(1);
+    expect(screen.queryByRole("navigation", { name: en.shell.tabs_aria })).toBeNull();
+    act(() => {
+      useLayerStore.getState().popLayer();
+    });
+    expect(useLayerStore.getState().layers).toHaveLength(0);
+    expect(screen.getByRole("navigation", { name: en.shell.tabs_aria })).toHaveAttribute(
+      "data-primary-nav",
+      "bar",
+    );
+    await user.click(await screen.findByText(ADA_DEMO.name));
+    expect(screen.queryByRole("navigation", { name: en.shell.tabs_aria })).toBeNull();
+    act(() => {
+      useShellStore.getState().setDestination("calls");
+    });
+    expect(screen.getByRole("navigation", { name: en.shell.tabs_aria })).toHaveAttribute(
+      "data-primary-nav",
+      "bar",
+    );
+    expect(screen.queryByRole("region", { name: en.shell.profile })).toBeNull();
+    expect(document.querySelector("[data-conversation-list]")).toBeNull();
+  });
+
+  it("does not auto-open a chat while another destination is showing", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 1280,
+    });
+    useShellStore.setState({ destination: "calls" });
+    renderShell();
+    expect(await screen.findByRole("region", { name: en.shell.calls })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(useLayerStore.getState().layers).toEqual([]);
+    });
   });
 });

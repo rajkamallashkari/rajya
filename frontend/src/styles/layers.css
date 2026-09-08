@@ -71,3 +71,51 @@
 .layer-resize:focus-visible {
   background: var(--accent);
 }
+
+.primary-rail {
+  align-items: center;
+  background: var(--surface-rail);
+  border-right: var(--hairline) solid var(--border-subtle);
+  display: flex;
+  flex: 0 0 var(--nav-rail-width);
+  flex-direction: column;
+  gap: var(--space-1_5);
+  height: 100%;
+  min-height: 0;
+  padding: var(--space-3) 0 var(--space-4);
+  width: var(--nav-rail-width);
+}
+
+.primary-bar {
+  align-items: stretch;
+  background: var(--surface-panel);
+  border-top: var(--hairline) solid var(--border-subtle);
+  display: flex;
+  flex: 0 0 auto;
+  height: calc(var(--nav-bar-height) + var(--safe-area-bottom));
+  padding-bottom: var(--safe-area-bottom);
+  width: 100%;
+}
+
+.primary-tab {
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  flex-direction: column;
+  font-size: var(--text-xs);
+  gap: var(--space-1);
+  min-height: var(--nav-tab-min);
+  min-width: var(--nav-tab-min);
+  width: var(--nav-tab-min);
+}
+
+.primary-tab[aria-current="page"] {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.primary-bar .primary-tab {
+  border-radius: 0;
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+}

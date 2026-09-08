@@ -13,25 +13,26 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 14.1 |
-| **Next session** | 14.2 |
+| **Last completed** | 14.2 |
+| **Next session** | 14.3 |
 | **Phase** | P14 Shell |
-| **Sessions remaining in phase** | 7 |
+| **Sessions remaining in phase** | 6 |
 
 ---
 
 ## Next session brief (agent: read SHELL_PLAN.md §5 for the full row)
 
-**14.2 — Tab chrome: rail + bottom bar.**
+**14.3 — Chats geometry: empty column + overlays.**
 
-Tab store: Chats / Calls / Profile. Desktop left rail (full height, edge-stuck).
-Mobile bottom bar (full width, three equal tabs, edge-stuck, safe-area). Switching
-a tab replaces the main surface — never both Calls and Profile. Stub Calls/Profile
-panes (empty or “coming in 14.5/14.6”). Hide bar when a nested chat/layer is open.
-Tests for exclusive destinations + bar visibility.
+Chats destination: always list + chat-or-empty welcome. Desktop details as
+right overlays (~420px), not a column that appears only when a layer exists.
+Settings must not occupy the chat pane. Restore last conversation when returning
+from Calls/Profile. First load: most recent chat if any. Stop auto-open fighting
+empty welcome.
 
-Docs: SHELL_TARGET §1; DESIGN_SYSTEM §6; `docs/shell-mockup.html`. Do not start
-14.3 in this session.
+Docs: SHELL_TARGET §1.3, §6; SHELL_AUDIT §2; DESIGN_SYSTEM §6; legacy
+`legacy/botverse/src/pages/HomePage.tsx`, `PanelHost.tsx`, `PanelShell.tsx`.
+Do not start 14.4 in this session.
 
 ---
 
@@ -41,6 +42,7 @@ Docs: SHELL_TARGET §1; DESIGN_SYSTEM §6; `docs/shell-mockup.html`. Do not star
 | --- | --- | --- |
 | docs | SHELL_AUDIT / TARGET / GAP / PLAN + mockup | Visual lock: `docs/shell-mockup.html` |
 | 14.1 | AuthGate Google GIS + password + OTP/magic/passkey | GIS popup → `POST /auth/google` `{ code }`, JWT in body (F-25). Google button hidden without `VITE_GOOGLE_CLIENT_ID`. OTP/magic/passkey use existing endpoints (server still enforces `passwordless_auth` / `passkey_auth`). `/auth/magic` consumes mailed tokens. Pages CSP allows `accounts.google.com`. |
+| 14.2 | Tab chrome: rail + bottom bar | Destination store Chats / Calls / Profile. Desktop left rail, mobile bottom bar (hidden on nested Chats layers). Exclusive panes; Calls/Profile stubs for 14.5/14.6. |
 
 ---
 

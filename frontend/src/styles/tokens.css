@@ -98,6 +98,7 @@
   --surface-chat: var(--blue-50);
   --surface-panel: var(--white);
   --surface-raised: var(--white);
+  --surface-rail: var(--white);
   --surface-input: var(--white);
   --surface-hover: var(--slate-50);
   --surface-active: var(--blue-50);
@@ -186,6 +187,9 @@
   );
   --icon-size: var(--space-4);
   --logo-size: var(--space-10);
+  --nav-rail-width: calc(var(--space-16) + var(--space-1));
+  --nav-bar-height: var(--space-16);
+  --nav-tab-min: calc(var(--space-12) + var(--space-1));
   --avatar-size: var(--space-10);
   --badge-min-height: var(--space-6);
   --close-offset: var(--space-3);
@@ -290,6 +294,7 @@ html.dark {
   --surface-chat: var(--tg-950);
   --surface-panel: var(--tg-700);
   --surface-raised: var(--tg-600);
+  --surface-rail: var(--tg-900);
   --surface-input: var(--tg-800);
   --surface-hover: var(--tg-600);
   --surface-active: var(--tg-400);

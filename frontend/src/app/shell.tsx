@@ -7,7 +7,9 @@ import { AppLockOverlay } from "@/features/auth/components/app-lock-overlay";
 import { AuthGate } from "@/features/auth/components/auth-gate";
 import { OnboardingWizard } from "@/features/auth/components/onboarding-wizard";
 import { ListErrorBoundary } from "@/app/error-boundaries/error-boundary";
+import { DestinationStub } from "@/app/navigation/destination-stub";
 import { LayerHost } from "@/app/navigation/layer-host";
+import { PrimaryNav } from "@/app/navigation/primary-nav";
 import { SettingsLayer } from "@/app/lazy/settings-layer";
 import { CallHost } from "@/app/lazy/call-host";
 import { ConversationList } from "@/features/conversations/components/conversation-list";
@@ -23,14 +25,17 @@ import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import { needsSignIn } from "@/features/auth/model/session-gate";
 import { useStopImpersonation } from "@/features/admin/api/queries";
 import { useShellStore } from "@/features/settings/store/shell-store";
+import { shouldHideMobileTabBar } from "@/shared/lib/navigation/destinations";
 import { useMobileViewport } from "@/shared/hooks/use-mobile-viewport";
 import { useShortcuts } from "@/shared/hooks/use-shortcuts";
 import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { cn } from "@/shared/lib/cn";
 import { useSearchStore } from "@/features/search/store/search-store";
 
 export function AppShell() {
   const { t } = useTranslation();
   const searchRef = useRef<HTMLInputElement>(null);
+  const destination = useShellStore((state) => state.destination);
   const impersonatingName = useShellStore((state) => state.impersonatingName);
   const stopImpersonation = useStopImpersonation();
   const popLayer = useLayerStore((state) => state.popLayer);
@@ -38,7 +43,9 @@ export function AppShell() {
   const hasConversation = useLayerStore((state) =>
     state.layers.some((layer) => layer.kind === "conversation"),
   );
+  const layerCount = useLayerStore((state) => state.layers.length);
   const mobile = useMobileViewport();
+  const hideMobileTabBar = shouldHideMobileTabBar({ destination, layerCount, mobile });
   const hydrateAccounts = useAccountsStore((state) => state.hydrate);
   const setActiveAccount = useAccountsStore((state) => state.setActive);
   const needsOnboarding = useAccountsStore((state) => {
@@ -46,6 +53,7 @@ export function AppShell() {
     return active !== undefined && !active.onboarded;
   });
   const signedOut = useAccountsStore((state) => needsSignIn(state.activeAccountId));
+  const showChrome = !signedOut && !needsOnboarding;
   const conversations = useConversations();
   const params = useParams();
   const [searchParams] = useSearchParams();
@@ -100,7 +108,7 @@ export function AppShell() {
   }, [navigate, params.conversationId, params.messageId]);
 
   useEffect(() => {
-    if (mobile || hasConversation || params.messageId) {
+    if (destination !== "chats" || mobile || hasConversation || params.messageId) {
       return;
     }
     const first = conversations.data?.conversations[0];
@@ -110,7 +118,15 @@ export function AppShell() {
     openConversation(
       conversationLayer(String(first.id), conversationTitle(first, t("conversations.untitled"))),
     );
-  }, [conversations.data, hasConversation, mobile, openConversation, params.messageId, t]);
+  }, [
+    conversations.data,
+    destination,
+    hasConversation,
+    mobile,
+    openConversation,
+    params.messageId,
+    t,
+  ]);
 
   useShortcuts({
     onPopLayer: () => {
@@ -142,26 +158,40 @@ export function AppShell() {
       <AppLockOverlay />
       {signedOut ? <AuthGate /> : null}
       {needsOnboarding ? <OnboardingWizard /> : null}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <ListErrorBoundary>
-          <LayerHost
-            base={<ConversationList searchRef={searchRef} />}
-            renderLayer={(layer) => {
-              if (layer.kind === "conversation") {
-                return <ConversationThread conversationId={layer.conversationId} />;
-              }
-              if (layer.kind === "gallery") {
-                return <MediaGalleryPanel conversationId={layer.conversationId} />;
-              }
-              if (layer.kind === "settings") {
-                return <SettingsLayer />;
-              }
-              return (
-                <ProfilePanel accountId={layer.accountId} conversationId={layer.conversationId} />
-              );
-            }}
-          />
-        </ListErrorBoundary>
+      <div
+        className={cn("flex min-h-0 flex-1 overflow-hidden", mobile ? "flex-col" : "flex-row")}
+        data-shell-destination={destination}
+      >
+        {showChrome && !mobile ? <PrimaryNav placement="rail" /> : null}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <ListErrorBoundary>
+            {destination === "chats" ? (
+              <LayerHost
+                base={<ConversationList searchRef={searchRef} />}
+                renderLayer={(layer) => {
+                  if (layer.kind === "conversation") {
+                    return <ConversationThread conversationId={layer.conversationId} />;
+                  }
+                  if (layer.kind === "gallery") {
+                    return <MediaGalleryPanel conversationId={layer.conversationId} />;
+                  }
+                  if (layer.kind === "settings") {
+                    return <SettingsLayer />;
+                  }
+                  return (
+                    <ProfilePanel
+                      accountId={layer.accountId}
+                      conversationId={layer.conversationId}
+                    />
+                  );
+                }}
+              />
+            ) : (
+              <DestinationStub destination={destination} />
+            )}
+          </ListErrorBoundary>
+        </div>
+        {showChrome && mobile && !hideMobileTabBar ? <PrimaryNav placement="bar" /> : null}
       </div>
     </main>
   );

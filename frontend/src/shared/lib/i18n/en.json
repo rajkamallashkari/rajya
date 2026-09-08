@@ -338,10 +338,15 @@
   },
   "shell": {
     "back": "Back",
+    "calls": "Calls",
+    "calls_stub": "Call history will show here.",
     "chats": "Chats",
     "open_profile": "Open profile",
+    "profile": "Profile",
+    "profile_stub": "Your profile will show here.",
     "profile_subtitle": "Shared media and info",
-    "settings": "Settings"
+    "settings": "Settings",
+    "tabs_aria": "Primary"
   },
   "lists": {
     "empty_action": "New chat",
