@@ -13,25 +13,24 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 14.4 |
-| **Next session** | 14.5 |
+| **Last completed** | 14.5 |
+| **Next session** | 14.6 |
 | **Phase** | P14 Shell |
-| **Sessions remaining in phase** | 4 |
+| **Sessions remaining in phase** | 3 |
 
 ---
 
 ## Next session brief (agent: read SHELL_PLAN.md §5 for the full row)
 
-**14.5 — Profile tab + inline edit.**
+**14.6 — Calls index + peer profile.**
 
-Profile tab: photo, name, username, bio; email/phone only when privacy
-prefs allow. Header **Edit** (inline form, Cancel/Save at bottom) and
-**Settings** (push hub layer). Remove settings gear and `/dev/*` links from
-the Chats header. Account switcher: long-press/right-click on identity.
+Add the paginated `GET /api/v1/calls` endpoint with OpenAPI, operation,
+Pundit, and serializer coverage. Calls tab is a log only; row click opens
+the peer profile layer. Keep live call overlays global.
 
-Docs: SHELL_TARGET §3; SHELL_AUDIT §3 AccountDrawer; legacy `NavBar.tsx`,
-`ProfileContent.tsx`, `ProfileEditPanel.tsx`, `AccountSwitcher.tsx`.
-Do not start 14.6 in this session.
+Docs: SHELL_TARGET §4; existing calls table and create/show implementation.
+Do not invent WhatsApp extras beyond log + profile. Do not start 14.7 in this
+session.
 
 ---
 
@@ -44,6 +43,7 @@ Do not start 14.6 in this session.
 | 14.2 | Tab chrome: rail + bottom bar | Destination store Chats / Calls / Profile. Desktop left rail, mobile bottom bar (hidden on nested Chats layers). Exclusive panes; Calls/Profile stubs for 14.5/14.6. |
 | 14.3 | Chats geometry: empty column + overlays | Always list + chat or empty welcome. Desktop details are 420px right overlays, not a third column. Settings overlay the chat pane. Returning from Calls/Profile restores the last conversation. First desktop load opens the most recent chat. |
 | 14.4 | Compose menu + New message / New group | Header bubble+plus menu (channel/broadcast Soon). New message layer: bots + people search; select opens/creates a DM. New group uses existing create-group. Empty-list and welcome CTAs open the same menu. |
+| 14.5 | Profile tab + inline edit | Self identity with privacy-gated email/phone, inline name/username/bio editing, settings overlay, and long-press/right-click account switching. Removed settings and `/dev/*` controls from Chats. |
 
 ---
 

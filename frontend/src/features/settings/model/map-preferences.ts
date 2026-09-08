@@ -2,6 +2,7 @@ import type { components } from "@/shared/lib/api/schema";
 import type {
   PreferenceAppearance,
   PreferenceDocument,
+  PreferencePrivacy,
 } from "@/shared/lib/config/preferences-registry";
 import preferencesRegistry from "@/shared/lib/config/preferences-registry.json";
 import {
@@ -34,6 +35,15 @@ export function deepMerge(
     next[key] = isPlainObject(current) && isPlainObject(value) ? deepMerge(current, value) : value;
   }
   return next;
+}
+
+export function preferencePrivacy(document: PreferenceDocument | undefined): PreferencePrivacy {
+  const defaults = preferencesRegistry.defaults.privacy as PreferencePrivacy;
+  const raw = document?.privacy;
+  if (!isPlainObject(raw)) {
+    return { ...defaults };
+  }
+  return { ...defaults, ...raw } as PreferencePrivacy;
 }
 
 export function preferenceAppearance(

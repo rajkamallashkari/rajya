@@ -5,6 +5,7 @@ import {
   deepMerge,
   mapPreferencesToTheme,
   preferenceAppearance,
+  preferencePrivacy,
   slidersFromAppearance,
 } from "./map-preferences";
 import type { PreferenceDocument } from "@/shared/lib/config/preferences-registry";
@@ -68,6 +69,14 @@ describe("mapPreferencesToTheme", () => {
     expect(asPreferenceDocument({ appearance: {} })).toEqual({ appearance: {} });
     expect(preferenceAppearance({ appearance: 1 } as unknown as PreferenceDocument).theme).toBe(
       "system",
+    );
+    expect(preferencePrivacy(undefined).show_email_on_profile).toBe(false);
+    expect(
+      preferencePrivacy({ privacy: { show_email_on_profile: true } } as PreferenceDocument)
+        .show_email_on_profile,
+    ).toBe(true);
+    expect(preferencePrivacy({ privacy: 1 } as unknown as PreferenceDocument).last_active).toBe(
+      true,
     );
     expect(
       preferenceAppearance({ appearance: { wallpaper: "dusk" } } as unknown as PreferenceDocument)

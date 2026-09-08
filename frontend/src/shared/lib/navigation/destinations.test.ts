@@ -11,7 +11,7 @@ describe("shell destinations", () => {
     expect(DEFAULT_SHELL_DESTINATION).toBe("chats");
   });
 
-  it("hides the mobile bar only for nested Chats surfaces", () => {
+  it("hides the mobile bar for nested Chats and Profile settings", () => {
     expect(shouldHideMobileTabBar({ destination: "chats", layerCount: 1, mobile: true })).toBe(
       true,
     );
@@ -24,5 +24,21 @@ describe("shell destinations", () => {
     expect(shouldHideMobileTabBar({ destination: "chats", layerCount: 1, mobile: false })).toBe(
       false,
     );
+    expect(
+      shouldHideMobileTabBar({
+        destination: "profile",
+        layerCount: 0,
+        mobile: true,
+        nested: true,
+      }),
+    ).toBe(true);
+    expect(
+      shouldHideMobileTabBar({
+        destination: "profile",
+        layerCount: 0,
+        mobile: true,
+        nested: false,
+      }),
+    ).toBe(false);
   });
 });

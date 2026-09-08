@@ -154,7 +154,9 @@
       "outbox_empty": "Outbox is empty",
       "outbox_item": "{{body}}",
       "active": "Active",
-      "switch": "Switch to {{name}}"
+      "logout_all": "Log out of all accounts",
+      "switch": "Switch to {{name}}",
+      "switcher": "Accounts"
     },
     "gate": {
       "aria": "Sign in to Rajya",
@@ -198,7 +200,15 @@
       "block": "Block",
       "unblock": "Unblock",
       "blocked": "Blocked",
-      "report": "Report"
+      "report": "Report",
+      "cancel": "Cancel",
+      "edit": "Edit profile",
+      "email": "Email",
+      "handle": "@{{username}}",
+      "name_blank": "Enter a display name.",
+      "phone": "Phone",
+      "save": "Save",
+      "username_short": "That username is too short."
     }
   },
   "bots": {
@@ -362,7 +372,6 @@
     "chats": "Chats",
     "open_profile": "Open profile",
     "profile": "Profile",
-    "profile_stub": "Your profile will show here.",
     "profile_subtitle": "Shared media and info",
     "settings": "Settings",
     "tabs_aria": "Primary",

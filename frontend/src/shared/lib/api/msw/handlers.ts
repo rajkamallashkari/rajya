@@ -93,19 +93,26 @@ const readyHealth = {
   },
 } satisfies HealthBody;
 
-const session = {
+const session: SessionBody = {
   token: "test-token",
-  account: { id: 1, username: "ada", display_name: "Ada", kind: "human" },
+  account: {
+    id: 1,
+    username: "ada",
+    display_name: "Ada",
+    kind: "human",
+    bio: "Building small tools.",
+  },
   user: {
     id: 1,
     email: "ada@example.com",
+    phone: "+12025550147",
     onboarded: false,
     has_password: true,
     has_passkey: false,
     phone_verified: false,
     is_admin: false,
   },
-} satisfies SessionBody;
+};
 
 type MeBody = NonNullable<
   paths["/api/v1/users/me"]["get"]["responses"][200]["content"]
@@ -230,6 +237,11 @@ export function resetFiledReports() {
 
 export function resetIdentity() {
   session.user.onboarded = false;
+  session.user.email = "ada@example.com";
+  session.user.phone = "+12025550147";
+  session.account.display_name = "Ada";
+  session.account.username = "ada";
+  session.account.bio = "Building small tools.";
 }
 
 const nimbusBot = {
@@ -828,9 +840,25 @@ export const handlerMap = {
   "/api/v1/users/me/verify_password": http.post("*/api/v1/users/me/verify_password", okResponse),
   "/api/v1/users/me/email": http.delete("*/api/v1/users/me/email", okResponse),
   "/api/v1/users/me/google": http.delete("*/api/v1/users/me/google", okResponse),
-  "/api/v1/users/me": http.all("*/api/v1/users/me", ({ request }) => {
+  "/api/v1/users/me": http.all("*/api/v1/users/me", async ({ request }) => {
     if (request.method === "DELETE") {
       return HttpResponse.json(ok);
+    }
+    if (request.method === "PATCH") {
+      const body = (await request.json()) as {
+        bio?: string;
+        display_name?: string;
+        username?: string;
+      };
+      if (typeof body.display_name === "string") {
+        session.account.display_name = body.display_name;
+      }
+      if (typeof body.username === "string") {
+        session.account.username = body.username;
+      }
+      if (typeof body.bio === "string") {
+        session.account.bio = body.bio;
+      }
     }
     return meResponse({ request });
   }),

@@ -51,8 +51,6 @@ describe("ConversationList", () => {
       </AppProviders>,
     );
     expect(screen.getByText(en.shell.chats)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: en.shell.settings }));
-    expect(useLayerStore.getState().layers.some((layer) => layer.kind === "settings")).toBe(true);
     await user.click(screen.getByRole("button", { name: en.bots.directory }));
     expect(await screen.findByText("Nimbus")).toBeInTheDocument();
     await user.keyboard("{Escape}");

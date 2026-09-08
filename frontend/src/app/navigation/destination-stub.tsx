@@ -2,13 +2,8 @@ import { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { WEIGHT_EMPHASIS } from "@/shared/ui/metrics";
-import type { ShellDestination } from "@/shared/lib/navigation/destinations";
 
-export function DestinationStub({
-  destination,
-}: {
-  destination: Exclude<ShellDestination, "chats">;
-}): ReactNode {
+export function DestinationStub({ destination }: { destination: "calls" }): ReactNode {
   const { t } = useTranslation();
   const title = t(`shell.${destination}`);
   return (

@@ -21,7 +21,7 @@ const SECTION_ICONS: Record<SettingsSectionId, typeof Palette> = {
   stickers: Sticker,
 };
 
-export function SettingsPanel() {
+export function SettingsPanel({ onClose }: { onClose?: () => void } = {}) {
   const { t } = useTranslation();
   const panel = useShellStore((state) => state.settingsPanel);
   const setSettingsPanel = useShellStore((state) => state.setSettingsPanel);
@@ -46,7 +46,7 @@ export function SettingsPanel() {
       data-settings-section={panel}
     >
       <LayerHeader
-        onBack={panel === "hub" ? undefined : () => setSettingsPanel("hub")}
+        onBack={panel === "hub" ? onClose : () => setSettingsPanel("hub")}
         title={title}
       />
       <div className="flex min-h-0 flex-1 flex-col gap-[var(--control-gap)] overflow-y-auto px-[var(--space-list-x)] py-[var(--space-4)]">

@@ -8,10 +8,10 @@ const SettingsPanel = lazy(() =>
   loadSettingsPanel().then((mod) => ({ default: mod.SettingsPanel })),
 );
 
-export function SettingsLayer() {
+export function SettingsLayer({ onClose }: { onClose?: () => void } = {}) {
   return (
     <Suspense fallback={<ChunkFallback />}>
-      <SettingsPanel />
+      <SettingsPanel onClose={onClose} />
     </Suspense>
   );
 }

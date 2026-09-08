@@ -12,6 +12,7 @@ import { LayerHost } from "@/app/navigation/layer-host";
 import { PrimaryNav } from "@/app/navigation/primary-nav";
 import { SettingsLayer } from "@/app/lazy/settings-layer";
 import { CallHost } from "@/app/lazy/call-host";
+import { ProfileDestination } from "@/features/auth/components/profile-destination";
 import { ChatsWelcome } from "@/features/conversations/components/chats-welcome";
 import { ConversationList } from "@/features/conversations/components/conversation-list";
 import { ConversationThread } from "@/features/conversations/components/conversation-thread";
@@ -49,7 +50,13 @@ export function AppShell() {
   );
   const layerCount = useLayerStore((state) => state.layers.length);
   const mobile = useMobileViewport();
-  const hideMobileTabBar = shouldHideMobileTabBar({ destination, layerCount, mobile });
+  const profileSettingsOpen = useShellStore((state) => state.profileSettingsOpen);
+  const hideMobileTabBar = shouldHideMobileTabBar({
+    destination,
+    layerCount,
+    mobile,
+    nested: profileSettingsOpen,
+  });
   const hydrateAccounts = useAccountsStore((state) => state.hydrate);
   const setActiveAccount = useAccountsStore((state) => state.setActive);
   const needsOnboarding = useAccountsStore((state) => {
@@ -162,6 +169,10 @@ export function AppShell() {
       if (restored !== null) {
         return;
       }
+      if (useShellStore.getState().profileSettingsOpen) {
+        useShellStore.getState().setProfileSettingsOpen(false);
+        return;
+      }
       const layers = useLayerStore.getState().layers;
       if (layers.length === 0) {
         return;
@@ -221,9 +232,9 @@ export function AppShell() {
                   );
                 }}
               />
-            ) : (
-              <DestinationStub destination={destination} />
-            )}
+            ) : null}
+            {destination === "profile" ? <ProfileDestination /> : null}
+            {destination === "calls" ? <DestinationStub destination="calls" /> : null}
           </ListErrorBoundary>
         </div>
         {showChrome && mobile && !hideMobileTabBar ? <PrimaryNav placement="bar" /> : null}

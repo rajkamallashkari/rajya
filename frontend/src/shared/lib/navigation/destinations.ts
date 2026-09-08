@@ -8,10 +8,18 @@ export function shouldHideMobileTabBar({
   destination,
   layerCount,
   mobile,
+  nested = false,
 }: {
   destination: ShellDestination;
   layerCount: number;
   mobile: boolean;
+  nested?: boolean;
 }): boolean {
-  return mobile && destination === "chats" && layerCount > 0;
+  if (!mobile) {
+    return false;
+  }
+  if (destination === "chats") {
+    return layerCount > 0;
+  }
+  return destination === "profile" && nested;
 }

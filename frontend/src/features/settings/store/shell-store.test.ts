@@ -18,5 +18,9 @@ describe("useShellStore", () => {
     resetShellStore();
     expect(useShellStore.getState().settingsPanel).toBe("hub");
     expect(useShellStore.getState().destination).toBe("chats");
+    expect(useShellStore.getState().profileSettingsOpen).toBe(false);
+    useShellStore.getState().setProfileSettingsOpen(true);
+    useShellStore.getState().setDestination("calls");
+    expect(useShellStore.getState().profileSettingsOpen).toBe(false);
   });
 });

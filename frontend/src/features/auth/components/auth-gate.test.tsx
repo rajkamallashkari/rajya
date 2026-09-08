@@ -92,6 +92,9 @@ describe("AuthGate", () => {
     await user.type(screen.getByLabelText(en.auth.gate.password), "password12");
     await user.click(screen.getByRole("button", { name: en.auth.gate.submit_login }));
     expect(await screen.findByText(en.auth.gate.failed)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.auth.gate.switch_register }));
+    expect(screen.getByRole("button", { name: en.auth.gate.submit_register })).toBeInTheDocument();
+    expect(screen.queryByText(en.auth.gate.failed)).toBeNull();
   });
 
   it("creates an account after a matching password", async () => {
@@ -166,6 +169,8 @@ describe("AuthGate", () => {
     requestOtp.mockResolvedValue({ accepted: true });
     verifyOtp.mockResolvedValue(session);
     renderGate("login");
+    await user.click(screen.getByRole("button", { name: en.auth.gate.otp }));
+    await user.click(screen.getByRole("button", { name: en.auth.gate.password_method }));
     await user.click(screen.getByRole("button", { name: en.auth.gate.otp }));
     await user.type(screen.getByLabelText(en.auth.gate.email), "ada@example.com");
     await user.click(screen.getByRole("button", { name: en.auth.gate.otp_send }));

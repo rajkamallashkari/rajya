@@ -14,7 +14,7 @@ describe("AppRouter", () => {
       </AppProviders>,
     );
     expect(screen.getByText("Chat")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Gallery" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Gallery" })).toBeNull();
   });
 
   it("renders the public invite landing", async () => {

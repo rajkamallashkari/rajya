@@ -17,17 +17,4 @@ describe("DestinationStub", () => {
     );
     expect(screen.getByText(en.shell.calls_stub)).toBeInTheDocument();
   });
-
-  it("renders the profile placeholder", () => {
-    render(
-      <AppProviders>
-        <DestinationStub destination="profile" />
-      </AppProviders>,
-    );
-    expect(screen.getByRole("region", { name: en.shell.profile })).toHaveAttribute(
-      "data-destination",
-      "profile",
-    );
-    expect(screen.getByText(en.shell.profile_stub)).toBeInTheDocument();
-  });
 });

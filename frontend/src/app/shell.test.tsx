@@ -10,7 +10,7 @@ import { ADA_DEMO } from "@/features/conversations/model/demo";
 import { messagingStore } from "@/shared/lib/api/msw/messaging-store";
 import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
-import { useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { settingsLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { resetSearchStore, useSearchStore } from "@/features/search/store/search-store";
 
 function liveToken(): string {
@@ -56,7 +56,7 @@ describe("AppShell", () => {
     useShellStore.setState({ impersonatingName: null });
     resetSearchStore();
   });
-  it("renders the chat list, impersonation banner, shortcuts, and gallery link", async () => {
+  it("renders the chat list, impersonation banner, shortcuts, and profile tab", async () => {
     const user = userEvent.setup();
     Object.defineProperty(window, "innerWidth", {
       configurable: true,
@@ -69,21 +69,20 @@ describe("AppShell", () => {
       expect(document.querySelector("[data-conversation-thread]")).not.toBeNull();
     });
     expect(screen.getByAltText(en.brand.logo_alt)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: en.app.gallery })).toHaveAttribute(
-      "href",
-      "/dev/gallery",
-    );
-    expect(screen.getByRole("link", { name: en.app.accounts })).toHaveAttribute(
-      "href",
-      "/dev/accounts",
-    );
+    expect(screen.queryByRole("link", { name: en.app.gallery })).toBeNull();
+    expect(screen.queryByRole("link", { name: en.app.accounts })).toBeNull();
     expect(screen.getByRole("alert")).toHaveTextContent("Ada");
     expect(screen.queryByRole("dialog")).toBeNull();
+    await user.click(screen.getByRole("button", { name: en.shell.profile }));
     await user.click(screen.getByRole("button", { name: en.shell.settings }));
     await waitFor(() => {
       expect(document.querySelector("[data-settings-panel]")).not.toBeNull();
     });
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
+    await user.click(screen.getByRole("button", { name: en.shell.back }));
+    await waitFor(() => {
+      expect(useShellStore.getState().profileSettingsOpen).toBe(false);
+    });
+    await user.click(screen.getByRole("button", { name: en.shell.chats }));
     await user.click(screen.getByRole("button", { name: en.impersonation.exit }));
     await waitFor(() => {
       expect(useShellStore.getState().impersonatingName).toBeNull();
@@ -306,6 +305,14 @@ describe("AppShell", () => {
     );
     expect(screen.queryByRole("region", { name: en.shell.profile })).toBeNull();
     expect(document.querySelector("[data-conversation-list]")).toBeNull();
+    await user.click(screen.getByRole("button", { name: en.shell.profile }));
+    expect(await screen.findByRole("region", { name: en.shell.profile })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.shell.settings }));
+    expect(screen.queryByRole("navigation", { name: en.shell.tabs_aria })).toBeNull();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
+    await waitFor(() => {
+      expect(screen.getByRole("navigation", { name: en.shell.tabs_aria })).toBeInTheDocument();
+    });
   });
 
   it("does not auto-open a chat while another destination is showing", async () => {
@@ -322,7 +329,7 @@ describe("AppShell", () => {
     });
   });
 
-  it("keeps list plus empty welcome and overlays settings instead of replacing the chat pane", async () => {
+  it("keeps list plus empty welcome and overlays settings on Profile", async () => {
     const user = userEvent.setup();
     messagingStore().conversations.splice(0);
     Object.defineProperty(window, "innerWidth", {
@@ -334,12 +341,25 @@ describe("AppShell", () => {
     expect(await screen.findByText(en.shell.welcome_title)).toBeInTheDocument();
     expect(document.querySelector("[data-conversation-list]")).not.toBeNull();
     expect(document.querySelector("[data-conversation-thread]")).toBeNull();
+    act(() => {
+      useLayerStore.getState().pushLayer(settingsLayer(en.shell.settings));
+    });
+    expect(await screen.findByText(en.settings.appearance)).toBeInTheDocument();
+    act(() => {
+      useLayerStore.getState().popLayer();
+    });
+    await user.click(screen.getByRole("button", { name: en.shell.profile }));
+    expect(await screen.findByRole("region", { name: en.shell.profile })).toHaveAttribute(
+      "data-profile-pane",
+      "",
+    );
     await user.click(screen.getByRole("button", { name: en.shell.settings }));
     await waitFor(() => {
       expect(document.querySelector("[data-settings-panel]")).not.toBeNull();
     });
-    expect(document.querySelector("[data-chats-welcome]")).not.toBeNull();
+    expect(document.querySelector("[data-profile-pane]")).not.toBeNull();
     expect(document.querySelector("[data-layer-column='overlay']")).not.toBeNull();
+    expect(document.querySelector("[data-conversation-list]")).toBeNull();
   });
 
   it("opens New message and New group layers from the compose menu", async () => {

@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AppProviders } from "@/app/providers";
 import { AdminAuditPanel } from "./admin-audit-panel";
 import { AdminBotsPanel } from "./admin-bots-panel";
@@ -70,6 +70,7 @@ function renderAdmin(path: string) {
 
 describe("AdminShell", () => {
   it("opens users from a stored admin token", async () => {
+    vi.stubEnv("VITE_MSW", "true");
     window.localStorage.setItem(
       ACCOUNTS_STORAGE_KEY,
       JSON.stringify({
@@ -88,6 +89,7 @@ describe("AdminShell", () => {
       }),
     );
     useAccountsStore.getState().hydrate();
+    vi.unstubAllEnvs();
     render(
       <AppProviders>
         <MemoryRouter initialEntries={["/admin/users"]}>

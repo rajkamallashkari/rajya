@@ -44,6 +44,7 @@ export function ComposeDirectory({
   const needle = composeSearchNeedle(debounced);
   const peopleEnabled = meetsMinQueryLength(needle, SEARCH_MIN_QUERY_LENGTH);
   const people = usePeopleSearch(needle);
+  const peopleRows = people.data?.accounts ?? [];
   const botRows = useMemo(
     () => (bots.data?.bots ?? []).filter((bot) => botMatchesComposeQuery(bot, query)),
     [bots.data, query],
@@ -106,13 +107,13 @@ export function ComposeDirectory({
             <Spinner label={t("compose.searching")} />
           </div>
         ) : null}
-        {peopleEnabled && !people.isFetching && (people.data?.accounts.length ?? 0) === 0 ? (
+        {peopleEnabled && !people.isFetching && peopleRows.length === 0 ? (
           <p className="px-[var(--space-list-x)] py-[var(--space-4)] text-[length:var(--text-sm)] text-[var(--text-secondary)]">
             {t("compose.no_people", { query: debounced })}
           </p>
         ) : null}
         {peopleEnabled && !people.isFetching
-          ? (people.data?.accounts ?? []).map((account) => (
+          ? peopleRows.map((account) => (
               <DirectoryRow
                 account={account}
                 busy={busyId === account.id}
