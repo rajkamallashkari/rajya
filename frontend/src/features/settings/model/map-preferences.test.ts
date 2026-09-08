@@ -4,7 +4,11 @@ import {
   asPreferenceDocument,
   deepMerge,
   mapPreferencesToTheme,
+  notificationScopeEntries,
+  preferenceAi,
   preferenceAppearance,
+  preferenceLocale,
+  preferenceNotifications,
   preferencePrivacy,
   slidersFromAppearance,
 } from "./map-preferences";
@@ -78,6 +82,39 @@ describe("mapPreferencesToTheme", () => {
     expect(preferencePrivacy({ privacy: 1 } as unknown as PreferenceDocument).last_active).toBe(
       true,
     );
+    expect(preferenceLocale(undefined).time_format).toBe("12h");
+    expect(preferenceLocale({ locale: { time_format: "24h" } } as PreferenceDocument).time_format).toBe(
+      "24h",
+    );
+    expect(preferenceLocale({ locale: 1 } as unknown as PreferenceDocument).timezone).toBe("UTC");
+    expect(preferenceAi(undefined).translation_language).toBe("en");
+    expect(preferenceAi({ ai: { translation_language: "es" } } as PreferenceDocument).translation_language).toBe(
+      "es",
+    );
+    expect(preferenceAi({ ai: 1 } as unknown as PreferenceDocument).style_profile_enabled).toBe(false);
+    const notes = preferenceNotifications({
+      notifications: {
+        global: { level: "mentions" },
+        "9": { level: "none", sound: false },
+      },
+    } as unknown as PreferenceDocument);
+    expect(notes.global.level).toBe("mentions");
+    expect(notes["9"]?.sound).toBe(false);
+    expect(preferenceNotifications(undefined).global.level).toBe("all");
+    expect(
+      preferenceNotifications({ notifications: 1 } as unknown as PreferenceDocument).global.show_preview,
+    ).toBe(true);
+    expect(
+      notificationScopeEntries(notes).map(([scope]) => scope),
+    ).toEqual(["global", "9"]);
+    expect(
+      preferenceNotifications({
+        notifications: { global: 1, skip: "nope", "2": { level: "none" } },
+      } as unknown as PreferenceDocument)["2"]?.level,
+    ).toBe("none");
+    expect(notificationScopeEntries({ global: notes.global }).map(([scope]) => scope)).toEqual([
+      "global",
+    ]);
     expect(
       preferenceAppearance({ appearance: { wallpaper: "dusk" } } as unknown as PreferenceDocument)
         .wallpaper.preset,

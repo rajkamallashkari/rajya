@@ -1023,9 +1023,22 @@
     "unknown_device": "Unknown device"
   },
   "settings": {
+    "accounts": "Manage accounts",
+    "ai": "AI Features",
     "appearance": "Appearance",
+    "bots": "Manage bots",
     "chats": "Chats",
     "devices": "Devices",
+    "display": "Display",
+    "dow": {
+      "0": "Su",
+      "1": "Mo",
+      "2": "Tu",
+      "3": "We",
+      "4": "Th",
+      "5": "Fr",
+      "6": "Sa"
+    },
     "export": {
       "all_chats": "All chats",
       "conversation": "Chat",
@@ -1048,6 +1061,12 @@
       "title": "Export chats"
     },
     "link_previews": "Link previews",
+    "locale": "Time and date",
+    "locale_date": "Date format",
+    "locale_time": "Time format",
+    "locale_time_12h": "12-hour",
+    "locale_time_24h": "24-hour",
+    "locale_timezone": "Timezone",
     "nicknames": {
       "add": "Save nickname",
       "empty": "No nicknames yet",
@@ -1057,6 +1076,30 @@
       "title": "Nicknames",
       "update": "Update nickname"
     },
+    "notifications": "Notifications",
+    "notifications_chat": "Chat {{id}}",
+    "notifications_dnd": "Do not disturb",
+    "notifications_dnd_days": "Quiet days",
+    "notifications_dnd_end": "Until",
+    "notifications_dnd_start": "From",
+    "notifications_global": "All conversations",
+    "notifications_level": "Alert level",
+    "notifications_level_all": "All messages",
+    "notifications_level_mentions": "Mentions",
+    "notifications_level_none": "Off",
+    "notifications_preview": "Show message preview",
+    "notifications_sound": "Sound",
+    "notifications_vibration": "Vibration",
+    "privacy": "Privacy",
+    "privacy_blocked": "Blocked accounts",
+    "privacy_discoverable_by_email": "Discoverable by email",
+    "privacy_discoverable_by_phone": "Discoverable by phone",
+    "privacy_discoverable_by_username": "Discoverable by username",
+    "privacy_last_active": "Show last active",
+    "privacy_read_receipts": "Read receipts",
+    "privacy_show_email_on_profile": "Show email on profile",
+    "privacy_show_phone_on_profile": "Show phone on profile",
+    "privacy_unblock": "Unblock",
     "quick_reaction_slot": "Quick reaction {{n}}",
     "quick_reactions": "Quick reactions",
     "saved_replies": {
@@ -1068,6 +1111,24 @@
       "title": "Saved replies",
       "update": "Save reply"
     },
+    "scheduled": "Scheduled messages",
+    "scheduled_cancel": "Cancel",
+    "scheduled_send_now": "Send now",
+    "security": "Security",
+    "security_add_passkey": "Add passkey",
+    "security_confirm_password": "Confirm password",
+    "security_current_password": "Current password",
+    "security_delete_passkey": "Remove passkey",
+    "security_new_password": "New password",
+    "security_passkey_default": "Passkey",
+    "security_passkey_failed": "Could not add that passkey.",
+    "security_passkey_nickname": "Passkey nickname",
+    "security_passkeys": "Passkeys",
+    "security_password": "Password",
+    "security_password_failed": "Could not update the password.",
+    "security_save_password": "Save password",
+    "starred": "Starred messages",
+    "starred_unsave": "Unsave",
     "sticker_packs": {
       "add": "Add sticker",
       "create": "Create pack",
@@ -1085,6 +1146,7 @@
     },
     "stickers": "Stickers",
     "title": "Settings",
-    "transcription": "Voice transcription"
+    "transcription": "Voice transcription",
+    "translation_language": "Translation language"
   }
 }

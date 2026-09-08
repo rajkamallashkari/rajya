@@ -22,3 +22,19 @@ export const nicknameKeys = {
 export const exportJobKeys = {
   list: () => ["export-jobs"] as const,
 };
+
+export const savedMessageKeys = {
+  list: () => ["saved-messages"] as const,
+};
+
+export const scheduledMessageKeys = {
+  list: () => ["scheduled-messages"] as const,
+};
+
+export const passkeyKeys = {
+  list: () => ["passkeys"] as const,
+};
+
+export const blockKeys = {
+  list: () => ["blocks"] as const,
+};

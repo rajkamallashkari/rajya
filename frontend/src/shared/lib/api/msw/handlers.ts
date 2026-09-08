@@ -1548,16 +1548,27 @@ export const handlerMap = {
     return HttpResponse.json({ message_reminders: [messageReminder] });
   }),
   "/api/v1/saved_messages/{id}": http.delete("*/api/v1/saved_messages/:id", okResponse),
-  "/api/v1/saved_messages": http.post("*/api/v1/saved_messages", async ({ request }) => {
-    const body = (await request.json()) as { message_id?: number };
-    const message = findMessage(body.message_id ?? 0);
-    if (!message) {
-      return jsonError(404);
+  "/api/v1/saved_messages": http.all("*/api/v1/saved_messages", async ({ request }) => {
+    if (request.method === "POST") {
+      const body = (await request.json()) as { message_id?: number };
+      const message = findMessage(body.message_id ?? 0);
+      if (!message) {
+        return jsonError(404);
+      }
+      return HttpResponse.json(
+        { id: message.id, message_id: message.id, created_at: MESSAGE_STAMP, message },
+        { status: 201 },
+      );
     }
-    return HttpResponse.json(
-      { id: message.id, message_id: message.id, created_at: MESSAGE_STAMP, message },
-      { status: 201 },
-    );
+    const message = Object.values(messagingStore().messages).flat()[0];
+    if (!message) {
+      return HttpResponse.json({ saved_messages: [] });
+    }
+    return HttpResponse.json({
+      saved_messages: [
+        { id: message.id, message_id: message.id, created_at: MESSAGE_STAMP, message },
+      ],
+    });
   }),
   "/api/v1/scheduled_messages": http.all("*/api/v1/scheduled_messages", ({ request }) => {
     if (request.method === "POST") {

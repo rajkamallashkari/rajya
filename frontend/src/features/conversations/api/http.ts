@@ -198,6 +198,23 @@ export async function saveMessage(messageId: number) {
   );
 }
 
+export async function listSavedMessages() {
+  return unwrap(
+    await apiClient().GET("/api/v1/saved_messages", { headers: bearerHeaders() }),
+    "saved_messages_failed",
+  );
+}
+
+export async function unsaveMessage(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/saved_messages/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "unsave_failed",
+  );
+}
+
 export async function regenerateMessage(id: number) {
   return unwrap(
     await apiClient().POST("/api/v1/messages/{id}/regenerate", {

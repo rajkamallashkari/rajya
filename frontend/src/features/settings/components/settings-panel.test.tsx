@@ -33,7 +33,7 @@ describe("SettingsPanel admin", () => {
   it("hides the admin row unless the session user is an admin", async () => {
     render(wrap(<SettingsPanel />));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: en.settings.appearance })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: en.settings.display })).toBeInTheDocument();
     });
     expect(screen.queryByRole("button", { name: en.admin.title })).toBeNull();
     expect(screen.queryByRole("link", { name: en.admin.title })).toBeNull();

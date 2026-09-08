@@ -1098,6 +1098,8 @@ describe("MSW handlers", () => {
         body: { message_id: sent.data?.id ?? 1 },
       });
       expect(saved.response.status).toBe(201);
+      const listedSaves = await client.GET("/api/v1/saved_messages");
+      expect(listedSaves.data?.saved_messages?.length).toBeGreaterThan(0);
       const unsaved = await client.DELETE("/api/v1/saved_messages/{id}", {
         params: { path: { id: sent.data?.id ?? 1 } },
       });
@@ -1551,4 +1553,11 @@ describe("MSW handlers", () => {
       expect(exportUrl.data?.url).toContain("export");
     },
   );
+
+  it("lists no saved messages when the store has none", async () => {
+    const client = createApiClient("http://rajya.test");
+    messagingStore().messages = {};
+    const listed = await client.GET("/api/v1/saved_messages");
+    expect(listed.data?.saved_messages).toEqual([]);
+  });
 });

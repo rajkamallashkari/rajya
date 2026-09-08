@@ -1,4 +1,17 @@
-export const SETTINGS_PANELS = ["appearance", "chats", "devices", "stickers"] as const;
+export const SETTINGS_PANELS = [
+  "notifications",
+  "privacy",
+  "security",
+  "display",
+  "ai",
+  "starred",
+  "scheduled",
+  "chats",
+  "devices",
+  "stickers",
+  "bots",
+  "accounts",
+] as const;
 export type SettingsSectionId = (typeof SETTINGS_PANELS)[number];
 export type SettingsPanelId = SettingsSectionId | "hub";
 

@@ -1,7 +1,11 @@
 import type { components } from "@/shared/lib/api/schema";
 import type {
+  PreferenceAi,
   PreferenceAppearance,
   PreferenceDocument,
+  PreferenceLocale,
+  PreferenceNotifications,
+  PreferenceNotificationScope,
   PreferencePrivacy,
 } from "@/shared/lib/config/preferences-registry";
 import preferencesRegistry from "@/shared/lib/config/preferences-registry.json";
@@ -35,6 +39,56 @@ export function deepMerge(
     next[key] = isPlainObject(current) && isPlainObject(value) ? deepMerge(current, value) : value;
   }
   return next;
+}
+
+export function preferenceLocale(document: PreferenceDocument | undefined): PreferenceLocale {
+  const defaults = preferencesRegistry.defaults.locale as PreferenceLocale;
+  const raw = document?.locale;
+  if (!isPlainObject(raw)) {
+    return { ...defaults };
+  }
+  return { ...defaults, ...raw } as PreferenceLocale;
+}
+
+export function preferenceAi(document: PreferenceDocument | undefined): PreferenceAi {
+  const defaults = preferencesRegistry.defaults.ai as PreferenceAi;
+  const raw = document?.ai;
+  if (!isPlainObject(raw)) {
+    return { ...defaults };
+  }
+  return { ...defaults, ...raw } as PreferenceAi;
+}
+
+export function preferenceNotifications(
+  document: PreferenceDocument | undefined,
+): PreferenceNotifications {
+  const defaults = preferencesRegistry.defaults.notifications as PreferenceNotifications;
+  const raw = document?.notifications;
+  if (!isPlainObject(raw)) {
+    return { global: { ...defaults.global } };
+  }
+  const global = isPlainObject(raw.global)
+    ? ({ ...defaults.global, ...raw.global } as PreferenceNotificationScope)
+    : { ...defaults.global };
+  const next: PreferenceNotifications = { global };
+  for (const [key, value] of Object.entries(raw)) {
+    if (key === "global" || !isPlainObject(value)) {
+      continue;
+    }
+    next[key] = { ...defaults.global, ...value } as PreferenceNotificationScope;
+  }
+  return next;
+}
+
+export function notificationScopeEntries(
+  notifications: PreferenceNotifications,
+): [string, PreferenceNotificationScope][] {
+  const extras = Object.entries(notifications).filter(([key]) => key !== "global") as [
+    string,
+    PreferenceNotificationScope,
+  ][];
+  extras.sort(([left], [right]) => left.localeCompare(right));
+  return [["global", notifications.global], ...extras];
 }
 
 export function preferencePrivacy(document: PreferenceDocument | undefined): PreferencePrivacy {

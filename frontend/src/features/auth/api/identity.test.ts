@@ -22,6 +22,9 @@ import {
   fetchRegistrationOptions,
   registerPasskey,
   authenticatePasskey,
+  destroyPasskey,
+  listPasskeys,
+  renamePasskey,
 } from "./passkeys";
 
 const get = vi.fn();
@@ -73,6 +76,9 @@ describe("identity APIs", () => {
     await expect(checkUsername("ada")).resolves.toEqual({ available: true });
     patch.mockResolvedValue({ data: { token: "t", ...me } });
     await expect(setPassword("password12", "password12")).resolves.toMatchObject({ token: "t" });
+    await expect(setPassword("password12", "password12", "oldpass")).resolves.toMatchObject({
+      token: "t",
+    });
     get.mockResolvedValue({ data: me.account });
     await expect(fetchAccount(1)).resolves.toEqual({ account: me.account, missing: false });
     get.mockResolvedValue({ data: undefined });
@@ -151,5 +157,11 @@ describe("identity APIs", () => {
         },
       }),
     ).resolves.toMatchObject({ token: "jwt" });
+    get.mockResolvedValue({ data: { passkeys: [] } });
+    await expect(listPasskeys()).resolves.toEqual({ passkeys: [] });
+    patch.mockResolvedValue({ data: { id: 1, nickname: "Home", created_at: "t" } });
+    await expect(renamePasskey(1, "Home")).resolves.toMatchObject({ nickname: "Home" });
+    del.mockResolvedValue({ data: { ok: true } });
+    await expect(destroyPasskey(1)).resolves.toEqual({ ok: true });
   });
 });

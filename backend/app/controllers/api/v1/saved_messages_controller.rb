@@ -1,6 +1,14 @@
 module Api
   module V1
     class SavedMessagesController < ApplicationController
+      def index
+        authorize SavedMessage
+        render_result(
+          Messages::ListSaved.call(saved_messages: policy_scope(SavedMessage)),
+          serializer: SavedMessageListResource
+        )
+      end
+
       def create
         message = policy_scope(Message).find(params[:message_id])
         authorize message, :save?

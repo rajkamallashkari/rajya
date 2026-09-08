@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as apiClient from "@/shared/lib/api/client";
+import { listSavedMessages, unsaveMessage } from "@/features/conversations/api/http";
 import {
   createExportJob,
   destroyContactNickname,
@@ -10,6 +11,9 @@ import {
   listDeviceSessions,
   listExportJobs,
   listFontConfigs,
+  listScheduledMessages,
+  cancelScheduledMessage,
+  sendScheduledMessageNow,
   revokeDeviceSession,
   revokeOtherDeviceSessions,
   updatePreferences,
@@ -89,5 +93,15 @@ describe("preferences API", () => {
     });
     get.mockResolvedValue({ data: { url: "https://media.test/export", expires_at: "2099-01-01T00:00:00Z" } });
     await expect(downloadExportJob(1)).resolves.toMatchObject({ url: "https://media.test/export" });
+    get.mockResolvedValue({ data: { scheduled_messages: [{ id: 1, body: "later" }] } });
+    await expect(listScheduledMessages()).resolves.toMatchObject({ scheduled_messages: [{ id: 1 }] });
+    del.mockResolvedValue({ data: { ok: true } });
+    await expect(cancelScheduledMessage(1)).resolves.toEqual({ ok: true });
+    post.mockResolvedValue({ data: { id: 9, body: "later" } });
+    await expect(sendScheduledMessageNow(1)).resolves.toMatchObject({ id: 9 });
+    get.mockResolvedValue({ data: { saved_messages: [{ id: 1, message_id: 1 }] } });
+    await expect(listSavedMessages()).resolves.toMatchObject({ saved_messages: [{ id: 1 }] });
+    del.mockResolvedValue({ data: { ok: true } });
+    await expect(unsaveMessage(1)).resolves.toEqual({ ok: true });
   });
 });

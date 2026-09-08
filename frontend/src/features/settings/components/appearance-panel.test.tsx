@@ -122,7 +122,7 @@ describe("SettingsPanel", () => {
     expect(
       document.querySelector("[data-settings-section]")?.getAttribute("data-settings-section"),
     ).toBe("hub");
-    await user.click(screen.getByRole("button", { name: en.settings.appearance }));
+    await user.click(screen.getByRole("button", { name: en.settings.display }));
     expect(
       await screen.findByRole("button", { name: en.appearance.theme_option.dark }),
     ).toBeInTheDocument();
@@ -168,7 +168,7 @@ describe("WallpaperPicker", () => {
   it("applies presets and rejects unreadable dim", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     render(wrap(<SettingsPanel />));
-    await user.click(screen.getByRole("button", { name: en.settings.appearance }));
+    await user.click(screen.getByRole("button", { name: en.settings.display }));
     await screen.findByRole("button", { name: "Cyber Indigo" });
     await user.click(screen.getByRole("button", { name: en.appearance.theme_option.light }));
     await user.click(screen.getByRole("button", { name: en.wallpaper.presets.dusk }));

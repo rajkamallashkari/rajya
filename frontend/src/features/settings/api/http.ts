@@ -120,3 +120,30 @@ export async function downloadExportJob(id: number) {
     "export_download_failed",
   );
 }
+
+export async function listScheduledMessages() {
+  return unwrap(
+    await apiClient().GET("/api/v1/scheduled_messages", { headers: bearerHeaders() }),
+    "scheduled_messages_failed",
+  );
+}
+
+export async function cancelScheduledMessage(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/scheduled_messages/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "scheduled_cancel_failed",
+  );
+}
+
+export async function sendScheduledMessageNow(id: number) {
+  return unwrap(
+    await apiClient().POST("/api/v1/scheduled_messages/{id}/send_now", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "scheduled_send_now_failed",
+  );
+}

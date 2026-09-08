@@ -7,6 +7,7 @@ import { CallsDestination } from "./calls-destination";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import { resetShellStore, useShellStore } from "@/features/settings/store/shell-store";
 import { en } from "@/shared/lib/i18n/catalog";
+import { MOBILE_MAX_PX } from "@/shared/lib/navigation/constants";
 import { MESSAGE_STAMP, VIEWER, peerAccount } from "@/shared/lib/api/msw/messaging-store";
 import { server } from "@/test/msw";
 
@@ -18,11 +19,21 @@ const emptyLog = {
 describe("CallsDestination", () => {
   afterEach(() => {
     resetShellStore();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 1280,
+    });
   });
 
   it("opens a peer profile, not the self profile pane", async () => {
     const user = userEvent.setup();
-    useAccountsStore.setState({ activeAccountId: VIEWER.id });
+    useAccountsStore.setState({ activeAccountId: null });
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: MOBILE_MAX_PX - 10,
+    });
     render(
       <AppProviders>
         <CallsDestination />
@@ -34,6 +45,13 @@ describe("CallsDestination", () => {
     expect(document.querySelector("[data-profile-pane]")).toBeNull();
     expect(document.querySelector("[data-account-profile]")).not.toBeNull();
     expect(useShellStore.getState().callsContact?.accountId).toBe("2");
+    expect(document.querySelector("[data-layer='profile']")?.className).toContain("layer-frame-mobile");
+    await Promise.resolve();
+    window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+    await waitFor(() => {
+      expect(useShellStore.getState().callsContact).toBeNull();
+    });
+    await user.click(await screen.findByRole("button", { name: /Grace/ }));
     await user.click(screen.getByRole("button", { name: en.shell.back }));
     expect(useShellStore.getState().callsContact).toBeNull();
   });

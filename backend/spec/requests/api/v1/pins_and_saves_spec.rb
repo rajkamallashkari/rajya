@@ -1,7 +1,7 @@
 require "swagger_helper"
 
 # rubocop:disable RSpec/VariableName
-# rubocop:disable RSpec/EmptyExampleGroup, RSpec/MultipleDescribes, RSpec/MultipleMemoizedHelpers -- rswag path groups
+# rubocop:disable RSpec/AnyInstance, RSpec/EmptyExampleGroup, RSpec/MultipleDescribes, RSpec/MultipleMemoizedHelpers, RSpec/ScatteredSetup -- rswag path groups + F-1 stub
 RSpec.describe "Pins create", type: :request do
   path "/api/v1/conversations/{conversation_id}/pins" do
     post "Pin a message" do
@@ -53,6 +53,42 @@ RSpec.describe "Pins destroy", type: :request do
 
         run_test! do
           expect(PinnedMessage.where(message: message)).not_to exist
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Saved messages index", type: :request do
+  path "/api/v1/saved_messages" do
+    get "List saved messages" do
+      tags "Messages"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+
+      response "200", "listed" do
+        schema "$ref" => "#/components/schemas/SavedMessageList"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:message) { Messages::Send.call(conversation: conversation, sender: user.account, body: "Hi").value }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        before { Messages::Save.call(message: message, actor: user.account) }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("saved_messages").sole.fetch("message_id")).to eq(message.id)
+        end
+      end
+
+      response "403", "refused" do
+        schema "$ref" => "#/components/schemas/Error"
+        let(:user) { create(:user) }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        before { allow_any_instance_of(SavedMessagePolicy).to receive(:index?).and_return(false) }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).dig("error", "code")).to eq("forbidden")
         end
       end
     end
@@ -111,5 +147,5 @@ RSpec.describe "Saved messages destroy", type: :request do
     end
   end
 end
-# rubocop:enable RSpec/EmptyExampleGroup, RSpec/MultipleDescribes, RSpec/MultipleMemoizedHelpers
+# rubocop:enable RSpec/AnyInstance, RSpec/EmptyExampleGroup, RSpec/MultipleDescribes, RSpec/MultipleMemoizedHelpers, RSpec/ScatteredSetup
 # rubocop:enable RSpec/VariableName

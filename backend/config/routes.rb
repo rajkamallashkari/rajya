@@ -144,7 +144,7 @@ Rails.application.routes.draw do
           post :close
         end
       end
-      resources :saved_messages, only: %i[create destroy]
+      resources :saved_messages, only: %i[index create destroy]
       resources :saved_replies, only: %i[index create update destroy]
       resources :sticker_packs, only: %i[index create update destroy] do
         resources :stickers, only: %i[create destroy], controller: "sticker_pack_stickers"

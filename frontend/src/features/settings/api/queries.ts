@@ -1,5 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { listBlocks, destroyBlock } from "@/features/auth/api/blocks";
+import { persistSession } from "@/features/auth/model/persist-session";
+import { setPassword } from "@/features/auth/api/identity";
 import {
+  destroyPasskey,
+  listPasskeys,
+  registerPasskey,
+  renamePasskey,
+} from "@/features/auth/api/passkeys";
+import { listSavedMessages, unsaveMessage } from "@/features/conversations/api/http";
+import {
+  cancelScheduledMessage,
   createExportJob,
   destroyContactNickname,
   downloadExportJob,
@@ -9,24 +20,31 @@ import {
   listDeviceSessions,
   listExportJobs,
   listFontConfigs,
+  listScheduledMessages,
   revokeDeviceSession,
   revokeOtherDeviceSessions,
+  sendScheduledMessageNow,
   updatePreferences,
   upsertContactNickname,
   type Preferences,
 } from "@/features/settings/api/http";
 import {
   accentConfigKeys,
+  blockKeys,
   exportJobKeys,
   fontConfigKeys,
   nicknameKeys,
+  passkeyKeys,
   preferenceKeys,
+  savedMessageKeys,
+  scheduledMessageKeys,
   sessionKeys,
 } from "@/features/settings/api/keys";
 import { EXPORT_POLL_MS } from "@/features/settings/model/constants";
 import { shouldPollExportJobs } from "@/features/settings/model/map-sessions";
 import { deepMerge } from "@/features/settings/model/map-preferences";
 import preferencesRegistry from "@/shared/lib/config/preferences-registry.json";
+import type { SerializedAttestation } from "@/features/auth/lib/webauthn";
 
 function mergePreferences(
   current: Preferences | undefined,
@@ -162,6 +180,122 @@ export function useDownloadExportJob() {
       const media = await downloadExportJob(id);
       window.open(media.url, "_blank", "noopener");
       return media;
+    },
+  });
+}
+
+export function useSavedMessages() {
+  return useQuery({
+    queryFn: listSavedMessages,
+    queryKey: savedMessageKeys.list(),
+  });
+}
+
+export function useUnsaveMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: unsaveMessage,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: savedMessageKeys.list() });
+    },
+  });
+}
+
+export function useScheduledMessages() {
+  return useQuery({
+    queryFn: listScheduledMessages,
+    queryKey: scheduledMessageKeys.list(),
+  });
+}
+
+export function useCancelScheduledMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: cancelScheduledMessage,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: scheduledMessageKeys.list() });
+    },
+  });
+}
+
+export function useSendScheduledMessageNow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: sendScheduledMessageNow,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: scheduledMessageKeys.list() });
+    },
+  });
+}
+
+export function usePasskeys() {
+  return useQuery({
+    queryFn: listPasskeys,
+    queryKey: passkeyKeys.list(),
+  });
+}
+
+export function useRenamePasskey() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, nickname }: { id: number; nickname: string }) => renamePasskey(id, nickname),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: passkeyKeys.list() });
+    },
+  });
+}
+
+export function useDestroyPasskey() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: destroyPasskey,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: passkeyKeys.list() });
+    },
+  });
+}
+
+export function useRegisterPasskey() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ nickname, credential }: { nickname: string; credential: SerializedAttestation }) =>
+      registerPasskey(nickname, credential),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: passkeyKeys.list() });
+    },
+  });
+}
+
+export function useSetPassword() {
+  return useMutation({
+    mutationFn: ({
+      password,
+      passwordConfirmation,
+      currentPassword,
+    }: {
+      password: string;
+      passwordConfirmation: string;
+      currentPassword?: string;
+    }) => setPassword(password, passwordConfirmation, currentPassword),
+    onSuccess: (payload) => {
+      persistSession(payload);
+    },
+  });
+}
+
+export function useBlocks() {
+  return useQuery({
+    queryFn: listBlocks,
+    queryKey: blockKeys.list(),
+  });
+}
+
+export function useUnblock() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: destroyBlock,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: blockKeys.list() });
     },
   });
 }

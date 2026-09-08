@@ -13,25 +13,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 14.6 |
-| **Next session** | 14.7 |
+| **Last completed** | 14.7 |
+| **Next session** | 14.8 |
 | **Phase** | P14 Shell |
-| **Sessions remaining in phase** | 2 |
+| **Sessions remaining in phase** | 1 |
 
 ---
 
 ## Next session brief (agent: read SHELL_PLAN.md §5 for the full row)
 
-**14.7 — Settings stack completeness.**
+**14.8 — Playwright + two-profile DM.**
 
-Settings hub rows matching Botverse `AccountDrawer` (notifications, privacy,
-security, display, AI, starred, scheduled, devices, stickers, chats, bots,
-manage accounts). Each row is a stack layer over existing Rajya panels/APIs.
-Do not invent features. Privacy toggles for profile email/phone must actually
-hide those fields on the Profile tab.
+Playwright (two contexts): sign-in (password always; Google when env present),
+compose New message, DM appears on both sides, tab exclusive, overlay back,
+mobile bar hidden in chat. i18n. RuboCop/Vitest on touched files.
 
-Docs: SHELL_TARGET §3; SHELL_AUDIT §3. Legacy: `legacy/botverse/src/components/sidebar/AccountDrawer.tsx` and the named panels.
-Do not start 14.8 in this session.
+Docs: SHELL_TARGET §7.
+Do not start work beyond this brief.
 
 ---
 
@@ -46,6 +44,7 @@ Do not start 14.8 in this session.
 | 14.4 | Compose menu + New message / New group | Header bubble+plus menu (channel/broadcast Soon). New message layer: bots + people search; select opens/creates a DM. New group uses existing create-group. Empty-list and welcome CTAs open the same menu. |
 | 14.5 | Profile tab + inline edit | Self identity with privacy-gated email/phone, inline name/username/bio editing, settings overlay, and long-press/right-click account switching. Removed settings and `/dev/*` controls from Chats. |
 | 14.6 | Calls index + peer profile | Paginated `GET /api/v1/calls` (OpenAPI, Pundit scope, operation, serializer). Calls tab is a log; row click opens peer or group profile overlay, not self profile. Live call overlays stay global. |
+| 14.7 | Settings stack completeness | Hub rows over existing APIs: notifications, privacy, security, display, AI, starred, scheduled, chats, devices, stickers, bots, accounts. `GET /api/v1/saved_messages` for starred. Privacy flags hide Profile email/phone. |
 
 ---
 

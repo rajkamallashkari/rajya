@@ -35,11 +35,19 @@ export async function checkUsername(username: string) {
   );
 }
 
-export async function setPassword(password: string, passwordConfirmation: string) {
+export async function setPassword(
+  password: string,
+  passwordConfirmation: string,
+  currentPassword?: string,
+) {
   return unwrap(
     await apiClient().PATCH("/api/v1/users/me/password", {
       headers: bearerHeaders(),
-      body: { password, password_confirmation: passwordConfirmation },
+      body: {
+        password,
+        password_confirmation: passwordConfirmation,
+        ...(currentPassword === undefined ? {} : { current_password: currentPassword }),
+      },
     }),
     "password_failed",
   );

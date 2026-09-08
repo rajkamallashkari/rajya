@@ -18,6 +18,34 @@ export async function registerPasskey(nickname: string, credential: SerializedAt
   );
 }
 
+export async function listPasskeys() {
+  return unwrap(
+    await apiClient().GET("/api/v1/passkeys", { headers: bearerHeaders() }),
+    "passkeys_failed",
+  );
+}
+
+export async function renamePasskey(id: number, nickname: string) {
+  return unwrap(
+    await apiClient().PATCH("/api/v1/passkeys/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+      body: { nickname },
+    }),
+    "passkey_rename_failed",
+  );
+}
+
+export async function destroyPasskey(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/passkeys/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "passkey_destroy_failed",
+  );
+}
+
 export async function fetchAuthenticationOptions(email?: string) {
   return unwrap(
     await apiClient().POST("/auth/passkeys/authentication_options", {

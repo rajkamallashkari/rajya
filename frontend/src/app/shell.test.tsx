@@ -363,7 +363,7 @@ describe("AppShell", () => {
     act(() => {
       useLayerStore.getState().pushLayer(settingsLayer(en.shell.settings));
     });
-    expect(await screen.findByText(en.settings.appearance)).toBeInTheDocument();
+    expect(await screen.findByText(en.settings.display)).toBeInTheDocument();
     act(() => {
       useLayerStore.getState().popLayer();
     });
