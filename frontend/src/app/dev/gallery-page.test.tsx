@@ -87,12 +87,6 @@ describe("GalleryPage", () => {
     );
     await user.click(
       composer.getByRole("button", {
-        name: en.composer.scheduled.replace("{{when}}", en.gallery.composer.schedule),
-      }),
-    );
-    await user.click(composer.getByRole("button", { name: en.composer.clear_schedule }));
-    await user.click(
-      composer.getByRole("button", {
         name: en.composer.remove_attachment.replace("{{name}}", en.gallery.composer.attachment),
       }),
     );
@@ -167,6 +161,8 @@ describe("gallery route", () => {
         <RouterProvider router={router} />
       </AppProviders>,
     );
-    expect(await screen.findByRole("heading", { name: en.auth.accounts.title })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: en.auth.accounts.title }),
+    ).toBeInTheDocument();
   });
 });

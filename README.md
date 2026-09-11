@@ -98,6 +98,11 @@ Password register remains valid for agents and CI without Google credentials.
 `VITE_API_ORIGIN` unset locally. `backend/bin/dev` is only Puma. Leave
 `VITE_MSW` unset so the SPA talks to Rails, not browser mocks.
 
+AI helpers need one configured provider. Put `GROQ_API_KEY` in the repo-root
+`.env`, or run Ollama on the host (`ollama serve`, `ollama pull llama3.2`) and
+set `OLLAMA_BASE_URL=http://localhost:11434`. Without either provider, rewrite
+and the other AI helpers return an upstream-unavailable error.
+
 If you previously used mocks, clear site data for `localhost:5173` (or the
 opaque `test-token` in `rajya:accounts` is dropped automatically).
 

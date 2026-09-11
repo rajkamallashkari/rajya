@@ -392,9 +392,10 @@ seek), played bars highlight and the clock shows `elapsed / total`
 **Above the row**, sharing the composer surface so it reads as one control:
 
 - Reply and edit dismissible strips (unchanged)
-- A small schedule indicator while a send is armed, until the message is actually
-  sent (tap to edit the time, dismiss to clear)
-- Removable chips for attached files (caption stays in the textarea)
+- A small scheduled-message count when the chat has pending scheduled messages;
+  tap it to open that chat's scheduled-message list
+- Removable thumbnail previews for attached images/videos and file tiles for
+  other attachments (caption stays in the textarea)
 
 **Composer state survives navigation.** Drafts persist per conversation in
 IndexedDB, restored on return. This exists today and is worth calling out because
@@ -661,7 +662,7 @@ provisional.
 | **DS-10** | New feature components | **Must reuse existing primitives and interaction patterns.** A feature that needs a new interaction pattern needs a design decision first (§4) |
 | **DS-11** | Brand | **Rajya** — see §11. Reuse legacy light/dark logo assets until replaced |
 | **DS-12** | Ephemeral message features | **Do not ship.** No disappearing messages (NR-16), no view-once media (NR-17). Cut in Step 5 |
-| **DS-13** | Composer chrome | **Three-element row** — mic, textarea, send. Send long-press/right-click: attach, schedule, rewrite, silent send. Mic replaces the whole row with the voice recorder (pause, resume, preview, cancel, send at any point). Schedule indicator and attachment chips sit above the row. **No mic↔send morph.** See §5.2 |
+| **DS-13** | Composer chrome | **Three-element row** — mic, textarea, send. Send long-press/right-click: attach, schedule, rewrite, silent send. Mic replaces the whole row with the voice recorder (pause, resume, preview, cancel, send at any point). Scheduled-message count and attachment previews sit above the row. **No mic↔send morph.** See §5.2 |
 
 ### Still open
 

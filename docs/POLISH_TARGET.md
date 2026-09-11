@@ -21,10 +21,13 @@ Send-arrow long-press / right-click:
 
 | Item | Behaviour |
 | --- | --- |
-| Attach | Opens the existing attach picker; files become composer chips; send uses `attachment_signed_ids` |
-| Schedule | Opens the existing schedule bar; send uses the scheduled payload already on `onSend` |
+| Attach | Opens the existing attach picker; images/videos become small composer previews; send uses `attachment_signed_ids` |
+| Schedule | Shown for a non-empty text draft; opens the time sheet; Confirm immediately creates the scheduled message. A per-chat count above the composer opens that chat's scheduled-message list |
 | Rewrite | Unchanged |
 | Silent | Unchanged |
+
+Scheduled messages are text-only until the scheduled-message API owns durable
+attachment references; never silently drop composer attachments.
 
 Voice: after preview, send uploads the blob (`presignAndUpload`), then
 `Messages::Send` with `attachment_signed_ids`, `voice_duration_ms`,

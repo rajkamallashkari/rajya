@@ -13,6 +13,7 @@ export const PREVIEW_PROGRESS_MIN = 0;
 export const PREVIEW_PROGRESS_MAX = 1;
 export const MS_PER_SECOND = 1000;
 export const SECONDS_PER_MINUTE = 60;
+export const SECONDS_PER_HOUR = 3600;
 export const BYTE_MAX = 255;
 export const DURATION_PAD = 2;
 

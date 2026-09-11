@@ -12,7 +12,6 @@ import {
 import { useTranslation } from "react-i18next";
 import {
   ComposerAttachmentChips,
-  ComposerScheduleBar,
   type ComposerAttachment,
 } from "@/features/composer/components/composer-extras";
 import { ComposerStrip, type ComposerReply } from "@/features/composer/components/composer-strip";
@@ -81,8 +80,6 @@ export function Composer({
   onRemoveAttachment,
   onRewrite,
   onSchedule,
-  onClearSchedule,
-  onOpenSchedule,
   onSend,
   onVoiceSend,
   placeholder,
@@ -90,7 +87,7 @@ export function Composer({
   remoteGifs = false,
   replyTo,
   savedReplies = [],
-  scheduledLabel,
+  scheduleAvailable = false,
   slashCommands = [],
   stickers = [],
   value,
@@ -103,12 +100,10 @@ export function Composer({
   gifs?: GifView[];
   onAttach?: () => void;
   onChange?: (value: string) => void;
-  onClearSchedule?: () => void;
   onDismissEdit?: () => void;
   onDismissReply?: () => void;
   onEditLast?: () => void;
   onGifQueryChange?: (query: string) => void;
-  onOpenSchedule?: () => void;
   onPickGif?: (gif: GifView) => void;
   onPickSticker?: (sticker: StickerView) => void;
   onRemoveAttachment?: (id: string) => void;
@@ -121,7 +116,7 @@ export function Composer({
   remoteGifs?: boolean;
   replyTo?: ComposerReply | null;
   savedReplies?: SavedReplyView[];
-  scheduledLabel?: string | null;
+  scheduleAvailable?: boolean;
   slashCommands?: SlashCommand[];
   stickers?: StickerView[];
   value?: string;
@@ -154,14 +149,17 @@ export function Composer({
   const emitSend = useCallback(
     (silent: boolean) => {
       const trimmed = text.trim();
-      if (!trimmed) {
+      if (!trimmed && attachments.length === 0) {
         return;
       }
-      onSend({ silent, text: trimmed });
+      onSend({
+        silent,
+        text: trimmed,
+      });
       setText("");
       setSendMenuOpen(false);
     },
-    [onSend, setText, text],
+    [attachments.length, onSend, setText, text],
   );
 
   const deliverVoice = useCallback(
@@ -267,7 +265,7 @@ export function Composer({
       onClick: () => onAttach?.(),
     },
     {
-      hidden: editing,
+      hidden: editing || !scheduleAvailable,
       icon: Calendar,
       key: "schedule",
       label: t("composer.schedule"),
@@ -340,13 +338,6 @@ export function Composer({
         onDismiss={editing ? () => onDismissEdit?.() : () => onDismissReply?.()}
         replyTo={replyTo}
       />
-      {scheduledLabel ? (
-        <ComposerScheduleBar
-          label={scheduledLabel}
-          onClear={onClearSchedule}
-          onOpen={onOpenSchedule}
-        />
-      ) : null}
       <ComposerAttachmentChips attachments={attachments} onRemove={onRemoveAttachment} />
       {provisional ? (
         <p

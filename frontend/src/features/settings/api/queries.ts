@@ -11,6 +11,7 @@ import {
 import { listSavedMessages, unsaveMessage } from "@/features/conversations/api/http";
 import {
   cancelScheduledMessage,
+  createScheduledMessage,
   createExportJob,
   destroyContactNickname,
   downloadExportJob,
@@ -40,7 +41,7 @@ import {
   scheduledMessageKeys,
   sessionKeys,
 } from "@/features/settings/api/keys";
-import { EXPORT_POLL_MS } from "@/features/settings/model/constants";
+import { EXPORT_POLL_MS, SCHEDULED_MESSAGES_REFRESH_MS } from "@/features/settings/model/constants";
 import { shouldPollExportJobs } from "@/features/settings/model/map-sessions";
 import { deepMerge } from "@/features/settings/model/map-preferences";
 import preferencesRegistry from "@/shared/lib/config/preferences-registry.json";
@@ -205,6 +206,17 @@ export function useScheduledMessages() {
   return useQuery({
     queryFn: listScheduledMessages,
     queryKey: scheduledMessageKeys.list(),
+    refetchInterval: SCHEDULED_MESSAGES_REFRESH_MS,
+  });
+}
+
+export function useCreateScheduledMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createScheduledMessage,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: scheduledMessageKeys.list() });
+    },
   });
 }
 
@@ -258,8 +270,13 @@ export function useDestroyPasskey() {
 export function useRegisterPasskey() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ nickname, credential }: { nickname: string; credential: SerializedAttestation }) =>
-      registerPasskey(nickname, credential),
+    mutationFn: ({
+      nickname,
+      credential,
+    }: {
+      nickname: string;
+      credential: SerializedAttestation;
+    }) => registerPasskey(nickname, credential),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: passkeyKeys.list() });
     },

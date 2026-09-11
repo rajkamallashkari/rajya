@@ -699,7 +699,6 @@ function GalleryComposer() {
   const { t } = useTranslation();
   const [text, setText] = useState("");
   const [reply, setReply] = useState(true);
-  const [scheduled, setScheduled] = useState(t("gallery.composer.schedule"));
   const [files, setFiles] = useState([{ id: "g1", name: t("gallery.composer.attachment") }]);
   return (
     <div className="flex flex-col gap-[var(--space-4)]">
@@ -712,12 +711,10 @@ function GalleryComposer() {
           ])
         }
         onChange={setText}
-        onClearSchedule={() => setScheduled("")}
         onDismissReply={() => setReply(false)}
-        onOpenSchedule={galleryAction}
         onRemoveAttachment={(id) => setFiles((current) => current.filter((file) => file.id !== id))}
         onRewrite={galleryAction}
-        onSchedule={() => setScheduled(t("gallery.composer.schedule"))}
+        onSchedule={galleryAction}
         onSend={() => setText("")}
         replyTo={
           reply
@@ -727,7 +724,7 @@ function GalleryComposer() {
               }
             : null
         }
-        scheduledLabel={scheduled || null}
+        scheduleAvailable
         value={text}
       />
       <Composer

@@ -40,7 +40,7 @@ module Ai
       private
 
       def api_key
-        Settings.fetch(:groq_api_key).to_s
+        ENV.fetch("GROQ_API_KEY") { Settings.fetch(:groq_api_key) }.to_s
       end
 
       def host

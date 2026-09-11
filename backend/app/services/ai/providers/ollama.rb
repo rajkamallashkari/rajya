@@ -55,7 +55,7 @@ module Ai
       private
 
       def uri(path)
-        base = URI.parse(Settings.fetch(:ollama_base_url))
+        base = URI.parse(ENV.fetch("OLLAMA_BASE_URL") { Settings.fetch(:ollama_base_url) })
         base.path = path
         base
       end

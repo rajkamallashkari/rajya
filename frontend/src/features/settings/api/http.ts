@@ -128,6 +128,21 @@ export async function listScheduledMessages() {
   );
 }
 
+export async function createScheduledMessage(body: {
+  body: string;
+  client_nonce: string;
+  conversation_id: number;
+  scheduled_at: string;
+}) {
+  return unwrap(
+    await apiClient().POST("/api/v1/scheduled_messages", {
+      headers: bearerHeaders(),
+      body,
+    }),
+    "scheduled_create_failed",
+  );
+}
+
 export async function cancelScheduledMessage(id: number) {
   return unwrap(
     await apiClient().DELETE("/api/v1/scheduled_messages/{id}", {

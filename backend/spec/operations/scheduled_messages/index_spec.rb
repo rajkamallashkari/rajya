@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe ScheduledMessages::Index do
-  it "lists the actor's pending rows and omits due ones" do
+  it "lists the actor's undelivered rows including due ones" do
     user = create(:user)
     conversation = create_direct_between(user.account, create(:account))
     pending = ScheduledMessages::Create.call(
@@ -14,6 +14,6 @@ RSpec.describe ScheduledMessages::Index do
 
     ids = described_class.call(account: user.account, scheduled_messages: ScheduledMessage.all)
                          .value.scheduled_messages.map(&:id)
-    expect(ids).to eq([ pending.id ])
+    expect(ids).to eq([ due.id, pending.id ])
   end
 end

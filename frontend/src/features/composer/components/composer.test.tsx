@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { Composer } from "./composer";
+import { ScheduleSheet } from "./schedule-sheet";
 import type { VoiceRecorderResult } from "@/features/composer/hooks/use-voice-recorder";
 import { LONG_PRESS_MS } from "@/shared/hooks/constants";
 import { en } from "@/shared/lib/i18n/catalog";
@@ -25,6 +26,26 @@ function voice(overrides: Partial<VoiceRecorderResult> = {}): VoiceRecorderResul
 }
 
 describe("Composer", () => {
+  it("confirms and cancels the schedule sheet", async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    const onOpenChange = vi.fn();
+    const { rerender } = render(
+      <ScheduleSheet onConfirm={onConfirm} onOpenChange={onOpenChange} open />,
+    );
+    await user.click(screen.getByRole("button", { name: en.composer.cancel_schedule }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+
+    rerender(<ScheduleSheet onConfirm={onConfirm} onOpenChange={onOpenChange} open={false} />);
+    rerender(<ScheduleSheet onConfirm={onConfirm} onOpenChange={onOpenChange} open />);
+    fireEvent.change(screen.getByLabelText(en.composer.schedule_when), {
+      target: { value: "2099-01-01T12:00" },
+    });
+    await user.click(screen.getByRole("button", { name: en.composer.confirm_schedule }));
+    expect(onConfirm).toHaveBeenCalledWith(new Date("2099-01-01T12:00").toISOString());
+    expect(onOpenChange).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps mic and send as separate controls and opens the send menu", async () => {
     const user = userEvent.setup();
     const onSend = vi.fn();
@@ -34,23 +55,23 @@ describe("Composer", () => {
     const onRewrite = vi.fn();
     const onDismissReply = vi.fn();
     const onDismissEdit = vi.fn();
-    const onClearSchedule = vi.fn();
-    const onOpenSchedule = vi.fn();
     const onRemoveAttachment = vi.fn();
+    const image = new File(["image"], "clip.png");
+    const video = new File(["video"], "clip.mp4");
     const { rerender } = render(
       <Composer
-        attachments={[{ id: "a1", name: "clip.png" }]}
+        attachments={[
+          { file: image, id: "a1", name: "clip.png" },
+          { file: video, id: "a2", name: "clip.mp4" },
+        ]}
         onAttach={onAttach}
         onChange={onChange}
-        onClearSchedule={onClearSchedule}
         onDismissReply={onDismissReply}
-        onOpenSchedule={onOpenSchedule}
         onRemoveAttachment={onRemoveAttachment}
         onRewrite={onRewrite}
         onSchedule={onSchedule}
         onSend={onSend}
         replyTo={{ preview: "earlier", senderName: "Ada" }}
-        scheduledLabel="Tomorrow 09:00"
       />,
     );
     expect(screen.getByLabelText(en.composer.mic)).toBeInTheDocument();
@@ -62,14 +83,8 @@ describe("Composer", () => {
       "data-composer-row",
       "compose",
     );
-    await user.click(
-      screen.getByRole("button", {
-        name: en.composer.scheduled.replace("{{when}}", "Tomorrow 09:00"),
-      }),
-    );
-    expect(onOpenSchedule).toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: en.composer.clear_schedule }));
-    expect(onClearSchedule).toHaveBeenCalled();
+    expect(screen.getByRole("img", { name: "clip.png" })).toHaveAttribute("src", "blob:rajya-test");
+    expect(screen.getByLabelText("clip.mp4")).toHaveAttribute("src", "blob:rajya-test");
     await user.click(
       screen.getByRole("button", {
         name: en.composer.remove_attachment.replace("{{name}}", "clip.png"),
@@ -80,7 +95,7 @@ describe("Composer", () => {
     expect(chips).toHaveClass("overflow-x-auto");
     expect(chips).not.toHaveClass("flex-wrap");
     expect(chips?.firstElementChild).toHaveClass("shrink-0");
-    expect(chips?.firstElementChild).toHaveClass("whitespace-nowrap");
+    expect(chips?.firstElementChild).toHaveClass("overflow-hidden");
 
     const field = screen.getByRole("textbox");
     await user.type(field, "hello");
@@ -96,6 +111,7 @@ describe("Composer", () => {
         onSchedule={onSchedule}
         onSend={onSend}
         replyTo={{ preview: "earlier", senderName: "Ada" }}
+        scheduleAvailable
         value="later"
       />,
     );
@@ -163,6 +179,10 @@ describe("Composer", () => {
     fireEvent.submit(document.querySelector("form") as HTMLFormElement);
     expect(onSend).toHaveBeenCalledTimes(2);
 
+    rerender(<Composer attachments={[{ id: "a3", name: "only.pdf" }]} onSend={onSend} />);
+    fireEvent.submit(document.querySelector("form") as HTMLFormElement);
+    expect(onSend).toHaveBeenLastCalledWith({ silent: false, text: "" });
+
     rerender(<Composer editing onSend={onSend} placeholder="Ask…" value="keep" />);
     fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" });
     rerender(
@@ -171,14 +191,7 @@ describe("Composer", () => {
     fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" });
     await user.type(screen.getByRole("textbox"), "x");
 
-    rerender(
-      <Composer
-        attachments={[{ id: "a2", name: "doc.pdf" }]}
-        onSend={onSend}
-        scheduledLabel="Later"
-      />,
-    );
-    await user.click(screen.getByRole("button", { name: en.composer.clear_schedule }));
+    rerender(<Composer attachments={[{ id: "a2", name: "doc.pdf" }]} onSend={onSend} />);
     await user.click(
       screen.getByRole("button", {
         name: en.composer.remove_attachment.replace("{{name}}", "doc.pdf"),

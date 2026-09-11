@@ -105,7 +105,11 @@ export function PickerSheet({
                     variant="ghost"
                   >
                     {sticker.url ? (
-                      <img alt={sticker.shortcode} className="mx-auto size-[var(--space-8)]" src={sticker.url} />
+                      <img
+                        alt={sticker.shortcode}
+                        className="mx-auto size-[var(--space-8)]"
+                        src={sticker.url}
+                      />
                     ) : (
                       sticker.shortcode
                     )}
@@ -138,7 +142,11 @@ export function PickerSheet({
                       variant="ghost"
                     >
                       {gif.previewUrl ? (
-                        <img alt={gif.title} className="mx-auto max-h-[var(--space-16)]" src={gif.previewUrl} />
+                        <img
+                          alt={gif.title}
+                          className="mx-auto max-h-[var(--space-16)]"
+                          src={gif.previewUrl}
+                        />
                       ) : (
                         gif.previewLabel
                       )}

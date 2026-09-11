@@ -52,6 +52,14 @@ RSpec.describe Ai::Providers::Groq do
     expect(provider.stream_chat(messages: [], model: "m")).to eq(:missing_key)
   end
 
+  it "prefers the environment key over the stored setting" do
+    allow(ENV).to receive(:fetch).and_call_original
+    allow(ENV).to receive(:fetch).with("GROQ_API_KEY").and_return("env-key")
+
+    expect(described_class.new).to be_ready
+    expect(Settings).not_to have_received(:fetch).with(:groq_api_key)
+  end
+
   it "maps 429 onto quota_exhausted and 402 onto payment_required" do
     stub_http(classify_double(Net::HTTPTooManyRequests, body: "{}", code: "429"))
     expect(described_class.new.transcribe(io: StringIO.new("x"), filename: "a.ogg", content_type: "audio/ogg", model: "w")).to eq(:quota_exhausted)

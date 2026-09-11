@@ -14,22 +14,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 15.2 |
-| **Next session** | 15.3 |
+| **Last completed** | 15.3 |
+| **Next session** | 15.4 |
 | **Phase** | P15 Polish |
-| **Sessions remaining in phase** | 8 |
+| **Sessions remaining in phase** | 7 |
 
 ---
 
 ## Next session brief (agent: read POLISH_PLAN.md §5 for the full row)
 
-**15.3 — Send-arrow attach + schedule.**
+**15.4 — Date chips → JumpDateSheet.**
 
-Send-arrow menu: attach opens the existing picker and chips; schedule opens
-the existing schedule bar. Both actually send. Rewrite and silent stay. Do
-not change DS-13. Do not start 15.4 in this session.
+Date chips are buttons; they open `JumpDateSheet`. Remove the header calendar
+icon. Keyboard-focusable chips. Same `around_at` jump. Do not start 15.5 in
+this session.
 
-Docs: POLISH_TARGET §2; POLISH_AUDIT §2.
+Docs: POLISH_TARGET §3; POLISH_AUDIT §3.
+Legacy: `legacy/botverse/src/components/chat/MessageView.tsx` `DateChip`.
 
 ---
 
@@ -40,6 +41,7 @@ Docs: POLISH_TARGET §2; POLISH_AUDIT §2.
 | docs | POLISH_AUDIT / TARGET / GAP / PLAN | P14 frozen; visual chrome still `docs/shell-mockup.html` |
 | 15.1 | Mobile overlay pointer-events + back | Mobile frames restore pointer events; Profile, Calls, and Chats overlay/back coverage is green |
 | 15.2 | Voice note send | LiveThread `onVoiceSend` → presign upload → send with voice fields; optimistic voice bubble + rollback |
+| 15.3 | Send-arrow attach + schedule | Attach opens a hidden picker → media previews → `attachment_signed_ids`; Schedule appears for text drafts and Confirm posts immediately. Per-chat scheduled count/list added; Rewrite/silent and DS-13 untouched |
 
 ---
 

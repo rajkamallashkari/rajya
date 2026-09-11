@@ -1,5 +1,13 @@
 import { Calendar, Phone, Search, Video } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { getAccessSession } from "@/features/auth/model/access-session";
 import {
@@ -15,7 +23,7 @@ import {
   useTranslateMessage,
 } from "@/features/bots/api/queries";
 import { startCall } from "@/features/calls/lib";
-import { Composer } from "@/features/composer";
+import { Composer, ScheduleSheet, type ComposerAttachment } from "@/features/composer";
 import {
   gifsFromList,
   slashCommandsFromApi,
@@ -49,6 +57,7 @@ import {
   useUnsendMessage,
   useVotePoll,
 } from "@/features/conversations/api/queries";
+import { ConversationScheduledMessages } from "@/features/conversations/components/conversation-scheduled-messages";
 import { MessageInfoSheet } from "@/features/conversations/components/message-info-sheet";
 import { ReminderSheet } from "@/features/conversations/components/reminder-sheet";
 import { ReportHost } from "@/features/conversations/components/report-host";
@@ -64,11 +73,8 @@ import { conversationById, type DemoMessage } from "@/features/conversations/mod
 import { newClientNonce, parseConversationId } from "@/features/conversations/model/ids";
 import { conversationTitle } from "@/features/conversations/model/title";
 import type { ThreadRun } from "@/features/conversations/model/thread-window";
-import {
-  useGifSearch,
-  useRetryTranscript,
-  useStickerPacks,
-} from "@/features/media/api/queries";
+import { useGifSearch, useRetryTranscript, useStickerPacks } from "@/features/media/api/queries";
+import { presignAndUpload } from "@/features/media/model/direct-upload";
 import {
   MessageContextMenu,
   MessageGroup,
@@ -96,16 +102,16 @@ import { SEARCH_DEBOUNCE_MS } from "@/features/search/model/constants";
 import { serializeFilters } from "@/features/search/model/filters";
 import { wrapMatchIndex } from "@/features/search/model/highlight";
 import { resetSearchStore, useSearchStore } from "@/features/search/store/search-store";
-import { usePreferences } from "@/features/settings/api/queries";
+import { useCreateScheduledMessage, usePreferences } from "@/features/settings/api/queries";
 import { asPreferenceDocument } from "@/features/settings/model/map-preferences";
 import { DEFAULT_QUICK_REACTIONS } from "@/features/messages/model/menu";
 import { parseWallpaper, resolveAppearance, wallpaperLayerStyle } from "@/shared/lib/theme";
 import { useThemeControls } from "@/app/theme-provider";
 import { IconButton } from "@/shared/ui/icon-button";
+import { showToast } from "@/shared/ui/toast";
 import { ListView } from "@/shared/ui/list-view";
 
-const THREAD_SURFACE =
-  "chat-wallpaper flex h-full min-h-0 flex-col bg-[var(--surface-chat)]";
+const THREAD_SURFACE = "chat-wallpaper flex h-full min-h-0 flex-col bg-[var(--surface-chat)]";
 
 export function ConversationThread({ conversationId }: { conversationId: string }): ReactNode {
   const liveId = parseConversationId(conversationId);
@@ -207,6 +213,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const conversationQuery = useConversation(conversationId);
   const page = useMessagePage(conversationId);
   const send = useSendMessage(conversationId);
+  const schedule = useCreateScheduledMessage();
   const edit = useEditMessage(conversationId);
   const react = useReactMessage(conversationId);
   const pin = usePinMessage(conversationId);
@@ -267,6 +274,8 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const [restoreScrollTop, setRestoreScrollTop] = useState<number | null>(null);
   const mobile = useMobileViewport();
   const [draft, setDraft] = useState("");
+  const [attachments, setAttachments] = useState<Array<ComposerAttachment & { file: File }>>([]);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [provisional, setProvisional] = useState(false);
   const [replyChips, setReplyChips] = useState<string[]>([]);
   const [translations, setTranslations] = useState<Record<number, string>>({});
@@ -278,6 +287,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
     y: number;
   } | null>(null);
   const [reportId, setReportId] = useState<number | null>(null);
+  const fileInput = useRef<HTMLInputElement | null>(null);
   const scroller = useRef<HTMLElement | null>(null);
   const viewerId = getAccessSession()?.accountId ?? 0;
   const listed = page.messages;
@@ -296,9 +306,9 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         resolveAppearance(input.appearance).reduceTransparency,
       ) as CSSProperties)
     : undefined;
-  const quickReactions =
-    asPreferenceDocument(preferences.data?.data)?.chat?.quick_reactions ??
-    [...DEFAULT_QUICK_REACTIONS];
+  const quickReactions = asPreferenceDocument(preferences.data?.data)?.chat?.quick_reactions ?? [
+    ...DEFAULT_QUICK_REACTIONS,
+  ];
 
   useEffect(() => {
     jumpedQuery.current = "";
@@ -384,6 +394,23 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
     setMatchIndex(index);
     pushJumpFromScroller();
     openConversation(conversationLayer(String(conversationId), title, String(messageId)));
+  };
+
+  const sendWithAttachments = async (body: string, silent: boolean): Promise<void> => {
+    const pending = [...attachments];
+    try {
+      const signedIds = await Promise.all(pending.map((row) => presignAndUpload(row.file)));
+      send.mutate({
+        attachment_signed_ids: signedIds,
+        body: body || undefined,
+        client_nonce: newClientNonce(),
+        silent,
+      });
+      setAttachments((current) => current.filter((row) => !pending.includes(row)));
+    } catch {
+      // Chips stay so the user can retry; restore the caption the composer cleared.
+      setDraft(body);
+    }
   };
 
   if (conversationQuery.isPending || page.isPending) {
@@ -593,8 +620,11 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         }}
         suggestions={replyChips}
       />
+      <ConversationScheduledMessages conversationId={conversationId} locale={i18n.language} />
       <Composer
+        attachments={attachments}
         editing={editingId !== null}
+        onAttach={() => fileInput.current?.click()}
         onChange={(value) => {
           setDraft(value);
           if (value.trim()) {
@@ -614,6 +644,9 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           setDraft(lastSent.body);
           setProvisional(false);
         }}
+        onRemoveAttachment={(id) =>
+          setAttachments((current) => current.filter((attachment) => attachment.id !== id))
+        }
         onRewrite={() => {
           if (!draft.trim()) {
             return;
@@ -625,6 +658,9 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
               text: draft,
             },
             {
+              onError: () => {
+                showToast({ title: t("ai.rewrite_failed"), variant: "danger" });
+              },
               onSuccess: (result) => {
                 setDraft(result.text);
                 setProvisional(true);
@@ -633,10 +669,13 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
             },
           );
         }}
+        onSchedule={() => setScheduleOpen(true)}
         onSend={({ silent, text }) => {
           if (editingId) {
             edit.mutate({ body: text, id: editingId });
             setEditingId(null);
+          } else if (attachments.length > 0) {
+            void sendWithAttachments(text, silent);
           } else {
             send.mutate({ body: text, client_nonce: newClientNonce(), silent });
           }
@@ -658,6 +697,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           send.mutate({ client_nonce: newClientNonce(), sticker_id: Number(sticker.id) });
         }}
         remoteGifs
+        scheduleAvailable={draft.trim().length > 0 && attachments.length === 0}
         gifUnavailable={gifs.isError}
         gifs={gifsFromList(gifs.data?.gifs)}
         savedReplies={savedReplyViews(savedReplies.data?.saved_replies)}
@@ -665,6 +705,50 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         stickers={stickerViewsFromPacks(packs.data?.sticker_packs)}
         provisional={provisional}
         value={draft}
+      />
+      <input
+        aria-label={t("composer.attach_files")}
+        className="hidden"
+        multiple
+        onChange={(event) => {
+          const files = Array.from(event.currentTarget.files ?? []);
+          setAttachments((current) => [
+            ...current,
+            ...files.map((file) => ({
+              file,
+              id: crypto.randomUUID(),
+              name: file.name,
+            })),
+          ]);
+          event.currentTarget.value = "";
+        }}
+        ref={fileInput}
+        type="file"
+      />
+      <ScheduleSheet
+        onConfirm={(scheduledAt) => {
+          schedule.mutate(
+            {
+              body: draft,
+              client_nonce: newClientNonce(),
+              conversation_id: conversationId,
+              scheduled_at: scheduledAt,
+            },
+            {
+              onError: () => {
+                showToast({ title: t("composer.schedule_failed"), variant: "danger" });
+              },
+              onSuccess: () => {
+                setDraft("");
+                setProvisional(false);
+                setReplyChips([]);
+                setScheduleOpen(false);
+              },
+            },
+          );
+        }}
+        onOpenChange={setScheduleOpen}
+        open={scheduleOpen}
       />
       {menu ? (
         <MessageContextMenu
@@ -979,8 +1063,7 @@ export function buildMessageMenuActions({
     onSelect: () => onSelect(message.id),
     onSuggestReply:
       Boolean(onSuggestReply) && canCopy ? () => onSuggestReply?.(message.id) : undefined,
-    onTranscribe:
-      Boolean(onTranscribe) && voice ? () => onTranscribe?.(voice.id) : undefined,
+    onTranscribe: Boolean(onTranscribe) && voice ? () => onTranscribe?.(voice.id) : undefined,
     onTranslate: Boolean(onTranslate) && canCopy ? () => onTranslate?.(message.id) : undefined,
     onUnsend: () => onUnsend(message.id),
     quickReactions,

@@ -24,6 +24,22 @@ RSpec.describe Ai::Providers::Ollama do
     expect(described_class.new.chat(messages: [], model: "m", images: [ "x" ])).to eq(:timeout)
   end
 
+  it "prefers the environment base URL over the stored setting" do
+    allow(ENV).to receive(:fetch).and_call_original
+    allow(ENV).to receive(:fetch).with("OLLAMA_BASE_URL").and_return("http://localhost:11434")
+    allow(Settings).to receive(:fetch).and_call_original
+    captured = nil
+    allow(Ai::Providers::Http).to receive(:post_json) do |uri, **_|
+      captured = uri
+      [ { "message" => { "content" => "hi" } }, nil ]
+    end
+
+    described_class.new.chat(messages: [], model: "m")
+
+    expect(captured.to_s).to eq("http://localhost:11434/api/chat")
+    expect(Settings).not_to have_received(:fetch).with(:ollama_base_url)
+  end
+
   it "streams NDJSON deltas and ignores junk" do
     allow(Ai::Providers::Http).to receive(:post_stream) do |_uri, **_, &block|
       block.call("{\"message\":{\"content\":\"A\"}}\n")

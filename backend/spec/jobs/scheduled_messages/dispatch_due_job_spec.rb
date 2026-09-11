@@ -12,4 +12,17 @@ RSpec.describe ScheduledMessages::DispatchDueJob do
     described_class.perform_now
     expect(conversation.messages.pluck(:body)).to eq([ "Due" ])
   end
+
+  it "is recurring in development and production" do
+    config = YAML.safe_load_file(Rails.root.join("config/recurring.yml"))
+
+    %w[development production].each do |environment|
+      task = config.dig(environment, "dispatch_scheduled_messages")
+      expect(task).to include(
+        "class" => "ScheduledMessages::DispatchDueJob",
+        "queue" => "default",
+        "schedule" => "every 10 seconds"
+      )
+    end
+  end
 end

@@ -145,9 +145,9 @@ describe("conversation layers", () => {
     );
     await screen.findByRole("textbox");
     expect(screen.getByText("See you at the gate")).toBeInTheDocument();
-    expect(
-      document.querySelector("[data-conversation-thread]")?.getAttribute("style"),
-    ).toContain("--wallpaper-image");
+    expect(document.querySelector("[data-conversation-thread]")?.getAttribute("style")).toContain(
+      "--wallpaper-image",
+    );
     const field = screen.getByRole("textbox");
     await user.type(field, "/sticker");
     await user.click(await screen.findByRole("option", { name: /sticker/i }));
@@ -659,13 +659,15 @@ describe("conversation layers", () => {
         deleted: false,
         silent: false,
         created_at: "2026-01-01T12:00:00.000Z",
-        attachments: [{
-          byte_size: 1,
-          content_type: "audio/webm",
-          id: 12,
-          kind: "voice",
-          processing_status: "ready",
-        }],
+        attachments: [
+          {
+            byte_size: 1,
+            content_type: "audio/webm",
+            id: 12,
+            kind: "voice",
+            processing_status: "ready",
+          },
+        ],
       },
       onCopy: () => undefined,
       onEdit: () => undefined,
@@ -695,14 +697,16 @@ describe("conversation layers", () => {
         deleted: false,
         silent: false,
         created_at: "2026-01-01T12:00:00.000Z",
-        attachments: [{
-          byte_size: 1,
-          content_type: "audio/webm",
-          id: 13,
-          kind: "voice",
-          processing_status: "ready",
-          transcript_status: "ready",
-        }],
+        attachments: [
+          {
+            byte_size: 1,
+            content_type: "audio/webm",
+            id: 13,
+            kind: "voice",
+            processing_status: "ready",
+            transcript_status: "ready",
+          },
+        ],
       },
       onCopy: () => undefined,
       onEdit: () => undefined,
@@ -990,7 +994,9 @@ describe("conversation layers", () => {
       </AppProviders>,
     );
     await liveThreadReady("Bot hello");
-    fireEvent.contextMenu(screen.getByText("Bot hello").closest("[data-message-bubble]") as HTMLElement);
+    fireEvent.contextMenu(
+      screen.getByText("Bot hello").closest("[data-message-bubble]") as HTMLElement,
+    );
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.regenerate }));
     expect(await screen.findByText(en.messages.deleted)).toBeInTheDocument();
     testCable().emit({
@@ -1072,9 +1078,9 @@ describe("conversation layers", () => {
     expect(useSearchStore.getState().jumpStack[0]?.scrollTop).toBe(40);
     await user.click(screen.getByRole("button", { name: en.shell.back }));
     await waitFor(() => {
-      expect(
-        (document.querySelector("[data-layer-scroll='15']") as HTMLDivElement).scrollTop,
-      ).toBe(40);
+      expect((document.querySelector("[data-layer-scroll='15']") as HTMLDivElement).scrollTop).toBe(
+        40,
+      );
     });
     await user.click(screen.getByLabelText(en.search.in_chat));
     await user.keyboard("{Enter}");
@@ -1137,6 +1143,203 @@ describe("conversation layers", () => {
     fireEvent.contextMenu(bubbles[0] as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.translate }));
     expect(document.querySelector("[data-translation-card]")).not.toBeNull();
+  });
+
+  it("attaches files and schedules messages from the send menu", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    let sentPayload: Record<string, unknown> | null = null;
+    let scheduledPayload: Record<string, unknown> | null = null;
+    server.use(
+      http.get("*/api/v1/scheduled_messages", () =>
+        HttpResponse.json({
+          scheduled_messages: scheduledPayload
+            ? [
+                {
+                  body: "Later",
+                  client_nonce: scheduledPayload.client_nonce,
+                  conversation_id: 1,
+                  created_at: "2026-01-01T12:00:00.000Z",
+                  id: 2,
+                  scheduled_at: scheduledPayload.scheduled_at,
+                  sender_account_id: 1,
+                },
+              ]
+            : [],
+        }),
+      ),
+      http.post("*/api/v1/messages", async ({ request }) => {
+        sentPayload = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json(
+          {
+            body: "With file",
+            client_nonce: sentPayload.client_nonce,
+            conversation_id: 1,
+            created_at: "2026-01-01T12:00:00.000Z",
+            deleted: false,
+            id: 999,
+            kind: "text",
+            position: 999,
+            revision: 0,
+            silent: false,
+          },
+          { status: 201 },
+        );
+      }),
+      http.post("*/api/v1/scheduled_messages", async ({ request }) => {
+        scheduledPayload = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json(
+          {
+            body: "Later",
+            client_nonce: scheduledPayload.client_nonce,
+            conversation_id: 1,
+            created_at: "2026-01-01T12:00:00.000Z",
+            id: 2,
+            scheduled_at: scheduledPayload.scheduled_at,
+            sender_account_id: 1,
+          },
+          { status: 201 },
+        );
+      }),
+    );
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    const field = await screen.findByRole("textbox");
+
+    fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
+    await user.click(screen.getByRole("menuitem", { name: en.composer.attach_files }));
+    await user.upload(
+      screen.getByLabelText(en.composer.attach_files),
+      new File(["notes"], "notes.txt", { type: "text/plain" }),
+    );
+    expect(screen.getByText("notes.txt")).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", {
+        name: en.composer.remove_attachment.replace("{{name}}", "notes.txt"),
+      }),
+    );
+    expect(screen.queryByText("notes.txt")).not.toBeInTheDocument();
+    await user.upload(
+      screen.getByLabelText(en.composer.attach_files),
+      new File(["notes"], "notes.txt", { type: "text/plain" }),
+    );
+    await user.type(field, "With file");
+    await user.keyboard("{Enter}");
+    await waitFor(() => {
+      expect(sentPayload).toMatchObject({
+        attachment_signed_ids: ["signed"],
+        body: "With file",
+      });
+    });
+    expect(screen.queryByText("notes.txt")).not.toBeInTheDocument();
+
+    sentPayload = null;
+    await user.upload(
+      screen.getByLabelText(en.composer.attach_files),
+      new File(["shot"], "shot.png", { type: "image/png" }),
+    );
+    expect(screen.getByRole("img", { name: "shot.png" })).toHaveAttribute("src", "blob:rajya-test");
+    await user.click(screen.getByLabelText(en.composer.send));
+    await waitFor(() => {
+      expect(sentPayload).toMatchObject({ attachment_signed_ids: ["signed"] });
+    });
+    expect(sentPayload).not.toHaveProperty("body");
+
+    const picker = screen.getByLabelText(en.composer.attach_files);
+    Object.defineProperty(picker, "files", { configurable: true, value: null });
+    fireEvent.change(picker);
+    expect(document.querySelector("[data-composer-attachments]")).toBeNull();
+
+    fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
+    expect(screen.queryByRole("menuitem", { name: en.composer.schedule })).toBeNull();
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    await user.type(field, "Later");
+    fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
+    await user.click(screen.getByRole("menuitem", { name: en.composer.schedule }));
+    fireEvent.change(screen.getByLabelText(en.composer.schedule_when), {
+      target: { value: "2099-01-01T12:00" },
+    });
+    await user.click(screen.getByRole("button", { name: en.composer.confirm_schedule }));
+    await waitFor(() => {
+      expect(scheduledPayload).toMatchObject({
+        body: "Later",
+        conversation_id: 1,
+        scheduled_at: new Date("2099-01-01T12:00").toISOString(),
+      });
+    });
+    expect(field).toHaveValue("");
+    const count = await screen.findByRole("button", {
+      name: en.composer.scheduled_count_one.replace("{{count}}", "1"),
+    });
+    await user.click(count);
+    expect(screen.getByText("Later")).toBeInTheDocument();
+  });
+
+  it("keeps the draft and explains rewrite and schedule failures", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    const failure = {
+      error: { code: "upstream_failed", details: {}, message: "Unavailable" },
+    };
+    server.use(
+      http.post("*/api/v1/ai/rewrite", () => HttpResponse.json(failure, { status: 502 })),
+      http.post("*/api/v1/scheduled_messages", () => HttpResponse.json(failure, { status: 502 })),
+    );
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    const field = await screen.findByRole("textbox");
+    await user.type(field, "Keep me");
+
+    fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
+    await user.click(screen.getByRole("menuitem", { name: en.composer.rewrite }));
+    expect(await screen.findByText(en.ai.rewrite_failed)).toBeInTheDocument();
+    expect(field).toHaveValue("Keep me");
+
+    fireEvent.contextMenu(screen.getByLabelText(en.composer.send));
+    await user.click(screen.getByRole("menuitem", { name: en.composer.schedule }));
+    fireEvent.change(screen.getByLabelText(en.composer.schedule_when), {
+      target: { value: "2099-01-01T12:00" },
+    });
+    await user.click(screen.getByRole("button", { name: en.composer.confirm_schedule }));
+    expect(await screen.findByText(en.composer.schedule_failed)).toBeInTheDocument();
+    expect(field).toHaveValue("Keep me");
+    expect(screen.getByLabelText(en.composer.schedule_when)).toBeInTheDocument();
+  });
+
+  it("keeps the chips and caption when an attachment upload fails", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    server.use(
+      http.post("*/api/v1/direct_uploads", () =>
+        HttpResponse.json(
+          { error: { code: "validation_failed", message: "fail", details: {} } },
+          { status: 422 },
+        ),
+      ),
+    );
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    const field = await screen.findByRole("textbox");
+    await user.upload(
+      screen.getByLabelText(en.composer.attach_files),
+      new File(["notes"], "notes.txt", { type: "text/plain" }),
+    );
+    await user.type(field, "With file");
+    await user.keyboard("{Enter}");
+    await waitFor(() => {
+      expect(field).toHaveValue("With file");
+    });
+    expect(screen.getByText("notes.txt")).toBeInTheDocument();
   });
 
   it("starts a call from the live header and hides call buttons on a channel", async () => {

@@ -9,6 +9,12 @@
 #     priority: 2
 #     schedule: at 5am every day
 
+development:
+  dispatch_scheduled_messages:
+    class: ScheduledMessages::DispatchDueJob
+    queue: default
+    schedule: every 10 seconds
+
 production:
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
@@ -21,6 +27,10 @@ production:
     class: MessageReminders::DispatchDueJob
     queue: default
     schedule: every minute
+  dispatch_scheduled_messages:
+    class: ScheduledMessages::DispatchDueJob
+    queue: default
+    schedule: every 10 seconds
   reconcile_storage_quotas:
     class: StorageQuotas::ReconcileJob
     queue: background

@@ -8,6 +8,7 @@ import {
   useAccentConfigs,
   useContactNicknames,
   useCreateExportJob,
+  useCreateScheduledMessage,
   useDestroyContactNickname,
   useDeviceSessions,
   useDownloadExportJob,
@@ -36,10 +37,16 @@ function PrefsHarness() {
   const upsert = useUpsertContactNickname();
   const destroyNickname = useDestroyContactNickname();
   const createExport = useCreateExportJob();
+  const createScheduled = useCreateScheduledMessage();
   const download = useDownloadExportJob();
   return (
     <div>
-      <p data-theme="">{String((prefs.data?.data as { appearance?: { theme?: string } } | undefined)?.appearance?.theme ?? "")}</p>
+      <p data-theme="">
+        {String(
+          (prefs.data?.data as { appearance?: { theme?: string } } | undefined)?.appearance
+            ?.theme ?? "",
+        )}
+      </p>
       <p data-fonts="">{fonts.data?.font_configs.length ?? 0}</p>
       <p data-accents="">{accents.data?.accent_configs.length ?? 0}</p>
       <p data-sessions="">{sessions.data?.sessions.length ?? 0}</p>
@@ -62,6 +69,19 @@ function PrefsHarness() {
       </Button>
       <Button onClick={() => createExport.mutate({ format: "json" })} type="button">
         export
+      </Button>
+      <Button
+        onClick={() =>
+          createScheduled.mutate({
+            body: "Later",
+            client_nonce: "00000000-0000-4000-8000-000000000001",
+            conversation_id: 1,
+            scheduled_at: "2099-01-01T12:00:00.000Z",
+          })
+        }
+        type="button"
+      >
+        schedule
       </Button>
       <Button onClick={() => download.mutate(1)} type="button">
         download
@@ -94,6 +114,7 @@ describe("settings queries", () => {
     await user.click(screen.getByRole("button", { name: "nick" }));
     await user.click(screen.getByRole("button", { name: "unnick" }));
     await user.click(screen.getByRole("button", { name: "export" }));
+    await user.click(screen.getByRole("button", { name: "schedule" }));
     await user.click(screen.getByRole("button", { name: "download" }));
     expect(open).toHaveBeenCalled();
     open.mockRestore();

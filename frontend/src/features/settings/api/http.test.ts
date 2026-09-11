@@ -3,6 +3,7 @@ import * as apiClient from "@/shared/lib/api/client";
 import { listSavedMessages, unsaveMessage } from "@/features/conversations/api/http";
 import {
   createExportJob,
+  createScheduledMessage,
   destroyContactNickname,
   downloadExportJob,
   getPreferences,
@@ -60,12 +61,20 @@ describe("preferences API", () => {
     await expect(updatePreferences({ appearance: { theme: "dark" } })).resolves.toMatchObject({
       data: { appearance: { theme: "dark" } },
     });
-    get.mockResolvedValue({ data: { font_configs: [{ id: 1, name: "System", font_family_value: "inherit" }] } });
+    get.mockResolvedValue({
+      data: { font_configs: [{ id: 1, name: "System", font_family_value: "inherit" }] },
+    });
     await expect(listFontConfigs()).resolves.toMatchObject({ font_configs: [{ id: 1 }] });
     get.mockResolvedValue({
       data: {
         accent_configs: [
-          { id: "cyber_indigo", label: "Cyber Indigo", hex: "var(--accent)", is_light_compatible: true, is_dark_compatible: true },
+          {
+            id: "cyber_indigo",
+            label: "Cyber Indigo",
+            hex: "var(--accent)",
+            is_light_compatible: true,
+            is_dark_compatible: true,
+          },
         ],
       },
     });
@@ -81,20 +90,37 @@ describe("preferences API", () => {
     await expect(revokeDeviceSession(2)).resolves.toEqual({ ok: true });
     await expect(revokeOtherDeviceSessions()).resolves.toEqual({ ok: true });
     get.mockResolvedValue({ data: { nicknames: [{ nickname: "Ada", account: { id: 2 } }] } });
-    await expect(listContactNicknames()).resolves.toMatchObject({ nicknames: [{ nickname: "Ada" }] });
+    await expect(listContactNicknames()).resolves.toMatchObject({
+      nicknames: [{ nickname: "Ada" }],
+    });
     put.mockResolvedValue({ data: { nickname: "Key", account: { id: 2 } } });
     await expect(upsertContactNickname(2, "Key")).resolves.toMatchObject({ nickname: "Key" });
     await expect(destroyContactNickname(2)).resolves.toEqual({ ok: true });
     get.mockResolvedValue({ data: { export_jobs: [{ id: 1, status: "pending" }] } });
     await expect(listExportJobs()).resolves.toMatchObject({ export_jobs: [{ id: 1 }] });
     post.mockResolvedValue({ data: { id: 1, format: "json", status: "pending" } });
-    await expect(createExportJob({ format: "txt", include_media: true, conversation_id: 3 })).resolves.toMatchObject({
+    await expect(
+      createExportJob({ format: "txt", include_media: true, conversation_id: 3 }),
+    ).resolves.toMatchObject({
       id: 1,
     });
-    get.mockResolvedValue({ data: { url: "https://media.test/export", expires_at: "2099-01-01T00:00:00Z" } });
+    get.mockResolvedValue({
+      data: { url: "https://media.test/export", expires_at: "2099-01-01T00:00:00Z" },
+    });
     await expect(downloadExportJob(1)).resolves.toMatchObject({ url: "https://media.test/export" });
     get.mockResolvedValue({ data: { scheduled_messages: [{ id: 1, body: "later" }] } });
-    await expect(listScheduledMessages()).resolves.toMatchObject({ scheduled_messages: [{ id: 1 }] });
+    await expect(listScheduledMessages()).resolves.toMatchObject({
+      scheduled_messages: [{ id: 1 }],
+    });
+    post.mockResolvedValue({ data: { id: 2, body: "later" } });
+    await expect(
+      createScheduledMessage({
+        body: "later",
+        client_nonce: "00000000-0000-4000-8000-000000000001",
+        conversation_id: 3,
+        scheduled_at: "2026-01-01T12:00:00.000Z",
+      }),
+    ).resolves.toMatchObject({ id: 2 });
     del.mockResolvedValue({ data: { ok: true } });
     await expect(cancelScheduledMessage(1)).resolves.toEqual({ ok: true });
     post.mockResolvedValue({ data: { id: 9, body: "later" } });

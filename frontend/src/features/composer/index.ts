@@ -4,6 +4,7 @@ export {
   type ComposerSendPayload,
   type ComposerVoicePayload,
 } from "./components/composer";
+export { ScheduleSheet } from "./components/schedule-sheet";
 export { ComposerStrip, type ComposerReply } from "./components/composer-strip";
 export { SlashCommandMenu } from "./components/slash-command-menu";
 export { VoiceRecorder, VoiceWaveform } from "./components/voice-recorder";
