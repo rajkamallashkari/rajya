@@ -288,7 +288,7 @@ describe("standalone bubbles", () => {
       </AppProviders>,
     );
     expect(document.querySelector("[data-video-bubble]")).not.toBeNull();
-    await userEvent.setup().click(screen.getByRole("button", { name: en.transcript.retry }));
+    expect(screen.queryByRole("button", { name: en.transcript.retry })).toBeNull();
     await waitFor(() => {
       expect(document.querySelector("[data-progressive-stage] img")).not.toBeNull();
     });

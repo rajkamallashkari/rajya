@@ -140,6 +140,7 @@ export type SettingKey =
   | "openrouter_http_referer"
   | "openrouter_title"
   | "transcribe_retry_attempts"
+  | "transcribe_stale_after"
   | "notification_cascade_defaults"
   | "push_ttl"
   | "fanout_batch_size"

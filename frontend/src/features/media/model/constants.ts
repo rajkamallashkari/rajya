@@ -29,6 +29,8 @@ export const FILENAME_TRUNCATE = 30;
 export const VOICE_MIN_WIDTH_PX = 220;
 export const VOICE_MAX_WIDTH_PX = 320;
 export const VOICE_PLAYBACK_RATES = [1, 1.5, 2] as const;
+export const TRANSCRIPT_PENDING_TIMEOUT_MS =
+  (registry.transcribe_stale_after.default as number) * 1000;
 export const MEDIA_URL_STALE_BUFFER_MS = 15_000;
 export const MEDIA_URL_STALE_MAX_MS = 86_400_000;
 export const LIGHTBOX_MAX_ZOOM = 3;

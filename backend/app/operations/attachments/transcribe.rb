@@ -4,6 +4,7 @@ module Attachments
       record = attachment || Attachment.find_by(id: attachment_id)
       return success(record) if record.nil?
       return success(record) unless record.voice?
+      return success(record) unless record.transcript_status == "pending"
       unless FeatureFlag.enabled?(:voice_transcription, account: record.message&.sender_account)
         clear_pending!(record)
         return success(record)
@@ -59,8 +60,6 @@ module Attachments
     end
 
     def clear_pending!(record)
-      return unless record.transcript_status == "pending"
-
       record.update!(transcript_status: nil)
       publish(record)
     end

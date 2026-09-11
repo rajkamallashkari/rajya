@@ -17,6 +17,8 @@ RSpec.describe "Messages create", type: :request do
           client_nonce: { type: :string, format: :uuid },
           reply_to_message_id: { type: :integer },
           attachment_signed_ids: { type: :array, items: { type: :string } },
+          voice_duration_ms: { type: :integer },
+          voice_waveform: { type: :array, items: { type: :number } },
           poll: {
             type: :object,
             properties: {

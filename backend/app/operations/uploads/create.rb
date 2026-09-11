@@ -5,7 +5,7 @@ module Uploads
 
       name = filename.to_s.strip
       size = byte_size.to_i
-      type = content_type.to_s.strip
+      type = Storage::Mime.without_parameters(content_type)
       digest = checksum.to_s.strip
 
       return failure(:validation_failed) if name.blank? || digest.blank? || size < 1

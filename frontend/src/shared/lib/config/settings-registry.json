@@ -1307,6 +1307,15 @@
     "max": 10,
     "allow_nil": false
   },
+  "transcribe_stale_after": {
+    "type": "integer",
+    "category": "ai",
+    "default": 120,
+    "description": "Seconds a pending transcript may sit before it reads as failed (NR-33).",
+    "min": 30,
+    "max": 86400,
+    "allow_nil": false
+  },
   "notification_cascade_defaults": {
     "type": "object",
     "category": "notifications",

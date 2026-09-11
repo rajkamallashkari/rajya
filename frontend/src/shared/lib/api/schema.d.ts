@@ -5023,6 +5023,8 @@ export interface paths {
                         client_nonce?: string;
                         reply_to_message_id?: number;
                         attachment_signed_ids?: string[];
+                        voice_duration_ms?: number;
+                        voice_waveform?: number[];
                         poll?: {
                             question?: string;
                             options?: string[];

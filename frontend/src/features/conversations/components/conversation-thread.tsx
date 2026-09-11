@@ -64,7 +64,11 @@ import { conversationById, type DemoMessage } from "@/features/conversations/mod
 import { newClientNonce, parseConversationId } from "@/features/conversations/model/ids";
 import { conversationTitle } from "@/features/conversations/model/title";
 import type { ThreadRun } from "@/features/conversations/model/thread-window";
-import { useGifSearch, useStickerPacks } from "@/features/media/api/queries";
+import {
+  useGifSearch,
+  useRetryTranscript,
+  useStickerPacks,
+} from "@/features/media/api/queries";
 import {
   MessageContextMenu,
   MessageGroup,
@@ -219,6 +223,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const savedReplies = useSavedReplies();
   const commands = useConversationCommands(conversationId);
   const packs = useStickerPacks();
+  const transcribe = useRetryTranscript();
   const [gifQuery, setGifQuery] = useState("");
   const gifs = useGifSearch(gifQuery);
   const remind = useCreateReminder();
@@ -639,6 +644,12 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           setProvisional(false);
           setReplyChips([]);
         }}
+        onVoiceSend={({ blob, durationMs, mimeType, peaks }) => {
+          send.mutate({
+            client_nonce: newClientNonce(),
+            voice: { blob, durationMs, mimeType, peaks },
+          });
+        }}
         onGifQueryChange={setGifQuery}
         onPickGif={(gif: GifView) => {
           send.mutate({ client_nonce: newClientNonce(), gif_id: gif.id });
@@ -681,6 +692,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
                 onSuccess: (result) => setReplyChips(result.suggestions),
               });
             },
+            onTranscribe: (attachmentId) => transcribe.mutate(attachmentId),
             onTranslate: (id) => {
               translate.mutate(
                 { id, targetLanguage: i18n.language },
@@ -911,6 +923,7 @@ export function buildMessageMenuActions({
   saved,
   viewerId,
   onSuggestReply,
+  onTranscribe,
   onTranslate,
 }: {
   message: Message | undefined;
@@ -926,6 +939,7 @@ export function buildMessageMenuActions({
   onSave: (id: number) => void;
   onSelect: (id: number) => void;
   onSuggestReply?: (id: number) => void;
+  onTranscribe?: (attachmentId: number) => void;
   onTranslate?: (id: number) => void;
   onUnsend: (id: number) => void;
   pinned: number[];
@@ -941,6 +955,11 @@ export function buildMessageMenuActions({
   const canCopy = Boolean(message.body) && !restrictForwarding;
   const canReport = Boolean(onReport) && !isMine && !message.deleted && message.kind !== "system";
   const canRegenerate = Boolean(onRegenerate) && canRegenerateBotReply(message, viewerId);
+  const voice = message.attachments?.find(
+    (attachment) =>
+      attachment.kind === "voice" &&
+      (attachment.transcript_status == null || attachment.transcript_status === "failed"),
+  );
   return {
     canEdit: isMine && !message.deleted && Boolean(message.body),
     hasText: canCopy,
@@ -960,6 +979,8 @@ export function buildMessageMenuActions({
     onSelect: () => onSelect(message.id),
     onSuggestReply:
       Boolean(onSuggestReply) && canCopy ? () => onSuggestReply?.(message.id) : undefined,
+    onTranscribe:
+      Boolean(onTranscribe) && voice ? () => onTranscribe?.(voice.id) : undefined,
     onTranslate: Boolean(onTranslate) && canCopy ? () => onTranslate?.(message.id) : undefined,
     onUnsend: () => onUnsend(message.id),
     quickReactions,

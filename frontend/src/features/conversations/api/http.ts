@@ -122,6 +122,7 @@ export async function getMessageInfo(id: number) {
 }
 
 export async function sendMessage(body: {
+  attachment_signed_ids?: string[];
   body?: string;
   client_nonce?: string;
   contacts?: components["schemas"]["MessageContact"][];
@@ -138,6 +139,8 @@ export async function sendMessage(body: {
   reply_to_message_id?: number;
   silent?: boolean;
   sticker_id?: number;
+  voice_duration_ms?: number;
+  voice_waveform?: number[];
 }) {
   return unwrap(
     await apiClient().POST("/api/v1/messages", { headers: bearerHeaders(), body }),

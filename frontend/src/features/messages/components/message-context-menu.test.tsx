@@ -26,6 +26,7 @@ describe("MessageContextMenu", () => {
       onSave: vi.fn(),
       onSelect: vi.fn(),
       onSuggestReply: vi.fn(),
+      onTranscribe: vi.fn(),
       onTranslate: vi.fn(),
       onUnsend: vi.fn(),
     };
@@ -52,6 +53,7 @@ describe("MessageContextMenu", () => {
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.forward }));
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.copy }));
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.suggest_reply }));
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.transcribe }));
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.translate }));
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.unpin }));
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.unsave }));
@@ -67,6 +69,7 @@ describe("MessageContextMenu", () => {
     expect(actions.onReport).toHaveBeenCalled();
     expect(actions.onUnsend).toHaveBeenCalled();
     expect(actions.onSuggestReply).toHaveBeenCalled();
+    expect(actions.onTranscribe).toHaveBeenCalled();
     expect(actions.onTranslate).toHaveBeenCalled();
 
     const failed = {

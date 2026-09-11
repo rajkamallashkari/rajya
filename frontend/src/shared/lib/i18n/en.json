@@ -839,6 +839,7 @@
       "react": "React with {{emoji}}",
       "select": "Select",
       "suggest_reply": "Suggest a reply",
+      "transcribe": "Transcribe",
       "translate": "Translate",
       "reactions": "Reactions",
       "remind": "Remind me"
@@ -933,11 +934,12 @@
     "phone": "{{value}}"
   },
   "transcript": {
-    "failed": "Couldn't transcribe this voice note",
-    "pending": "Transcribing voice note",
+    "failed": "Couldn't transcribe",
+    "pending": "Transcribing",
     "ready": "Transcript",
     "ready_language": "Transcript · {{language}}",
-    "retry": "Retry transcription"
+    "retry": "Retry transcription",
+    "unavailable": "Transcription is unavailable right now"
   },
   "slash": {
     "empty": "No commands match",

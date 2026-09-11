@@ -14,24 +14,22 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 15.1 |
-| **Next session** | 15.2 |
+| **Last completed** | 15.2 |
+| **Next session** | 15.3 |
 | **Phase** | P15 Polish |
-| **Sessions remaining in phase** | 9 |
+| **Sessions remaining in phase** | 8 |
 
 ---
 
 ## Next session brief (agent: read POLISH_PLAN.md §5 for the full row)
 
-**15.2 — Voice note send.**
+**15.3 — Send-arrow attach + schedule.**
 
-Wire `LiveThread` to `onVoiceSend`; presign and upload the recording; send
-`attachment_signed_ids`, `voice_duration_ms`, and `voice_waveform`. Add an
-optimistic voice bubble with rollback on failure. Update OpenAPI/generated
-types only if the current client is missing the voice fields. Do not start 15.3
-in this session.
+Send-arrow menu: attach opens the existing picker and chips; schedule opens
+the existing schedule bar. Both actually send. Rewrite and silent stay. Do
+not change DS-13. Do not start 15.4 in this session.
 
-Docs: POLISH_TARGET §2; POLISH_AUDIT §4.
+Docs: POLISH_TARGET §2; POLISH_AUDIT §2.
 
 ---
 
@@ -41,6 +39,7 @@ Docs: POLISH_TARGET §2; POLISH_AUDIT §4.
 | --- | --- | --- |
 | docs | POLISH_AUDIT / TARGET / GAP / PLAN | P14 frozen; visual chrome still `docs/shell-mockup.html` |
 | 15.1 | Mobile overlay pointer-events + back | Mobile frames restore pointer events; Profile, Calls, and Chats overlay/back coverage is green |
+| 15.2 | Voice note send | LiveThread `onVoiceSend` → presign upload → send with voice fields; optimistic voice bubble + rollback |
 
 ---
 

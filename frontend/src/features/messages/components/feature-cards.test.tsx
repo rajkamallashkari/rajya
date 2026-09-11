@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReactionDetailsSheet } from "./reaction-details-sheet";
@@ -6,6 +6,7 @@ import { SelectionToolbar } from "./selection-toolbar";
 import { LocationCard } from "./location-card";
 import { ContactCard } from "./contact-card";
 import { TranscriptBlock } from "./transcript-block";
+import { TRANSCRIPT_PENDING_TIMEOUT_MS } from "@/features/media/model/constants";
 import { remainingOsmTileBudget, resetOsmTileBudget, tilesForLocation } from "@/features/messages/model/osm-tiles";
 import { en } from "@/shared/lib/i18n/catalog";
 
@@ -139,5 +140,22 @@ describe("cards", () => {
     expect(onRetry).toHaveBeenCalled();
     rerender(<TranscriptBlock language={null} status="failed" text={null} />);
     expect(screen.queryByRole("button", { name: en.transcript.retry })).toBeNull();
+  });
+
+  it("gives up on a transcript that never arrives", () => {
+    vi.useFakeTimers();
+    try {
+      render(<TranscriptBlock language={null} status="pending" text={null} />);
+      expect(screen.getByText(en.transcript.pending)).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(TRANSCRIPT_PENDING_TIMEOUT_MS);
+      });
+
+      expect(screen.queryByText(en.transcript.pending)).toBeNull();
+      expect(screen.getByText(en.transcript.failed)).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

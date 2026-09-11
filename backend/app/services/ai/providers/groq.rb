@@ -33,6 +33,10 @@ module Ai
         %i[chat stream_chat transcribe]
       end
 
+      def ready?
+        api_key.present?
+      end
+
       private
 
       def api_key

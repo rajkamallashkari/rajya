@@ -1417,12 +1417,19 @@ export const handlerMap = {
       client_nonce?: string;
       conversation_id?: number;
       silent?: boolean;
+      voice_duration_ms?: number;
+      voice_waveform?: number[];
     };
+    const voice =
+      body.voice_duration_ms != null
+        ? { durationMs: body.voice_duration_ms, waveform: body.voice_waveform ?? [] }
+        : undefined;
     const message = appendSent(
       body.conversation_id ?? 1,
       body.body ?? "",
       body.client_nonce,
       body.silent,
+      voice,
     );
     publishMswRealtime({
       type: "message_created",

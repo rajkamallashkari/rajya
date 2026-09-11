@@ -11,6 +11,15 @@ RSpec.describe Calls::Page do
     expect(entry.peer).to eq(peer)
   end
 
+  it "leaves a direct call unnamed when only the viewer took part" do
+    user = create(:user)
+    direct = create_direct_call_log(user.account, peer: create(:account))
+    direct.call_participants.where.not(account_id: user.account.id).destroy_all
+    entry = described_class.call(account: user.account, scope: Call.where(id: direct.id)).calls.sole
+
+    expect(entry).to have_attributes(title: nil, peer: nil)
+  end
+
   it "names a group call after the conversation" do
     user = create(:user)
     group = create_talk(kind: "group", owner: user.account, members: create_list(:account, 2))

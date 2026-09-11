@@ -1080,7 +1080,7 @@ paths:
                 "$ref": "#/components/schemas/Error"
   "/api/v1/attachments/{id}/transcribe":
     post:
-      summary: Retry a failed voice-note transcript
+      summary: Start or retry a voice-note transcript
       tags:
       - Media
       security:
@@ -1093,11 +1093,17 @@ paths:
           type: integer
       responses:
         '200':
-          description: requeued
+          description: queued
           content:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Attachment"
+        '502':
+          description: no transcription provider configured
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
         '403':
           description: non-member refused
           content:
@@ -3141,6 +3147,12 @@ paths:
                   type: array
                   items:
                     type: string
+                voice_duration_ms:
+                  type: integer
+                voice_waveform:
+                  type: array
+                  items:
+                    type: number
                 poll:
                   type: object
                   properties:

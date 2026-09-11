@@ -21,6 +21,18 @@ RSpec.describe Ai::ModelRegistry do
     expect(described_class.chain_for(:transcribe)).to eq([])
   end
 
+  it "reports whether a capability has a usable provider (NR-33)" do
+    allow(Settings).to receive(:fetch).and_call_original
+    allow(Settings).to receive(:fetch).with(:groq_api_key).and_return("")
+    expect(described_class.available_for?(:transcribe)).to be(false)
+
+    allow(Settings).to receive(:fetch).with(:groq_api_key).and_return("gkey")
+    expect(described_class.available_for?(:transcribe)).to be(true)
+
+    allow(Settings).to receive(:fetch).with(:ai_transcribe_models).and_return([ "nope/model" ])
+    expect(described_class.available_for?(:transcribe)).to be(false)
+  end
+
   it "raises in local environments for an unregistered capability" do
     expect { described_class.chain_for(:not_a_capability) }.to raise_error(Ai::ModelRegistry::UnregisteredCapability)
   end

@@ -1,6 +1,12 @@
 require "rails_helper"
 
 RSpec.describe Storage::Mime do
+  it "drops MIME parameters so disk PUT tokens match request.content_mime_type" do
+    expect(described_class.without_parameters("audio/webm;codecs=opus")).to eq("audio/webm")
+    expect(described_class.without_parameters("  image/png  ")).to eq("image/png")
+    expect(described_class.without_parameters("")).to eq("")
+  end
+
   it "classifies content types onto file-cap categories (BR-88)" do
     expect(described_class.cap_category("image/png")).to eq("image")
     expect(described_class.cap_category("video/mp4")).to eq("video")

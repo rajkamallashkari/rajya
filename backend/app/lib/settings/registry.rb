@@ -575,6 +575,10 @@ module Settings
         type: :integer, category: :ai, default: 2, min: 1, max: 10,
         description: "Retries for unexpected transcription job errors before a visible fail (NR-33)."
       },
+      transcribe_stale_after: {
+        type: :integer, category: :ai, default: 120, min: 30, max: 86_400,
+        description: "Seconds a pending transcript may sit before it reads as failed (NR-33)."
+      },
 
       # --- notifications (BR-98, BR-99, BR-103) ---
       notification_cascade_defaults: {

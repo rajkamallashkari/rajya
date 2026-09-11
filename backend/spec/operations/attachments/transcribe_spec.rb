@@ -5,7 +5,10 @@ RSpec.describe Attachments::Transcribe do
     user = create(:user)
     conversation = create_direct_between(user.account, create(:account))
     message = create(:message, conversation: conversation, sender_account: user.account)
-    attachment = create(:attachment, message: message, kind: "voice", content_type: "audio/ogg")
+    attachment = create(
+      :attachment, message: message, kind: "voice",
+      content_type: "audio/ogg", transcript_status: "pending"
+    )
     attachment.file.attach(io: StringIO.new("ogg"), filename: "note.ogg", content_type: "audio/ogg")
     attachment
   end
@@ -52,6 +55,7 @@ RSpec.describe Attachments::Transcribe do
 
   it "leaves a nil transcript when the flag is off" do
     attachment = voice_attachment
+    attachment.update!(transcript_status: nil)
     create(:feature_flag, key: "voice_transcription",
                           description: FeatureFlagRegistry.description_for(:voice_transcription), enabled: false)
     allow(Ai::Runner).to receive(:transcribe)
@@ -66,10 +70,15 @@ RSpec.describe Attachments::Transcribe do
     expect(described_class.call(attachment_id: 0).value).to be_nil
     image = create(:attachment)
     expect(described_class.call(attachment: image).value.transcript_status).to be_nil
+    idle_voice = voice_attachment
+    idle_voice.update!(transcript_status: nil)
+    expect(described_class.call(attachment: idle_voice).value.transcript_status).to be_nil
   end
 
   it "fails visibly when the voice blob is missing" do
-    attachment = create(:attachment, kind: "voice", content_type: "audio/ogg")
+    attachment = create(
+      :attachment, kind: "voice", content_type: "audio/ogg", transcript_status: "pending"
+    )
 
     described_class.call(attachment: attachment)
 

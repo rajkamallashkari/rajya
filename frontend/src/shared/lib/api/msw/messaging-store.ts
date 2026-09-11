@@ -496,6 +496,7 @@ export function appendSent(
   body: string,
   nonce?: string,
   silent = false,
+  voice?: { durationMs: number; waveform: number[] },
 ): Message {
   const rows = store.messages[conversationId] ?? [];
   if (nonce) {
@@ -506,19 +507,35 @@ export function appendSent(
   }
   const last = rows[rows.length - 1];
   const created = new Date().toISOString();
+  const isVoice = voice != null;
   const message: Message = {
     id: store.nextId,
     conversation_id: conversationId,
     position: (last?.position ?? 0) + 1,
     revision: 1,
-    kind: "text",
-    body,
+    kind: isVoice ? "voice" : "text",
+    body: isVoice ? null : body,
     deleted: false,
     silent,
     client_nonce: nonce ?? null,
     created_at: created,
     sender: VIEWER,
     tick: "sent",
+    attachment_count: isVoice ? 1 : undefined,
+    attachments: isVoice
+      ? [
+          {
+            id: store.nextId + 1000,
+            kind: "voice",
+            content_type: "audio/webm",
+            byte_size: 1,
+            duration_ms: voice.durationMs,
+            waveform: voice.waveform,
+            processing_status: "ready",
+            filename: "voice.weba",
+          },
+        ]
+      : undefined,
   };
   store.nextId += 1;
   store.messages[conversationId] = [...rows, message];
@@ -527,8 +544,8 @@ export function appendSent(
     conversation.last_activity_at = created;
     conversation.last_message = {
       id: message.id,
-      kind: "text",
-      body,
+      kind: isVoice ? "voice" : "text",
+      body: isVoice ? null : body,
       deleted: false,
       created_at: created,
       sender_name: VIEWER.display_name,

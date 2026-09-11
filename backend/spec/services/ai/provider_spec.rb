@@ -14,6 +14,7 @@ RSpec.describe Ai::Provider do
 
     expect(provider.transcribe(io: nil, filename: "a", content_type: "b", model: "x")).to eq(:unsupported)
     expect(provider.capabilities).to eq([])
+    expect(provider.ready?).to be(true)
   end
 
   it "yields a chat result once when a subclass does not override streaming" do

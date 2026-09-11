@@ -9,7 +9,6 @@ module Attachments
       sniff!(record)
       process_kind!(record)
       record.update!(processing_status: "ready", processing_error: nil)
-      enqueue_transcription!(record)
       publish(record)
       success(record)
     rescue PermanentFailure => error
@@ -179,14 +178,6 @@ module Attachments
       return if duration.nil?
 
       (duration * 1.second.in_milliseconds).round
-    end
-
-    def enqueue_transcription!(record)
-      return unless record.voice?
-      return unless FeatureFlag.enabled?(:voice_transcription, account: record.message&.sender_account)
-
-      record.update!(transcript_status: "pending")
-      TranscribeJob.perform_later(record.id)
     end
 
     def publish(record)

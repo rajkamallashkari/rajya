@@ -16,6 +16,26 @@ RSpec.describe Attachment do
     expect(pdf).to be_pdf
   end
 
+  it "presents a transcript nobody is working on as failed (NR-33)" do
+    voice = create(:attachment, kind: "voice", content_type: "audio/ogg", transcript_status: "pending")
+
+    expect(voice).not_to be_transcript_stalled
+    expect(voice.visible_transcript_status).to eq("pending")
+
+    voice.update_columns(updated_at: (Settings.fetch(:transcribe_stale_after) + 1).seconds.ago)
+
+    expect(voice).to be_transcript_stalled
+    expect(voice.visible_transcript_status).to eq("failed")
+  end
+
+  it "leaves settled transcript statuses alone" do
+    voice = create(:attachment, kind: "voice", content_type: "audio/ogg", transcript_status: "ready")
+    voice.update_columns(updated_at: 1.year.ago)
+
+    expect(voice).not_to be_transcript_stalled
+    expect(voice.visible_transcript_status).to eq("ready")
+  end
+
   it "accepts pending transcripts and rejects unknown statuses" do
     voice = build(:attachment, kind: "voice", content_type: "audio/ogg")
     expect(voice).to be_valid

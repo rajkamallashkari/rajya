@@ -94,6 +94,17 @@ RSpec.describe Uploads::Create do
     expect(presign(user).error_code).to eq(:quota_exceeded)
   end
 
+  it "strips MIME parameters so Active Storage disk PUT checks pass" do
+    user = create(:user)
+    create(:storage_bucket, service_name: "test")
+    result = presign(user, filename: "voice.weba", content_type: "audio/webm;codecs=opus")
+    blob = ActiveStorage::Blob.find_signed(result.value.blob_signed_id)
+
+    expect(result).to be_success
+    expect(blob.content_type).to eq("audio/webm")
+    expect(result.value.headers["Content-Type"]).to eq("audio/webm")
+  end
+
   it "returns not_found when direct uploads are disabled" do
     user = create(:user)
     create(:feature_flag, key: "direct_uploads",

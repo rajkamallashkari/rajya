@@ -45,6 +45,8 @@ RSpec.describe Ai::Providers::Groq do
     allow(Settings).to receive(:fetch).with(:groq_api_key).and_return("")
     provider = described_class.new
 
+    expect(provider).not_to be_ready
+
     expect(provider.transcribe(io: StringIO.new("x"), filename: "a.ogg", content_type: "audio/ogg", model: "w")).to eq(:missing_key)
     expect(provider.chat(messages: [], model: "m")).to eq(:missing_key)
     expect(provider.stream_chat(messages: [], model: "m")).to eq(:missing_key)
@@ -88,6 +90,7 @@ RSpec.describe Ai::Providers::Groq do
     expect(provider.chat(messages: [ { role: "user", content: "q" } ], model: "m").text).to eq("ok")
     expect(provider.stream_chat(messages: [], model: "m").text).to eq("")
     expect(provider.capabilities).to include(:transcribe, :chat)
+    expect(provider).to be_ready
   end
 end
 # rubocop:enable RSpec/ExampleLength

@@ -148,13 +148,13 @@ end
 
 RSpec.describe "Attachment transcribe", type: :request do
   path "/api/v1/attachments/{id}/transcribe" do
-    post "Retry a failed voice-note transcript" do
+    post "Start or retry a voice-note transcript" do
       tags "Media"
       produces "application/json"
       security [ { bearerAuth: [] } ]
       parameter name: :id, in: :path, type: :integer
 
-      response "200", "requeued" do
+      response "200", "queued" do
         schema "$ref" => "#/components/schemas/Attachment"
         let(:user) { create(:user) }
         let(:conversation) { create_direct_between(user.account, create(:account)) }
@@ -170,8 +170,34 @@ RSpec.describe "Attachment transcribe", type: :request do
         let(:id) { attachment.id }
         let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
 
+        before do
+          allow(Settings).to receive(:fetch).and_call_original
+          allow(Settings).to receive(:fetch).with(:groq_api_key).and_return("gkey")
+        end
+
         run_test! do |response|
           expect(JSON.parse(response.body).fetch("transcript_status")).to eq("pending")
+        end
+      end
+
+      response "502", "no transcription provider configured" do
+        schema "$ref" => "#/components/schemas/Error"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:attachment) do
+          create(
+            :attachment,
+            message: create(:message, conversation: conversation, sender_account: user.account),
+            kind: "voice",
+            content_type: "audio/ogg",
+            transcript_status: "failed"
+          )
+        end
+        let(:id) { attachment.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).dig("error", "code")).to eq("upstream_failed")
         end
       end
 

@@ -32,4 +32,15 @@ class Attachment < ApplicationRecord
   def pdf?
     content_type == "application/pdf"
   end
+
+  # A pending transcript only means "a worker is on it" for as long as the job
+  # can plausibly still be running. Past that it is indistinguishable from a
+  # failure, and callers must not present it as work in progress (NR-33).
+  def transcript_stalled?
+    transcript_status == "pending" && updated_at <= Settings.fetch(:transcribe_stale_after).seconds.ago
+  end
+
+  def visible_transcript_status
+    transcript_stalled? ? "failed" : transcript_status
+  end
 end

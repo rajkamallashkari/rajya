@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { conversationKeys, messageKeys } from "@/features/conversations/api/keys";
 import {
   addStickerToPack,
@@ -22,6 +23,7 @@ import {
   type GalleryKind,
 } from "@/features/media/model/constants";
 import type { components } from "@/shared/lib/api/schema";
+import { showToast } from "@/shared/ui/toast";
 
 type GalleryPage = components["schemas"]["GalleryPage"];
 type MediaUrl = components["schemas"]["MediaUrl"];
@@ -36,7 +38,9 @@ export function mediaUrlStaleTime(expiresAt: string, now: number = Date.now()): 
 
 export function useMediaUrl(id: number, variant: "original" | "thumb", enabled = true) {
   return useQuery({
-    enabled,
+    // Optimistic attachments carry a negative placeholder id until the server
+    // row arrives; asking for a signed URL then only yields a 404.
+    enabled: enabled && id > 0,
     queryFn: () => (variant === "thumb" ? getAttachmentThumbnail(id) : getAttachmentDownload(id)),
     queryKey: mediaKeys.url(id, variant),
     staleTime: (query) => mediaUrlStaleTime((query.state.data as MediaUrl | undefined)?.expires_at ?? ""),
@@ -70,8 +74,14 @@ export function useRetryAttachment() {
 
 export function useRetryTranscript() {
   const client = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: retryTranscript,
+    // Transcription needs a configured provider and a running worker; without
+    // feedback a rejected request looks like a spinner that never resolves.
+    onError: () => {
+      showToast({ title: t("transcript.unavailable"), variant: "danger" });
+    },
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: mediaKeys.all });
       void client.invalidateQueries({ queryKey: messageKeys.all });

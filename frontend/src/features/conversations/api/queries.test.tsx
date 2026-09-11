@@ -92,6 +92,61 @@ function EmptyHarness() {
       <Button onClick={() => send.mutate({ client_nonce: "blank" })} type="button">
         send-blank
       </Button>
+      <Button
+        onClick={() => send.mutate({ attachment_signed_ids: ["signed"], client_nonce: "attach" })}
+        type="button"
+      >
+        send-attachment
+      </Button>
+      <Button
+        onClick={() => send.mutate({ client_nonce: "duration", voice_duration_ms: 800 })}
+        type="button"
+      >
+        send-duration-only
+      </Button>
+    </div>
+  );
+}
+
+function UnloadedThreadHarness() {
+  const send = useSendMessage(7);
+  return (
+    <Button
+      data-unloaded-status={send.status}
+      onClick={() => send.mutate({ body: "first", client_nonce: "cold" })}
+      type="button"
+    >
+      send-cold
+    </Button>
+  );
+}
+
+function VoiceHarness() {
+  const page = useMessagePage(9);
+  const send = useSendMessage(9);
+  return (
+    <div>
+      <p data-voice-count="">{page.messages.length}</p>
+      <p data-voice-kind={page.messages[0]?.kind ?? ""} />
+      <p data-voice-status={send.status}>
+        {send.error ? JSON.stringify(send.error) : "ok"}
+      </p>
+      <Button
+        onClick={() =>
+          send.mutate({
+            client_nonce: "voice-nonce",
+            voice: {
+              blob: new Blob(["voice"], { type: "audio/webm" }),
+              durationMs: 1500,
+              mimeType: "audio/webm",
+              peaks: [0.2, 0.8, 0.4],
+            },
+          })
+        }
+        type="button"
+      >
+        send-voice
+      </Button>
     </div>
   );
 }
@@ -365,6 +420,88 @@ describe("message queries", () => {
     await user.click(screen.getByRole("button", { name: "send-sticker" }));
     await waitFor(() => {
       expect(screen.getByText("1")).toBeInTheDocument();
+    });
+  });
+
+  it("sends attachments and a cold thread without a cached page", async () => {
+    const user = userEvent.setup();
+    seedPositions(9, 0);
+    setAccessSession(testSession());
+    render(
+      <AppProviders>
+        <EmptyHarness />
+        <UnloadedThreadHarness />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText("0")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "send-attachment" }));
+    await waitFor(() => {
+      expect(screen.getByText("1")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "send-duration-only" }));
+    await waitFor(() => {
+      expect(screen.getByText("2")).toBeInTheDocument();
+    });
+
+    const cold = screen.getByRole("button", { name: "send-cold" });
+    await user.click(cold);
+    await waitFor(() => {
+      expect(cold.dataset.unloadedStatus).toBe("success");
+    });
+  });
+
+  it("uploads and sends a voice note with an optimistic bubble", async () => {
+    const user = userEvent.setup();
+    seedPositions(9, 0);
+    setAccessSession(testSession());
+    render(
+      <AppProviders>
+        <VoiceHarness />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText("0")).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: "send-voice" }));
+    await waitFor(() => {
+      const err = document.querySelector("[data-voice-status]")?.textContent;
+      expect(screen.getByText("1"), `voice status=${err}`).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(document.querySelector('[data-voice-kind="voice"]')).not.toBeNull();
+    });
+  });
+
+  it("rolls a failed voice send back off the thread", async () => {
+    const user = userEvent.setup();
+    seedPositions(9, 0);
+    setAccessSession(testSession());
+    server.use(
+      http.post("*/api/v1/messages", () =>
+        HttpResponse.json(
+          { error: { code: "validation_failed", message: "fail", details: {} } },
+          { status: 422 },
+        ),
+      ),
+    );
+    render(
+      <AppProviders>
+        <VoiceHarness />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(screen.getByText("0")).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: "send-voice" }));
+    await waitFor(() => {
+      expect(document.querySelector("[data-voice-status]")?.textContent).not.toBe("ok");
+    });
+    await waitFor(() => {
+      expect(screen.getByText("0")).toBeInTheDocument();
     });
   });
 

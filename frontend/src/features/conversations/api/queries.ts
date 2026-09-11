@@ -76,9 +76,15 @@ import {
   persistFetchedPage,
 } from "@/features/conversations/api/persist";
 import { MS_PER_SECOND } from "@/features/conversations/model/constants";
+import {
+  voiceContentType,
+  voiceExtensionForMime,
+  voiceFileFromBlob,
+} from "@/features/conversations/model/voice-file";
+import { presignAndUpload } from "@/features/media/model/direct-upload";
+import { apiOrigin } from "@/shared/lib/api/origin";
 import { enqueueAndFlush } from "@/shared/lib/outbox/processor";
 import { sendOutboxMessage } from "@/shared/lib/outbox/send";
-import { apiOrigin } from "@/shared/lib/api/origin";
 import { realtimeKeys } from "@/shared/lib/realtime/keys";
 
 type MessagePageParam = { after?: number; before?: number };
@@ -285,20 +291,37 @@ function optimisticMessage(
   conversationId: number,
   body: string,
   nonce: string,
-  input: { silent?: boolean },
+  input: SendMessageInput,
 ): Message {
   const session = getAccessSession();
+  const voice = input.voice;
+  const contentType = voice ? voiceContentType(voice.mimeType) : "";
   return {
     id: -Date.now(),
     conversation_id: conversationId,
     position: 0,
     revision: 0,
-    kind: "text",
-    body,
+    kind: voice ? "voice" : "text",
+    body: voice ? null : body,
     deleted: false,
     silent: input.silent ?? false,
     client_nonce: nonce,
     created_at: new Date().toISOString(),
+    attachment_count: voice ? 1 : undefined,
+    attachments: voice
+      ? [
+          {
+            id: -Date.now(),
+            kind: "voice",
+            content_type: contentType,
+            byte_size: voice.blob.size,
+            duration_ms: voice.durationMs,
+            waveform: voice.peaks,
+            processing_status: "ready",
+            filename: `voice.${voiceExtensionForMime(contentType)}`,
+          },
+        ]
+      : undefined,
     sender: session
       ? {
           id: session.accountId,
@@ -310,13 +333,62 @@ function optimisticMessage(
   };
 }
 
+export type VoiceSendInput = {
+  blob: Blob;
+  durationMs: number;
+  mimeType: string;
+  peaks: number[];
+};
+
 export type SendMessageInput = {
+  attachment_signed_ids?: string[];
   body?: string;
   client_nonce: string;
   gif_id?: string;
   silent?: boolean;
   sticker_id?: number;
+  voice?: VoiceSendInput;
+  voice_duration_ms?: number;
+  voice_waveform?: number[];
 };
+
+async function resolveSendPayload(input: SendMessageInput): Promise<{
+  attachment_signed_ids?: string[];
+  body?: string;
+  client_nonce: string;
+  gif_id?: string;
+  silent?: boolean;
+  sticker_id?: number;
+  voice_duration_ms?: number;
+  voice_waveform?: number[];
+}> {
+  const { voice, ...rest } = input;
+  if (voice == null) {
+    return rest;
+  }
+  const signedId = await presignAndUpload(voiceFileFromBlob(voice.blob, voice.mimeType));
+  return {
+    attachment_signed_ids: [signedId],
+    client_nonce: rest.client_nonce,
+    silent: rest.silent,
+    voice_duration_ms: voice.durationMs,
+    voice_waveform: voice.peaks,
+  };
+}
+
+function skipsOutbox(input: {
+  attachment_signed_ids?: string[];
+  gif_id?: string;
+  sticker_id?: number;
+  voice_duration_ms?: number;
+}): boolean {
+  return (
+    input.sticker_id != null ||
+    input.gif_id != null ||
+    input.voice_duration_ms != null ||
+    (input.attachment_signed_ids?.length ?? 0) > 0
+  );
+}
 
 export function useSendMessage(conversationId: number) {
   const queryClient = useQueryClient();
@@ -324,18 +396,18 @@ export function useSendMessage(conversationId: number) {
   return useMutation({
     mutationFn: async (input: SendMessageInput) => {
       const session = getAccessSession();
-      const skipOutbox = input.sticker_id != null || input.gif_id != null;
-      if (session == null || skipOutbox) {
-        return sendMessage({ conversation_id: conversationId, ...input });
+      const payload = await resolveSendPayload(input);
+      if (session == null || skipsOutbox(payload)) {
+        return sendMessage({ conversation_id: conversationId, ...payload });
       }
       const result = await enqueueAndFlush(
         session.accountId,
         {
-          body: input.body ?? "",
+          body: payload.body ?? "",
           conversationId,
           createdAt: new Date().toISOString(),
-          id: input.client_nonce,
-          silent: input.silent,
+          id: payload.client_nonce,
+          silent: payload.silent,
         },
         {
           send: (entry) =>
@@ -350,11 +422,11 @@ export function useSendMessage(conversationId: number) {
             }),
         },
       );
-      const failed = result.failed[input.client_nonce];
+      const failed = result.failed[payload.client_nonce];
       if (failed === "auth" || failed === "rejected") {
         throw new Error(failed);
       }
-      return result.sent[input.client_nonce] ?? null;
+      return result.sent[payload.client_nonce] ?? null;
     },
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: key });
@@ -366,9 +438,10 @@ export function useSendMessage(conversationId: number) {
         input,
       );
       optimistic.position = newestPosition(previous) + 1;
-      if (previous) {
-        queryClient.setQueryData(key, appendToNewest(previous, optimistic));
-      }
+      queryClient.setQueryData(
+        key,
+        appendToNewest(previous ?? { pageParams: [{}], pages: [] }, optimistic),
+      );
       return { previous };
     },
     onError: (_error, _input, context) => {

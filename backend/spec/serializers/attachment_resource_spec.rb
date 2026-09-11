@@ -21,6 +21,15 @@ RSpec.describe AttachmentResource do
     expect(json.fetch("transcript_status")).to be_nil
   end
 
+  it "reports an abandoned transcript as failed (NR-33)" do
+    attachment = create(:attachment, kind: "voice", content_type: "audio/ogg", transcript_status: "pending")
+    expect(described_class.new(attachment).to_h.fetch("transcript_status")).to eq("pending")
+
+    attachment.update_columns(updated_at: (Settings.fetch(:transcribe_stale_after) + 1).seconds.ago)
+
+    expect(described_class.new(attachment).to_h.fetch("transcript_status")).to eq("failed")
+  end
+
   it "exposes the attached filename" do
     attachment = create(:attachment)
     attachment.file.attach(io: StringIO.new("img"), filename: "pic.png", content_type: "image/png")

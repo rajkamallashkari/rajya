@@ -50,6 +50,10 @@ module Ai
         CHAINS.key?(capability.to_sym)
       end
 
+      def available_for?(capability)
+        chain_for(capability).any? { |entry| provider_for(entry.provider)&.ready? }
+      end
+
       private
 
       def parse(token)

@@ -15,6 +15,10 @@ interface VoicePlayerState {
 
 let audio: HTMLAudioElement | null = null;
 
+export function finiteMediaTime(value: number): number {
+  return Number.isFinite(value) && value >= 0 ? value : 0;
+}
+
 function bindAudio(set: (partial: Partial<VoicePlayerState>) => void): HTMLAudioElement {
   if (audio) {
     return audio;
@@ -22,10 +26,13 @@ function bindAudio(set: (partial: Partial<VoicePlayerState>) => void): HTMLAudio
   const element = new Audio();
   audio = element;
   element.addEventListener("timeupdate", () => {
-    set({ currentTime: element.currentTime, duration: element.duration || 0 });
+    set({
+      currentTime: finiteMediaTime(element.currentTime),
+      duration: finiteMediaTime(element.duration),
+    });
   });
   element.addEventListener("loadedmetadata", () => {
-    set({ duration: element.duration || 0 });
+    set({ duration: finiteMediaTime(element.duration) });
   });
   element.addEventListener("ended", () => {
     set({ currentTime: 0, isPlaying: false });
@@ -59,8 +66,8 @@ export const useVoicePlayerStore = create<VoicePlayerState>((set, get) => ({
     if (!audio) {
       return;
     }
-    audio.currentTime = Math.max(0, seconds);
-    set({ currentTime: audio.currentTime });
+    audio.currentTime = finiteMediaTime(seconds);
+    set({ currentTime: finiteMediaTime(audio.currentTime) });
   },
   cycleSpeed: () => {
     const playbackRate = nextPlaybackRate(get().playbackRate);

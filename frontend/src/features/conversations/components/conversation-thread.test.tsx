@@ -295,6 +295,71 @@ describe("conversation layers", () => {
     expect(document.querySelector("[data-status='queued']")).not.toBeNull();
   });
 
+  it("records and sends a voice note from the live composer", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    const tracks = [{ stop: vi.fn() }];
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { getUserMedia: async () => ({ getTracks: () => tracks }) },
+    });
+    class StubRecorder {
+      public ondataavailable: ((event: { data: Blob }) => void) | null = null;
+      public onstop: (() => void) | null = null;
+      public state = "inactive";
+      public static isTypeSupported = (): boolean => true;
+      public start(): void {
+        this.state = "recording";
+      }
+      public stop(): void {
+        this.state = "inactive";
+        this.ondataavailable?.({ data: new Blob(["voice"]) });
+        this.onstop?.();
+      }
+      public pause(): void {
+        this.state = "paused";
+      }
+      public resume(): void {
+        this.state = "recording";
+      }
+    }
+    vi.stubGlobal("MediaRecorder", StubRecorder);
+    vi.stubGlobal(
+      "AudioContext",
+      class {
+        public close = async (): Promise<void> => undefined;
+        public createAnalyser = () => ({
+          fftSize: 0,
+          frequencyBinCount: 4,
+          getByteFrequencyData: (data: Uint8Array) => data.fill(128),
+        });
+        public createMediaStreamSource = () => ({ connect: () => undefined });
+      },
+    );
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    await screen.findByRole("textbox");
+
+    await user.click(screen.getByRole("button", { name: en.composer.mic }));
+    const send = await screen.findByRole("button", { name: en.composer.send_voice });
+    await user.click(send);
+
+    await waitFor(() => {
+      expect(document.querySelector("[data-voice-note]")).not.toBeNull();
+    });
+
+    const bubbles = document.querySelectorAll("[data-message-bubble]");
+    fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.transcribe }));
+    await waitFor(() => {
+      expect(screen.queryByRole("menuitem", { name: en.messages.menu.transcribe })).toBeNull();
+    });
+    vi.unstubAllGlobals();
+  });
+
   it("skips edit-last when the live thread has no sent body", async () => {
     messagingStore().messages[3] = [
       {
@@ -582,6 +647,79 @@ describe("conversation layers", () => {
     });
     expect(actions.onCopy).toBeUndefined();
     expect(actions.onEdit).toBeUndefined();
+    const onTranscribe = vi.fn();
+    const voice = buildMessageMenuActions({
+      message: {
+        id: 6,
+        conversation_id: 1,
+        position: 6,
+        revision: 1,
+        kind: "voice",
+        body: null,
+        deleted: false,
+        silent: false,
+        created_at: "2026-01-01T12:00:00.000Z",
+        attachments: [{
+          byte_size: 1,
+          content_type: "audio/webm",
+          id: 12,
+          kind: "voice",
+          processing_status: "ready",
+        }],
+      },
+      onCopy: () => undefined,
+      onEdit: () => undefined,
+      onInfo: () => undefined,
+      onPin: () => undefined,
+      onReact: () => undefined,
+      onReactions: () => undefined,
+      onRemind: () => undefined,
+      onSave: () => undefined,
+      onSelect: () => undefined,
+      onTranscribe,
+      onUnsend: () => undefined,
+      pinned: [],
+      saved: [],
+      viewerId: 1,
+    });
+    voice.onTranscribe?.();
+    expect(onTranscribe).toHaveBeenCalledWith(12);
+    const transcribed = buildMessageMenuActions({
+      message: {
+        id: 7,
+        conversation_id: 1,
+        position: 7,
+        revision: 1,
+        kind: "voice",
+        body: null,
+        deleted: false,
+        silent: false,
+        created_at: "2026-01-01T12:00:00.000Z",
+        attachments: [{
+          byte_size: 1,
+          content_type: "audio/webm",
+          id: 13,
+          kind: "voice",
+          processing_status: "ready",
+          transcript_status: "ready",
+        }],
+      },
+      onCopy: () => undefined,
+      onEdit: () => undefined,
+      onInfo: () => undefined,
+      onPin: () => undefined,
+      onReact: () => undefined,
+      onReactions: () => undefined,
+      onRemind: () => undefined,
+      onSave: () => undefined,
+      onSelect: () => undefined,
+      onTranscribe,
+      onUnsend: () => undefined,
+      pinned: [],
+      saved: [],
+      viewerId: 1,
+    });
+    expect(transcribed.onTranscribe).toBeUndefined();
     const restricted = buildMessageMenuActions({
       message: {
         id: 2,

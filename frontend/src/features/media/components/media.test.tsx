@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import { AppProviders } from "@/app/providers";
 import { Button } from "@/shared/ui/button";
@@ -27,9 +28,15 @@ import { nextLightboxZoom, wrapLightboxIndex } from "@/features/media/model/ligh
 import { paintBlurhash, progressiveStage } from "@/features/media/model/progressive";
 import { isPreviewableName, uploadProgressWidth } from "@/features/media/model/upload";
 import { nextPlaybackRate, playbackRateLabel, seekFraction, voiceProgress } from "@/features/media/model/voice";
-import { mediaUrlStaleTime, useGifSearch, useStickerPacks, useCreateStickerPack, useDestroyStickerPack, useAddStickerToPack, useRemoveStickerFromPack } from "@/features/media/api/queries";
-import { resetVoicePlayer, useVoicePlayerStore } from "@/features/media/store/voice-player";
+import { mediaUrlStaleTime, useGifSearch, useMediaUrl, useRetryTranscript, useStickerPacks, useCreateStickerPack, useDestroyStickerPack, useAddStickerToPack, useRemoveStickerFromPack } from "@/features/media/api/queries";
+import {
+  finiteMediaTime,
+  resetVoicePlayer,
+  useVoicePlayerStore,
+} from "@/features/media/store/voice-player";
 import { en } from "@/shared/lib/i18n/catalog";
+import { dismissToast, getToast } from "@/shared/ui/toast";
+import { server } from "@/test/msw";
 
 const PIXEL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 
@@ -265,6 +272,13 @@ describe("lightbox wrap", () => {
 });
 
 describe("voice player store", () => {
+  it("ignores non-finite media metadata", () => {
+    expect(finiteMediaTime(Infinity)).toBe(0);
+    expect(finiteMediaTime(Number.NaN)).toBe(0);
+    expect(finiteMediaTime(-1)).toBe(0);
+    expect(finiteMediaTime(10)).toBe(10);
+  });
+
   it("plays, seeks, cycles speed, and pauses", async () => {
     const play = vi.fn().mockResolvedValue(undefined);
     const pause = vi.fn();
@@ -297,10 +311,11 @@ describe("voice player store", () => {
     listeners.timeupdate?.();
     const element = created[0];
     if (element) {
-      element.duration = 0;
+      element.duration = Infinity;
     }
     listeners.loadedmetadata?.();
     listeners.timeupdate?.();
+    expect(useVoicePlayerStore.getState().duration).toBe(0);
     listeners.ended?.();
     expect(useVoicePlayerStore.getState().isPlaying).toBe(false);
     useVoicePlayerStore.getState().seek(2);
@@ -354,6 +369,74 @@ describe("media http", () => {
     await expect(removeStickerFromPack(1, 1)).resolves.toMatchObject({ ok: true });
     await expect(searchGifs("party")).resolves.toMatchObject({ gifs: [{ id: "tenor-1" }] });
     await expect(searchGifs("fail")).rejects.toThrow();
+  });
+});
+
+function MediaUrlHarness({ id }: { id: number }) {
+  const url = useMediaUrl(id, "original");
+  return (
+    <span data-media-url={url.fetchStatus}>{url.data?.url ?? ""}</span>
+  );
+}
+
+function TranscribeHarness() {
+  const transcribe = useRetryTranscript();
+  return (
+    <Button data-transcribe-status={transcribe.status} onClick={() => transcribe.mutate(1)} variant="ghost">
+      transcribe
+    </Button>
+  );
+}
+
+describe("transcribe requests", () => {
+  it("toasts when the server cannot start a transcription", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    dismissToast();
+    render(
+      <AppProviders>
+        <TranscribeHarness />
+      </AppProviders>,
+    );
+    const button = screen.getByRole("button", { name: "transcribe" });
+
+    await user.click(button);
+    await waitFor(() => {
+      expect(button.dataset.transcribeStatus).toBe("success");
+    });
+    expect(getToast()).toBeNull();
+
+    server.use(
+      http.post("*/api/v1/attachments/:id/transcribe", () =>
+        HttpResponse.json({ code: "upstream_failed", message: "no", details: {} }, { status: 502 }),
+      ),
+    );
+    await user.click(button);
+    await waitFor(() => {
+      expect(getToast()?.title).toBe(en.transcript.unavailable);
+    });
+    dismissToast();
+  });
+});
+
+describe("media url", () => {
+  it("skips the signed URL request for an optimistic attachment id", async () => {
+    setAccessSession(testSession());
+    const { container } = render(
+      <AppProviders>
+        <MediaUrlHarness id={-1} />
+      </AppProviders>,
+    );
+    expect(container.querySelector("[data-media-url='idle']")).not.toBeNull();
+
+    const real = render(
+      <AppProviders>
+        <MediaUrlHarness id={1} />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(real.container.textContent).toContain("https://media.test/file");
+    });
   });
 });
 

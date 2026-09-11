@@ -31,5 +31,11 @@ module Ai
     def capabilities
       []
     end
+
+    # Whether this backend has everything it needs to be called at all. Lets
+    # callers refuse work up front instead of queueing a job that can only fail.
+    def ready?
+      true
+    end
   end
 end

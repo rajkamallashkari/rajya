@@ -50,6 +50,7 @@ export interface MessageMenuActions {
   onSave?: () => void;
   onSelect?: () => void;
   onSuggestReply?: () => void;
+  onTranscribe?: () => void;
   onTranslate?: () => void;
   onReactions?: () => void;
   onRemind?: () => void;
@@ -127,6 +128,12 @@ export function MessageContextMenu({
       key: "translate",
       label: t("messages.menu.translate"),
       onClick: persisted && actions.hasText ? actions.onTranslate : undefined,
+    },
+    {
+      accent: true,
+      key: "transcribe",
+      label: t("messages.menu.transcribe"),
+      onClick: persisted ? actions.onTranscribe : undefined,
     },
     {
       key: "pin",
@@ -243,7 +250,7 @@ function MenuIcon({ name, pinned, saved }: { name: string; pinned?: boolean; sav
   if (name === "copy") {
     return <Copy className={className} />;
   }
-  if (name === "suggest_reply" || name === "translate") {
+  if (name === "suggest_reply" || name === "transcribe" || name === "translate") {
     return <Sparkles className={className} />;
   }
   if (name === "pin") {
