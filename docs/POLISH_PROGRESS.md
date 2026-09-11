@@ -14,24 +14,24 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | — (docs only) |
-| **Next session** | 15.1 |
+| **Last completed** | 15.1 |
+| **Next session** | 15.2 |
 | **Phase** | P15 Polish |
-| **Sessions remaining in phase** | 10 |
+| **Sessions remaining in phase** | 9 |
 
 ---
 
 ## Next session brief (agent: read POLISH_PLAN.md §5 for the full row)
 
-**15.1 — Mobile overlay pointer-events + back.**
+**15.2 — Voice note send.**
 
-`.layer-overlay-stack` is `pointer-events: none` while `.layer-frame-mobile`
-never restores `auto`, so Profile settings and Calls contact overlays ignore
-taps on a phone. Give visible mobile/overlay frames `pointer-events: auto`.
-Buried layers stay inert. Verify Profile settings, Calls contact, and Chats
-overlays. Do not start 15.2 in this session.
+Wire `LiveThread` to `onVoiceSend`; presign and upload the recording; send
+`attachment_signed_ids`, `voice_duration_ms`, and `voice_waveform`. Add an
+optimistic voice bubble with rollback on failure. Update OpenAPI/generated
+types only if the current client is missing the voice fields. Do not start 15.3
+in this session.
 
-Docs: POLISH_TARGET §1; POLISH_AUDIT §1.
+Docs: POLISH_TARGET §2; POLISH_AUDIT §4.
 
 ---
 
@@ -40,6 +40,7 @@ Docs: POLISH_TARGET §1; POLISH_AUDIT §1.
 | Session | Deliverable | Notes |
 | --- | --- | --- |
 | docs | POLISH_AUDIT / TARGET / GAP / PLAN | P14 frozen; visual chrome still `docs/shell-mockup.html` |
+| 15.1 | Mobile overlay pointer-events + back | Mobile frames restore pointer events; Profile, Calls, and Chats overlay/back coverage is green |
 
 ---
 

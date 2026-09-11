@@ -58,6 +58,30 @@ describe("AppShell", () => {
     resetSearchStore();
     resetShellStore();
   });
+
+  it("opens and closes Profile settings in an interactive mobile frame", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    renderShell();
+    await user.click(screen.getByRole("button", { name: en.shell.profile }));
+    await user.click(screen.getByRole("button", { name: en.shell.settings }));
+    await waitFor(() => {
+      expect(document.querySelector("[data-settings-panel]")).not.toBeNull();
+    });
+    const settings = document.querySelector("[data-layer='settings']");
+    expect(settings).toHaveClass("layer-frame-mobile");
+    expect(settings).not.toHaveAttribute("inert");
+    expect(settings?.parentElement).toHaveClass("layer-overlay-stack");
+    await user.click(screen.getByRole("button", { name: en.shell.back }));
+    await waitFor(() => {
+      expect(useShellStore.getState().profileSettingsOpen).toBe(false);
+    });
+  });
+
   it("renders the chat list, impersonation banner, shortcuts, and profile tab", async () => {
     const user = userEvent.setup();
     Object.defineProperty(window, "innerWidth", {

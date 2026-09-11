@@ -59,6 +59,7 @@
 }
 
 .layer-frame-mobile {
+  pointer-events: auto;
   position: absolute;
   inset: 0;
   z-index: var(--z-layer);

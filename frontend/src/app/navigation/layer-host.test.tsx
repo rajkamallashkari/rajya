@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -12,6 +15,11 @@ import {
   LAYER_RESIZE_HANDLE_PX,
 } from "@/shared/lib/navigation/constants";
 import { Button } from "@/shared/ui/button";
+
+const layersCss = readFileSync(
+  path.join(path.dirname(fileURLToPath(import.meta.url)), "../../styles/layers.css"),
+  "utf8",
+);
 
 const conversation = {
   conversationId: "ada",
@@ -82,6 +90,10 @@ function mockRect(node: Element, width: number): void {
 }
 
 describe("LayerHost", () => {
+  it("restores pointer events on mobile layer frames", () => {
+    expect(layersCss).toMatch(/\.layer-frame-mobile\s*\{[^}]*pointer-events:\s*auto;/);
+  });
+
   it("keeps buried mobile layers mounted and inert", async () => {
     Object.defineProperty(window, "innerWidth", { configurable: true, writable: true, value: 390 });
     const user = userEvent.setup();
