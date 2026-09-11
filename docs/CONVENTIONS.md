@@ -1,12 +1,15 @@
 # CONVENTIONS.md — Agent Session Contract
 
 > **Step 5 deliverable.** Feed this file to the Agent at the start of **every**
-> coding session, together with the phase brief from `MASTER_PLAN.md`.
+> coding session, together with the current phase brief (`POLISH_PLAN.md` during
+> P15).
 >
 > Companions: [`TARGET_ARCHITECTURE.md`](TARGET_ARCHITECTURE.md),
 > [`SCHEMA_DESIGN.md`](SCHEMA_DESIGN.md), [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md),
 > [`MASTER_PLAN.md`](MASTER_PLAN.md), [`READINESS_CHECKLIST.md`](READINESS_CHECKLIST.md).
-> **P14 shell sessions:** [`SHELL_PLAN.md`](SHELL_PLAN.md),
+> **P15 polish sessions:** [`POLISH_PLAN.md`](POLISH_PLAN.md),
+> [`POLISH_PROGRESS.md`](POLISH_PROGRESS.md), [`POLISH_TARGET.md`](POLISH_TARGET.md).
+> **P14 shell (frozen):** [`SHELL_PLAN.md`](SHELL_PLAN.md),
 > [`SHELL_PROGRESS.md`](SHELL_PROGRESS.md), [`SHELL_TARGET.md`](SHELL_TARGET.md).
 >
 > Product / repo / URL / identifier token: **Rajya** / `rajya` /
@@ -17,11 +20,13 @@
 ## §0 How to use this document
 
 1. Read this file fully before writing code.
-2. If [`SHELL_PROGRESS.md`](SHELL_PROGRESS.md) has a Next session, read only
-   that row in [`SHELL_PLAN.md`](SHELL_PLAN.md) §5 — not the whole original
-   `MASTER_PLAN.md`. Otherwise read only the `MASTER_PLAN.md` phase section
-   for the current session.
-3. Pull the named AUDIT / SCHEMA / DESIGN / SHELL slices listed in that brief.
+2. If [`POLISH_PROGRESS.md`](POLISH_PROGRESS.md) has a Next session, read only
+   that row in [`POLISH_PLAN.md`](POLISH_PLAN.md) §5. Else if
+   [`SHELL_PROGRESS.md`](SHELL_PROGRESS.md) has a Next session, read that row
+   in [`SHELL_PLAN.md`](SHELL_PLAN.md) §5. Otherwise read only the
+   `MASTER_PLAN.md` phase section for the current session — not the whole plan.
+3. Pull the named AUDIT / SCHEMA / DESIGN / SHELL / POLISH slices listed in
+   that brief.
 4. If a rule here conflicts with improvisation, **this file wins**.
 5. If a product decision is unclear, **stop and ask** — do not invent.
 6. Shell placement matches [`shell-mockup.html`](shell-mockup.html) and
@@ -351,7 +356,7 @@ requires an explicit decision record, not a drive-by cleanup.
 | **BR-36** | `last_seen_position` always advances on view; `last_read_position` only when read receipts are on. Turning receipts on does **not** disclose prior private views. |
 | **BR-37** | Accent read ticks require **both** parties to have read receipts enabled. |
 | **BR-42** | Last-active visibility is **symmetric**. |
-| **NR-1** | Blocks: mutual invisibility in search/profiles; no new DMs; **groups unaffected**. |
+| **NR-1** | Blocks: the **blocked** party cannot see you in search or profile (404). **No new DMs.** **Groups unaffected.** The **blocker** may open that account’s profile and Unblock (`POLISH_TARGET.md` §7). Do not 404 the blocker’s own view. |
 | **NR-11 / DS-1** | Bot memory is fully shared — UI must disclose ("Remembers what everyone tells it"). |
 
 ---
@@ -384,9 +389,10 @@ Copy this checklist mentally at the start of every session:
 ## §9 Session start template
 
 Do **not** paste a long prompt each time. Attach
-[`SESSION_STARTER.md`](SESSION_STARTER.md) + this file + `SHELL_PLAN.md` +
-`SHELL_PROGRESS.md` during P14 (or `MASTER_PLAN.md` + `PROGRESS.md` after
-14.8). Type only Continue. or the session id (see `SESSION_STARTER.md`).
+[`SESSION_STARTER.md`](SESSION_STARTER.md) + this file + `POLISH_PLAN.md` +
+`POLISH_PROGRESS.md` during P15 (or `SHELL_PLAN.md` + `SHELL_PROGRESS.md` for
+frozen P14, or `MASTER_PLAN.md` + `PROGRESS.md` for the original port). Type
+only Continue. or the session id (see `SESSION_STARTER.md`).
 
 When opening a coding session, the Agent should confirm:
 

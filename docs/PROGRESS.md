@@ -1,11 +1,12 @@
 # PROGRESS.md — Session state (original port)
 
-> **Roadmap 0.1–13.3 is complete.** P14 shell work uses
-> [`SHELL_PROGRESS.md`](SHELL_PROGRESS.md) — do not set Next session here.
+> **Roadmap 0.1–13.3 is complete.** P14 shell is frozen in
+> [`SHELL_PROGRESS.md`](SHELL_PROGRESS.md). **P15 polish** uses
+> [`POLISH_PROGRESS.md`](POLISH_PROGRESS.md) — do not set Next session here.
 >
 > Historical: Agent used to read this at the start of every session. Update
-> only if you reopen a 0.1–13.3 follow-up. User: for chrome work attach
-> `SHELL_PROGRESS.md` and type `Continue.`
+> only if you reopen a 0.1–13.3 follow-up. User: for polish work attach
+> `POLISH_PROGRESS.md` and type `Continue.`
 
 ---
 

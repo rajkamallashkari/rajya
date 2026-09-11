@@ -14,7 +14,7 @@
 | Field | Value |
 | --- | --- |
 | **Last completed** | 14.8 |
-| **Next session** | — (P14 complete; resume `MASTER_PLAN.md` / `PROGRESS.md`) |
+| **Next session** | — (P14 complete; continue in `POLISH_PLAN.md` / `POLISH_PROGRESS.md`) |
 | **Phase** | P14 Shell |
 | **Sessions remaining in phase** | 0 |
 
@@ -22,7 +22,9 @@
 
 ## Next session brief (agent: read SHELL_PLAN.md §5 for the full row)
 
-**P14 complete.** Further Continue. sessions attach `MASTER_PLAN.md` + `PROGRESS.md` (see `SESSION_STARTER.md`). Do not start MASTER_PLAN work from this file.
+**P14 complete.** Further Continue. sessions attach `POLISH_PLAN.md` +
+`POLISH_PROGRESS.md` (see `SESSION_STARTER.md`). Do not start MASTER_PLAN or
+new P14 work from this file.
 
 ---
 
