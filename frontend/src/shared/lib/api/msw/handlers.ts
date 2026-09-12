@@ -954,7 +954,7 @@ export const handlerMap = {
     return HttpResponse.json({ accounts: accountSearchHits(q, actorIdFromRequest(request)) });
   }),
   "/api/v1/accounts/{id}": http.get("*/api/v1/accounts/:id", () =>
-    HttpResponse.json(session.account),
+    HttpResponse.json({ ...session.account, blocked_by_viewer: false }),
   ),
   "/api/v1/attachments/{id}/download": http.get("*/api/v1/attachments/:id/download", () =>
     HttpResponse.json({

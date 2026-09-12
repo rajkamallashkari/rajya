@@ -236,6 +236,35 @@ describe("conversation layers", () => {
     expect(useLayerStore.getState().layers.some((layer) => layer.kind === "profile")).toBe(true);
   });
 
+  it("shows a banner when the viewer blocked the direct-message peer", async () => {
+    setAccessSession(testSession());
+    server.use(
+      http.get("*/api/v1/blocks", () =>
+        HttpResponse.json({
+          blocks: [
+            {
+              account: {
+                display_name: "Grace Hopper",
+                id: 2,
+                kind: "human",
+                username: "grace",
+              },
+            },
+          ],
+        }),
+      ),
+    );
+
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+
+    expect(await screen.findByText(en.conversations.blocked_banner)).toBeInTheDocument();
+    expect(document.querySelector("[data-blocked-banner]")).not.toBeNull();
+  });
+
   it("votes in a live poll, opens results, and renders location and contact cards", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     setAccessSession(testSession());

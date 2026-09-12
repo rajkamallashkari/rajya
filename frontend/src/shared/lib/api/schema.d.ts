@@ -61,13 +61,13 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description visible */
+                /** @description visible, including accounts blocked by the viewer */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Account"];
+                        "application/json": components["schemas"]["AccountProfile"];
                     };
                 };
                 /** @description blocked reverse (NR-1 invisibility) */
@@ -1735,7 +1735,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Retry a failed voice-note transcript */
+        /** Start or retry a voice-note transcript */
         post: {
             parameters: {
                 query?: never;
@@ -1747,7 +1747,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description requeued */
+                /** @description queued */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1758,6 +1758,15 @@ export interface paths {
                 };
                 /** @description non-member refused */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description no transcription provider configured */
+                502: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -8105,6 +8114,15 @@ export interface components {
             kind: string;
             bio?: string | null;
             shared_memory?: boolean;
+        };
+        AccountProfile: {
+            id: number;
+            username: string;
+            display_name: string;
+            kind: string;
+            bio?: string | null;
+            shared_memory?: boolean;
+            blocked_by_viewer: boolean;
         };
         CallParticipant: {
             id: number;

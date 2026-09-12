@@ -75,6 +75,19 @@ RSpec.configure do |config|
                 shared_memory: { type: :boolean }
               }
             },
+            AccountProfile: {
+              type: :object,
+              required: %w[id username display_name kind blocked_by_viewer],
+              properties: {
+                id: { type: :integer },
+                username: { type: :string },
+                display_name: { type: :string },
+                kind: { type: :string },
+                bio: { type: :string, nullable: true },
+                shared_memory: { type: :boolean },
+                blocked_by_viewer: { type: :boolean }
+              }
+            },
             CallParticipant: {
               type: :object,
               required: %w[id account_id status is_screen_sharing],

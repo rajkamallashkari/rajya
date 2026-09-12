@@ -1,6 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { createBlock, destroyBlock } from "@/features/auth/api/blocks";
+import { blockKeys, createBlock, destroyBlock } from "@/features/auth/api/blocks";
 import { fetchAccount } from "@/features/auth/api/identity";
 import { disclosesSharedMemory, MemoryDisclosure } from "@/features/bots";
 import { Button } from "@/shared/ui/button";
@@ -14,6 +15,7 @@ export function AccountProfile({
   initiallyBlocked?: boolean;
 }) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [missing, setMissing] = useState(false);
   const [blocked, setBlocked] = useState(initiallyBlocked);
   const [name, setName] = useState<string | null>(null);
@@ -26,6 +28,7 @@ export function AccountProfile({
         return;
       }
       setMissing(false);
+      setBlocked(result.account.blocked_by_viewer);
       setName(result.account.display_name);
       setSharedMemory(disclosesSharedMemory(result.account));
     });
@@ -36,10 +39,12 @@ export function AccountProfile({
       if (blocked) {
         await destroyBlock(accountId);
         setBlocked(false);
+        await queryClient.invalidateQueries({ queryKey: blockKeys.list() });
         return;
       }
       await createBlock(accountId);
       setBlocked(true);
+      await queryClient.invalidateQueries({ queryKey: blockKeys.list() });
     } catch {
       return;
     }

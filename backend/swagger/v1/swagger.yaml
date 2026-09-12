@@ -40,11 +40,11 @@ paths:
           type: integer
       responses:
         '200':
-          description: visible
+          description: visible, including accounts blocked by the viewer
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Account"
+                "$ref": "#/components/schemas/AccountProfile"
         '404':
           description: blocked reverse (NR-1 invisibility)
           content:
@@ -5096,6 +5096,30 @@ components:
           type: string
           nullable: true
         shared_memory:
+          type: boolean
+    AccountProfile:
+      type: object
+      required:
+      - id
+      - username
+      - display_name
+      - kind
+      - blocked_by_viewer
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        display_name:
+          type: string
+        kind:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        shared_memory:
+          type: boolean
+        blocked_by_viewer:
           type: boolean
     CallParticipant:
       type: object

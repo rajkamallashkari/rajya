@@ -34,7 +34,3 @@ export const scheduledMessageKeys = {
 export const passkeyKeys = {
   list: () => ["passkeys"] as const,
 };
-
-export const blockKeys = {
-  list: () => ["blocks"] as const,
-};

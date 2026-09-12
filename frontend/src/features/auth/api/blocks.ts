@@ -1,5 +1,9 @@
 import { apiClient, bearerHeaders, unwrap } from "@/features/auth/api/http";
 
+export const blockKeys = {
+  list: () => ["blocks"] as const,
+};
+
 export async function listBlocks() {
   return unwrap(
     await apiClient().GET("/api/v1/blocks", { headers: bearerHeaders() }),

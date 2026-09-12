@@ -32,8 +32,8 @@ RSpec.describe "Account profile", type: :request do
       security [ { bearerAuth: [] } ]
       parameter name: :id, in: :path, type: :integer
 
-      response "200", "visible" do
-        schema "$ref" => "#/components/schemas/Account"
+      response "200", "visible, including accounts blocked by the viewer" do
+        schema "$ref" => "#/components/schemas/AccountProfile"
         let(:user) { create(:user) }
         let(:target) { create(:account) }
         let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
@@ -44,6 +44,7 @@ RSpec.describe "Account profile", type: :request do
         run_test! do |response|
           body = JSON.parse(response.body)
           expect(body.fetch("id")).to eq(target.id)
+          expect(body.fetch("blocked_by_viewer")).to be(false)
           expect(body).not_to have_key("nickname")
         end
       end
@@ -51,7 +52,7 @@ RSpec.describe "Account profile", type: :request do
   end
 end
 
-RSpec.describe "Account profile blocked", type: :request do
+RSpec.describe "Account profile blocked by viewer", type: :request do
   path "/api/v1/accounts/{id}" do
     get "Show a public profile" do
       tags "Accounts"
@@ -59,14 +60,44 @@ RSpec.describe "Account profile blocked", type: :request do
       security [ { bearerAuth: [] } ]
       parameter name: :id, in: :path, type: :integer
 
-      response "404", "blocked (NR-1 invisibility)" do
-        schema "$ref" => "#/components/schemas/Error"
+      response "200", "visible, including accounts blocked by the viewer" do
+        schema "$ref" => "#/components/schemas/AccountProfile"
         let(:user) { create(:user) }
         let(:target) { create(:account) }
         let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
         let(:id) { target.id }
 
         before { create(:block, blocker_account: user.account, blocked_account: target) }
+
+        run_test! do |response|
+          body = JSON.parse(response.body)
+          expect(body.fetch("id")).to eq(target.id)
+          expect(body.fetch("blocked_by_viewer")).to be(true)
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Account profile mutually blocked", type: :request do
+  path "/api/v1/accounts/{id}" do
+    get "Show a public profile" do
+      tags "Accounts"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+
+      response "404", "mutual block (NR-1 invisibility)" do
+        schema "$ref" => "#/components/schemas/Error"
+        let(:user) { create(:user) }
+        let(:target) { create(:account) }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+        let(:id) { target.id }
+
+        before do
+          create(:block, blocker_account: user.account, blocked_account: target)
+          create(:block, blocker_account: target, blocked_account: user.account)
+        end
 
         run_test! do |response|
           expect(JSON.parse(response.body).dig("error", "code")).to eq("not_found")

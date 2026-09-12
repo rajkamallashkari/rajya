@@ -102,7 +102,11 @@ import { SEARCH_DEBOUNCE_MS } from "@/features/search/model/constants";
 import { serializeFilters } from "@/features/search/model/filters";
 import { wrapMatchIndex } from "@/features/search/model/highlight";
 import { resetSearchStore, useSearchStore } from "@/features/search/store/search-store";
-import { useCreateScheduledMessage, usePreferences } from "@/features/settings/api/queries";
+import {
+  useBlocks,
+  useCreateScheduledMessage,
+  usePreferences,
+} from "@/features/settings/api/queries";
 import { asPreferenceDocument } from "@/features/settings/model/map-preferences";
 import { DEFAULT_QUICK_REACTIONS } from "@/features/messages/model/menu";
 import { parseWallpaper, resolveAppearance, wallpaperLayerStyle } from "@/shared/lib/theme";
@@ -207,6 +211,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const { t, i18n } = useTranslation();
   const { input } = useThemeControls();
   const preferences = usePreferences();
+  const blocks = useBlocks();
   const { cancelGeneration, publishActivity } = useConversationChannel(conversationId);
   const typists = useTypingIndicators(conversationId);
   const generation = useGeneration(conversationId);
@@ -298,6 +303,10 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
       ? jumped
       : listed;
   const conversation = conversationQuery.data;
+  const blockedPeer =
+    conversation?.kind === "direct" &&
+    conversation.peer != null &&
+    blocks.data?.blocks.some((block) => block.account.id === conversation.peer?.id);
   const title = conversation ? conversationTitle(conversation, t("conversations.untitled")) : "";
   const membershipWallpaper = parseWallpaper(conversation?.wallpaper);
   const wallpaperStyle = membershipWallpaper
@@ -484,6 +493,14 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           </>
         )}
       </LayerHeader>
+      {blockedPeer ? (
+        <p
+          className="bg-[var(--surface-muted)] px-[var(--space-list-x)] py-[var(--space-2)] text-center text-[length:var(--text-sm)] text-[var(--text-secondary)]"
+          data-blocked-banner=""
+        >
+          {t("conversations.blocked_banner")}
+        </p>
+      ) : null}
       {chatOpen ? (
         <SearchResultsPanel
           conversationId={conversationId}

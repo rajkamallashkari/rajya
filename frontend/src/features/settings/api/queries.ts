@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { listBlocks, destroyBlock } from "@/features/auth/api/blocks";
+import { blockKeys, destroyBlock, listBlocks } from "@/features/auth/api/blocks";
 import { persistSession } from "@/features/auth/model/persist-session";
 import { setPassword } from "@/features/auth/api/identity";
 import {
@@ -31,7 +31,6 @@ import {
 } from "@/features/settings/api/http";
 import {
   accentConfigKeys,
-  blockKeys,
   exportJobKeys,
   fontConfigKeys,
   nicknameKeys,

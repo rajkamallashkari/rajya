@@ -9,6 +9,7 @@ import {
 import { asPreferenceDocument, preferencePrivacy } from "@/features/settings/model/map-preferences";
 import { queryListStatus } from "@/features/settings/model/map-sessions";
 import type { PreferencePrivacy } from "@/shared/lib/config/preferences-registry";
+import { useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { Button, ListView } from "@/shared/ui";
 import { WEIGHT_EMPHASIS } from "@/shared/ui/metrics";
 
@@ -28,6 +29,7 @@ export function PrivacyPanel() {
   const update = useUpdatePreferences();
   const blocks = useBlocks();
   const unblock = useUnblock();
+  const pushLayer = useLayerStore((state) => state.pushLayer);
   const privacy = preferencePrivacy(asPreferenceDocument(preferences.data?.data));
   const rows = blocks.data?.blocks ?? [];
 
@@ -53,8 +55,26 @@ export function PrivacyPanel() {
         >
           <ul className="flex flex-col gap-[var(--control-gap)]">
             {rows.map((row) => (
-              <li className="flex items-center justify-between gap-[var(--control-gap)]" key={row.account.id}>
-                <span>{row.account.display_name}</span>
+              <li
+                className="flex items-center justify-between gap-[var(--control-gap)]"
+                key={row.account.id}
+              >
+                <Button
+                  className="min-w-0 justify-start truncate"
+                  onClick={() =>
+                    pushLayer({
+                      accountId: String(row.account.id),
+                      conversationId: "0",
+                      id: `account:${String(row.account.id)}`,
+                      kind: "profile",
+                      title: row.account.display_name,
+                    })
+                  }
+                  type="button"
+                  variant="ghost"
+                >
+                  {row.account.display_name}
+                </Button>
                 <Button
                   onClick={() => unblock.mutate(row.account.id)}
                   type="button"

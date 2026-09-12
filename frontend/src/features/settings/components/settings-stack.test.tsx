@@ -13,7 +13,7 @@ import { SettingsPanel } from "@/features/settings/components/settings-panel";
 import { resetShellStore, useShellStore } from "@/features/settings/store/shell-store";
 import { seedPreferenceOverlay } from "@/shared/lib/api/msw/handlers";
 import { en } from "@/shared/lib/i18n/catalog";
-import { useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { resetLayerStore, useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { testSession } from "@/test/access-session";
 import { server } from "@/test/msw";
 
@@ -36,6 +36,7 @@ function seedAccount(): void {
 
 describe("settings hub stack", () => {
   beforeEach(() => {
+    resetLayerStore();
     resetShellStore();
     seedAccount();
   });
@@ -51,7 +52,9 @@ describe("settings hub stack", () => {
       ),
     );
 
-    expect(await screen.findByRole("button", { name: en.settings.notifications })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: en.settings.notifications }),
+    ).toBeInTheDocument();
     expect(screen.queryByText("ada@example.com")).toBeNull();
 
     await user.click(screen.getByRole("button", { name: en.settings.privacy }));
@@ -63,7 +66,9 @@ describe("settings hub stack", () => {
 
     await user.click(screen.getByRole("button", { name: en.settings.notifications }));
     expect(document.querySelector("[data-notifications-panel]")).not.toBeNull();
-    await user.click(screen.getByRole("button", { name: en.settings.notifications_level_mentions }));
+    await user.click(
+      screen.getByRole("button", { name: en.settings.notifications_level_mentions }),
+    );
     await user.click(screen.getByRole("switch", { name: en.settings.notifications_preview }));
     await user.click(screen.getByRole("switch", { name: en.settings.notifications_sound }));
     await user.click(screen.getByRole("switch", { name: en.settings.notifications_vibration }));
@@ -91,7 +96,9 @@ describe("settings hub stack", () => {
     server.use(
       http.get("*/api/v1/passkeys", () =>
         HttpResponse.json({
-          passkeys: [{ created_at: "2026-01-01T00:00:00Z", id: 1, last_used_at: null, nickname: null }],
+          passkeys: [
+            { created_at: "2026-01-01T00:00:00Z", id: 1, last_used_at: null, nickname: null },
+          ],
         }),
       ),
     );
@@ -189,10 +196,16 @@ describe("settings hub stack", () => {
     expect(
       await screen.findByText(en.settings.notifications_chat.replace("{{id}}", "3")),
     ).toBeInTheDocument();
-    await user.click(screen.getAllByRole("button", { name: en.settings.notifications_level_none })[1]!);
-    await user.click(screen.getAllByRole("switch", { name: en.settings.notifications_preview })[1]!);
+    await user.click(
+      screen.getAllByRole("button", { name: en.settings.notifications_level_none })[1]!,
+    );
+    await user.click(
+      screen.getAllByRole("switch", { name: en.settings.notifications_preview })[1]!,
+    );
     await user.click(screen.getAllByRole("switch", { name: en.settings.notifications_sound })[1]!);
-    await user.click(screen.getAllByRole("switch", { name: en.settings.notifications_vibration })[1]!);
+    await user.click(
+      screen.getAllByRole("switch", { name: en.settings.notifications_vibration })[1]!,
+    );
     await user.click(screen.getAllByRole("switch", { name: en.settings.notifications_dnd })[1]!);
     await waitFor(() => {
       expect(screen.getAllByLabelText(en.settings.notifications_dnd_start)[1]).not.toBeDisabled();
@@ -215,16 +228,28 @@ describe("settings hub stack", () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     server.use(
       http.get("*/api/v1/scheduled_messages", () =>
-        HttpResponse.json({ error: { code: "fail", message: "fail", details: {} } }, { status: 500 }),
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
       ),
       http.get("*/api/v1/blocks", () =>
-        HttpResponse.json({ error: { code: "fail", message: "fail", details: {} } }, { status: 500 }),
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
       ),
       http.get("*/api/v1/passkeys", () =>
-        HttpResponse.json({ error: { code: "fail", message: "fail", details: {} } }, { status: 500 }),
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
       ),
       http.patch("*/api/v1/users/me/password", () =>
-        HttpResponse.json({ error: { code: "fail", message: "fail", details: {} } }, { status: 500 }),
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
       ),
       http.post("*/api/v1/passkeys/registration_options", () =>
         HttpResponse.json({
@@ -378,6 +403,10 @@ describe("settings hub stack", () => {
     });
     render(wrap(<SettingsPanel />));
     await user.click(screen.getByRole("button", { name: en.settings.privacy }));
+    await user.click(await screen.findByRole("button", { name: "Eve" }));
+    expect(useLayerStore.getState().layers).toContainEqual(
+      expect.objectContaining({ accountId: "9", kind: "profile" }),
+    );
     await user.click(await screen.findByRole("button", { name: en.settings.privacy_unblock }));
     await user.click(screen.getByRole("button", { name: en.shell.back }));
     await user.click(screen.getByRole("button", { name: en.settings.security }));

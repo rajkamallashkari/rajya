@@ -659,6 +659,7 @@
     "stop_preview": "Stop preview"
   },
   "conversations": {
+    "blocked_banner": "You blocked this account. Open their profile to unblock them.",
     "typing": "typing…",
     "activity": {
       "typing": "typing…",

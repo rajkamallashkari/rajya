@@ -14,26 +14,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 15.7 |
-| **Next session** | 15.8 |
+| **Last completed** | 15.8 |
+| **Next session** | 15.9 |
 | **Phase** | P15 Polish |
-| **Sessions remaining in phase** | 3 |
+| **Sessions remaining in phase** | 2 |
 
 ---
 
 ## Next session brief (agent: read POLISH_PLAN.md §5 for the full row)
 
-**15.8 — Blocker profile + Unblock + banner.**
+**15.9 — Profile edit: username debounce + avatar.**
 
-Split NR-1 profile authorization: a blocker can open the blocked account's
-profile and Unblock, while the blocked party still gets 404. Keep the chat
-header working, add the thread banner, and make Privacy blocked-list rows open
-profiles. Search and new-DM gates stay unchanged. Do not start 15.9 in this
-session.
+Debounce username availability in profile edit. Add avatar pick, preview, upload,
+and remove through the existing direct-upload and me/avatar endpoints. Keep the
+existing name/bio PATCH. Do not start 15.10 in this session.
 
-Docs: POLISH_TARGET §7; POLISH_AUDIT §9; CONVENTIONS §7.
-Legacy: none — Botverse has no block list; do not invent extras beyond Unblock,
-the banner, and Privacy-list navigation.
+Docs: POLISH_TARGET §8; POLISH_AUDIT §10.
+Legacy: `legacy/botverse/src/components/panels/ProfileEditPanel.tsx`.
 
 ---
 
@@ -49,6 +46,7 @@ the banner, and Privacy-list navigation.
 | 15.5 | Call controls + Return to call | Voice/video chrome starts visible, idle-hides, and toggles from the call surface. Reloaded active calls offer Return to call with fresh media, PeerConnections, and signaling; impossible rejoins hang up without the amber End-only bar |
 | 15.6 | Profile scroll, members, invites, common groups | Profile bodies scroll independently; group profiles list cached conversation members alongside invite management, and direct/bot profiles open common groups derived from the conversation query cache |
 | 15.7 | Compose: drop bot icon, collapsible, group chips | Removed the chat-list Bot shortcut; New Message sections start open and collapse independently; new-group selections show responsive avatar chips with desktop-hover/mobile-tap identity details and click/X removal |
+| 15.8 | Blocker profile + Unblock + banner | Profile show now distinguishes block direction: blockers receive the profile plus `blocked_by_viewer` and can Unblock, while reverse and mutual blocks remain 404. Direct threads show a blocked banner, and Privacy blocked-account rows open profiles |
 
 ---
 

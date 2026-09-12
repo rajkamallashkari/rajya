@@ -5,7 +5,7 @@ module Api
         authorize Account
         skip_policy_scope
         render_result(Accounts::ShowProfile.call(viewer: current_account, account_id: params[:id]),
-                      serializer: AccountResource)
+                      serializer: AccountProfileResource)
       end
     end
   end
