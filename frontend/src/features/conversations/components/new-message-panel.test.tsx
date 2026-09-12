@@ -4,7 +4,7 @@ import { delay, http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { NewMessagePanel } from "./new-message-panel";
 import { AppProviders } from "@/app/providers";
-import { SEARCH_DEBOUNCE_MS } from "@/features/search/model/constants";
+import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_QUERY_LENGTH } from "@/features/search/model/constants";
 import { messagingStore } from "@/shared/lib/api/msw/messaging-store";
 import { COMPOSE_AT } from "@/features/conversations/model/compose";
 import { en } from "@/shared/lib/i18n/catalog";
@@ -12,6 +12,29 @@ import { useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { server } from "@/test/msw";
 
 describe("NewMessagePanel", () => {
+  it("starts with Bots and People open and lets each section collapse", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    render(
+      <AppProviders>
+        <NewMessagePanel />
+      </AppProviders>,
+    );
+    const bots = screen.getByRole("button", { name: en.compose.bots });
+    const people = screen.getByRole("button", { name: en.compose.people });
+    expect(bots).toHaveAttribute("aria-expanded", "true");
+    expect(people).toHaveAttribute("aria-expanded", "true");
+    expect(await screen.findByText("Nimbus")).toBeInTheDocument();
+    const peopleHint = en.compose.people_hint.replace("{{count}}", String(SEARCH_MIN_QUERY_LENGTH));
+    expect(screen.getByText(peopleHint)).toBeInTheDocument();
+
+    await user.click(bots);
+    expect(bots).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Nimbus")).toBeNull();
+    await user.click(people);
+    expect(people).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText(peopleHint)).toBeNull();
+  });
+
   it("lists bots, searches people, and opens a DM from either row", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     render(

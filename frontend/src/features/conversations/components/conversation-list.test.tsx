@@ -51,9 +51,7 @@ describe("ConversationList", () => {
       </AppProviders>,
     );
     expect(screen.getByText(en.shell.chats)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: en.bots.directory }));
-    expect(await screen.findByText("Nimbus")).toBeInTheDocument();
-    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("button", { name: en.bots.directory })).toBeNull();
     await user.click(screen.getByRole("button", { name: en.search.filters }));
     expect(screen.getByText(en.search.filters_clear)).toBeInTheDocument();
     await user.keyboard("{Escape}");

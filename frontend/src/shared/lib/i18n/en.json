@@ -313,15 +313,18 @@
     "create_group": "Create group",
     "group": "New group",
     "group_name": "Group name",
+    "hide_member": "Hide {{name}} details",
     "message": "New message",
     "new_conversation": "New conversation",
     "no_bots": "No bots matching \"{{query}}\"",
     "no_people": "No people matching \"{{query}}\"",
     "people": "People",
     "people_hint": "Type at least {{count}} characters to search",
+    "remove_member": "Remove {{name}}",
     "search": "Search bots or people",
     "search_placeholder": "Name, @username, email, or phone…",
     "searching": "Searching people",
+    "show_member": "Show {{name}} details",
     "soon": "Soon"
   },
   "errors": {

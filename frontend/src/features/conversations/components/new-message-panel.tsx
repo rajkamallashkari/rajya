@@ -30,6 +30,7 @@ export function NewMessagePanel(): ReactNode {
       <LayerHeader title={t("compose.message")} />
       <ComposeDirectory
         busyId={start.isPending ? start.variables : null}
+        collapsible
         onSelect={openAccount}
         query={query}
         selection="single"

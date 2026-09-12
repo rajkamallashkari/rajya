@@ -1,5 +1,5 @@
-import { Check, X } from "lucide-react";
-import { useMemo, useRef, type ReactNode } from "react";
+import { Check, ChevronDown, ChevronUp, X } from "lucide-react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useBots } from "@/features/bots/api/queries";
 import {
@@ -24,6 +24,7 @@ type Account = components["schemas"]["Account"];
 
 export function ComposeDirectory({
   busyId,
+  collapsible = false,
   onSelect,
   query,
   selectedIds,
@@ -31,6 +32,7 @@ export function ComposeDirectory({
   setQuery,
 }: {
   busyId?: number | null;
+  collapsible?: boolean;
   onSelect: (account: Account) => void;
   query: string;
   selectedIds?: Set<number>;
@@ -39,6 +41,8 @@ export function ComposeDirectory({
 }): ReactNode {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [botsOpen, setBotsOpen] = useState(true);
+  const [peopleOpen, setPeopleOpen] = useState(true);
   const bots = useBots();
   const debounced = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const needle = composeSearchNeedle(debounced);
@@ -75,57 +79,101 @@ export function ComposeDirectory({
         ) : null}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <p className="px-[var(--space-list-x)] py-[var(--space-2)] text-[length:var(--text-xs)] text-[var(--text-tertiary)]">
-          {t("compose.bots")}
-        </p>
-        {botRows.length === 0 ? (
-          <p className="px-[var(--space-list-x)] py-[var(--space-4)] text-[length:var(--text-sm)] text-[var(--text-secondary)]">
-            {query.trim() ? t("compose.no_bots", { query }) : t("bots.empty")}
-          </p>
-        ) : (
-          botRows.map((bot) => (
-            <DirectoryRow
-              account={bot.account}
-              busy={busyId === bot.account.id}
-              key={`bot:${String(bot.account.id)}`}
-              onSelect={onSelect}
-              selected={selectedIds?.has(bot.account.id) === true}
-              selection={selection}
-            />
-          ))
-        )}
-        <p className="px-[var(--space-list-x)] py-[var(--space-2)] text-[length:var(--text-xs)] text-[var(--text-tertiary)]">
-          {t("compose.people")}
-        </p>
-        {!peopleEnabled ? (
-          <p className="px-[var(--space-list-x)] py-[var(--space-4)] text-[length:var(--text-sm)] text-[var(--text-secondary)]">
-            {t("compose.people_hint", { count: SEARCH_MIN_QUERY_LENGTH })}
-          </p>
-        ) : null}
-        {peopleEnabled && people.isFetching ? (
-          <div className="flex justify-center py-[var(--space-6)]">
-            <Spinner label={t("compose.searching")} />
-          </div>
-        ) : null}
-        {peopleEnabled && !people.isFetching && peopleRows.length === 0 ? (
-          <p className="px-[var(--space-list-x)] py-[var(--space-4)] text-[length:var(--text-sm)] text-[var(--text-secondary)]">
-            {t("compose.no_people", { query: debounced })}
-          </p>
-        ) : null}
-        {peopleEnabled && !people.isFetching
-          ? peopleRows.map((account) => (
+        <DirectorySection
+          collapsible={collapsible}
+          label={t("compose.bots")}
+          onToggle={() => setBotsOpen((open) => !open)}
+          open={botsOpen}
+        >
+          {botRows.length === 0 ? (
+            <p className="px-[var(--space-list-x)] py-[var(--space-4)] text-[length:var(--text-sm)] text-[var(--text-secondary)]">
+              {query.trim() ? t("compose.no_bots", { query }) : t("bots.empty")}
+            </p>
+          ) : (
+            botRows.map((bot) => (
               <DirectoryRow
-                account={account}
-                busy={busyId === account.id}
-                key={`person:${String(account.id)}`}
+                account={bot.account}
+                busy={busyId === bot.account.id}
+                key={`bot:${String(bot.account.id)}`}
                 onSelect={onSelect}
-                selected={selectedIds?.has(account.id) === true}
+                selected={selectedIds?.has(bot.account.id) === true}
                 selection={selection}
               />
             ))
-          : null}
+          )}
+        </DirectorySection>
+        <DirectorySection
+          collapsible={collapsible}
+          label={t("compose.people")}
+          onToggle={() => setPeopleOpen((open) => !open)}
+          open={peopleOpen}
+        >
+          {!peopleEnabled ? (
+            <p className="px-[var(--space-list-x)] py-[var(--space-4)] text-[length:var(--text-sm)] text-[var(--text-secondary)]">
+              {t("compose.people_hint", { count: SEARCH_MIN_QUERY_LENGTH })}
+            </p>
+          ) : null}
+          {peopleEnabled && people.isFetching ? (
+            <div className="flex justify-center py-[var(--space-6)]">
+              <Spinner label={t("compose.searching")} />
+            </div>
+          ) : null}
+          {peopleEnabled && !people.isFetching && peopleRows.length === 0 ? (
+            <p className="px-[var(--space-list-x)] py-[var(--space-4)] text-[length:var(--text-sm)] text-[var(--text-secondary)]">
+              {t("compose.no_people", { query: debounced })}
+            </p>
+          ) : null}
+          {peopleEnabled && !people.isFetching
+            ? peopleRows.map((account) => (
+                <DirectoryRow
+                  account={account}
+                  busy={busyId === account.id}
+                  key={`person:${String(account.id)}`}
+                  onSelect={onSelect}
+                  selected={selectedIds?.has(account.id) === true}
+                  selection={selection}
+                />
+              ))
+            : null}
+        </DirectorySection>
       </div>
     </div>
+  );
+}
+
+function DirectorySection({
+  children,
+  collapsible,
+  label,
+  onToggle,
+  open,
+}: {
+  children: ReactNode;
+  collapsible: boolean;
+  label: string;
+  onToggle: () => void;
+  open: boolean;
+}): ReactNode {
+  return (
+    <section>
+      {collapsible ? (
+        <Button
+          aria-expanded={open}
+          className="h-auto w-full justify-between rounded-none px-[var(--space-list-x)] py-[var(--space-2)] text-[length:var(--text-xs)] text-[var(--text-tertiary)]"
+          onClick={onToggle}
+          type="button"
+          variant="ghost"
+        >
+          {label}
+          {open ? <ChevronUp className={ICON_CLASS} /> : <ChevronDown className={ICON_CLASS} />}
+        </Button>
+      ) : (
+        <p className="px-[var(--space-list-x)] py-[var(--space-2)] text-[length:var(--text-xs)] text-[var(--text-tertiary)]">
+          {label}
+        </p>
+      )}
+      {open ? children : null}
+    </section>
   );
 }
 

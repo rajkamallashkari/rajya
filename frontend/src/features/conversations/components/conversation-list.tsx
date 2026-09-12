@@ -1,7 +1,6 @@
-import { Bot, Filter } from "lucide-react";
+import { Filter } from "lucide-react";
 import { useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
-import { BotDirectorySheet } from "@/features/bots";
 import type { Conversation, ConversationFolder } from "@/features/conversations/api/http";
 import {
   useArchiveConversation,
@@ -57,7 +56,6 @@ export function ConversationList({
   const layers = useLayerStore((state) => state.layers);
   const setMenuOpen = useComposeStore((state) => state.setMenuOpen);
   const [query, setQuery] = useState("");
-  const [botsOpen, setBotsOpen] = useState(false);
   const setFiltersOpen = useSearchStore((state) => state.setFiltersOpen);
   const [tab, setTab] = useState("all");
   const localRef = useRef<HTMLInputElement>(null);
@@ -124,13 +122,6 @@ export function ConversationList({
           value={query}
         />
         <IconButton
-          aria-label={t("bots.directory")}
-          onClick={() => setBotsOpen(true)}
-          type="button"
-        >
-          <Bot className="h-[var(--icon-size)] w-[var(--icon-size)]" />
-        </IconButton>
-        <IconButton
           aria-label={t("search.filters")}
           onClick={() => setFiltersOpen(true)}
           type="button"
@@ -138,7 +129,6 @@ export function ConversationList({
           <Filter className="h-[var(--icon-size)] w-[var(--icon-size)]" />
         </IconButton>
       </div>
-      <BotDirectorySheet onOpenChange={setBotsOpen} open={botsOpen} />
       <SearchFilterSheet />
       <FolderStrip
         archivedUnread={archivedUnreadCount(archived.data?.conversations ?? [])}
