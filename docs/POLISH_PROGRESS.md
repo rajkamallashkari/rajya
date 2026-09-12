@@ -14,23 +14,24 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 15.5 |
-| **Next session** | 15.6 |
+| **Last completed** | 15.6 |
+| **Next session** | 15.7 |
 | **Phase** | P15 Polish |
-| **Sessions remaining in phase** | 5 |
+| **Sessions remaining in phase** | 4 |
 
 ---
 
 ## Next session brief (agent: read POLISH_PLAN.md §5 for the full row)
 
-**15.6 — Profile scroll, members, invites, common groups.**
+**15.7 — Compose: drop bot icon, collapsible, group chips.**
 
-Profile panel bodies scroll. Group profiles show conversation members and the
-existing invite manager. Direct and bot profiles show common groups from the
-inbox query cache; no new table or API. Do not start 15.7 in this session.
+Remove the Bot icon between search and filter. New Message gets default-open,
+collapsible Bots and People sections. New group gets avatar chips with
+desktop-hover/mobile-tap identity details and click/X removal. Do not start
+15.8 in this session.
 
-Docs: POLISH_TARGET §5; POLISH_AUDIT §7.
-Legacy: `GroupInfoContent.tsx`, `ProfileContent.tsx`.
+Docs: POLISH_TARGET §6; POLISH_AUDIT §8.
+Legacy: `NewChatPanel.tsx`, `GroupCreatorPanel.tsx` `SelectedChip`.
 
 ---
 
@@ -44,6 +45,7 @@ Legacy: `GroupInfoContent.tsx`, `ProfileContent.tsx`.
 | 15.3 | Send-arrow attach + schedule | Attach opens a hidden picker → media previews → `attachment_signed_ids`; Schedule appears for text drafts and Confirm posts immediately. Per-chat scheduled count/list added; Rewrite/silent and DS-13 untouched |
 | 15.4 | Date chips → JumpDateSheet | Thread date chips are keyboard-focusable buttons that open the existing jump sheet; the header calendar action is removed and `around_at` jumping is preserved |
 | 15.5 | Call controls + Return to call | Voice/video chrome starts visible, idle-hides, and toggles from the call surface. Reloaded active calls offer Return to call with fresh media, PeerConnections, and signaling; impossible rejoins hang up without the amber End-only bar |
+| 15.6 | Profile scroll, members, invites, common groups | Profile bodies scroll independently; group profiles list cached conversation members alongside invite management, and direct/bot profiles open common groups derived from the conversation query cache |
 
 ---
 

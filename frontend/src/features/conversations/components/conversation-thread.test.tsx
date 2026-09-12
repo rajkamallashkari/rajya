@@ -15,8 +15,9 @@ import {
   savedReplyViews,
   voteFromThread,
 } from "./conversation-thread";
-import { ProfilePanel } from "./profile-panel";
+import { commonGroupsFromCache, ProfilePanel } from "./profile-panel";
 import { AppProviders } from "@/app/providers";
+import { createQueryClient } from "@/shared/lib/query/client";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { ADA_DEMO } from "@/features/conversations/model/demo";
 import type { Message } from "@/features/conversations/api/http";
@@ -476,6 +477,9 @@ describe("conversation layers", () => {
       </AppProviders>,
     );
     expect(await screen.findByText(en.invites.manage)).toBeInTheDocument();
+    expect(
+      screen.getByText(en.conversations.profile.members.replace("{{count}}", "1")),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.report.action }));
     expect(await screen.findByRole("button", { name: en.report.submit })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.ui.close }));
@@ -497,6 +501,55 @@ describe("conversation layers", () => {
     await waitFor(() => {
       expect(document.querySelector("[data-qr-grid]")).toBeNull();
     });
+  });
+
+  it("opens group members and cached groups in common from profiles", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    const group = findConversation(2);
+    const direct = findConversation(1);
+    const peer = direct?.peer;
+    if (!group || !peer) {
+      throw new Error("missing profile fixtures");
+    }
+    group.members.push({ account: peer, role: "member" });
+    const { rerender } = render(
+      <AppProviders>
+        <ProfilePanel conversationId="2" />
+      </AppProviders>,
+    );
+    expect(
+      await screen.findByText(en.conversations.profile.members.replace("{{count}}", "2")),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: new RegExp(peer.display_name) }));
+    expect(useLayerStore.getState().layers.at(-1)).toEqual(
+      expect.objectContaining({ accountId: String(peer.id), kind: "profile" }),
+    );
+
+    rerender(
+      <AppProviders>
+        <ProfilePanel conversationId="1" />
+      </AppProviders>,
+    );
+    expect(await screen.findByText(en.conversations.profile.common_groups)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Team/ }));
+    expect(useLayerStore.getState().layers).toEqual([
+      expect.objectContaining({ conversationId: "2", kind: "conversation" }),
+    ]);
+  });
+
+  it("derives common groups only from cached memberships", () => {
+    const queryClient = createQueryClient();
+    expect(commonGroupsFromCache(queryClient, 2)).toEqual([]);
+    const direct = findConversation(1);
+    const group = findConversation(2);
+    if (!direct || !group) {
+      throw new Error("missing profile fixtures");
+    }
+    queryClient.setQueryData(["conversations", "detail", 0], undefined);
+    queryClient.setQueryData(["conversations", "detail", direct.id], direct);
+    queryClient.setQueryData(["conversations", "list"], { conversations: [group] });
+    expect(commonGroupsFromCache(queryClient, 2)).toEqual([]);
   });
 
   it("opens a report sheet from a peer message", async () => {

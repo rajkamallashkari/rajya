@@ -691,6 +691,10 @@
     "pin": "Pin",
     "unpin": "Unpin",
     "open": "Open conversation",
+    "profile": {
+      "common_groups": "Groups in common",
+      "members": "{{count}} members"
+    },
     "permissions": {
       "add_members": "Add members",
       "admin": "Admins",
