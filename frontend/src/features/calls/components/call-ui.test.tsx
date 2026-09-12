@@ -13,7 +13,11 @@ import { PipSelfView } from "@/features/calls/components/pip-self-view";
 import { RemoteAudioSink } from "@/features/calls/components/remote-audio-sink";
 import { VideoCallView } from "@/features/calls/components/video-call-view";
 import { VoiceCallView } from "@/features/calls/components/voice-call-view";
-import { CALL_CONTROLS_ARM_MS, RING_TIMEOUT_MS } from "@/features/calls/model/constants";
+import {
+  CALL_CONTROLS_ARM_MS,
+  CALL_CONTROLS_IDLE_MS,
+  RING_TIMEOUT_MS,
+} from "@/features/calls/model/constants";
 import { resetCallStore, useCallStore } from "@/features/calls/store/call-store";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import { en } from "@/shared/lib/i18n/catalog";
@@ -28,6 +32,7 @@ const engine = vi.hoisted(() => ({
   endStuckCall: vi.fn(),
   flipCamera: vi.fn(),
   rejectCall: vi.fn(),
+  returnToCall: vi.fn(),
   startScreenShare: vi.fn(),
   stopScreenShare: vi.fn(),
   switchAudioInput: vi.fn(),
@@ -38,7 +43,8 @@ const engine = vi.hoisted(() => ({
 }));
 
 vi.mock("@/features/calls/lib", async () => {
-  const actual = await vi.importActual<typeof import("@/features/calls/lib")>("@/features/calls/lib");
+  const actual =
+    await vi.importActual<typeof import("@/features/calls/lib")>("@/features/calls/lib");
   return { ...actual, ...engine };
 });
 
@@ -58,7 +64,12 @@ function participant(accountId: number, status = "joined") {
 }
 
 function liveVideo(): MediaStream {
-  const track = { kind: "video", enabled: true, readyState: "live", stop: vi.fn() } as unknown as MediaStreamTrack;
+  const track = {
+    kind: "video",
+    enabled: true,
+    readyState: "live",
+    stop: vi.fn(),
+  } as unknown as MediaStreamTrack;
   return {
     id: "live",
     getAudioTracks: () => [],
@@ -124,7 +135,12 @@ describe("call UI", () => {
     await user.click(screen.getByRole("button", { name: en.calls.speaker_on }));
     expect(engine.toggleSpeaker).toHaveBeenCalled();
     fireEvent.contextMenu(screen.getByRole("button", { name: en.calls.mute }));
-    useCallStore.setState({ camOn: false, micOn: false, speakerOn: false, status: "ringing-outgoing" });
+    useCallStore.setState({
+      camOn: false,
+      micOn: false,
+      speakerOn: false,
+      status: "ringing-outgoing",
+    });
     rerender(<CallControlBar showCameraFlip />);
     await user.click(screen.getByRole("button", { name: en.calls.end }));
     expect(engine.cancelCall).toHaveBeenCalled();
@@ -255,7 +271,7 @@ describe("call UI", () => {
   });
 
   it("renders the voice surface and minimize paths", async () => {
-    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    vi.useFakeTimers();
     seedMe();
     useCallStore.setState({
       callType: "audio",
@@ -269,6 +285,11 @@ describe("call UI", () => {
     });
     const { rerender } = render(<VoiceCallView />);
     expect(screen.getByRole("dialog", { name: en.calls.title_audio })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: en.calls.hide_controls })).toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(CALL_CONTROLS_IDLE_MS);
+    });
+    fireEvent.click(screen.getByRole("button", { name: en.calls.show_controls }));
     fireEvent.keyDown(window, { key: "Escape" });
     expect(useCallStore.getState().minimized).toBe(true);
     useCallStore.setState({
@@ -281,12 +302,12 @@ describe("call UI", () => {
     useCallStore.setState({ participants: [participant(1)], status: "ringing-outgoing" });
     rerender(<VoiceCallView />);
     expect(screen.getByText(en.calls.waiting)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: en.calls.minimize }));
+    fireEvent.click(screen.getByRole("button", { name: en.calls.minimize }));
     expect(useCallStore.getState().minimized).toBe(true);
   });
 
   it("renders the video surface including the group grid", async () => {
-    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    vi.useFakeTimers();
     seedMe();
     const stream = liveVideo();
     HTMLMediaElement.prototype.play = vi.fn(async () => undefined);
@@ -308,9 +329,18 @@ describe("call UI", () => {
     });
     const { rerender } = render(<VideoCallView />);
     expect(screen.getByRole("dialog", { name: en.calls.title_video })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: en.calls.pip_swap }));
-    await user.click(screen.getByRole("button", { name: en.calls.show_controls }));
-    await user.click(screen.getByRole("button", { name: en.calls.minimize }));
+    expect(screen.getByRole("button", { name: en.calls.hide_controls })).toBeInTheDocument();
+    fireEvent.pointerDown(screen.getByRole("button", { name: en.calls.pip_swap }), {
+      clientX: 10,
+      clientY: 10,
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(screen.getByRole("button", { name: en.calls.pip_swap }), { pointerId: 1 });
+    act(() => {
+      vi.advanceTimersByTime(CALL_CONTROLS_IDLE_MS);
+    });
+    fireEvent.click(screen.getByRole("button", { name: en.calls.show_controls }));
+    fireEvent.click(screen.getByRole("button", { name: en.calls.minimize }));
     expect(useCallStore.getState().minimized).toBe(true);
     useCallStore.setState({ minimized: false, status: "connecting" });
     rerender(<VideoCallView />);
@@ -339,12 +369,22 @@ describe("call UI", () => {
     const { rerender } = render(<TopCallBar />);
     await user.click(screen.getByRole("button", { name: /Maximize call/ }));
     expect(useCallStore.getState().minimized).toBe(false);
-    useCallStore.setState({ callType: "audio", micOn: true, minimized: true, status: "ringing-outgoing" });
+    useCallStore.setState({
+      callType: "audio",
+      micOn: true,
+      minimized: true,
+      status: "ringing-outgoing",
+    });
     rerender(<TopCallBar />);
     await user.click(screen.getByRole("button", { name: en.calls.mute }));
     await user.click(screen.getByRole("button", { name: en.calls.end }));
     expect(engine.cancelCall).toHaveBeenCalled();
-    useCallStore.setState({ callType: "audio", micOn: false, minimized: true, status: "connecting" });
+    useCallStore.setState({
+      callType: "audio",
+      micOn: false,
+      minimized: true,
+      status: "connecting",
+    });
     rerender(<TopCallBar />);
     await user.click(screen.getByRole("button", { name: en.calls.end }));
     expect(engine.endCall).toHaveBeenCalled();
@@ -367,8 +407,8 @@ describe("call UI", () => {
       stuckCall: { callType: "video", conversationId: 1, id: 9, status: "active" },
     });
     rerender(<TopCallBar />);
-    await user.click(screen.getByRole("button", { name: en.calls.stuck_end }));
-    expect(engine.endStuckCall).toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: en.calls.return_to_call }));
+    expect(engine.returnToCall).toHaveBeenCalled();
     useCallStore.setState({
       stuckCall: { callType: "audio", conversationId: 1, id: 9, status: "active" },
     });
@@ -421,7 +461,15 @@ describe("call UI", () => {
     });
     fireEvent.pointerUp(screen.getByRole("button", { name: en.calls.pip_swap }), { pointerId: 1 });
     fireEvent.pointerCancel(screen.getByRole("button", { name: en.calls.pip_swap }));
-    render(<PipSelfView mirror={false} name="Ada" onSwap={() => undefined} stream={null} videoOn={false} />);
+    render(
+      <PipSelfView
+        mirror={false}
+        name="Ada"
+        onSwap={() => undefined}
+        stream={null}
+        videoOn={false}
+      />,
+    );
     useCallStore.setState({ remoteStreams: { 2: stream }, speakerVolume: 0.5 });
     render(<RemoteAudioSink />);
     expect(document.querySelector("[data-call-audio]")).not.toBeNull();
@@ -461,7 +509,9 @@ describe("call UI", () => {
       pointerId: 1,
       button: 0,
     });
-    fireEvent.pointerUp(document.querySelector("[data-floating-drag]") as HTMLElement, { pointerId: 1 });
+    fireEvent.pointerUp(document.querySelector("[data-floating-drag]") as HTMLElement, {
+      pointerId: 1,
+    });
     act(() => {
       vi.advanceTimersByTime(CALL_CONTROLS_ARM_MS);
     });
@@ -483,7 +533,9 @@ describe("call UI", () => {
       clientY: 80,
       pointerId: 1,
     });
-    fireEvent.pointerUp(document.querySelector("[data-floating-drag]") as HTMLElement, { pointerId: 1 });
+    fireEvent.pointerUp(document.querySelector("[data-floating-drag]") as HTMLElement, {
+      pointerId: 1,
+    });
     useCallStore.setState({ minimized: true, remoteStreams: {}, status: "ringing-outgoing" });
     rerender(<FloatingVideoOverlay />);
     fireEvent.pointerDown(document.querySelector("[data-floating-drag]") as HTMLElement, {
@@ -492,7 +544,9 @@ describe("call UI", () => {
       pointerId: 1,
       button: 0,
     });
-    fireEvent.pointerUp(document.querySelector("[data-floating-drag]") as HTMLElement, { pointerId: 1 });
+    fireEvent.pointerUp(document.querySelector("[data-floating-drag]") as HTMLElement, {
+      pointerId: 1,
+    });
     act(() => {
       vi.advanceTimersByTime(CALL_CONTROLS_ARM_MS);
     });
@@ -591,8 +645,8 @@ describe("call UI", () => {
       status: "active",
     });
     const { rerender, unmount } = render(<VideoCallView />);
-    await user.click(screen.getByRole("button", { name: en.calls.show_controls }));
     await user.click(screen.getByRole("button", { name: en.calls.hide_controls }));
+    await user.click(screen.getByRole("button", { name: en.calls.show_controls }));
     useCallStore.setState({
       camOn: false,
       isScreenSharing: false,

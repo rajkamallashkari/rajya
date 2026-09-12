@@ -233,6 +233,176 @@ describe("webrtc engine", () => {
     expect(mockCancel).toHaveBeenCalledWith(9);
   });
 
+  it("returns to an active call with fresh media, peer connections, and signaling", async () => {
+    const { returnToCall, setLocalAccountId, setSignalingSender, __test } =
+      await import("./engine");
+    const sent: Array<[string, Record<string, unknown>]> = [];
+    setLocalAccountId(1);
+    setSignalingSender((action, data) => sent.push([action, data]));
+    useCallStore
+      .getState()
+      .setStuckCall({ id: 12, conversationId: 8, callType: "video", status: "active" });
+    const call = {
+      id: 12,
+      conversation_id: 8,
+      initiator_account_id: 2,
+      kind: "video",
+      status: "active",
+      participants: [
+        { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+        { id: 2, account_id: 2, status: "joined", is_screen_sharing: false },
+      ],
+    };
+    mockGetActive.mockResolvedValueOnce({ call, ice_servers: null });
+    mockAccept.mockResolvedValueOnce({ call, ice_servers: [{ urls: "stun:return" }] });
+
+    await returnToCall();
+
+    expect(mockAccept).toHaveBeenCalledWith(12);
+    expect(useCallStore.getState()).toMatchObject({
+      callId: 12,
+      callType: "video",
+      conversationId: 8,
+      iceServers: [{ urls: "stun:return" }],
+      status: "active",
+      stuckCall: null,
+    });
+    expect(__test.getPeerConnections()[2]).toBeDefined();
+    expect(sent).toContainEqual(["join", { call_id: 12 }]);
+    expect(mockHangup).not.toHaveBeenCalled();
+  });
+
+  it("hangs up without a stuck bar when returning is impossible", async () => {
+    const { returnToCall, setLocalAccountId, setSignalingSender } = await import("./engine");
+    setLocalAccountId(1);
+    setSignalingSender(() => undefined);
+    useCallStore
+      .getState()
+      .setStuckCall({ id: 14, conversationId: 8, callType: "audio", status: "active" });
+    mockGetActive.mockResolvedValueOnce({ call: null });
+    mockHangup.mockRejectedValueOnce(new Error("already gone"));
+
+    await returnToCall();
+
+    expect(mockHangup).toHaveBeenCalledWith(14);
+    expect(useCallStore.getState().stuckCall).toBeNull();
+    expect(useCallStore.getState().status).toBe("idle");
+  });
+
+  it("hangs up and reports rejoin failures without restoring the stuck bar", async () => {
+    const { returnToCall, setLocalAccountId, setSignalingSender } = await import("./engine");
+    setLocalAccountId(1);
+    setSignalingSender(null);
+    useCallStore
+      .getState()
+      .setStuckCall({ id: 15, conversationId: 8, callType: "audio", status: "active" });
+    const call = {
+      id: 15,
+      conversation_id: 8,
+      initiator_account_id: 2,
+      kind: "audio",
+      status: "active",
+      participants: [
+        { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+        { id: 2, account_id: 2, status: "joined", is_screen_sharing: false },
+      ],
+    };
+    mockGetActive.mockResolvedValueOnce({ call });
+    mockAccept.mockResolvedValueOnce({ call, ice_servers: [] });
+    mockHangup.mockResolvedValueOnce({});
+
+    await returnToCall();
+
+    expect(mockHangup).toHaveBeenCalledWith(15);
+    expect(useCallStore.getState().error).toBe(i18n.t("calls.errors.return_failed"));
+    expect(useCallStore.getState().stuckCall).toBeNull();
+  });
+
+  it("covers every unavailable return-to-call path", async () => {
+    const { returnToCall, setLocalAccountId, setSignalingSender } = await import("./engine");
+    const stuck = (id: number) => {
+      useCallStore
+        .getState()
+        .setStuckCall({ id, conversationId: 8, callType: "audio", status: "active" });
+    };
+    const call = (id: number, status = "active") => ({
+      id,
+      conversation_id: 8,
+      initiator_account_id: 2,
+      kind: "audio",
+      status,
+      participants: [
+        { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+        { id: 2, account_id: 2, status: "left", is_screen_sharing: false },
+        { id: 3, account_id: 3, status: "left", is_screen_sharing: false },
+      ],
+    });
+    setSignalingSender(() => undefined);
+    await returnToCall();
+
+    setLocalAccountId(1);
+    stuck(20);
+    mockGetActive.mockResolvedValueOnce({ call: call(99) });
+    mockHangup.mockResolvedValueOnce({});
+    await returnToCall();
+
+    stuck(21);
+    mockGetActive.mockResolvedValueOnce({ call: call(21, "ended") });
+    mockHangup.mockResolvedValueOnce({});
+    await returnToCall();
+
+    setLocalAccountId(null);
+    stuck(22);
+    mockGetActive.mockResolvedValueOnce({ call: call(22) });
+    mockHangup.mockResolvedValueOnce({});
+    await returnToCall();
+
+    setLocalAccountId(1);
+    stuck(23);
+    mockGetActive.mockResolvedValueOnce({ call: call(23) });
+    mockAccept.mockResolvedValueOnce({ ice_servers: [] });
+    mockHangup.mockRejectedValueOnce(new Error("already gone"));
+    await returnToCall();
+
+    expect(mockHangup).toHaveBeenCalledWith(20);
+    expect(mockHangup).toHaveBeenCalledWith(21);
+    expect(mockHangup).toHaveBeenCalledWith(22);
+    expect(mockHangup).toHaveBeenCalledWith(23);
+    expect(useCallStore.getState().error).toBe(i18n.t("calls.errors.return_failed"));
+    expect(useCallStore.getState().stuckCall).toBeNull();
+  });
+
+  it("reports permission denial while attempting to return to a call", async () => {
+    const { returnToCall, setLocalAccountId, setSignalingSender } = await import("./engine");
+    setLocalAccountId(1);
+    setSignalingSender(() => undefined);
+    useCallStore
+      .getState()
+      .setStuckCall({ id: 24, conversationId: 8, callType: "video", status: "active" });
+    mockGetActive.mockResolvedValueOnce({
+      call: {
+        id: 24,
+        conversation_id: 8,
+        initiator_account_id: 2,
+        kind: "video",
+        status: "active",
+        participants: [
+          { id: 1, account_id: 1, status: "joined", is_screen_sharing: false },
+          { id: 2, account_id: 2, status: "joined", is_screen_sharing: false },
+        ],
+      },
+    });
+    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new DOMException("denied", "NotAllowedError"),
+    );
+    mockHangup.mockResolvedValueOnce({});
+
+    await returnToCall();
+
+    expect(useCallStore.getState().error).toBe(i18n.t("calls.errors.permission"));
+    expect(useCallStore.getState().stuckCall).toBeNull();
+  });
+
   it("starts an outgoing call and tears down when everyone is busy", async () => {
     const { startCall } = await import("./engine");
     mockCreate.mockResolvedValueOnce({
@@ -405,11 +575,14 @@ describe("webrtc engine", () => {
 
   it("heartbeats while active and stops after hangup", async () => {
     vi.useFakeTimers();
-    const { handleSignalingMessage, setSignalingSender, endCall, setLocalAccountId } =
+    const { __test, handleSignalingMessage, setSignalingSender, endCall, setLocalAccountId } =
       await import("./engine");
     const sent: Array<[string, Record<string, unknown>]> = [];
     setSignalingSender((action, data) => sent.push([action, data]));
     setLocalAccountId(1);
+    __test.startHeartbeat(99);
+    __test.startHeartbeat(99);
+    __test.stopHeartbeat();
     useCallStore.setState({
       callId: 3,
       status: "connecting",
@@ -459,7 +632,7 @@ describe("webrtc engine", () => {
     });
   });
 
-  it("best-effort unloads the live call on pagehide", async () => {
+  it("only unloads ringing calls on pagehide so live calls can be rejoined", async () => {
     await import("./engine");
     useCallStore.setState({ callId: 2, status: "ringing-outgoing" });
     window.dispatchEvent(new Event("pagehide"));
@@ -469,7 +642,9 @@ describe("webrtc engine", () => {
     expect(mockUnload).toHaveBeenCalledWith(3, "decline");
     useCallStore.setState({ callId: 4, status: "active" });
     window.dispatchEvent(new Event("pagehide"));
-    expect(mockUnload).toHaveBeenCalledWith(4, "hangup");
+    useCallStore.setState({ callId: 5, status: "connecting" });
+    window.dispatchEvent(new Event("pagehide"));
+    expect(mockUnload).toHaveBeenCalledTimes(2);
   });
 
   it("falls back to STUN when the store has no ICE servers", async () => {
@@ -1097,9 +1272,17 @@ describe("webrtc engine", () => {
     mockGetActive.mockResolvedValueOnce({
       call: { id: 2, conversation_id: 1, kind: "video", status: "ringing", participants: [] },
     });
+    mockCancel.mockResolvedValueOnce({});
     useCallStore.setState({ status: "idle", callId: null });
     await checkForStuckCall();
+    expect(mockCancel).toHaveBeenCalledWith(2);
+    expect(useCallStore.getState().stuckCall).toBeNull();
+    mockGetActive.mockResolvedValueOnce({
+      call: { id: 3, conversation_id: 1, kind: "video", status: "active", participants: [] },
+    });
+    await checkForStuckCall();
     expect(useCallStore.getState().stuckCall?.callType).toBe("video");
+    useCallStore.getState().setStuckCall(null);
     setLocalAccountId(null);
     useCallStore.setState({ callId: 1, iceServers: [{ urls: "stun:x" }] });
     __test.createPeerConnection(5);

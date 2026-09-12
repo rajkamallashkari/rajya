@@ -20,6 +20,7 @@ export const CALL_PIP_MOVE_THRESHOLD_PX = 6;
 export const CALL_SWIPE_UP_THRESHOLD_PX = 48;
 export const CALL_SWIPE_TAP_SLOP_PX = 12;
 export const CALL_CONTROLS_ARM_MS = 350;
+export const CALL_CONTROLS_IDLE_MS = 3000;
 export const CALL_SNAP_MS = 180;
 export const CALL_ELAPSED_TICK_MS = MS_PER_SECOND;
 export const CALL_RINGTONE_INTERVAL_MS = 2000;

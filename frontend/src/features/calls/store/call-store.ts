@@ -4,12 +4,7 @@ import { SPEAKER_EARPIECE_VOLUME } from "@/features/calls/model/constants";
 import type { RealtimeEvent } from "@/shared/lib/realtime/events";
 
 export type CallUiStatus =
-  | "idle"
-  | "ringing-incoming"
-  | "ringing-outgoing"
-  | "connecting"
-  | "active"
-  | "ended";
+  "idle" | "ringing-incoming" | "ringing-outgoing" | "connecting" | "active" | "ended";
 
 export type FacingMode = "user" | "environment";
 
@@ -79,6 +74,14 @@ interface CallActions {
   setMicOn: (on: boolean) => void;
   setMinimized: (minimized: boolean) => void;
   setOutgoing: (opts: {
+    callId: number;
+    callType: CallKind;
+    conversationId: number;
+    iceServers: IceServerConfig[];
+    initiatorId: number;
+    participants: CallParticipant[];
+  }) => void;
+  setRejoined: (opts: {
     callId: number;
     callType: CallKind;
     conversationId: number;
@@ -206,6 +209,23 @@ export const useCallStore = create<CallState>((set) => ({
       minimized: false,
       participants,
       status: "ringing-outgoing",
+      stuckCall: null,
+    }),
+  setRejoined: ({ callId, callType, conversationId, iceServers, initiatorId, participants }) =>
+    set({
+      callId,
+      callType,
+      camOn: callType === "video",
+      conversationId,
+      error: null,
+      facingMode: "user",
+      iceServers,
+      incomingPreview: false,
+      incomingSilenced: false,
+      initiatorId,
+      minimized: false,
+      participants,
+      status: "connecting",
       stuckCall: null,
     }),
   setPipSwapped: (swapped) => set({ pipSwapped: swapped }),

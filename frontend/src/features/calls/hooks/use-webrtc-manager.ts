@@ -17,6 +17,7 @@ export function useWebRTCManager() {
     endCall: engine.endCall,
     flipCamera: engine.flipCamera,
     rejectCall: engine.rejectCall,
+    returnToCall: engine.returnToCall,
     setSpeakerVolume: engine.setSpeakerVolume,
     startCall: engine.startCall,
     startScreenShare: engine.startScreenShare,

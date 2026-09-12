@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Minimize2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { CallControlBar } from "@/features/calls/components/call-control-bar";
 import { PipSelfView } from "@/features/calls/components/pip-self-view";
+import { useCallChrome } from "@/features/calls/hooks/use-call-chrome";
 import { useCallElapsed } from "@/features/calls/hooks/use-call-elapsed";
 import { bindVideoElement } from "@/features/calls/lib/bind-media";
 import { isLiveCallStatus } from "@/features/calls/model/live";
@@ -106,12 +107,13 @@ export function VideoCallView() {
   const myId = useAccountsStore((state) => state.activeAccountId);
   const elapsed = useCallElapsed();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [chromeVisible, setChromeVisible] = useState(false);
   const inCall = isLiveCallStatus(status);
+  const { toggle: toggleChrome, visible: chromeVisible } = useCallChrome(
+    inCall && !minimized && callType === "video",
+  );
 
   useEffect(() => {
     if (!inCall || minimized || callType !== "video") {
-      setChromeVisible(false);
       return;
     }
     const onKey = (event: KeyboardEvent) => {
@@ -152,7 +154,6 @@ export function VideoCallView() {
   const isOneOnOne = remoteEntries.length <= 1;
   const primaryRemote = remoteEntries[0];
   const myName = t("calls.you");
-  const toggleChrome = () => setChromeVisible((value) => !value);
   const mainIsLocal = pipSwapped;
   const localFeed = localStream;
   const mainStream = mainIsLocal ? localFeed : (primaryRemote?.stream ?? null);

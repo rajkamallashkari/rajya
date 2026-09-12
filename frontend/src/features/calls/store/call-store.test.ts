@@ -28,7 +28,12 @@ describe("call store", () => {
   it("setIncoming maps initiator fields and clears a stuck banner", () => {
     const { result } = renderHook(() => useCallStore((state) => state));
     act(() => {
-      result.current.setStuckCall({ id: 5, conversationId: 1, callType: "audio", status: "active" });
+      result.current.setStuckCall({
+        id: 5,
+        conversationId: 1,
+        callType: "audio",
+        status: "active",
+      });
       result.current.setIncoming({
         type: "incoming_call",
         call_id: 7,
@@ -45,6 +50,34 @@ describe("call store", () => {
     expect(result.current.initiatorName).toBe("Alice");
     expect(result.current.initiatorUsername).toBe("alice");
     expect(result.current.stuckCall).toBeNull();
+  });
+
+  it("hydrates a returning audio call in the connecting state", () => {
+    const { result } = renderHook(() => useCallStore((state) => state));
+    act(() => {
+      result.current.setStuckCall({
+        id: 5,
+        conversationId: 1,
+        callType: "audio",
+        status: "active",
+      });
+      result.current.setRejoined({
+        callId: 5,
+        callType: "audio",
+        conversationId: 1,
+        iceServers: [{ urls: "stun:return" }],
+        initiatorId: 2,
+        participants: [{ id: 1, account_id: 2, status: "joined", is_screen_sharing: false }],
+      });
+    });
+    expect(result.current).toMatchObject({
+      callId: 5,
+      callType: "audio",
+      camOn: false,
+      conversationId: 1,
+      status: "connecting",
+      stuckCall: null,
+    });
   });
 
   it("treats a non-video incoming kind as audio", () => {
@@ -102,7 +135,12 @@ describe("call store", () => {
   it("reset preserves error, stuckCall, and speaker preference", () => {
     const { result } = renderHook(() => useCallStore((state) => state));
     act(() => {
-      result.current.setStuckCall({ id: 5, conversationId: 1, callType: "audio", status: "active" });
+      result.current.setStuckCall({
+        id: 5,
+        conversationId: 1,
+        callType: "audio",
+        status: "active",
+      });
       result.current.setError("Something went wrong");
       result.current.setSpeakerOn(false);
       result.current.setRemoteMedia(1, { micOn: true, camOn: false });

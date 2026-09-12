@@ -28,13 +28,17 @@ export function useSignalingChannel(): void {
     );
     void checkForStuckCall();
     setSignalingSender((action, data) => {
+      let signalingFailed = false;
       try {
         subscription.perform(action, data);
       } catch {
-        /* ActionCable may be closed under MSW; BroadcastChannel still relays. */
+        signalingFailed = true;
       }
       const sessionId = getAccessSession()?.accountId ?? accountId;
       publishMswSignaling(action, data, sessionId);
+      if (signalingFailed) {
+        throw new Error("signaling_unavailable");
+      }
     });
     return () => {
       setSignalingSender(null);

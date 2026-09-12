@@ -8,6 +8,7 @@ export {
   flipCamera,
   handleSignalingMessage,
   rejectCall,
+  returnToCall,
   setLocalAccountId,
   setSignalingSender,
   setSpeakerVolume,

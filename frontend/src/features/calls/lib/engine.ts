@@ -73,6 +73,13 @@ function signal(action: string, data: Record<string, unknown>): void {
   }
 }
 
+function requiredSignal(action: string, data: Record<string, unknown>): void {
+  if (!sendSignal) {
+    throw new Error("signaling_unavailable");
+  }
+  sendSignal(action, data);
+}
+
 function startHeartbeat(callId: number): void {
   if (heartbeatTimer && heartbeatCallId === callId) {
     return;
@@ -104,7 +111,10 @@ function errorReason(err: unknown): string | null {
   if (!err || typeof err !== "object") {
     return null;
   }
-  const root = err as { error?: { code?: string; details?: { reason?: string } }; details?: { reason?: string } };
+  const root = err as {
+    error?: { code?: string; details?: { reason?: string } };
+    details?: { reason?: string };
+  };
   return root.error?.details?.reason ?? root.details?.reason ?? root.error?.code ?? null;
 }
 
@@ -131,7 +141,9 @@ async function acquireLocalMedia(callType: CallKind, isGroup: boolean): Promise<
     return stream;
   } catch (err) {
     const denied = err instanceof DOMException && err.name === "NotAllowedError";
-    useCallStore.getState().setError(i18n.t(denied ? "calls.errors.permission" : "calls.errors.media"));
+    useCallStore
+      .getState()
+      .setError(i18n.t(denied ? "calls.errors.permission" : "calls.errors.media"));
     throw err;
   }
 }
@@ -463,7 +475,9 @@ export async function toggleSpeaker(): Promise<void> {
   try {
     const devices = (await navigator.mediaDevices?.enumerateDevices?.()) ?? [];
     const outputs = devices.filter((device) => device.kind === "audiooutput");
-    const speakerLike = outputs.find((device) => /speaker|loudspeaker|loud|hdmi|usb audio/i.test(device.label));
+    const speakerLike = outputs.find((device) =>
+      /speaker|loudspeaker|loud|hdmi|usb audio/i.test(device.label),
+    );
     const earpieceLike = outputs.find((device) =>
       /earpiece|receiver|phone|communications|headset|headphone|bluetooth/i.test(device.label),
     );
@@ -586,7 +600,10 @@ async function handleAnswer(fromAccountId: number, sdp: RTCSessionDescriptionIni
   await flushIceQueue(fromAccountId);
 }
 
-async function handleIceCandidate(fromAccountId: number, candidate: RTCIceCandidateInit): Promise<void> {
+async function handleIceCandidate(
+  fromAccountId: number,
+  candidate: RTCIceCandidateInit,
+): Promise<void> {
   const pc = peerConnections[fromAccountId];
   if (!pc || !remoteDescSet[fromAccountId]) {
     iceQueues[fromAccountId] = iceQueues[fromAccountId] ?? [];
@@ -602,11 +619,11 @@ async function handleIceCandidate(fromAccountId: number, candidate: RTCIceCandid
 
 export async function handleSignalingMessage(data: RealtimeEvent | unknown): Promise<void> {
   let event: RealtimeEvent;
-    try {
-      event = parseRealtimeEvent(data);
-    } catch {
-      return;
-    }
+  try {
+    event = parseRealtimeEvent(data);
+  } catch {
+    return;
+  }
   await dispatchSignaling(event);
 }
 
@@ -648,7 +665,10 @@ async function dispatchSignaling(event: RealtimeEvent): Promise<void> {
         return;
       }
       if (event.account_id != null) {
-        store.updateParticipantStatus(event.account_id, event.type === "busy" ? "busy" : "rejected");
+        store.updateParticipantStatus(
+          event.account_id,
+          event.type === "busy" ? "busy" : "rejected",
+        );
       }
       if (store.participants.length <= DIRECT_PARTICIPANT_MAX) {
         await teardownLocal();
@@ -673,7 +693,10 @@ async function dispatchSignaling(event: RealtimeEvent): Promise<void> {
       if (event.account_id != null) {
         store.updateParticipantStatus(event.account_id, "joined");
       }
-      if ((store.status === "active" || store.status === "connecting") && event.account_id != null) {
+      if (
+        (store.status === "active" || store.status === "connecting") &&
+        event.account_id != null
+      ) {
         await ensurePeerAndOffer(event.account_id);
         broadcastMuteState();
       }
@@ -693,7 +716,11 @@ async function dispatchSignaling(event: RealtimeEvent): Promise<void> {
       }
       return;
     case "screen_share":
-      if (store.callId !== event.call_id || event.account_id == null || event.account_id === localAccountId) {
+      if (
+        store.callId !== event.call_id ||
+        event.account_id == null ||
+        event.account_id === localAccountId
+      ) {
         return;
       }
       store.updateScreenSharing(event.account_id, event.sharing);
@@ -748,6 +775,10 @@ export async function checkForStuckCall(): Promise<void> {
       store.setStuckCall(null);
       return;
     }
+    if (res.call.status !== "active") {
+      await finishStuckCall({ id: res.call.id, status: res.call.status });
+      return;
+    }
     store.setStuckCall({
       callType: res.call.kind === "video" ? "video" : "audio",
       conversationId: res.call.conversation_id,
@@ -759,11 +790,7 @@ export async function checkForStuckCall(): Promise<void> {
   }
 }
 
-export async function endStuckCall(): Promise<void> {
-  const stuck = useCallStore.getState().stuckCall;
-  if (!stuck) {
-    return;
-  }
+async function finishStuckCall(stuck: { id: number; status: string }): Promise<void> {
   try {
     if (stuck.status === "ringing") {
       await cancelCallRequest(stuck.id);
@@ -776,6 +803,73 @@ export async function endStuckCall(): Promise<void> {
   useCallStore.getState().setStuckCall(null);
 }
 
+export async function endStuckCall(): Promise<void> {
+  const stuck = useCallStore.getState().stuckCall;
+  if (!stuck) {
+    return;
+  }
+  await finishStuckCall(stuck);
+}
+
+export async function returnToCall(): Promise<void> {
+  const store = useCallStore.getState();
+  const stuck = store.stuckCall;
+  if (!stuck) {
+    return;
+  }
+  store.setStuckCall(null);
+  try {
+    const active = await getActiveCall();
+    const call = active.call;
+    if (!call || call.id !== stuck.id || call.status !== "active") {
+      await finishStuckCall(stuck);
+      return;
+    }
+    if (localAccountId == null) {
+      throw new Error("signaling_unavailable");
+    }
+
+    const callType = call.kind === "video" ? "video" : "audio";
+    const isGroup = call.participants.length > DIRECT_PARTICIPANT_MAX;
+    await acquireLocalMedia(callType, isGroup);
+    const accepted = await acceptCallRequest(call.id);
+    const current = accepted.call ?? call;
+    const joined = current.participants.filter(
+      (participant) => participant.status === "joined" && participant.account_id !== localAccountId,
+    );
+    if (!joined.length) {
+      throw new Error("peer_unavailable");
+    }
+
+    cleanupAllPeers();
+    store.setRejoined({
+      callId: current.id,
+      callType,
+      conversationId: current.conversation_id,
+      iceServers: asIceServers(accepted.ice_servers),
+      initiatorId: current.initiator_account_id,
+      participants: current.participants,
+    });
+    for (const participant of joined) {
+      await ensurePeerAndOffer(participant.account_id);
+    }
+    requiredSignal("join", { call_id: current.id });
+    broadcastMuteState();
+    store.setActive();
+    startHeartbeat(current.id);
+  } catch (err) {
+    try {
+      await hangupCallRequest(stuck.id);
+    } catch {
+      /* expiry sweep cleans up */
+    }
+    const denied = err instanceof DOMException && err.name === "NotAllowedError";
+    store.setError(i18n.t(denied ? "calls.errors.permission" : "calls.errors.return_failed"));
+    store.setStuckCall(null);
+    await teardownLocal();
+  }
+}
+
 if (typeof window !== "undefined") {
   window.addEventListener("pagehide", () => {
     const store = useCallStore.getState();
@@ -786,8 +880,6 @@ if (typeof window !== "undefined") {
       endCallOnUnload(store.callId, "cancel");
     } else if (store.status === "ringing-incoming") {
       endCallOnUnload(store.callId, "decline");
-    } else if (store.status === "connecting" || store.status === "active") {
-      endCallOnUnload(store.callId, "hangup");
     }
   });
 }
@@ -799,7 +891,11 @@ async function ensurePeerAndOffer(peerId: number): Promise<void> {
   createPeerConnection(peerId);
 }
 
-export async function startCall(conversationId: number, callType: CallKind, myAccountId: number): Promise<void> {
+export async function startCall(
+  conversationId: number,
+  callType: CallKind,
+  myAccountId: number,
+): Promise<void> {
   if (localAccountId == null) {
     setLocalAccountId(myAccountId);
   }
@@ -1045,7 +1141,9 @@ export async function startScreenShare(): Promise<void> {
     }
   } catch (err) {
     const denied = err instanceof DOMException && err.name === "NotAllowedError";
-    useCallStore.getState().setError(i18n.t(denied ? "calls.errors.permission" : "calls.errors.screen_share"));
+    useCallStore
+      .getState()
+      .setError(i18n.t(denied ? "calls.errors.permission" : "calls.errors.screen_share"));
   }
 }
 
@@ -1156,6 +1254,8 @@ export const __test = {
     Object.defineProperty(pc, "iceConnectionState", { configurable: true, value: state });
     await onIceConnectionState(peerId);
   },
+  startHeartbeat,
+  stopHeartbeat,
   startSpeakerPolling,
   stopSpeakerPolling,
   stopLocalMedia,

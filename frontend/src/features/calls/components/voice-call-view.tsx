@@ -3,10 +3,13 @@ import { Minimize2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { CallControlBar } from "@/features/calls/components/call-control-bar";
 import { CallParticipantRow } from "@/features/calls/components/call-participant-row";
+import { useCallChrome } from "@/features/calls/hooks/use-call-chrome";
 import { useCallElapsed } from "@/features/calls/hooks/use-call-elapsed";
 import { isLiveCallStatus } from "@/features/calls/model/live";
 import { useCallStore } from "@/features/calls/store/call-store";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
+import { cn } from "@/shared/lib/cn";
+import { Button } from "@/shared/ui/button";
 import { IconButton } from "@/shared/ui/icon-button";
 import { ICON_CLASS } from "@/shared/ui/metrics";
 import type { MicStatus } from "@/features/calls/components/mic-status-icon";
@@ -26,6 +29,9 @@ export function VoiceCallView() {
   const elapsed = useCallElapsed();
   const containerRef = useRef<HTMLDivElement>(null);
   const inCall = isLiveCallStatus(status);
+  const { toggle: toggleChrome, visible: chromeVisible } = useCallChrome(
+    inCall && !minimized && callType === "audio",
+  );
 
   useEffect(() => {
     if (!inCall || minimized || callType !== "audio") {
@@ -72,7 +78,12 @@ export function VoiceCallView() {
       role="dialog"
       tabIndex={-1}
     >
-      <div className="flex items-center justify-between px-[var(--space-4)] py-[var(--space-3)] text-[var(--text-inverse)]">
+      <div
+        className={cn(
+          "absolute inset-x-0 top-0 z-[var(--z-sticky)] flex items-center justify-between px-[var(--space-4)] py-[var(--space-3)] text-[var(--text-inverse)] transition-opacity duration-[var(--motion-base)]",
+          chromeVisible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
+        )}
+      >
         <div aria-live="polite">
           <p className="text-[length:var(--text-sm)] [font-weight:var(--font-weight-emphasis)]">
             {t("calls.title_audio")}
@@ -89,28 +100,51 @@ export function VoiceCallView() {
           <Minimize2 aria-hidden className={ICON_CLASS} />
         </IconButton>
       </div>
-      <div className="flex-1 overflow-y-auto px-[var(--space-2)] py-[var(--space-4)]">
-        {remotes.length === 0 ? (
-          <p className="px-[var(--space-4)] text-center text-[length:var(--text-sm)] text-[var(--text-tertiary)]">
-            {t("calls.waiting")}
-          </p>
-        ) : (
-          <ul className="mx-auto flex max-w-md flex-col gap-[var(--space-1)]">
-            {remotes.map((row) => (
-              <li key={row.account_id}>
-                <CallParticipantRow
-                  micStatus={micStatusFor(row.account_id)}
-                  name={
-                    row.account_id === initiatorId ? (initiatorName || t("calls.remote")) : t("calls.remote")
-                  }
-                  username={null}
-                />
-              </li>
-            ))}
-          </ul>
+      <div
+        className={cn(
+          "relative flex-1 overflow-y-auto px-[var(--space-2)] py-[var(--space-4)]",
+          chromeVisible ? "pt-[var(--space-16)] pb-[var(--space-16)]" : "",
         )}
+      >
+        <Button
+          aria-label={chromeVisible ? t("calls.hide_controls") : t("calls.show_controls")}
+          className="absolute inset-0 z-[var(--z-base)] h-full w-full cursor-default rounded-none border-0 bg-transparent p-0 hover:bg-transparent"
+          onClick={toggleChrome}
+          type="button"
+          variant="ghost"
+        />
+        <div className="pointer-events-none relative">
+          {remotes.length === 0 ? (
+            <p className="px-[var(--space-4)] text-center text-[length:var(--text-sm)] text-[var(--text-tertiary)]">
+              {t("calls.waiting")}
+            </p>
+          ) : (
+            <ul className="mx-auto flex max-w-md flex-col gap-[var(--space-1)]">
+              {remotes.map((row) => (
+                <li key={row.account_id}>
+                  <CallParticipantRow
+                    micStatus={micStatusFor(row.account_id)}
+                    name={
+                      row.account_id === initiatorId
+                        ? initiatorName || t("calls.remote")
+                        : t("calls.remote")
+                    }
+                    username={null}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
-      <CallControlBar />
+      <div
+        className={cn(
+          "absolute inset-x-0 bottom-0 z-[var(--z-sticky)] bg-[linear-gradient(to_top,var(--call-label-bg),transparent)] transition-opacity duration-[var(--motion-base)]",
+          chromeVisible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
+        )}
+      >
+        <CallControlBar />
+      </div>
     </div>
   );
 }

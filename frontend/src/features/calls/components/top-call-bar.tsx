@@ -1,7 +1,14 @@
-import { AlertTriangle, Mic, MicOff, Phone, PhoneOff } from "lucide-react";
+import { Mic, MicOff, Phone, PhoneOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useCallElapsed } from "@/features/calls/hooks/use-call-elapsed";
-import { acceptCall, cancelCall, endCall, endStuckCall, rejectCall, toggleMic } from "@/features/calls/lib";
+import {
+  acceptCall,
+  cancelCall,
+  endCall,
+  rejectCall,
+  returnToCall,
+  toggleMic,
+} from "@/features/calls/lib";
 import { stopRingtone } from "@/features/calls/lib/ringtone";
 import { isLiveCallStatus } from "@/features/calls/model/live";
 import { useCallStore } from "@/features/calls/store/call-store";
@@ -32,28 +39,29 @@ export function TopCallBar() {
   }
 
   const peerName = initiatorName || t("calls.unnamed");
-  const kindLabel = (stuckCall?.callType ?? callType) === "video" ? t("calls.kind_video") : t("calls.kind_audio");
+  const kindLabel =
+    (stuckCall?.callType ?? callType) === "video" ? t("calls.kind_video") : t("calls.kind_audio");
 
   if (showStuck && stuckCall) {
     return (
       <div
-        className="flex h-[var(--space-12)] items-center gap-[var(--control-gap)] bg-[var(--status-warning)] px-[var(--space-3)] pt-[var(--safe-area-top)] text-[var(--text-inverse)]"
+        className="flex h-[var(--space-12)] items-center gap-[var(--control-gap)] bg-[var(--accent)] px-[var(--space-3)] pt-[var(--safe-area-top)] text-[var(--accent-contrast)]"
         role="status"
       >
-        <AlertTriangle aria-hidden className={cn(ICON_CLASS, "shrink-0")} />
+        <Phone aria-hidden className={cn(ICON_CLASS, "shrink-0")} />
         <span className="min-w-0 flex-1 truncate text-[length:var(--text-sm)] [font-weight:var(--font-weight-emphasis)]">
-          {t("calls.stuck", {
+          {t("calls.return_available", {
             kind: stuckCall.callType === "video" ? t("calls.title_video") : t("calls.title_audio"),
           })}
         </span>
         <Button
           className="h-[var(--touch-target-min)] rounded-[var(--radius-full)] bg-[var(--call-label-bg)] px-[var(--space-3)] text-[length:var(--text-xs)] text-[var(--text-inverse)]"
-          onClick={() => void endStuckCall()}
+          onClick={() => void returnToCall()}
           type="button"
           variant="ghost"
         >
-          <PhoneOff aria-hidden className="h-[var(--space-3)] w-[var(--space-3)]" />
-          {t("calls.stuck_end")}
+          <Phone aria-hidden className="h-[var(--space-3)] w-[var(--space-3)]" />
+          {t("calls.return_to_call")}
         </Button>
       </div>
     );
@@ -125,7 +133,9 @@ export function TopCallBar() {
         <Phone aria-hidden className={cn(ICON_CLASS, "shrink-0")} />
         <span className="min-w-0 truncate text-[length:var(--text-sm)] [font-weight:var(--font-weight-emphasis)]">
           {peerName}
-          <span className="ml-[var(--space-2)] font-normal opacity-[var(--opacity-queued)]">{statusLabel}</span>
+          <span className="ml-[var(--space-2)] font-normal opacity-[var(--opacity-queued)]">
+            {statusLabel}
+          </span>
         </span>
       </Button>
       {callType === "video" ? null : (
@@ -141,7 +151,11 @@ export function TopCallBar() {
             type="button"
             variant="ghost"
           >
-            {micOn ? <Mic aria-hidden className={ICON_CLASS} /> : <MicOff aria-hidden className={ICON_CLASS} />}
+            {micOn ? (
+              <Mic aria-hidden className={ICON_CLASS} />
+            ) : (
+              <MicOff aria-hidden className={ICON_CLASS} />
+            )}
           </IconButton>
           <IconButton
             aria-label={t("calls.end")}
