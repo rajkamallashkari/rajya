@@ -91,6 +91,30 @@ test.describe("shell chrome on a phone", () => {
     await expect(page.locator("[data-conversation-thread]")).toBeVisible();
     await expect(page.locator("[data-primary-nav='bar']")).toHaveCount(0);
   });
+
+  test("lets Profile, Calls, and Chats overlays receive taps and go back", async ({ page }) => {
+    await signInWithPassword(page, "ada@example.com", PASSWORD);
+
+    await page.getByRole("button", { name: en.shell.profile }).click();
+    await page.getByRole("button", { name: en.shell.settings }).click();
+    await expect(page.locator("[data-settings-panel]")).toBeVisible();
+    await page.getByRole("button", { name: en.shell.back }).click();
+    await expect(page.locator("[data-settings-panel]")).toHaveCount(0);
+
+    await page.getByRole("button", { name: en.shell.calls }).click();
+    await page.locator("[data-call-row]").first().click();
+    await expect(page.locator("[data-profile-panel]")).toBeVisible();
+    await page.getByRole("button", { name: en.shell.back }).click();
+    await expect(page.locator("[data-profile-panel]")).toHaveCount(0);
+
+    await page.getByRole("button", { name: en.shell.chats }).click();
+    await page.getByText("Adele Goldberg").click();
+    await page.getByRole("button", { name: en.shell.open_profile }).click();
+    await expect(page.locator("[data-profile-panel]")).toBeVisible();
+    await page.getByRole("button", { name: en.shell.back }).click();
+    await expect(page.locator("[data-profile-panel]")).toHaveCount(0);
+    await expect(page.locator("[data-conversation-thread]")).toBeVisible();
+  });
 });
 
 async function openSignedInPair(browser: Browser) {

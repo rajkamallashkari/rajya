@@ -24,4 +24,15 @@ describe("i18n", () => {
     const instance = await initI18n({ instance: fresh });
     expect(instance.t("errors.app.retry")).toBe("Try again");
   });
+
+  it("keeps polish chrome copy in the catalog", () => {
+    expect(en.calls.return_to_call).toBe("Return to call");
+    expect(en.conversations.blocked_banner).toBe(
+      "You blocked this account. Open their profile to unblock them.",
+    );
+    expect(en.auth.profile.username_checking).toBe("Checking username…");
+    expect(en.auth.profile.avatar_change).toBe("Change profile photo");
+    expect(en.search.jump_date).toBe("Jump to date");
+    expect(en.composer.send_voice).toBe("Send voice note");
+  });
 });
