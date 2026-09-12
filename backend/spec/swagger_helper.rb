@@ -71,6 +71,7 @@ RSpec.configure do |config|
                 username: { type: :string },
                 display_name: { type: :string },
                 kind: { type: :string },
+                avatar_url: { type: :string, nullable: true },
                 bio: { type: :string, nullable: true },
                 shared_memory: { type: :boolean }
               }

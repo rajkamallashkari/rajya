@@ -4416,11 +4416,15 @@ paths:
             schema:
               type: object
               properties:
+                avatar:
+                  type: string
+                  nullable: true
+                  description: Direct-upload signed ID, or null to remove
+                bio:
+                  type: string
                 display_name:
                   type: string
                 username:
-                  type: string
-                bio:
                   type: string
     delete:
       summary: Deactivate the current account (S-3)
@@ -5092,6 +5096,9 @@ components:
           type: string
         kind:
           type: string
+        avatar_url:
+          type: string
+          nullable: true
         bio:
           type: string
           nullable: true

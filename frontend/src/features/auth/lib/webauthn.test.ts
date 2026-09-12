@@ -101,8 +101,8 @@ describe("webauthn helpers", () => {
       allowCredentials: [{ type: "public-key", id: bufferToBase64url(bytes("ex")) }],
     });
     expect(requestTyped.allowCredentials?.[0]?.type).toBe("public-key");
-    expect(passkeyNonce({ challenge: "YQ", nonce: "n" })).toBe("n");
-    expect(() => passkeyNonce({ challenge: "YQ" })).toThrow("authentication_options_incomplete");
+    expect(passkeyNonce({ nonce: "n" })).toBe("n");
+    expect(() => passkeyNonce({})).toThrow("authentication_options_incomplete");
     const withParams = toCreationPublicKey({
       challenge: bufferToBase64url(bytes("ch")),
       rp: { name: "Rajya", id: "rajya.test" },

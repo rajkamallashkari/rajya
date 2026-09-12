@@ -29,7 +29,8 @@ module Api
           display_name: params[:display_name],
           username: params[:username],
           bio: params[:bio],
-          avatar: params[:avatar]
+          avatar: params[:avatar],
+          avatar_provided: params.key?(:avatar)
         }
       end
     end

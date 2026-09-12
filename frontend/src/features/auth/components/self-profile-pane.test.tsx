@@ -1,8 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppProviders } from "@/app/providers";
+import { AVATAR_MAX_BYTES } from "@/features/auth/model/limits";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { persistSession } from "@/features/auth/model/persist-session";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
@@ -10,6 +11,8 @@ import preferencesRegistry from "@/shared/lib/config/preferences-registry.json";
 import { en } from "@/shared/lib/i18n/catalog";
 import { server } from "@/test/msw";
 import { SelfProfilePane } from "./self-profile-pane";
+
+const AVATAR_TOO_LARGE_BYTES = AVATAR_MAX_BYTES + 1;
 
 function seedAccount(): void {
   setAccessSession({
@@ -29,7 +32,17 @@ function seedAccount(): void {
 }
 
 describe("SelfProfilePane", () => {
-  beforeEach(seedAccount);
+  beforeEach(() => {
+    seedAccount();
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: vi.fn(() => "blob:avatar"),
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: vi.fn(),
+    });
+  });
 
   it("shows profile fields, cancels edits, and saves inline", async () => {
     const user = userEvent.setup();
@@ -146,6 +159,141 @@ describe("SelfProfilePane", () => {
     expect(await screen.findByText(en.auth.onboarding.profile_failed)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.auth.profile.cancel }));
     expect(screen.queryByText(en.auth.onboarding.profile_failed)).toBeNull();
+  });
+
+  it("checks username availability after a debounce", async () => {
+    const user = userEvent.setup();
+    const checked: string[] = [];
+    server.use(
+      http.get("*/api/v1/accounts/username", ({ request }) => {
+        const username = new URL(request.url).searchParams.get("username") ?? "";
+        checked.push(username);
+        return HttpResponse.json({ available: username === "available" });
+      }),
+    );
+    render(
+      <AppProviders>
+        <SelfProfilePane />
+      </AppProviders>,
+    );
+    await user.click(await screen.findByRole("button", { name: en.auth.profile.edit }));
+    const username = screen.getByLabelText(en.auth.onboarding.username);
+
+    await user.clear(username);
+    await user.type(username, "bad-name");
+    expect(screen.getByText(en.auth.profile.username_invalid)).toBeInTheDocument();
+    expect(checked).toEqual([]);
+    await user.click(screen.getByRole("button", { name: en.auth.profile.save }));
+    expect(screen.getByText(en.auth.profile.username_invalid)).toBeInTheDocument();
+
+    await user.clear(username);
+    await user.type(username, "taken");
+    expect(screen.getByText(en.auth.profile.username_checking)).toBeInTheDocument();
+    expect(await screen.findByText(en.auth.profile.username_taken)).toBeInTheDocument();
+
+    server.use(
+      http.get("*/api/v1/accounts/username", () => HttpResponse.json({}, { status: 500 })),
+    );
+    await user.clear(username);
+    await user.type(username, "uncheckable");
+    expect(await screen.findByText(en.auth.profile.username_invalid)).toBeInTheDocument();
+
+    server.use(
+      http.get("*/api/v1/accounts/username", () => HttpResponse.json({ available: true })),
+    );
+    await user.clear(username);
+    await user.type(username, "available");
+    expect(await screen.findByText(en.auth.profile.username_available)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.auth.profile.save }));
+    expect(checked).toEqual(["taken"]);
+  });
+
+  it("validates, previews, uploads, cancels, and removes an avatar", async () => {
+    const user = userEvent.setup({ applyAccept: false });
+    const updates: Array<{ avatar?: string | null }> = [];
+    let avatarUrl: string | null = "https://media.test/original";
+    let failRemove = false;
+    let failUpload = false;
+    const profile = () => ({
+      account: {
+        avatar_url: avatarUrl,
+        bio: null,
+        display_name: "Ada",
+        id: 1,
+        kind: "human",
+        username: "ada",
+      },
+      user: {
+        email: "ada@example.com",
+        has_passkey: false,
+        has_password: true,
+        id: 1,
+        is_admin: false,
+        onboarded: true,
+        phone: null,
+        phone_verified: false,
+      },
+    });
+    server.use(
+      http.get("*/api/v1/users/me", () => HttpResponse.json(profile())),
+      http.patch("*/api/v1/users/me", async ({ request }) => {
+        const body = (await request.json()) as { avatar?: string | null };
+        updates.push(body);
+        if (failRemove && body.avatar === null) {
+          return HttpResponse.json({}, { status: 500 });
+        }
+        if ("avatar" in body) {
+          avatarUrl = body.avatar ? "https://media.test/new" : null;
+        }
+        return HttpResponse.json(profile());
+      }),
+      http.post("*/api/v1/direct_uploads", () =>
+        failUpload
+          ? HttpResponse.json({}, { status: 500 })
+          : HttpResponse.json({ blob_signed_id: "signed", skip_upload: true }),
+      ),
+    );
+    const { container } = render(
+      <AppProviders>
+        <SelfProfilePane />
+      </AppProviders>,
+    );
+    await user.click(await screen.findByRole("button", { name: en.auth.profile.edit }));
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    const inputClick = vi.spyOn(input, "click");
+    await user.click(screen.getByRole("button", { name: en.auth.profile.avatar_change }));
+    expect(inputClick).toHaveBeenCalled();
+
+    fireEvent.change(input, { target: { files: [] } });
+    await user.upload(input, new File(["text"], "avatar.txt", { type: "text/plain" }));
+    expect(screen.getByText(en.auth.profile.avatar_file_invalid)).toBeInTheDocument();
+    await user.upload(
+      input,
+      new File([new Uint8Array(AVATAR_TOO_LARGE_BYTES)], "large.png", { type: "image/png" }),
+    );
+    expect(screen.getByText(en.auth.profile.avatar_size_invalid)).toBeInTheDocument();
+
+    await user.upload(input, new File(["png"], "avatar.png", { type: "image/png" }));
+    expect(URL.createObjectURL).toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: en.auth.profile.avatar_cancel })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: en.auth.profile.avatar_cancel }));
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:avatar");
+    await user.upload(input, new File(["png"], "avatar.png", { type: "image/png" }));
+    failUpload = true;
+    await user.click(screen.getByRole("button", { name: en.auth.profile.save }));
+    expect(await screen.findByText(en.auth.profile.avatar_upload_failed)).toBeInTheDocument();
+    failUpload = false;
+    await user.click(screen.getByRole("button", { name: en.auth.profile.save }));
+    expect(updates.at(-1)?.avatar).toBe("signed");
+
+    await user.click(await screen.findByRole("button", { name: en.auth.profile.edit }));
+    failRemove = true;
+    await user.click(screen.getByRole("button", { name: en.auth.profile.avatar_remove }));
+    expect(await screen.findByText(en.auth.profile.avatar_remove_failed)).toBeInTheDocument();
+    failRemove = false;
+    await user.click(screen.getByRole("button", { name: en.auth.profile.avatar_remove }));
+    await waitFor(() => expect(updates.at(-1)?.avatar).toBeNull());
+    expect(screen.queryByRole("button", { name: en.auth.profile.avatar_remove })).toBeNull();
   });
 
   it("retries loading the profile after an identity error", async () => {

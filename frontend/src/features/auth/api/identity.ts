@@ -8,6 +8,7 @@ export async function fetchMe() {
 }
 
 export async function updateProfile(body: {
+  avatar?: string | null;
   bio?: string;
   display_name?: string;
   username?: string;

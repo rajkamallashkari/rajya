@@ -14,23 +14,23 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 15.8 |
-| **Next session** | 15.9 |
+| **Last completed** | 15.9 |
+| **Next session** | 15.10 |
 | **Phase** | P15 Polish |
-| **Sessions remaining in phase** | 2 |
+| **Sessions remaining in phase** | 1 |
 
 ---
 
 ## Next session brief (agent: read POLISH_PLAN.md §5 for the full row)
 
-**15.9 — Profile edit: username debounce + avatar.**
+**15.10 — Playwright / Vitest / i18n.**
 
-Debounce username availability in profile edit. Add avatar pick, preview, upload,
-and remove through the existing direct-upload and me/avatar endpoints. Keep the
-existing name/bio PATCH. Do not start 15.10 in this session.
+Add Playwright/Vitest coverage for mobile overlay back, voice bubble, date-chip
+jump, Return to call or no stuck bar, blocker profile + unblock, and
+username/avatar edit. Complete the i18n pass and run RuboCop on touched Ruby.
 
-Docs: POLISH_TARGET §8; POLISH_AUDIT §10.
-Legacy: `legacy/botverse/src/components/panels/ProfileEditPanel.tsx`.
+Docs: POLISH_TARGET §9.
+Legacy: none.
 
 ---
 
@@ -47,6 +47,7 @@ Legacy: `legacy/botverse/src/components/panels/ProfileEditPanel.tsx`.
 | 15.6 | Profile scroll, members, invites, common groups | Profile bodies scroll independently; group profiles list cached conversation members alongside invite management, and direct/bot profiles open common groups derived from the conversation query cache |
 | 15.7 | Compose: drop bot icon, collapsible, group chips | Removed the chat-list Bot shortcut; New Message sections start open and collapse independently; new-group selections show responsive avatar chips with desktop-hover/mobile-tap identity details and click/X removal |
 | 15.8 | Blocker profile + Unblock + banner | Profile show now distinguishes block direction: blockers receive the profile plus `blocked_by_viewer` and can Unblock, while reverse and mutual blocks remain 404. Direct threads show a blocked banner, and Privacy blocked-account rows open profiles |
+| 15.9 | Profile edit: username debounce, avatar | Profile edit now checks username availability after a debounce and supports validated avatar selection, local preview, direct upload, persisted display, and removal through the documented profile contract |
 
 ---
 

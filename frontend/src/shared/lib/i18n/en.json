@@ -195,20 +195,31 @@
       "magic_failed": "Could not complete magic-link sign-in."
     },
     "profile": {
-      "missing": "This profile is not available",
-      "missing_description": "The account may be blocked or no longer exist.",
+      "avatar_cancel": "Cancel photo",
+      "avatar_change": "Change profile photo",
+      "avatar_file_invalid": "Choose a JPEG, PNG, GIF, or WebP image.",
+      "avatar_remove": "Remove photo",
+      "avatar_remove_failed": "Could not remove your photo.",
+      "avatar_size_invalid": "Image must be smaller than 5 MB.",
+      "avatar_upload_failed": "Could not upload your photo.",
       "block": "Block",
-      "unblock": "Unblock",
       "blocked": "Blocked",
-      "report": "Report",
       "cancel": "Cancel",
       "edit": "Edit profile",
       "email": "Email",
       "handle": "@{{username}}",
+      "missing": "This profile is not available",
+      "missing_description": "The account may be blocked or no longer exist.",
       "name_blank": "Enter a display name.",
       "phone": "Phone",
+      "report": "Report",
       "save": "Save",
-      "username_short": "That username is too short."
+      "unblock": "Unblock",
+      "username_available": "Username is available.",
+      "username_checking": "Checking username…",
+      "username_invalid": "Use only letters, numbers, underscores, or periods.",
+      "username_short": "That username is too short.",
+      "username_taken": "That username is taken."
     }
   },
   "bots": {

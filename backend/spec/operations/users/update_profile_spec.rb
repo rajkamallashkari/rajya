@@ -23,18 +23,30 @@ RSpec.describe Users::UpdateProfile do
     expect(described_class.call(user: user, display_name: "Ada", username: "taken").error_code).to eq(:validation_failed)
   end
 
-  it "allows keeping the current username and attaches an avatar" do
+  it "allows keeping the current username and updates an avatar" do
     user = create(:user)
     file = Tempfile.new([ "avatar", ".png" ])
     file.write("png")
     file.rewind
     upload = Rack::Test::UploadedFile.new(file.path, "image/png")
     result = described_class.call(user: user, display_name: user.account.display_name,
-                                  username: user.account.username, avatar: upload)
+                                  username: user.account.username, avatar: upload, avatar_provided: true)
 
     expect(result).to be_success
     expect(user.account.reload.avatar).to be_attached
   ensure
     file.close!
+  end
+
+  it "preserves an omitted avatar and removes an explicit null avatar" do
+    user = create(:user)
+    user.account.avatar.attach(io: StringIO.new("png"), filename: "avatar.png", content_type: "image/png")
+    described_class.call(user: user, display_name: user.account.display_name,
+                         username: user.account.username)
+    expect(user.account.reload.avatar).to be_attached
+
+    described_class.call(user: user, display_name: user.account.display_name,
+                         username: user.account.username, avatar: nil, avatar_provided: true)
+    expect(user.account.reload.avatar).not_to be_attached
   end
 end

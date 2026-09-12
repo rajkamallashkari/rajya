@@ -4,6 +4,14 @@ require "rails_helper"
 # serialize accounts through AccountResource (P3/P8); this spec is the contract
 # those surfaces inherit.
 RSpec.describe AccountResource do
+  it "includes an attached avatar URL" do
+    account = create(:account)
+    account.avatar.attach(io: StringIO.new("png"), filename: "avatar.png", content_type: "image/png")
+
+    expect(described_class.new(account).to_h.fetch("avatar_url"))
+      .to match(%r{\A/rails/active_storage/blobs/redirect/})
+  end
+
   it "never includes nickname on AccountResource, Me, Session, or Block payloads" do
     owner = create(:user)
     target = create(:account)

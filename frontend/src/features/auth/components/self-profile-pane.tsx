@@ -1,11 +1,26 @@
-import { Pencil, Settings } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { Camera, Pencil, Settings } from "lucide-react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useMe, useUpdateProfile } from "@/features/auth/api/queries";
 import { AccountSwitcher } from "@/features/auth/components/account-switcher";
 import { checkUsername } from "@/features/auth/api/identity";
-import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from "@/features/auth/model/limits";
+import {
+  AVATAR_ALLOWED_TYPES,
+  AVATAR_MAX_BYTES,
+  USERNAME_AVAILABILITY_DEBOUNCE_MS,
+  USERNAME_FORMAT,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+} from "@/features/auth/model/limits";
 import { visibleProfileContacts } from "@/features/auth/model/self-profile";
+import { presignAndUpload } from "@/features/media/model/direct-upload";
 import { useLongPress } from "@/shared/hooks/use-long-press";
 import { asPreferenceDocument, preferencePrivacy } from "@/features/settings/model/map-preferences";
 import { usePreferences } from "@/features/settings/api/queries";
@@ -29,7 +44,14 @@ export function SelfProfilePane(): ReactNode {
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarErrorKey, setAvatarErrorKey] = useState<string | null>(null);
   const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [usernameStatus, setUsernameStatus] = useState<
+    "available" | "checking" | "invalid" | "taken" | null
+  >(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const privacy = preferencePrivacy(asPreferenceDocument(preferences.data?.data));
   const contacts = visibleProfileContacts({
     email: me.data?.user.email,
@@ -50,6 +72,83 @@ export function SelfProfilePane(): ReactNode {
     setBio(me.data.account.bio ?? "");
   }, [editing, me.data]);
 
+  useEffect(() => {
+    if (!editing || !me.data || username === me.data.account.username) {
+      setUsernameStatus(null);
+      return;
+    }
+    if (
+      username.length < USERNAME_MIN_LENGTH ||
+      username.length > USERNAME_MAX_LENGTH ||
+      !USERNAME_FORMAT.test(username)
+    ) {
+      setUsernameStatus("invalid");
+      return;
+    }
+    let current = true;
+    setUsernameStatus("checking");
+    const timer = window.setTimeout(() => {
+      void checkUsername(username)
+        .then(({ available }) => {
+          if (current) {
+            setUsernameStatus(available ? "available" : "taken");
+          }
+        })
+        .catch(() => {
+          if (current) {
+            setUsernameStatus("invalid");
+          }
+        });
+    }, USERNAME_AVAILABILITY_DEBOUNCE_MS);
+    return () => {
+      current = false;
+      window.clearTimeout(timer);
+    };
+  }, [editing, me.data, username]);
+
+  useEffect(() => {
+    if (!avatarFile) {
+      setAvatarPreview(null);
+      return;
+    }
+    const preview = URL.createObjectURL(avatarFile);
+    setAvatarPreview(preview);
+    return () => URL.revokeObjectURL(preview);
+  }, [avatarFile]);
+
+  const onAvatarChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+    if (!AVATAR_ALLOWED_TYPES.includes(file.type)) {
+      setAvatarErrorKey("auth.profile.avatar_file_invalid");
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      setAvatarErrorKey("auth.profile.avatar_size_invalid");
+      return;
+    }
+    setAvatarErrorKey(null);
+    setAvatarFile(file);
+  };
+
+  const onRemoveAvatar = async (): Promise<void> => {
+    setAvatarErrorKey(null);
+    try {
+      await update.mutateAsync({
+        avatar: null,
+        bio: me.data!.account.bio ?? "",
+        display_name: me.data!.account.display_name,
+        username: me.data!.account.username,
+      });
+      setAvatarFile(null);
+    } catch {
+      setAvatarErrorKey("auth.profile.avatar_remove_failed");
+    }
+  };
+
   const onSave = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
     const name = displayName.trim();
@@ -62,19 +161,28 @@ export function SelfProfilePane(): ReactNode {
       setErrorKey("auth.profile.username_short");
       return;
     }
+    if (!USERNAME_FORMAT.test(handle)) {
+      setErrorKey("auth.profile.username_invalid");
+      return;
+    }
     setErrorKey(null);
     try {
       if (handle !== me.data?.account.username) {
-        const availability = await checkUsername(handle);
+        const availability =
+          usernameStatus === "available" ? { available: true } : await checkUsername(handle);
         if (!availability.available) {
-          setErrorKey("auth.onboarding.username_taken");
+          setErrorKey("auth.profile.username_taken");
           return;
         }
       }
-      await update.mutateAsync({ bio, display_name: name, username: handle });
+      const avatar = avatarFile ? await presignAndUpload(avatarFile) : undefined;
+      await update.mutateAsync({ avatar, bio, display_name: name, username: handle });
+      setAvatarFile(null);
       setEditing(false);
     } catch {
-      setErrorKey("auth.onboarding.profile_failed");
+      setErrorKey(
+        avatarFile ? "auth.profile.avatar_upload_failed" : "auth.onboarding.profile_failed",
+      );
     }
   };
 
@@ -120,10 +228,48 @@ export function SelfProfilePane(): ReactNode {
                 data-profile-edit=""
                 onSubmit={(event) => void onSave(event)}
               >
-                <Avatar
-                  className="mx-auto size-[var(--space-12)]"
-                  name={displayName || identityName}
-                />
+                <div className="flex flex-col items-center gap-[var(--space-2)]">
+                  <Button
+                    aria-label={t("auth.profile.avatar_change")}
+                    className="relative h-auto rounded-[var(--radius-full)] p-0"
+                    onClick={() => fileInputRef.current?.click()}
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Avatar
+                      className="size-[var(--space-12)]"
+                      name={displayName || identityName}
+                      src={avatarPreview ?? me.data.account.avatar_url}
+                    />
+                    <Camera className="absolute right-0 bottom-0 size-[var(--space-4)] rounded-[var(--radius-full)] bg-[var(--surface-raised)] p-[var(--space-1)]" />
+                  </Button>
+                  <input
+                    accept={AVATAR_ALLOWED_TYPES.join(",")}
+                    className="hidden"
+                    onChange={onAvatarChange}
+                    ref={fileInputRef}
+                    type="file"
+                  />
+                  {avatarFile ? (
+                    <Button onClick={() => setAvatarFile(null)} type="button" variant="ghost">
+                      {t("auth.profile.avatar_cancel")}
+                    </Button>
+                  ) : me.data.account.avatar_url ? (
+                    <Button
+                      disabled={update.isPending}
+                      onClick={() => void onRemoveAvatar()}
+                      type="button"
+                      variant="ghost"
+                    >
+                      {t("auth.profile.avatar_remove")}
+                    </Button>
+                  ) : null}
+                  {avatarErrorKey ? (
+                    <p className="text-[length:var(--text-sm)] text-[var(--status-danger)]">
+                      {t(avatarErrorKey)}
+                    </p>
+                  ) : null}
+                </div>
                 <label className="flex flex-col gap-[var(--space-1)]">
                   <span>{t("auth.onboarding.display_name")}</span>
                   <Input
@@ -137,9 +283,26 @@ export function SelfProfilePane(): ReactNode {
                   <Input
                     autoComplete="username"
                     maxLength={USERNAME_MAX_LENGTH}
-                    onChange={(event) => setUsername(event.target.value.toLowerCase())}
+                    onChange={(event) => {
+                      setErrorKey(null);
+                      setUsername(event.target.value.toLowerCase());
+                    }}
                     value={username}
                   />
+                  {usernameStatus && errorKey !== `auth.profile.username_${usernameStatus}` ? (
+                    <span
+                      aria-live="polite"
+                      className={
+                        usernameStatus === "available"
+                          ? "text-[var(--status-success)]"
+                          : usernameStatus === "checking"
+                            ? "text-[var(--text-secondary)]"
+                            : "text-[var(--status-danger)]"
+                      }
+                    >
+                      {t(`auth.profile.username_${usernameStatus}`)}
+                    </span>
+                  ) : null}
                 </label>
                 <label className="flex flex-col gap-[var(--space-1)]">
                   <span>{t("auth.onboarding.bio")}</span>
@@ -153,6 +316,8 @@ export function SelfProfilePane(): ReactNode {
                 <div className="mt-auto flex gap-[var(--control-gap)]">
                   <Button
                     onClick={() => {
+                      setAvatarErrorKey(null);
+                      setAvatarFile(null);
                       setErrorKey(null);
                       setEditing(false);
                     }}
@@ -186,7 +351,11 @@ export function SelfProfilePane(): ReactNode {
                   type="button"
                   variant="ghost"
                 >
-                  <Avatar className="size-[var(--space-12)]" name={identityName} />
+                  <Avatar
+                    className="size-[var(--space-12)]"
+                    name={identityName}
+                    src={me.data.account.avatar_url}
+                  />
                 </Button>
                 <h2 className={`text-[length:var(--text-lg)] ${WEIGHT_EMPHASIS}`}>
                   {identityName}

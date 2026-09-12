@@ -28,9 +28,10 @@ RSpec.describe "Current user profile", type: :request do
       parameter name: :payload, in: :body, schema: {
         type: :object,
         properties: {
+          avatar: { type: :string, nullable: true, description: "Direct-upload signed ID, or null to remove" },
+          bio: { type: :string },
           display_name: { type: :string },
-          username: { type: :string },
-          bio: { type: :string }
+          username: { type: :string }
         }
       }
 
@@ -38,10 +39,15 @@ RSpec.describe "Current user profile", type: :request do
         schema "$ref" => "#/components/schemas/Me"
         let(:user) { create(:user) }
         let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
-        let(:payload) { { display_name: "Ada", username: "ada_l", bio: "Hi", phone: "1555" } }
+        let(:payload) do
+          user.account.avatar.attach(io: StringIO.new("png"), filename: "avatar.png", content_type: "image/png")
+          { avatar: nil, display_name: "Ada", username: "ada_l", bio: "Hi", phone: "1555" }
+        end
 
         run_test! do |response|
           expect(JSON.parse(response.body).dig("account", "username")).to eq("ada_l")
+          expect(JSON.parse(response.body).dig("account", "avatar_url")).to be_nil
+          expect(user.account.reload.avatar).not_to be_attached
           expect(user.reload.phone).to be_nil
         end
       end

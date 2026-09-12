@@ -22,13 +22,13 @@ export interface GoogleIdentityWindow {
 
 let loading: Promise<void> | null = null;
 
-export function gisReady(host: GoogleIdentityWindow = window): boolean {
+export function gisReady(host: GoogleIdentityWindow = window as GoogleIdentityWindow): boolean {
   return typeof host.google?.accounts?.oauth2?.initCodeClient === "function";
 }
 
 export async function loadGoogleIdentityServices(
   doc: Document = document,
-  host: GoogleIdentityWindow = window,
+  host: GoogleIdentityWindow = window as GoogleIdentityWindow,
 ): Promise<void> {
   if (gisReady(host)) {
     return;
@@ -58,7 +58,7 @@ export async function loadGoogleIdentityServices(
 export async function requestGoogleAuthCode(
   env: { VITE_GOOGLE_CLIENT_ID?: string } = import.meta.env,
   doc: Document = document,
-  host: GoogleIdentityWindow = window,
+  host: GoogleIdentityWindow = window as GoogleIdentityWindow,
 ): Promise<string> {
   const clientId = googleClientId(env);
   if (!clientId) {

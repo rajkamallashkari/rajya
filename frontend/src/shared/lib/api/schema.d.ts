@@ -6958,9 +6958,11 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
+                        /** @description Direct-upload signed ID, or null to remove */
+                        avatar?: string | null;
+                        bio?: string;
                         display_name?: string;
                         username?: string;
-                        bio?: string;
                     };
                 };
             };
@@ -8112,6 +8114,7 @@ export interface components {
             username: string;
             display_name: string;
             kind: string;
+            avatar_url?: string | null;
             bio?: string | null;
             shared_memory?: boolean;
         };

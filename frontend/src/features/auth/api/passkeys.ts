@@ -29,7 +29,7 @@ export async function renamePasskey(id: number, nickname: string) {
   return unwrap(
     await apiClient().PATCH("/api/v1/passkeys/{id}", {
       headers: bearerHeaders(),
-      params: { path: { id } },
+      params: { path: { id: String(id) } },
       body: { nickname },
     }),
     "passkey_rename_failed",
@@ -40,7 +40,7 @@ export async function destroyPasskey(id: number) {
   return unwrap(
     await apiClient().DELETE("/api/v1/passkeys/{id}", {
       headers: bearerHeaders(),
-      params: { path: { id } },
+      params: { path: { id: String(id) } },
     }),
     "passkey_destroy_failed",
   );

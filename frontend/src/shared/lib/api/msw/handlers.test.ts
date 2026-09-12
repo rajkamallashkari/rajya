@@ -302,8 +302,13 @@ describe("MSW handlers", () => {
       ((await impersonatedMe.json()) as { impersonation: { display_name: string } }).impersonation
         .display_name,
     ).toBe("Peer");
-    const patched = await client.PATCH("/api/v1/users/me", { body: { display_name: "Ada" } });
+    const patched = await client.PATCH("/api/v1/users/me", {
+      body: { avatar: "signed", display_name: "Ada" },
+    });
     expect(patched.data?.account.username).toBe("ada");
+    expect(patched.data?.account.avatar_url).toBe("https://media.test/avatar");
+    const avatarRemoved = await client.PATCH("/api/v1/users/me", { body: { avatar: null } });
+    expect(avatarRemoved.data?.account.avatar_url).toBeNull();
     const deactivated = await client.DELETE("/api/v1/users/me");
     expect(deactivated.data?.ok).toBe(true);
     const onboarded = await client.POST("/api/v1/users/me/complete_onboarding");

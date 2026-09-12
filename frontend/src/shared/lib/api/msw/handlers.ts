@@ -102,6 +102,7 @@ const readyHealth = {
 const session: SessionBody = {
   token: "test-token",
   account: {
+    avatar_url: null,
     id: 1,
     username: "ada",
     display_name: "Ada",
@@ -918,10 +919,14 @@ export const handlerMap = {
     }
     if (request.method === "PATCH") {
       const body = (await request.json()) as {
+        avatar?: string | null;
         bio?: string;
         display_name?: string;
         username?: string;
       };
+      if ("avatar" in body) {
+        session.account.avatar_url = body.avatar ? "https://media.test/avatar" : null;
+      }
       if (typeof body.display_name === "string") {
         session.account.display_name = body.display_name;
       }
