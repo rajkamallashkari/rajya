@@ -303,4 +303,26 @@ describe("VirtualizedThread", () => {
     fireEvent.scroll(document.querySelector("[data-virtuoso]") as HTMLDivElement);
     expect(onLoadOlder).not.toHaveBeenCalled();
   });
+
+  it("opens date jump from a keyboard-focusable date chip", () => {
+    const onDateClick = vi.fn();
+    render(
+      <VirtualizedThread
+        conversationId="1"
+        hasMoreOlder={false}
+        loadingOlder={false}
+        locale="en"
+        messages={[message(1)]}
+        onDateClick={onDateClick}
+        onLoadOlder={() => undefined}
+        renderRun={(run) => <p>{run.messages[0]?.body}</p>}
+        scrollerRef={{ current: null }}
+      />,
+    );
+
+    const dateChip = screen.getByRole("button", { name: "Jan 1, 2026" });
+    expect(dateChip).toHaveAttribute("type", "button");
+    fireEvent.click(dateChip);
+    expect(onDateClick).toHaveBeenCalledOnce();
+  });
 });

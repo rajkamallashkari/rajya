@@ -1,4 +1,4 @@
-import { Calendar, Phone, Search, Video } from "lucide-react";
+import { Phone, Search, Video } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -481,13 +481,6 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
             >
               <Search className="h-[var(--icon-size)] w-[var(--icon-size)]" />
             </IconButton>
-            <IconButton
-              aria-label={t("search.jump_date")}
-              onClick={() => setDateOpen(true)}
-              type="button"
-            >
-              <Calendar className="h-[var(--icon-size)] w-[var(--icon-size)]" />
-            </IconButton>
           </>
         )}
       </LayerHeader>
@@ -585,6 +578,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         loadingOlder={page.isFetchingNextPage}
         locale={i18n.language}
         messages={messages}
+        onDateClick={() => setDateOpen(true)}
         onLoadOlder={() => {
           void page.fetchNextPage();
         }}

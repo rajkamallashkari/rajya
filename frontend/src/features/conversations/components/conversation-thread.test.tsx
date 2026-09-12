@@ -1044,7 +1044,7 @@ describe("conversation layers", () => {
       kind: "conversation",
       title: "Adele Goldberg",
     });
-    const { rerender } = render(
+    const { container, rerender } = render(
       <AppProviders>
         <ConversationThread conversationId="15" />
       </AppProviders>,
@@ -1088,8 +1088,10 @@ describe("conversation layers", () => {
     await user.click(screen.getByRole("button", { name: en.search.mode_list }));
     await user.click(await screen.findByRole("button", { name: /unique/i }));
     useSearchStore.getState().closeChatSearch();
-    expect(await screen.findByRole("button", { name: en.search.jump_date })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: en.search.jump_date }));
+    expect(screen.queryByLabelText(en.search.jump_date)).not.toBeInTheDocument();
+    const dateChip = container.querySelector("[data-date-divider] button");
+    expect(dateChip).toBeInstanceOf(HTMLButtonElement);
+    await user.click(dateChip as HTMLButtonElement);
     await user.click(screen.getByRole("button", { name: en.search.jump_today }));
     await waitFor(() => {
       expect(useLayerStore.getState().layers[0]?.focusMessageId).toBeTruthy();

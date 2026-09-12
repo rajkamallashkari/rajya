@@ -54,6 +54,7 @@ export function VirtualizedThread({
   loadingOlder,
   locale,
   messages,
+  onDateClick,
   onLoadOlder,
   renderRun,
   restoreEpoch = 0,
@@ -68,6 +69,7 @@ export function VirtualizedThread({
   loadingOlder: boolean;
   locale: string;
   messages: Message[];
+  onDateClick?: () => void;
   onLoadOlder: () => void;
   renderRun: (run: ThreadRun) => ReactNode;
   restoreEpoch?: number;
@@ -329,7 +331,7 @@ export function VirtualizedThread({
           const group = groupsRef.current[groupIndex]!;
           return (
             <div className="flex h-[var(--space-10)] items-center justify-center">
-              <DateDivider label={formatThreadDate(group.iso, locale)} />
+              <DateDivider label={formatThreadDate(group.iso, locale)} onClick={onDateClick} />
             </div>
           );
         }}

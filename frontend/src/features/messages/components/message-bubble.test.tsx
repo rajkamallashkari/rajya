@@ -248,8 +248,10 @@ describe("thread chrome", () => {
       <SystemMessage eventKey="member_joined" values={{ name: "Ada" }} />,
     );
     expect(screen.getByText("Ada joined")).toBeInTheDocument();
-    rerender(<DateDivider label={en.gallery.messages.today} />);
-    expect(screen.getByRole("separator")).toHaveTextContent(en.gallery.messages.today);
+    const onDateClick = vi.fn();
+    rerender(<DateDivider label={en.gallery.messages.today} onClick={onDateClick} />);
+    fireEvent.click(screen.getByRole("button", { name: en.gallery.messages.today }));
+    expect(onDateClick).toHaveBeenCalledOnce();
     rerender(<UnreadDivider />);
     expect(screen.getByText(en.messages.unread)).toBeInTheDocument();
     rerender(<TypingBubble senderName={en.gallery.messages.sender} />);

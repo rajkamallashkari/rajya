@@ -14,23 +14,25 @@
 
 | Field | Value |
 | --- | --- |
-| **Last completed** | 15.3 |
-| **Next session** | 15.4 |
+| **Last completed** | 15.4 |
+| **Next session** | 15.5 |
 | **Phase** | P15 Polish |
-| **Sessions remaining in phase** | 7 |
+| **Sessions remaining in phase** | 6 |
 
 ---
 
 ## Next session brief (agent: read POLISH_PLAN.md §5 for the full row)
 
-**15.4 — Date chips → JumpDateSheet.**
+**15.5 — Call controls + Return to call.**
 
-Date chips are buttons; they open `JumpDateSheet`. Remove the header calendar
-icon. Keyboard-focusable chips. Same `around_at` jump. Do not start 15.5 in
-this session.
+Video/voice controls are visible on join, then may auto-hide when idle; tapping
+the feed toggles them. Keep screen share. Reload offers Return to call when the
+active call can be rejoined with a new PeerConnection and signaling. Rejoin
+failure or no active call hangs up without an amber End-only bar. Do not start
+15.6 in this session.
 
-Docs: POLISH_TARGET §3; POLISH_AUDIT §3.
-Legacy: `legacy/botverse/src/components/chat/MessageView.tsx` `DateChip`.
+Docs: POLISH_TARGET §4; POLISH_AUDIT §5–§6.
+Legacy: `legacy/botverse/src/components/call/` controls only.
 
 ---
 
@@ -42,6 +44,7 @@ Legacy: `legacy/botverse/src/components/chat/MessageView.tsx` `DateChip`.
 | 15.1 | Mobile overlay pointer-events + back | Mobile frames restore pointer events; Profile, Calls, and Chats overlay/back coverage is green |
 | 15.2 | Voice note send | LiveThread `onVoiceSend` → presign upload → send with voice fields; optimistic voice bubble + rollback |
 | 15.3 | Send-arrow attach + schedule | Attach opens a hidden picker → media previews → `attachment_signed_ids`; Schedule appears for text drafts and Confirm posts immediately. Per-chat scheduled count/list added; Rewrite/silent and DS-13 untouched |
+| 15.4 | Date chips → JumpDateSheet | Thread date chips are keyboard-focusable buttons that open the existing jump sheet; the header calendar action is removed and `around_at` jumping is preserved |
 
 ---
 
