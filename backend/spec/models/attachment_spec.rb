@@ -36,6 +36,18 @@ RSpec.describe Attachment do
     expect(voice.visible_transcript_status).to eq("ready")
   end
 
+  it "keeps stalled media pending while exposing its retryable stalled state" do
+    attachment = create(:attachment, processing_status: "pending")
+
+    expect([ attachment.visible_processing_status, attachment.visible_processing_error ]).to eq([ "pending", nil ])
+
+    attachment.update_columns(updated_at: (Settings.fetch(:media_process_stale_after) + 1).seconds.ago)
+
+    expect(attachment).to be_processing_stalled
+    expect(attachment.visible_processing_status).to eq("pending")
+    expect(attachment.visible_processing_error).to eq("stalled")
+  end
+
   it "accepts pending transcripts and rejects unknown statuses" do
     voice = build(:attachment, kind: "voice", content_type: "audio/ogg")
     expect(voice).to be_valid

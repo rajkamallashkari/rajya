@@ -10,6 +10,7 @@ function row(id: number, lastActivityAt: string): Conversation {
   return {
     id,
     kind: "direct",
+    member_count: 2,
     last_activity_at: lastActivityAt,
     members: [],
     title: null,

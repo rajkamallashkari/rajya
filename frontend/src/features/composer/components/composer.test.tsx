@@ -278,6 +278,25 @@ describe("Composer", () => {
     expect(onEditLast).toHaveBeenCalledTimes(1);
   });
 
+  it("forwards dropped and pasted file batches through attachment selection", () => {
+    const onFiles = vi.fn();
+    const first = new File(["one"], "one.txt", { type: "text/plain" });
+    const second = new File(["two"], "two.txt", { type: "text/plain" });
+    render(<Composer onFiles={onFiles} onSend={vi.fn()} />);
+    const composer = document.querySelector("[data-composer]") as HTMLElement;
+    const field = screen.getByRole("textbox");
+
+    fireEvent.dragOver(composer, { dataTransfer: { types: [] } });
+    fireEvent.dragOver(composer, { dataTransfer: { types: ["Files"] } });
+    fireEvent.drop(composer, { dataTransfer: { files: [], types: [] } });
+    fireEvent.drop(composer, { dataTransfer: { files: [first, first], types: ["Files"] } });
+    fireEvent.paste(field, { clipboardData: { files: [] } });
+    fireEvent.paste(field, { clipboardData: { files: [second] } });
+
+    expect(onFiles).toHaveBeenNthCalledWith(1, [first, first]);
+    expect(onFiles).toHaveBeenNthCalledWith(2, [second]);
+  });
+
   it("expands a saved-reply shortcut and lists matching slash commands", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

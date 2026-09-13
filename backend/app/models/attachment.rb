@@ -33,6 +33,20 @@ class Attachment < ApplicationRecord
     content_type == "application/pdf"
   end
 
+  def processing_stalled?
+    processing_status == "pending" && updated_at <= Settings.fetch(:media_process_stale_after).seconds.ago
+  end
+
+  def visible_processing_status
+    processing_status
+  end
+
+  def visible_processing_error
+    return "stalled" if processing_stalled?
+
+    processing_error
+  end
+
   # A pending transcript only means "a worker is on it" for as long as the job
   # can plausibly still be running. Past that it is indistinguishable from a
   # failure, and callers must not present it as work in progress (NR-33).

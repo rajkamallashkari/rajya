@@ -1,5 +1,5 @@
 # web / worker / vite — run via `bin/dev` (foreman). Stateful deps (Postgres,
 # Redis, Mailpit) run in Docker: `docker compose -f docker-compose.dev.yml up -d`.
-web: cd backend && bin/rails server -p 3000
+web: cd backend && env -u SOLID_QUEUE_IN_PUMA bin/rails server -p 3000
 worker: cd backend && bin/jobs
 vite: cd frontend && npm run dev

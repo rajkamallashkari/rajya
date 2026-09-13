@@ -8,14 +8,14 @@ class BotPolicy < ApplicationPolicy
   end
 
   def destroy?
-    human?
+    human? && record.owner_account_id == account.id
   end
 
   class Scope < ApplicationPolicy::Scope
     def resolve
       return scope.none unless account
 
-      scope.joins(:account).merge(Account.active)
+      scope.active.where(owner_account_id: account.id)
     end
   end
 end

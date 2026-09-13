@@ -11,8 +11,15 @@ export type Summary = components["schemas"]["Summary"];
 export type Translation = components["schemas"]["Translation"];
 
 export async function listBots() {
+  return unwrap(await apiClient().GET("/api/v1/bots", { headers: bearerHeaders() }), "bots_failed");
+}
+
+export async function listOwnedBots() {
   return unwrap(
-    await apiClient().GET("/api/v1/bots", { headers: bearerHeaders() }),
+    await apiClient().GET("/api/v1/bots", {
+      headers: bearerHeaders(),
+      params: { query: { owned: true } },
+    }),
     "bots_failed",
   );
 }
@@ -35,6 +42,7 @@ export async function listBotRequests() {
 }
 
 export async function createBotRequest(body: {
+  avatar?: string | null;
   kind?: string;
   payload?: {
     bio?: string;
@@ -47,6 +55,48 @@ export async function createBotRequest(body: {
   return unwrap(
     await apiClient().POST("/api/v1/bot_requests", { headers: bearerHeaders(), body }),
     "bot_request_failed",
+  );
+}
+
+export async function updateBotRequest(
+  id: number,
+  body: {
+    avatar?: string | null;
+    payload?: {
+      bio?: string;
+      name?: string;
+      persona_prompt?: string;
+      username?: string;
+    };
+  },
+) {
+  return unwrap(
+    await apiClient().PATCH("/api/v1/bot_requests/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+      body,
+    }),
+    "bot_request_failed",
+  );
+}
+
+export async function withdrawBotRequest(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/bot_requests/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "bot_request_failed",
+  );
+}
+
+export async function deactivateBot(id: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/bots/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "bots_failed",
   );
 }
 

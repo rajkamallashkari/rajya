@@ -158,11 +158,19 @@ describe("AdminShell", () => {
   it("approves and declines bot requests, filters audit, and saves a prompt", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     renderAdmin("/admin/bots");
-    expect(await screen.findByText(en.admin.request_edit)).toBeInTheDocument();
-    expect(screen.getByText("nimbus")).toBeInTheDocument();
-    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(await screen.findByText("3")).toBeInTheDocument();
     await user.click(screen.getAllByRole("button", { name: en.admin.approve })[0]!);
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: en.admin.approve })).toHaveLength(2);
+    });
+    await user.type(
+      screen.getAllByRole("textbox", { name: en.admin.decline_reason })[0]!,
+      "Too thin",
+    );
     await user.click(screen.getAllByRole("button", { name: en.admin.decline })[0]!);
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: en.admin.approve })).toHaveLength(1);
+    });
     await user.click(screen.getByRole("link", { name: en.admin.audit }));
     expect(await screen.findByText("impersonation.start")).toBeInTheDocument();
     await user.type(screen.getByRole("textbox", { name: en.admin.action }), "transcript.read");
@@ -177,6 +185,52 @@ describe("AdminShell", () => {
     await user.click(screen.getAllByRole("button", { name: en.admin.current })[0]!);
     await waitFor(() => {
       expect(screen.getByRole("textbox", { name: "bot_reply" })).toBeInTheDocument();
+    });
+  });
+
+  it("filters bot requests and hides actions for completed rows", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    const requests: string[] = [];
+    server.use(
+      http.get("*/api/v1/admin/bot_requests", ({ request }) => {
+        requests.push(request.url);
+        return HttpResponse.json({
+          bot_requests: [
+            {
+              avatar_url: null,
+              created_at: "2026-01-01T00:00:00.000Z",
+              id: 40,
+              kind: "edit",
+              payload: { bio: "Done", persona_prompt: "Complete" },
+              requester_account_id: 1,
+              status: "approved",
+              target_bot_id: 1,
+            },
+            {
+              avatar_url: null,
+              created_at: "2026-01-01T00:00:00.000Z",
+              id: 3,
+              kind: "create",
+              payload: { name: "Pending" },
+              requester_account_id: 1,
+              status: "pending",
+              target_bot_id: null,
+            },
+          ],
+        });
+      }),
+    );
+    renderAdmin("/admin/bots");
+    expect(await screen.findByText("40")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: en.admin.approve })).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: en.admin.decline }));
+
+    await user.click(screen.getByRole("button", { name: en.admin.request_create }));
+    await user.click(screen.getByRole("button", { name: en.admin.request_edit }));
+    await user.click(screen.getByRole("button", { name: en.admin.bot_request_all }));
+    await waitFor(() => {
+      expect(requests.some((url) => url.includes("kind=create"))).toBe(true);
+      expect(requests.some((url) => url.includes("kind=edit"))).toBe(true);
     });
   });
 

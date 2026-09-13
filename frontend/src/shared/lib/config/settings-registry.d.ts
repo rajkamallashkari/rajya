@@ -73,6 +73,7 @@ export type SettingKey =
   | "image_variant_quality"
   | "link_preview_blob_prefix"
   | "media_process_retry_attempts"
+  | "media_process_stale_after"
   | "orphan_blob_max_age"
   | "ring_timeout"
   | "call_heartbeat_timeout"

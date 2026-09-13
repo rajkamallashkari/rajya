@@ -1,15 +1,28 @@
 class AttachmentResource < ApplicationResource
   attributes :id, :kind, :content_type, :byte_size, :width, :height, :duration_ms, :blurhash, :waveform,
-             :processing_status, :transcript, :transcript_language
+             :transcript, :transcript_language
+
+  attribute :processing_status do
+    object.visible_processing_status
+  end
+
+  attribute :processing_stalled do
+    object.processing_stalled?
+  end
+
+  attribute :original_available do
+    object.file.attached?
+  end
 
   attribute :transcript_status do
     object.visible_transcript_status
   end
 
   attribute :processing_error do
-    next if object.processing_error.blank?
+    error = object.visible_processing_error
+    next if error.blank?
 
-    Catalog.t("media.processing.#{object.processing_error}")
+    Catalog.t("media.processing.#{error}")
   end
 
   attribute :filename do

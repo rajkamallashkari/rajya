@@ -43,6 +43,14 @@ class CallLogResource < ApplicationResource
     object.title
   end
 
+  attribute :avatar_url do
+    nil
+  end
+
+  attribute :member_count do
+    object.conversation.conversation_memberships.count(&:active?)
+  end
+
   attribute :peer do
     peer = object.peer
     peer && AccountResource.new(peer).to_h

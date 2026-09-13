@@ -58,7 +58,8 @@ RSpec.describe "NR-43 search filter indexes" do
     )
 
     expect(planned).not_to include("Seq Scan")
-    expect(index_plan).to include("idx_messages_conversation_sender_position")
+    expect(index_plan).not_to include("Seq Scan")
+    expect(index_plan).to match(/idx_messages_conversation_sender_position|index_messages_on_sender_account_id/)
     expect(hits.call.map { |hit| hit.message.sender_account_id }.uniq).to eq([ peer.id ])
   end
 

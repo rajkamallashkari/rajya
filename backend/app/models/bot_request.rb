@@ -2,11 +2,14 @@ class BotRequest < ApplicationRecord
   KINDS = %w[create edit].freeze
   STATUSES = %w[pending approved declined].freeze
   PAYLOAD_KEYS = %w[name username bio persona_prompt].freeze
+  AVATAR_ACTIONS = %w[replace remove].freeze
 
   belongs_to :bot, optional: true, inverse_of: :created_requests
   belongs_to :target_bot, class_name: "Bot", optional: true, inverse_of: :requests_targeting_self
   belongs_to :requester_account, class_name: "Account", inverse_of: :requested_bots
+  has_one_attached :avatar
 
+  validates :avatar_action, inclusion: { in: AVATAR_ACTIONS }, allow_nil: true
   validates :kind, presence: true, inclusion: { in: KINDS }
   validates :status, presence: true, inclusion: { in: STATUSES }
 

@@ -466,6 +466,8 @@ CREATE TABLE public.bot_requests (
     decline_reason character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    avatar_action character varying,
+    CONSTRAINT ck_bot_requests_avatar_action CHECK (((avatar_action)::text = ANY ((ARRAY['replace'::character varying, 'remove'::character varying])::text[]))),
     CONSTRAINT ck_bot_requests_kind CHECK (((kind)::text = ANY ((ARRAY['create'::character varying, 'edit'::character varying])::text[]))),
     CONSTRAINT ck_bot_requests_status CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'declined'::character varying])::text[])))
 );
@@ -3591,6 +3593,13 @@ CREATE INDEX idx_bot_memories_embedding_hnsw ON public.bot_memories USING hnsw (
 
 
 --
+-- Name: idx_bot_requests_one_pending_edit; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_bot_requests_one_pending_edit ON public.bot_requests USING btree (target_bot_id) WHERE (((kind)::text = 'edit'::text) AND ((status)::text = 'pending'::text));
+
+
+--
 -- Name: idx_call_participants_one_live_per_account; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5316,6 +5325,7 @@ ALTER TABLE ONLY public.bot_commands
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260913170000'),
 ('20260831200000'),
 ('20260831183000'),
 ('20260831163000'),

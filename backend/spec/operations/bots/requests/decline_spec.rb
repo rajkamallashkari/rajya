@@ -4,9 +4,11 @@ RSpec.describe Bots::Requests::Decline do
   it "records a reason and refuses a second decision" do
     admin = create(:user, :admin)
     request = create(:bot_request, requester_account: create(:user).account)
+    request.avatar.attach(blob_signed_id)
 
     described_class.call(admin: admin, request: request, reason: "Too thin")
     expect(request.reload).to have_attributes(status: "declined", decline_reason: "Too thin")
+    expect(request.avatar).not_to be_attached
     expect(described_class.call(admin: admin, request: request).error_code).to eq(:conflict)
   end
 

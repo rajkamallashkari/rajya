@@ -1,9 +1,15 @@
-import { useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { type ReactNode, useEffect, useReducer, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Share2 } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AccountProfile } from "@/features/auth/components/account-profile";
+import { fetchCommonGroups } from "@/features/auth/api/identity";
+import {
+  AccountIdentity,
+  AccountProfile,
+  AccountProfileActions,
+  useAccountProfile,
+} from "@/features/auth/components/account-profile";
 import type { Conversation } from "@/features/conversations/api/http";
-import { conversationKeys } from "@/features/conversations/api/keys";
 import { useConversation } from "@/features/conversations/api/queries";
 import { InviteManager } from "@/features/conversations/components/invite-manager";
 import { GroupPermissions } from "@/features/conversations/components/group-permissions";
@@ -16,10 +22,14 @@ import { canEditInfo, canManageInvites, profileUrl } from "@/features/conversati
 import { conversationTitle } from "@/features/conversations/model/title";
 import { copyText } from "@/features/messages/model/copy-text";
 import { LayerHeader } from "@/app/navigation/layer-header";
-import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { AccountIdentityRow } from "@/shared/ui/account-identity-row";
 import { Avatar } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
+import { ConversationIdentityRow } from "@/shared/ui/conversation-identity-row";
+import { IconButton } from "@/shared/ui/icon-button";
 import { ListView } from "@/shared/ui/list-view";
+import { ICON_CLASS } from "@/shared/ui/metrics";
 
 export function ProfilePanel({
   accountId,
@@ -49,9 +59,14 @@ function AccountContactProfile({
 }): ReactNode {
   const { t } = useTranslation();
   const id = Number(accountId);
+  const profile = useAccountProfile(Number.isFinite(id) ? id : null);
+  const [qrOpen, setQrOpen] = useState(false);
+  const url = profile.username ? profileUrl(globalThis.location.origin, profile.username) : "";
   return (
     <div className="flex h-full min-h-0 flex-col bg-[var(--surface-panel)]" data-profile-panel="">
-      <LayerHeader onBack={onBack} title={t("contact.open_profile")} />
+      <LayerHeader onBack={onBack} title={t("contact.open_profile")}>
+        {url ? <ProfileShareButton onClick={() => setQrOpen(true)} /> : null}
+      </LayerHeader>
       <div className="min-h-0 flex-1 overflow-y-auto px-[var(--space-list-x)] py-[var(--space-4)]">
         {Number.isFinite(id) ? (
           <div className="flex flex-col gap-[var(--space-6)]">
@@ -60,6 +75,12 @@ function AccountContactProfile({
           </div>
         ) : null}
       </div>
+      <QrSheet
+        onCopy={() => void copyText(url)}
+        onOpenChange={setQrOpen}
+        open={qrOpen}
+        payload={url}
+      />
     </div>
   );
 }
@@ -97,6 +118,8 @@ function LiveProfile({
   const query = useConversation(conversationId);
   const [qrPayload, setQrPayload] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+  const peerId = query.data?.kind === "direct" && query.data.peer ? query.data.peer.id : null;
+  const peerProfile = useAccountProfile(peerId);
   if (query.isPending) {
     return (
       <div className="flex h-full min-h-0 flex-col bg-[var(--surface-panel)]" data-profile-panel="">
@@ -118,6 +141,18 @@ function LiveProfile({
       name={conversationTitle(query.data, t("conversations.untitled"))}
       onBack={onBack}
       subtitle={t("shell.profile_subtitle")}
+      headerActions={
+        username ? (
+          <ProfileShareButton
+            onClick={() => setQrPayload(profileUrl(globalThis.location.origin, username))}
+          />
+        ) : null
+      }
+      topIdentity={
+        peerId != null && !peerProfile.missing ? (
+          <AccountIdentity profile={peerProfile} showName={false} />
+        ) : null
+      }
     >
       {query.data.kind === "group" || query.data.kind === "channel" ? (
         <MemberList members={query.data.members} />
@@ -132,20 +167,10 @@ function LiveProfile({
       ) ? (
         <GroupPermissions conversation={query.data} />
       ) : null}
-      {username ? (
-        <Button
-          className="mx-[var(--space-list-x)]"
-          onClick={() => setQrPayload(profileUrl(globalThis.location.origin, username))}
-          type="button"
-          variant="secondary"
-        >
-          {t("invites.profile_qr")}
-        </Button>
-      ) : null}
       {query.data.kind === "direct" && query.data.peer ? (
         <div className="flex flex-col gap-[var(--space-6)] px-[var(--space-list-x)]">
-          <AccountProfile accountId={query.data.peer.id} />
           <CommonGroups accountId={query.data.peer.id} />
+          <AccountProfileActions profile={peerProfile} />
         </div>
       ) : null}
       <Button
@@ -178,7 +203,6 @@ function LiveProfile({
 
 function MemberList({ members }: { members: Conversation["members"] }): ReactNode {
   const { t } = useTranslation();
-  const pushLayer = useLayerStore((state) => state.pushLayer);
   return (
     <section
       className="flex flex-col gap-[var(--space-2)] px-[var(--space-list-x)]"
@@ -188,69 +212,19 @@ function MemberList({ members }: { members: Conversation["members"] }): ReactNod
         {t("conversations.profile.members", { count: members.length })}
       </p>
       {members.map((member) => (
-        <Button
-          className="h-auto justify-start gap-[var(--space-3)] px-[var(--space-2)]"
-          key={member.account.id}
-          onClick={() =>
-            pushLayer({
-              accountId: String(member.account.id),
-              conversationId: "0",
-              id: `account:${String(member.account.id)}`,
-              kind: "profile",
-              title: member.account.display_name,
-            })
-          }
-          type="button"
-          variant="ghost"
-        >
-          <Avatar className="size-[var(--space-8)]" name={member.account.display_name} />
-          <span className="min-w-0 text-left">
-            <span className="block truncate">{member.account.display_name}</span>
-            <span className="block truncate text-[length:var(--text-sm)] text-[var(--text-secondary)]">
-              @{member.account.username}
-            </span>
-          </span>
-        </Button>
+        <AccountIdentityRow account={member.account} key={member.account.id} openProfile />
       ))}
     </section>
   );
 }
 
-type ConversationList = { conversations: Conversation[] };
-
-export function commonGroupsFromCache(queryClient: QueryClient, accountId: number): Conversation[] {
-  const list =
-    queryClient.getQueryData<ConversationList>(conversationKeys.list())?.conversations ?? [];
-  const details = queryClient
-    .getQueriesData<Conversation>({ queryKey: conversationKeys.all })
-    .map(([, conversation]) => conversation)
-    .filter((conversation): conversation is Conversation => conversation != null);
-  const byId = new Map(list.map((conversation) => [conversation.id, conversation]));
-  details.forEach((conversation) => {
-    byId.set(conversation.id, conversation);
-  });
-  return [...byId.values()].filter(
-    (conversation) =>
-      (conversation.kind === "group" || conversation.kind === "channel") &&
-      conversation.members.some((member) => member.account.id === accountId),
-  );
-}
-
 function CommonGroups({ accountId }: { accountId: number }): ReactNode {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const openConversation = useLayerStore((state) => state.openConversation);
-  const [, refresh] = useReducer((count: number) => count + 1, 0);
-  useEffect(
-    () =>
-      queryClient.getQueryCache().subscribe((event) => {
-        if (event.query.queryKey[0] === conversationKeys.all[0]) {
-          refresh();
-        }
-      }),
-    [queryClient],
-  );
-  const groups = commonGroupsFromCache(queryClient, accountId);
+  const groupsQuery = useQuery({
+    queryKey: ["accounts", accountId, "common-groups"],
+    queryFn: () => fetchCommonGroups(accountId),
+  });
+  const groups = groupsQuery.data?.conversations ?? [];
   if (groups.length === 0) {
     return null;
   }
@@ -259,21 +233,9 @@ function CommonGroups({ accountId }: { accountId: number }): ReactNode {
       <p className="[font-weight:var(--font-weight-emphasis)]">
         {t("conversations.profile.common_groups")}
       </p>
-      {groups.map((group) => {
-        const title = conversationTitle(group, t("conversations.untitled"));
-        return (
-          <Button
-            className="h-auto justify-start gap-[var(--space-3)] px-[var(--space-2)]"
-            key={group.id}
-            onClick={() => openConversation(conversationLayer(String(group.id), title))}
-            type="button"
-            variant="ghost"
-          >
-            <Avatar className="size-[var(--space-8)]" name={title} />
-            <span className="truncate">{title}</span>
-          </Button>
-        );
-      })}
+      {groups.map((group) => (
+        <ConversationIdentityRow compact conversation={group} key={group.id} openConversation />
+      ))}
     </section>
   );
 }
@@ -281,26 +243,37 @@ function CommonGroups({ accountId }: { accountId: number }): ReactNode {
 function ProfileBody({
   children,
   conversationId,
+  headerActions,
   name,
   onBack,
   subtitle,
+  topIdentity,
 }: {
   children?: ReactNode;
   conversationId: string;
+  headerActions?: ReactNode;
   name: string;
   onBack?: () => void;
   subtitle: string;
+  topIdentity?: ReactNode;
 }) {
   const { t } = useTranslation();
   const pushLayer = useLayerStore((state) => state.pushLayer);
   const liveId = parseConversationId(conversationId);
   return (
     <div className="flex h-full min-h-0 flex-col bg-[var(--surface-panel)]" data-profile-panel="">
-      <LayerHeader onBack={onBack} title={name} />
+      <LayerHeader onBack={onBack} title={name}>
+        {headerActions}
+      </LayerHeader>
       <div className="flex min-h-0 flex-1 flex-col gap-[var(--space-6)] overflow-y-auto pb-[var(--space-8)]">
         <div className="flex flex-col items-center gap-[var(--control-gap)] px-[var(--space-list-x)] pt-[var(--space-8)]">
           <Avatar className="size-[var(--space-16)]" name={name} />
           <p className="[font-weight:var(--font-weight-emphasis)]">{name}</p>
+          {topIdentity ? (
+            <div className="w-full" data-top-profile-identity="">
+              {topIdentity}
+            </div>
+          ) : null}
           <p className="text-[var(--text-secondary)]">{subtitle}</p>
           {onBack ? null : (
             <Button
@@ -327,5 +300,19 @@ function ProfileBody({
         {children}
       </div>
     </div>
+  );
+}
+
+function ProfileShareButton({ onClick }: { onClick: () => void }): ReactNode {
+  const { t } = useTranslation();
+  return (
+    <IconButton
+      aria-label={t("auth.profile.share")}
+      onClick={onClick}
+      title={t("auth.profile.share")}
+      type="button"
+    >
+      <Share2 className={ICON_CLASS} />
+    </IconButton>
   );
 }

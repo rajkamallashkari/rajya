@@ -1,24 +1,10 @@
-# README
+# Rajya backend
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+From the repository root, `bin/dev` runs Rails, a separate Solid Queue worker,
+and Vite from `Procfile.dev`.
 
-Things you may want to cover:
+From this directory, `bin/dev` runs Rails/Puma with Solid Queue embedded. It
+accepts the usual Rails server arguments, for example `bin/dev -p 3001`.
 
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+`bin/rails server` alone is web-only. Set `SOLID_QUEUE_IN_PUMA=true` explicitly
+only when an embedded worker is wanted.

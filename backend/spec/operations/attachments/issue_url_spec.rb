@@ -22,6 +22,18 @@ RSpec.describe Attachments::IssueUrl do
     expect(result.value.expires_at).to be_within(2.seconds).of(Settings.fetch(:signed_url_ttl).seconds.from_now)
   end
 
+  it "keeps a stalled attachment original available after reloading persisted state" do
+    attachment = create(:attachment, processing_status: "pending")
+    attachment.file.attach(io: StringIO.new("img"), filename: "pic.png", content_type: "image/png")
+    attachment.update_columns(updated_at: (Settings.fetch(:media_process_stale_after) + 1).seconds.ago)
+
+    persisted_attachment = described_class.call(attachment: Attachment.find(attachment.id))
+
+    expect(persisted_attachment).to be_success
+    expect(persisted_attachment.value.url).to be_present
+    expect(attachment.reload.processing_status).to eq("pending")
+  end
+
   it "returns not_found when media is disabled or the file is missing" do
     create(:feature_flag, key: "media_attachments",
                           description: FeatureFlagRegistry.description_for(:media_attachments), enabled: false)
@@ -35,13 +47,13 @@ RSpec.describe Attachments::IssueUrl do
     expect(described_class.call(attachment: create(:attachment)).error_code).to eq(:not_found)
   end
 
-  it "falls back to the original blob when no thumbnail exists" do
+  it "does not expose a video blob as an image thumbnail" do
     attachment = create(:attachment, kind: "video", content_type: "video/mp4")
     attachment.file.attach(io: StringIO.new("vid"), filename: "a.mp4", content_type: "video/mp4")
 
     result = described_class.call(attachment: attachment, variant: :thumb)
 
-    expect(result.value.url).to include("rails/active_storage")
+    expect(result.error_code).to eq(:not_found)
   end
 
   it "uses an attached thumbnail blob when present" do

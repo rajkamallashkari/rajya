@@ -56,7 +56,7 @@ export function AlbumGrid({
         return (
           <Button
             aria-label={image.filename ?? t("media.photo")}
-            className="relative min-h-[var(--touch-target-min)] min-w-0 overflow-hidden p-0"
+            className="relative h-full min-h-[var(--touch-target-min)] min-w-0 overflow-hidden p-0"
             data-album-cell=""
             key={image.id}
             onClick={() => onPhotoClick?.(index)}
@@ -70,6 +70,7 @@ export function AlbumGrid({
             <RemoteProgressiveImage
               alt={image.filename ?? t("media.photo")}
               attachment={image}
+              className="h-full w-full min-w-0"
               wantFull={false}
             />
             {overlay > 0 ? (

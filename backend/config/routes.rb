@@ -69,13 +69,15 @@ Rails.application.routes.draw do
       get "accounts/username", to: "usernames#show"
       get "accounts/search", to: "account_searches#index"
       get "search", to: "searches#index"
-      resources :accounts, only: %i[show]
+      resources :accounts, only: %i[show] do
+        member { get :common_groups }
+      end
       resources :blocks, only: %i[index create destroy]
       resources :reports, only: :create do
         collection { get :reasons }
       end
       resources :bots, only: %i[index show destroy]
-      resources :bot_requests, only: %i[index create destroy]
+      resources :bot_requests, only: %i[index create update destroy]
       post "ai/rewrite", to: "ai_rewrites#create"
       post "ai/translate_text", to: "ai_text_translations#create"
       resource :style_profile, only: %i[show create update], controller: "style_profiles"
@@ -121,7 +123,7 @@ Rails.application.routes.draw do
             post :reject
           end
         end
-        resources :pins, only: %i[create destroy], param: :message_id
+        resources :pins, only: %i[index create destroy], param: :message_id
         resources :messages, only: :index, controller: "conversation_messages"
       end
       resources :messages, only: %i[show create update destroy] do

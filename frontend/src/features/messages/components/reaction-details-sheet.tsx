@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Avatar } from "@/shared/ui";
-import { BottomSheet, BottomSheetContent, BottomSheetTitle } from "@/shared/ui/bottom-sheet";
+import {
+  ResponsiveOverlay as BottomSheet,
+  ResponsiveOverlayContent as BottomSheetContent,
+  ResponsiveOverlayTitle as BottomSheetTitle,
+} from "@/shared/ui/responsive-overlay";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 

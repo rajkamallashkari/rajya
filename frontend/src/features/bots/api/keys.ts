@@ -1,6 +1,7 @@
 export const botKeys = {
   all: ["bots"] as const,
   list: () => [...botKeys.all, "list"] as const,
+  owned: () => [...botKeys.all, "owned"] as const,
   requests: () => [...botKeys.all, "requests"] as const,
 };
 

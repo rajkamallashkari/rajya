@@ -101,6 +101,14 @@ RSpec.describe "Session 9.3 authorization 403s", type: :request do
     expect(response).to have_http_status(:forbidden)
   end
 
+  it "returns 403 on bot request update when denied (F-1)" do
+    user = create(:user)
+    request = create(:bot_request, requester_account: user.account)
+    stub_deny(BotRequestPolicy, :update?)
+    patch "/api/v1/bot_requests/#{request.id}", headers: auth_headers_for(user), as: :json, params: { payload: {} }
+    expect(response).to have_http_status(:forbidden)
+  end
+
   it "returns 403 on style profile update when denied (F-1)" do
     user = create(:user)
     stub_deny(AiPolicy, :style_profile?)

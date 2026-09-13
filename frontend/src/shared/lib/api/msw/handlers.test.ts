@@ -10,9 +10,13 @@ import {
   resetFiledReports,
   resetIdentity,
   resetPreferences,
+  resetSavedAndScheduledMessages,
 } from "./handlers";
 import {
   MESSAGE_STAMP,
+  appendSent,
+  completeAttachmentProcessing,
+  findConversation,
   messagingStore,
   resetMessagingStore,
   messageSearchHits,
@@ -24,6 +28,7 @@ const expectedPaths = [
   "/api/v1/accounts/search",
   "/api/v1/accounts/username",
   "/api/v1/accounts/{id}",
+  "/api/v1/accounts/{id}/common_groups",
   "/api/v1/accent_configs",
   "/api/v1/admin/audit_events",
   "/api/v1/admin/bot_requests",
@@ -191,6 +196,7 @@ describe("MSW handlers", () => {
     resetAiHelpers();
     resetIdentity();
     resetPreferences();
+    resetSavedAndScheduledMessages();
     resetAdminConfig();
   });
 
@@ -331,6 +337,8 @@ describe("MSW handlers", () => {
     expect(username.data?.available).toBe(true);
     const profile = await client.GET("/api/v1/accounts/{id}", { params: { path: { id: 1 } } });
     expect(profile.data?.id).toBe(1);
+    expect(profile.data?.email).toBeUndefined();
+    expect(profile.data?.phone).toBeUndefined();
     const blocks = await client.GET("/api/v1/blocks");
     expect(blocks.data?.blocks).toEqual([]);
     const blocked = await client.POST("/api/v1/blocks", { body: { account_id: 2 } });
@@ -388,16 +396,25 @@ describe("MSW handlers", () => {
     const missingBot = await client.GET("/api/v1/bots/{id}", { params: { path: { id: 9 } } });
     expect(missingBot.response.status).toBe(404);
     const requests = await client.GET("/api/v1/bot_requests");
-    expect(requests.data?.bot_requests).toEqual([]);
+    expect(requests.data?.bot_requests[0]?.status).toBe("pending");
     const proposed = await client.POST("/api/v1/bot_requests", {
       body: {
+        avatar: "signed",
         kind: "create",
         payload: { bio: "Sky", name: "Nimbus", persona_prompt: "A".repeat(80), username: "nimbus" },
       },
     });
     expect(proposed.data?.status).toBe("pending");
+    const updated = await client.PATCH("/api/v1/bot_requests/{id}", {
+      params: { path: { id: proposed.data!.id } },
+      body: {
+        avatar: null,
+        payload: { ...proposed.data!.payload, name: "Nimbus updated" },
+      },
+    });
+    expect(updated.data?.payload.name).toBe("Nimbus updated");
     const withdrawn = await client.DELETE("/api/v1/bot_requests/{id}", {
-      params: { path: { id: 1 } },
+      params: { path: { id: proposed.data!.id } },
     });
     expect(withdrawn.data?.ok).toBe(true);
     const adminListed = await client.GET("/api/v1/admin/bot_requests");
@@ -406,11 +423,68 @@ describe("MSW handlers", () => {
       params: { path: { id: 1 } },
     });
     expect(approved.data?.account.username).toBe("nimbus");
+    const queueAfterApproval = await client.GET("/api/v1/admin/bot_requests");
+    expect(queueAfterApproval.data?.bot_requests.some((row) => row.id === 1)).toBe(false);
+    const editQueue = await client.GET("/api/v1/admin/bot_requests", {
+      params: { query: { kind: "edit" } },
+    });
+    expect(editQueue.data?.bot_requests.every((row) => row.kind === "edit")).toBe(true);
+    await client.PATCH("/api/v1/bot_requests/{id}", {
+      params: { path: { id: 2 } },
+      body: { payload: {} },
+    });
+    const approvedEdit = await client.POST("/api/v1/admin/bot_requests/{id}/approve", {
+      params: { path: { id: 2 } },
+    });
+    expect(approvedEdit.data?.id).toBe(1);
+    const missingApproval = await client.POST("/api/v1/admin/bot_requests/{id}/approve", {
+      params: { path: { id: 999 } },
+    });
+    expect(missingApproval.response.status).toBe(404);
+    const missingUpdate = await client.PATCH("/api/v1/bot_requests/{id}", {
+      params: { path: { id: 999 } },
+      body: {},
+    });
+    expect(missingUpdate.response.status).toBe(404);
+    await client.PATCH("/api/v1/bot_requests/{id}", {
+      params: { path: { id: 2 } },
+      body: { avatar: "signed-avatar" },
+    });
+    await client.PATCH("/api/v1/bot_requests/{id}", {
+      params: { path: { id: 2 } },
+      body: {},
+    });
+    const emptyProposal = await client.POST("/api/v1/bot_requests", { body: {} });
+    const approvedEmpty = await client.POST("/api/v1/admin/bot_requests/{id}/approve", {
+      params: { path: { id: emptyProposal.data!.id } },
+    });
+    expect(approvedEmpty.data?.account.display_name).toBe("Bot");
     const declined = await client.POST("/api/v1/admin/bot_requests/{id}/decline", {
-      params: { path: { id: 1 } },
+      params: { path: { id: 2 } },
       body: { reason: "Too thin" },
     });
     expect(declined.data?.status).toBe("declined");
+    const missingDecline = await client.POST("/api/v1/admin/bot_requests/{id}/decline", {
+      params: { path: { id: 999 } },
+      body: {},
+    });
+    expect(missingDecline.response.status).toBe(404);
+    const resubmitted = await client.PATCH("/api/v1/bot_requests/{id}", {
+      params: { path: { id: 2 } },
+      body: {
+        payload: {
+          bio: "Weather helper",
+          name: "Nimbus",
+          persona_prompt: "A".repeat(80),
+          username: "nimbus",
+        },
+      },
+    });
+    expect(resubmitted.data).toMatchObject({ decline_reason: null, id: 2, status: "pending" });
+    const requestsAfterResubmit = await client.GET("/api/v1/bot_requests");
+    expect(requestsAfterResubmit.data?.bot_requests).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 2, status: "pending" })]),
+    );
     const adminUsers = await client.GET("/api/v1/admin/users", {
       params: { query: { q: "peer" } },
     });
@@ -781,6 +855,18 @@ describe("MSW handlers", () => {
         body: { account_id: 2, kind: "direct" },
       });
       expect(existingDirect.data?.id).toBe(1);
+      const usernameDirect = await client.POST("/api/v1/conversations", {
+        body: { kind: "direct", username: "GRACE" },
+      });
+      expect(usernameDirect.data?.peer?.id).toBe(2);
+      const botDirect = await client.POST("/api/v1/conversations", {
+        body: { kind: "direct", username: "NIMBUS" },
+      });
+      expect(botDirect.data?.peer).toMatchObject({ id: 99, kind: "bot" });
+      const missingUsername = await client.POST("/api/v1/conversations", {
+        body: { kind: "direct", username: "missing" },
+      });
+      expect(missingUsername.response.status).toBe(404);
       const freshDirect = await client.POST("/api/v1/conversations", {
         body: { account_id: 42, kind: "direct" },
       });
@@ -976,6 +1062,32 @@ describe("MSW handlers", () => {
       });
       expect(sent.data?.body).toBe("hello");
       expect(sent.data?.silent).toBe(false);
+      const uploaded = await client.POST("/api/v1/messages", {
+        body: {
+          attachment_signed_ids: ["signed"],
+          client_nonce: "nonce-media",
+          conversation_id: 1,
+        },
+      });
+      expect(uploaded.data?.attachments?.[0]?.processing_status).toBe("pending");
+      completeAttachmentProcessing(uploaded.data?.id ?? 0);
+      const processed = await client.GET("/api/v1/messages/{id}", {
+        params: { path: { id: uploaded.data?.id ?? 0 } },
+      });
+      expect(processed.data?.attachments?.[0]).toMatchObject({
+        height: 9,
+        processing_status: "ready",
+        width: 16,
+      });
+      const voice = appendSent(1, "", "nonce-voice", false, {
+        durationMs: 1000,
+        waveform: [0.5],
+      });
+      expect(completeAttachmentProcessing(voice.id)?.attachments?.[0]).toMatchObject({
+        height: undefined,
+        processing_status: "ready",
+        width: undefined,
+      });
       const silent = await client.POST("/api/v1/messages", {
         body: { conversation_id: 1, body: "quiet", client_nonce: "nonce-silent", silent: true },
       });
@@ -992,10 +1104,26 @@ describe("MSW handlers", () => {
         params: { path: { message_id: sent.data?.id ?? 1 } },
       });
       expect(reactionDetails.data?.reactions).toEqual([]);
+      const directConversation = findConversation(1);
+      const directTitle = directConversation?.title;
+      const directPeer = directConversation?.peer;
+      if (directConversation) {
+        directConversation.title = null;
+        directConversation.peer = {
+          display_name: "Peer fallback",
+          id: 2,
+          kind: "human",
+          username: "peer",
+        };
+      }
       const bulkSaved = await client.POST("/api/v1/messages/bulk_save", {
         body: { message_ids: [sent.data?.id ?? 1] },
       });
       expect(bulkSaved.response.status).toBe(201);
+      if (directConversation) {
+        directConversation.title = directTitle ?? null;
+        directConversation.peer = directPeer;
+      }
       const bulkSavedMissing = await client.POST("/api/v1/messages/bulk_save", {
         body: {},
       });
@@ -1113,21 +1241,52 @@ describe("MSW handlers", () => {
         body: { message_id: sent.data?.id ?? 1 },
       });
       expect(pinned.response.status).toBe(201);
+      const listedPins = await client.GET("/api/v1/conversations/{conversation_id}/pins", {
+        params: { path: { conversation_id: 1 } },
+      });
+      expect(listedPins.data?.pinned_messages[0]?.message_id).toBe(sent.data?.id);
       const unpinned = await client.DELETE(
         "/api/v1/conversations/{conversation_id}/pins/{message_id}",
         { params: { path: { conversation_id: 1, message_id: sent.data?.id ?? 1 } } },
       );
       expect(unpinned.data?.ok).toBe(true);
+      if (directConversation) {
+        directConversation.title = null;
+        directConversation.peer = {
+          display_name: "Peer fallback",
+          id: 2,
+          kind: "human",
+          username: "peer",
+        };
+      }
       const saved = await client.POST("/api/v1/saved_messages", {
         body: { message_id: sent.data?.id ?? 1 },
       });
       expect(saved.response.status).toBe(201);
       const listedSaves = await client.GET("/api/v1/saved_messages");
       expect(listedSaves.data?.saved_messages?.length).toBeGreaterThan(0);
+      expect(listedSaves.data?.saved_messages[0]?.conversation_title).toBe(
+        directConversation?.peer?.display_name,
+      );
+      if (directConversation) {
+        directConversation.peer = undefined;
+      }
+      const untitledSave = await client.POST("/api/v1/saved_messages", {
+        body: { message_id: sent.data?.id ?? 1 },
+      });
+      expect(untitledSave.data?.conversation_title).toBeNull();
+      expect(
+        (await client.GET("/api/v1/saved_messages")).data?.saved_messages[0]?.conversation_title,
+      ).toBeNull();
+      if (directConversation) {
+        directConversation.title = directTitle ?? null;
+        directConversation.peer = directPeer;
+      }
       const unsaved = await client.DELETE("/api/v1/saved_messages/{id}", {
-        params: { path: { id: sent.data?.id ?? 1 } },
+        params: { path: { id: listedSaves.data?.saved_messages[0]?.message_id ?? 1 } },
       });
       expect(unsaved.data?.ok).toBe(true);
+      expect((await client.GET("/api/v1/saved_messages")).data?.saved_messages).toEqual([]);
       const tombstone = await client.DELETE("/api/v1/messages/{id}", {
         params: { path: { id: sent.data?.id ?? 1 } },
       });
@@ -1176,15 +1335,32 @@ describe("MSW handlers", () => {
         params: { path: { id: 1 } },
         body: { body: "soon" },
       });
-      expect(updated.data?.id).toBe(1);
+      expect(updated.data?.body).toBe("soon");
       const sentNow = await client.POST("/api/v1/scheduled_messages/{id}/send_now", {
         params: { path: { id: 1 } },
       });
       expect(sentNow.response.status).toBe(201);
+      expect(
+        (await client.GET("/api/v1/scheduled_messages")).data?.scheduled_messages,
+      ).toHaveLength(1);
       const cancelled = await client.DELETE("/api/v1/scheduled_messages/{id}", {
-        params: { path: { id: 1 } },
+        params: { path: { id: booked.data?.id ?? 2 } },
       });
       expect(cancelled.data?.ok).toBe(true);
+      expect((await client.GET("/api/v1/scheduled_messages")).data?.scheduled_messages).toEqual([]);
+      const missingScheduledUpdate = await client.PATCH("/api/v1/scheduled_messages/{id}", {
+        params: { path: { id: 0 } },
+        body: { body: "missing" },
+      });
+      expect(missingScheduledUpdate.response.status).toBe(404);
+      const missingScheduledSend = await client.POST("/api/v1/scheduled_messages/{id}/send_now", {
+        params: { path: { id: 0 } },
+      });
+      expect(missingScheduledSend.response.status).toBe(404);
+      const missingScheduledCancel = await client.DELETE("/api/v1/scheduled_messages/{id}", {
+        params: { path: { id: 0 } },
+      });
+      expect(missingScheduledCancel.response.status).toBe(404);
       const pinnedChat = await client.POST("/api/v1/conversations/{id}/pin", {
         params: { path: { id: 1 } },
       });

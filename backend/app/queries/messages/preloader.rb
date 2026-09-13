@@ -1,10 +1,10 @@
 module Messages
   module Preloader
     ASSOCIATIONS = [
-      :sender_account,
       :attachments,
       :reply_to_message,
       :message_location,
+      { sender_account: [ avatar_attachment: :blob ] },
       { message_contacts: :contact_account },
       { poll: [ :poll_options, :poll_votes ] }
     ].freeze

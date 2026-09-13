@@ -1,11 +1,14 @@
 import { getAccessSession } from "@/features/auth/model/access-session";
 import { useAccountsStore, type StoredAccount } from "@/features/auth/store/accounts-store";
 
-export function persistSession(payload: {
-  account: { display_name: string; id: number; username: string };
-  token?: string;
-  user: { has_passkey: boolean; has_password: boolean; onboarded: boolean };
-}): void {
+export function persistSession(
+  payload: {
+    account: { display_name: string; id: number; username: string };
+    token?: string;
+    user: { has_passkey: boolean; has_password: boolean; onboarded: boolean };
+  },
+  activate = true,
+): void {
   const token = payload.token ?? getAccessSession()?.token;
   if (!token) {
     throw new Error("session_token_missing");
@@ -19,5 +22,5 @@ export function persistSession(payload: {
     token,
     username: payload.account.username,
   };
-  useAccountsStore.getState().upsertAccount(account, true);
+  useAccountsStore.getState().upsertAccount(account, activate);
 }

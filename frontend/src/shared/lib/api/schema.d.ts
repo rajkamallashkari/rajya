@@ -89,6 +89,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/accounts/{id}/common_groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List conversations shared with an account */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description shared groups without member rosters */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConversationIdentityList"];
+                    };
+                };
+                /** @description account blocking the viewer remains private */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/settings": {
         parameters: {
             query?: never;
@@ -1974,14 +2021,16 @@ export interface paths {
         /** List active bots */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    owned?: boolean;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description listed */
+                /** @description owner-scoped with private prompt */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -2101,6 +2150,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         kind?: string;
+                        avatar?: string | null;
                         target_bot_id?: number | null;
                         payload?: {
                             bio?: string;
@@ -2129,6 +2179,80 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bot_requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Withdraw a pending or declined proposal */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description withdrawn */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Ok"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Update a pending bot proposal */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        avatar?: string | null;
+                        payload?: {
+                            bio?: string;
+                            name?: string;
+                            persona_prompt?: string;
+                            username?: string;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BotRequest"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/v1/ai/rewrite": {
@@ -2267,44 +2391,6 @@ export interface paths {
         };
         trace?: never;
     };
-    "/api/v1/bot_requests/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Withdraw a pending proposal */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: number;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description withdrawn */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Ok"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/bot_requests": {
         parameters: {
             query?: never;
@@ -2315,7 +2401,9 @@ export interface paths {
         /** List bot proposals */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    kind?: "create" | "edit";
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -3706,6 +3794,11 @@ export interface paths {
                     "application/json": {
                         kind?: string;
                         account_id?: number;
+                        account_ids?: number[];
+                        description?: string;
+                        title?: string;
+                        /** @description Exact account username; alternative to account_id for direct conversations */
+                        username?: string;
                     };
                 };
             };
@@ -5544,7 +5637,29 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List pinned messages */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversation_id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description listed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PinnedMessageList"];
+                    };
+                };
+            };
+        };
         put?: never;
         /** Pin a message */
         post: {
@@ -8123,9 +8238,12 @@ export interface components {
             username: string;
             display_name: string;
             kind: string;
+            avatar_url?: string | null;
             bio?: string | null;
-            shared_memory?: boolean;
             blocked_by_viewer: boolean;
+            email?: string | null;
+            phone?: string | null;
+            shared_memory?: boolean;
         };
         CallParticipant: {
             id: number;
@@ -8173,6 +8291,8 @@ export interface components {
             /** Format: date-time */
             created_at: string;
             title?: string | null;
+            avatar_url?: string | null;
+            member_count: number;
             peer?: components["schemas"]["Account"];
             participants: components["schemas"]["CallParticipant"][];
         };
@@ -8454,6 +8574,7 @@ export interface components {
             account: components["schemas"]["Account"];
             memory_enabled: boolean;
             owner_account_id?: number | null;
+            persona_prompt?: string | null;
         };
         BotList: {
             bots: components["schemas"]["Bot"][];
@@ -8473,6 +8594,7 @@ export interface components {
                 [key: string]: unknown;
             };
             decline_reason?: string | null;
+            avatar_url?: string | null;
             target_bot_id?: number | null;
             bot_id?: number | null;
             requester_account_id?: number;
@@ -8530,6 +8652,8 @@ export interface components {
             blurhash?: string | null;
             /** @description Voice-note peaks: floats in [0.0, 1.0], length waveform_peak_count. */
             waveform?: number[] | null;
+            original_available?: boolean;
+            processing_stalled?: boolean;
             /** @enum {string} */
             processing_status: "pending" | "ready" | "failed";
             processing_error?: string | null;
@@ -8550,17 +8674,26 @@ export interface components {
             duration_ms?: number | null;
             blurhash?: string | null;
             waveform?: number[] | null;
+            original_available?: boolean;
+            processing_stalled?: boolean;
             /** @enum {string} */
             processing_status: "pending" | "ready" | "failed";
             processing_error?: string | null;
             filename?: string | null;
             message_id: number;
+            sender?: components["schemas"]["Account"];
+            /** Format: date-time */
+            sent_at: string;
         };
         GalleryLink: {
             url: string;
             title?: string | null;
             description?: string | null;
             site_name?: string | null;
+            message_id: number;
+            sender?: components["schemas"]["Account"];
+            /** Format: date-time */
+            sent_at: string;
         };
         GalleryItem: {
             /** @enum {string} */
@@ -8629,12 +8762,26 @@ export interface components {
             role: string;
             account: components["schemas"]["Account"];
         };
+        ConversationIdentity: {
+            id: number;
+            /** @enum {string} */
+            kind: "direct" | "group" | "channel";
+            title?: string | null;
+            avatar_url?: string | null;
+            member_count: number;
+            peer?: components["schemas"]["Account"];
+        };
+        ConversationIdentityList: {
+            conversations: components["schemas"]["ConversationIdentity"][];
+        };
         Conversation: {
             id: number;
             /** @enum {string} */
             kind: "direct" | "group" | "channel";
             title?: string | null;
             description?: string | null;
+            avatar_url?: string | null;
+            member_count: number;
             /** Format: date-time */
             last_activity_at: string;
             unread_count: number;
@@ -8702,6 +8849,7 @@ export interface components {
             reaction_summary?: {
                 [key: string]: number;
             };
+            my_reactions?: string[];
             metadata?: Record<string, never>;
             sender_snapshot?: Record<string, never>;
             forwarded_from_account_id?: number | null;
@@ -8817,9 +8965,14 @@ export interface components {
             created_at?: string;
             message: components["schemas"]["Message"];
         };
+        PinnedMessageList: {
+            pinned_messages: components["schemas"]["PinnedMessage"][];
+        };
         SavedMessage: {
             id: number;
             message_id: number;
+            conversation: components["schemas"]["ConversationIdentity"];
+            conversation_title: string | null;
             /** Format: date-time */
             created_at?: string;
             message: components["schemas"]["Message"];
@@ -8830,6 +8983,7 @@ export interface components {
         ScheduledMessage: {
             id: number;
             conversation_id: number;
+            conversation: components["schemas"]["ConversationIdentity"];
             body: string;
             /** Format: date-time */
             scheduled_at: string;

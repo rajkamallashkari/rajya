@@ -31,6 +31,7 @@ import {
   listConversationCommands,
   listFolders,
   listMessages,
+  listPinnedMessages,
   listReactions,
   listReportReasons,
   listSavedReplies,
@@ -51,6 +52,8 @@ import {
   unarchiveConversation,
   unmuteConversation,
   unpinConversation,
+  unpinMessage,
+  unreactToMessage,
   unsendMessage,
   updateConversation,
   updateConversationWallpaper,
@@ -67,6 +70,7 @@ import {
   flattenMessages,
   mapPages,
   restorePages,
+  upsertMessages,
   type MessagePages,
 } from "@/features/conversations/api/cache";
 import {
@@ -82,6 +86,7 @@ import {
   voiceFileFromBlob,
 } from "@/features/conversations/model/voice-file";
 import { presignAndUpload } from "@/features/media/model/direct-upload";
+import type { Attachment } from "@/features/media/model/constants";
 import { apiOrigin } from "@/shared/lib/api/origin";
 import { enqueueAndFlush } from "@/shared/lib/outbox/processor";
 import { sendOutboxMessage } from "@/shared/lib/outbox/send";
@@ -295,19 +300,20 @@ function optimisticMessage(
 ): Message {
   const session = getAccessSession();
   const voice = input.voice;
+  const optimisticAttachments = input.optimistic_attachments;
   const contentType = voice ? voiceContentType(voice.mimeType) : "";
   return {
     id: -Date.now(),
     conversation_id: conversationId,
     position: 0,
     revision: 0,
-    kind: voice ? "voice" : "text",
+    kind: voice ? "voice" : (optimisticAttachments?.[0]?.kind ?? "text"),
     body: voice ? null : body,
     deleted: false,
     silent: input.silent ?? false,
     client_nonce: nonce,
     created_at: new Date().toISOString(),
-    attachment_count: voice ? 1 : undefined,
+    attachment_count: voice ? 1 : optimisticAttachments?.length,
     attachments: voice
       ? [
           {
@@ -321,7 +327,7 @@ function optimisticMessage(
             filename: `voice.${voiceExtensionForMime(contentType)}`,
           },
         ]
-      : undefined,
+      : optimisticAttachments,
     sender: session
       ? {
           id: session.accountId,
@@ -345,6 +351,7 @@ export type SendMessageInput = {
   body?: string;
   client_nonce: string;
   gif_id?: string;
+  optimistic_attachments?: Attachment[];
   silent?: boolean;
   sticker_id?: number;
   voice?: VoiceSendInput;
@@ -362,7 +369,8 @@ async function resolveSendPayload(input: SendMessageInput): Promise<{
   voice_duration_ms?: number;
   voice_waveform?: number[];
 }> {
-  const { voice, ...rest } = input;
+  const { optimistic_attachments: _optimisticAttachments, voice, ...rest } = input;
+  void _optimisticAttachments;
   if (voice == null) {
     return rest;
   }
@@ -451,6 +459,9 @@ export function useSendMessage(conversationId: number) {
       if (!message) {
         return;
       }
+      queryClient.setQueryData<MessagePages>(key, (current) =>
+        current ? upsertMessages(current, [message]) : current,
+      );
       void queryClient.invalidateQueries({ queryKey: key });
       void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
     },
@@ -486,15 +497,31 @@ export function useReactMessage(conversationId: number) {
   const queryClient = useQueryClient();
   const key = messageKeys.page(conversationId);
   return useMutation({
-    mutationFn: ({ emoji, id }: { emoji: string; id: number }) => reactToMessage(id, emoji),
-    onMutate: async ({ id }) => {
+    mutationFn: ({ emoji, id, mine }: { emoji: string; id: number; mine?: boolean }) =>
+      mine ? unreactToMessage(id, emoji) : reactToMessage(id, emoji),
+    onMutate: async ({ emoji, id, mine }) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<MessagePages>(key);
       if (previous) {
         queryClient.setQueryData(
           key,
           mapPages(previous, (message) =>
-            message.id === id ? { ...message, revision: message.revision + 1 } : message,
+            message.id === id
+              ? {
+                  ...message,
+                  my_reactions: mine
+                    ? (message.my_reactions ?? []).filter((value) => value !== emoji)
+                    : [...new Set([...(message.my_reactions ?? []), emoji])],
+                  reaction_summary: {
+                    ...(message.reaction_summary ?? {}),
+                    [emoji]: Math.max(
+                      0,
+                      (message.reaction_summary?.[emoji] ?? 0) + (mine ? -1 : 1),
+                    ),
+                  },
+                  revision: message.revision + 1,
+                }
+              : message,
           ),
         );
       }
@@ -513,15 +540,27 @@ export function usePinMessage(conversationId: number) {
   const queryClient = useQueryClient();
   const key = messageKeys.pinned(conversationId);
   return useMutation({
-    mutationFn: (messageId: number) => pinMessage(conversationId, messageId),
-    onMutate: async (messageId) => {
+    mutationFn: async ({ messageId, pinned }: { messageId: number; pinned: boolean }) => {
+      await (pinned
+        ? unpinMessage(conversationId, messageId)
+        : pinMessage(conversationId, messageId));
+    },
+    onMutate: async ({ messageId, pinned }) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<number[]>(key);
-      queryClient.setQueryData(key, [...(previous ?? []), messageId]);
+      queryClient.setQueryData(
+        key,
+        pinned
+          ? (previous ?? []).filter((id) => id !== messageId)
+          : [...new Set([...(previous ?? []), messageId])],
+      );
       return { previous };
     },
     onError: (_error, _input, context) => {
       queryClient.setQueryData(key, context?.previous ?? []);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: [...key, "details"] });
     },
   });
 }
@@ -698,10 +737,18 @@ export async function emptyIdList(): Promise<number[]> {
 
 export function usePinnedIds(conversationId: number) {
   return useQuery({
-    queryFn: emptyIdList,
+    queryFn: async () => {
+      const result = await listPinnedMessages(conversationId);
+      return result.pinned_messages.map((pin) => pin.message_id);
+    },
     queryKey: messageKeys.pinned(conversationId),
-    staleTime: Infinity,
-    initialData: [] as number[],
+  });
+}
+
+export function usePinnedMessages(conversationId: number) {
+  return useQuery({
+    queryFn: () => listPinnedMessages(conversationId),
+    queryKey: [...messageKeys.pinned(conversationId), "details"],
   });
 }
 
@@ -1061,6 +1108,7 @@ export function useReorderFolders() {
 
 export function useFolderMembership() {
   const queryClient = useQueryClient();
+  const key = folderKeys.list();
   return useMutation({
     mutationFn: ({
       add,
@@ -1074,8 +1122,32 @@ export function useFolderMembership() {
       add
         ? addConversationToFolder(folderId, conversationId)
         : removeConversationFromFolder(folderId, conversationId),
+    onMutate: async ({ add, conversationId, folderId }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<{ folders: ConversationFolder[] }>(key);
+      if (previous) {
+        queryClient.setQueryData(key, {
+          folders: previous.folders.map((folder) => {
+            if (folder.id !== folderId) {
+              return folder;
+            }
+            const conversationIds = new Set(folder.conversation_ids);
+            if (add) {
+              conversationIds.add(conversationId);
+            } else {
+              conversationIds.delete(conversationId);
+            }
+            return { ...folder, conversation_ids: [...conversationIds] };
+          }),
+        });
+      }
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      queryClient.setQueryData(key, context?.previous);
+    },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: folderKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: key });
     },
   });
 }

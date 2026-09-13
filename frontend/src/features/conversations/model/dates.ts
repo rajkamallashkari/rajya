@@ -1,5 +1,10 @@
+import {
+  DEFAULT_DATE_TIME_PREFERENCES,
+  formatPreferenceDate,
+} from "@/shared/lib/date-time";
+
 export function formatThreadDate(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(iso));
+  return formatPreferenceDate(iso, locale, DEFAULT_DATE_TIME_PREFERENCES);
 }
 
 export function sameCalendarDay(left: string, right: string): boolean {

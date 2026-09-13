@@ -24,6 +24,17 @@ RSpec.describe Calls::History do
     expect(Message.where(conversation: conversation, kind: "system").count).to eq(1)
   end
 
+  it "records call details needed to render the bubble" do
+    _conversation, call = ringing_call
+    call.update!(status: "ended", ended_at: Time.current)
+
+    metadata = described_class.call(call: call).value.metadata
+
+    expect(metadata).to include(
+      "initiator_account_id" => call.initiator_account_id, "kind" => "audio", "status" => "ended"
+    )
+  end
+
   it "renders busy copy and duration copy from the catalog" do
     _conversation, call = ringing_call
     call.update!(status: "missed", ended_at: Time.current)

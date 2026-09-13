@@ -19,16 +19,49 @@ import {
   isImageAttachment,
   isVisualAttachment,
 } from "@/features/media/model/constants";
-import { getAttachmentDownload, listConversationMedia, listStickerPacks, retryAttachment, retryTranscript, searchGifs, createDirectUpload, createStickerPack, destroyStickerPack, addStickerToPack, removeStickerFromPack } from "@/features/media/api/http";
+import {
+  getAttachmentDownload,
+  listConversationMedia,
+  listStickerPacks,
+  retryAttachment,
+  retryTranscript,
+  searchGifs,
+  createDirectUpload,
+  createStickerPack,
+  destroyStickerPack,
+  addStickerToPack,
+  removeStickerFromPack,
+} from "@/features/media/api/http";
 import { mediaKeys } from "@/features/media/api/keys";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { testSession } from "@/test/access-session";
-import { displayFilename, fileExtension, fileKindKey, formatByteSize, truncateFilename } from "@/features/media/model/files";
+import {
+  displayFilename,
+  fileExtension,
+  fileKindKey,
+  formatByteSize,
+  truncateFilename,
+} from "@/features/media/model/files";
 import { nextLightboxZoom, wrapLightboxIndex } from "@/features/media/model/lightbox";
 import { paintBlurhash, progressiveStage } from "@/features/media/model/progressive";
 import { isPreviewableName, uploadProgressWidth } from "@/features/media/model/upload";
-import { nextPlaybackRate, playbackRateLabel, seekFraction, voiceProgress } from "@/features/media/model/voice";
-import { mediaUrlStaleTime, useGifSearch, useMediaUrl, useRetryTranscript, useStickerPacks, useCreateStickerPack, useDestroyStickerPack, useAddStickerToPack, useRemoveStickerFromPack } from "@/features/media/api/queries";
+import {
+  nextPlaybackRate,
+  playbackRateLabel,
+  seekFraction,
+  voiceProgress,
+} from "@/features/media/model/voice";
+import {
+  mediaUrlStaleTime,
+  useGifSearch,
+  useMediaUrl,
+  useRetryTranscript,
+  useStickerPacks,
+  useCreateStickerPack,
+  useDestroyStickerPack,
+  useAddStickerToPack,
+  useRemoveStickerFromPack,
+} from "@/features/media/api/queries";
 import {
   finiteMediaTime,
   resetVoicePlayer,
@@ -53,9 +86,10 @@ describe("media models", () => {
     expect(isVisualAttachment({ kind: "video" })).toBe(true);
     expect(albumCellRadius(["tl", "tr", "bl", "br"]).borderTopLeftRadius).toBe("var(--radius-lg)");
     expect(albumCellRadius([]).borderTopRightRadius).toBe("var(--radius-sm)");
-    expect(computeAlbumLayout([{ width: 280, height: 140 }], 280).rows).toBe("140px");
+    expect(computeAlbumLayout([{ width: 280, height: 140 }], 280).rows).toBe("280px");
     expect(computeAlbumLayout([{}, {}], 280).cellAreas).toEqual(["a", "b"]);
     expect(computeAlbumLayout([{}, {}, {}], 280).areas).toContain("a c");
+    expect(computeAlbumLayout([{}, {}, {}], 280).rows).toContain("280px");
     expect(computeAlbumLayout([{}, {}, {}, {}, {}], 280).cellAreas).toHaveLength(4);
     expect(fileExtension("readme")).toBe("");
     expect(fileKindKey("notes.pdf")).toBe("pdf");
@@ -100,12 +134,16 @@ describe("media models", () => {
     expect(mediaKeys.stickerPacks()[1]).toBe("sticker_packs");
     expect(GIF_SEARCH_MIN_QUERY_LENGTH).toBeGreaterThan(0);
     expect(mediaUrlStaleTime("not-a-date")).toBe(0);
-    expect(mediaUrlStaleTime(new Date(Date.now() + 60_000).toISOString(), Date.now())).toBeGreaterThan(0);
+    expect(
+      mediaUrlStaleTime(new Date(Date.now() + 60_000).toISOString(), Date.now()),
+    ).toBeGreaterThan(0);
     expect(mediaUrlStaleTime("2099-01-01T00:00:00.000Z", Date.now())).toBe(MEDIA_URL_STALE_MAX_MS);
     const canvas = document.createElement("canvas");
     expect(paintBlurhash(canvas, "not-a-hash")).toBe(false);
     const ctx = {
-      createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }),
+      createImageData: (width: number, height: number) => ({
+        data: new Uint8ClampedArray(width * height * 4),
+      }),
       putImageData: vi.fn(),
     };
     vi.spyOn(canvas, "getContext").mockReturnValue(ctx as unknown as CanvasRenderingContext2D);
@@ -118,12 +156,22 @@ describe("media models", () => {
 describe("progressive rendering", () => {
   it("advances blurhash to thumbnail to full without layout shift", () => {
     const { container } = render(
-      <ProgressiveImage alt={en.media.photo} blurhash="LKO2?U%2Tw=w]~RBVZRi};RPxuwH" fullSrc={PIXEL} height={9} thumbSrc={PIXEL} width={16} />,
+      <ProgressiveImage
+        alt={en.media.photo}
+        blurhash="LKO2?U%2Tw=w]~RBVZRi};RPxuwH"
+        fullSrc={PIXEL}
+        height={9}
+        thumbSrc={PIXEL}
+        width={16}
+      />,
     );
     const box = container.querySelector("[data-progressive-stage]") as HTMLElement;
     expect(box.style.aspectRatio).toBe("16 / 9");
+    expect(box).toHaveClass("block", "h-full", "w-full", "min-w-0");
     expect(box).toHaveAttribute("data-progressive-stage", "placeholder");
     const images = container.querySelectorAll("img");
+    expect(images[0]).toHaveClass("block", "h-full", "w-full", "object-cover");
+    expect(images[1]).toHaveClass("block", "h-full", "w-full", "object-cover");
     fireEvent.load(images[0]!);
     expect(box).toHaveAttribute("data-progressive-stage", "thumb");
     fireEvent.load(images[1]!);
@@ -159,7 +207,13 @@ describe("failed and pending media", () => {
           onRetry={onRetry}
         />
         <AttachmentPending
-          attachment={{ byte_size: 1, content_type: "image/png", id: 2, kind: "image", processing_status: "pending" }}
+          attachment={{
+            byte_size: 1,
+            content_type: "image/png",
+            id: 2,
+            kind: "image",
+            processing_status: "pending",
+          }}
         />
       </AppProviders>,
     );
@@ -203,7 +257,11 @@ describe("upload preview", () => {
     );
     await user.click(screen.getAllByRole("button")[0]!);
     expect(onCancel).toHaveBeenCalledWith("a");
-    render(<AppProviders><UploadPreview onCancel={onCancel} uploads={[]} /></AppProviders>);
+    render(
+      <AppProviders>
+        <UploadPreview onCancel={onCancel} uploads={[]} />
+      </AppProviders>,
+    );
   });
 });
 
@@ -212,7 +270,15 @@ describe("lightbox wrap", () => {
     const { container } = render(
       <AppProviders>
         <MediaLightbox
-          attachments={[{ byte_size: 1, content_type: "application/pdf", id: 1, kind: "file", processing_status: "ready" }]}
+          attachments={[
+            {
+              byte_size: 1,
+              content_type: "application/pdf",
+              id: 1,
+              kind: "file",
+              processing_status: "ready",
+            },
+          ]}
           onClose={() => undefined}
           open
         />
@@ -258,16 +324,50 @@ describe("lightbox wrap", () => {
       </AppProviders>,
     );
     await waitFor(() => {
-      expect(document.querySelector("[data-media-lightbox] img, [data-media-lightbox] video")).not.toBeNull();
+      expect(
+        document.querySelector("[data-media-lightbox] img, [data-media-lightbox] video"),
+      ).not.toBeNull();
     });
+    fireEvent.error(document.querySelector("[data-media-lightbox] img")!);
+    expect(screen.getByText(en.media.load_failed)).toBeInTheDocument();
     fireEvent.doubleClick(document.querySelector("[data-media-lightbox]") as HTMLElement);
     await user.click(screen.getByRole("button", { name: en.media.next }));
     await waitFor(() => {
       expect(document.querySelector("[data-media-lightbox] video")).not.toBeNull();
     });
+    fireEvent.error(document.querySelector("[data-media-lightbox] video")!);
+    expect(screen.getByText(en.media.load_failed)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.media.previous }));
     await user.click(screen.getByRole("button", { name: en.ui.close }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("shows a useful error when signed media URLs fail", async () => {
+    setAccessSession(testSession());
+    server.use(
+      http.get("*/api/v1/attachments/:id/download", () => HttpResponse.json({}, { status: 404 })),
+      http.get("*/api/v1/attachments/:id/thumbnail", () => HttpResponse.json({}, { status: 404 })),
+    );
+    render(
+      <AppProviders>
+        <MediaLightbox
+          attachments={[
+            {
+              byte_size: 1,
+              content_type: "image/png",
+              id: 404,
+              kind: "image",
+              processing_status: "ready",
+            },
+          ]}
+          onClose={() => undefined}
+          open
+        />
+      </AppProviders>,
+    );
+
+    expect(screen.getByRole("status", { name: en.media.loading })).toBeInTheDocument();
+    expect(await screen.findByText(en.media.load_failed)).toBeInTheDocument();
   });
 });
 
@@ -351,7 +451,9 @@ describe("voice player store", () => {
 describe("media http", () => {
   it("unwraps download and gallery pages", async () => {
     setAccessSession(testSession());
-    await expect(getAttachmentDownload(1)).resolves.toMatchObject({ url: "https://media.test/file" });
+    await expect(getAttachmentDownload(1)).resolves.toMatchObject({
+      url: "https://media.test/file",
+    });
     await expect(retryAttachment(1)).resolves.toMatchObject({ processing_status: "pending" });
     await expect(retryTranscript(1)).resolves.toMatchObject({ transcript_status: "pending" });
     await expect(listConversationMedia(1, "images", 1)).resolves.toMatchObject({
@@ -359,11 +461,20 @@ describe("media http", () => {
     });
     await expect(listStickerPacks()).resolves.toMatchObject({ sticker_packs: [{ id: 1 }] });
     await expect(
-      createDirectUpload({ filename: "a.png", byte_size: 1, checksum: "abc", content_type: "image/png" }),
+      createDirectUpload({
+        filename: "a.png",
+        byte_size: 1,
+        checksum: "abc",
+        content_type: "image/png",
+      }),
     ).resolves.toMatchObject({ blob_signed_id: "signed" });
-    await expect(createStickerPack({ name: "Cats", kind: "emoji" })).resolves.toMatchObject({ id: 1 });
+    await expect(createStickerPack({ name: "Cats", kind: "emoji" })).resolves.toMatchObject({
+      id: 1,
+    });
     await expect(destroyStickerPack(1)).resolves.toMatchObject({ ok: true });
-    await expect(addStickerToPack(1, { signed_id: "signed", shortcode: "wave" })).resolves.toMatchObject({
+    await expect(
+      addStickerToPack(1, { signed_id: "signed", shortcode: "wave" }),
+    ).resolves.toMatchObject({
       id: 1,
     });
     await expect(removeStickerFromPack(1, 1)).resolves.toMatchObject({ ok: true });
@@ -374,15 +485,17 @@ describe("media http", () => {
 
 function MediaUrlHarness({ id }: { id: number }) {
   const url = useMediaUrl(id, "original");
-  return (
-    <span data-media-url={url.fetchStatus}>{url.data?.url ?? ""}</span>
-  );
+  return <span data-media-url={url.fetchStatus}>{url.data?.url ?? ""}</span>;
 }
 
 function TranscribeHarness() {
   const transcribe = useRetryTranscript();
   return (
-    <Button data-transcribe-status={transcribe.status} onClick={() => transcribe.mutate(1)} variant="ghost">
+    <Button
+      data-transcribe-status={transcribe.status}
+      onClick={() => transcribe.mutate(1)}
+      variant="ghost"
+    >
       transcribe
     </Button>
   );
@@ -459,7 +572,10 @@ function PickerQueryHarness() {
       <Button onClick={() => destroy.mutate(1)} type="button">
         pack-del
       </Button>
-      <Button onClick={() => add.mutate({ packId: 1, signedId: "signed", shortcode: "wave" })} type="button">
+      <Button
+        onClick={() => add.mutate({ packId: 1, signedId: "signed", shortcode: "wave" })}
+        type="button"
+      >
         sticker-add
       </Button>
       <Button onClick={() => remove.mutate({ packId: 1, id: 1 })} type="button">

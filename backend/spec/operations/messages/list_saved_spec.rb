@@ -7,6 +7,15 @@ RSpec.describe Messages::ListSaved do
     Messages::Save.call(message: message, actor: account).value
   end
 
+  def serialized_associations(row)
+    [
+      row.association(:account), row.association(:message),
+      row.message.association(:sender_account), row.message.association(:conversation),
+      row.message.conversation.association(:conversation_memberships),
+      *row.message.conversation.conversation_memberships.map { |membership| membership.association(:account) }
+    ]
+  end
+
   it "orders newest first" do
     user = create(:user)
     first = saved_for(user.account)
@@ -30,5 +39,16 @@ RSpec.describe Messages::ListSaved do
     )
 
     expect(result.value.saved_messages).to eq([ mine ])
+  end
+
+  it "preloads the associations used by the saved-message list serializer" do
+    user = create(:user)
+    saved_for(user.account)
+    result = described_class.call(
+      saved_messages: SavedMessagePolicy::Scope.new(user.account, SavedMessage.all).resolve
+    )
+    row = result.value.saved_messages.sole
+
+    expect(serialized_associations(row)).to all(be_loaded)
   end
 end

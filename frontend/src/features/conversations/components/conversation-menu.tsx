@@ -1,15 +1,21 @@
-import { Archive, BellOff, Check } from "lucide-react";
+import { Archive, BellOff, Check, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ConversationFolder } from "@/features/conversations/api/http";
 import { muteDurationOptions } from "@/features/conversations/model/mute";
 import { cn } from "@/shared/lib/cn";
-import { Button, DismissLayer } from "@/shared/ui";
+import {
+  Button,
+  Checkbox,
+  DismissLayer,
+  ResponsiveOverlay,
+  ResponsiveOverlayContent,
+  ResponsiveOverlayTitle,
+} from "@/shared/ui";
 import { ICON_CLASS, MENU_CONTENT_CLASS, MENU_ITEM_CLASS } from "@/shared/ui/metrics";
 
 export function ConversationMenu({
   archived = false,
   folders = [],
-  folderIds = [],
   muted,
   onAddToFolder,
   onArchive,
@@ -17,6 +23,8 @@ export function ConversationMenu({
   onMarkRead,
   onMarkUnread,
   onMute,
+  onOpenFolders,
+  onOpenMute,
   onPin,
   pinned,
   unread,
@@ -33,6 +41,8 @@ export function ConversationMenu({
   onMarkRead?: () => void;
   onMarkUnread?: () => void;
   onMute?: (duration: number) => void;
+  onOpenFolders?: () => void;
+  onOpenMute?: () => void;
   onPin?: () => void;
   pinned: boolean;
   unread: boolean;
@@ -59,25 +69,26 @@ export function ConversationMenu({
             onClick: onMute ? () => onMute(0) : undefined,
           },
         ]
-      : muteDurationOptions().map((option) => ({
-          key: `mute-${option.seconds}`,
-          label: t(option.labelKey),
-          onClick: onMute ? () => onMute(option.seconds) : undefined,
-        }))),
+      : [
+          {
+            key: "mute",
+            label: t("conversations.mute"),
+            onClick: onMute ? onOpenMute : undefined,
+            nested: true,
+          },
+        ]),
     {
       key: "archive",
       label: archived ? t("conversations.unarchive") : t("conversations.archive"),
       onClick: onArchive,
     },
-    ...folders.map((folder) => {
-      const inFolder = folderIds.includes(folder.id);
-      return {
-        key: `folder-${folder.id}`,
-        label: folder.name,
-        onClick: onAddToFolder ? () => onAddToFolder(folder.id, !inFolder) : undefined,
-      };
-    }),
-  ].filter((item): item is { key: string; label: string; onClick: () => void } =>
+    {
+      key: "folders",
+      label: t("conversations.folders.action"),
+      nested: true,
+      onClick: folders.length > 0 && onAddToFolder ? onOpenFolders : undefined,
+    },
+  ].filter((item): item is { key: string; label: string; nested?: boolean; onClick: () => void } =>
     Boolean(item.onClick),
   );
 
@@ -101,11 +112,87 @@ export function ConversationMenu({
             role="menuitem"
             variant="ghost"
           >
-            {item.label}
+            <span className="flex-1 text-left">{item.label}</span>
+            {item.nested ? <ChevronRight className={ICON_CLASS} aria-hidden="true" /> : null}
           </Button>
         ))}
       </div>
     </>
+  );
+}
+
+export function MuteDurationOverlay({
+  onMute,
+  onOpenChange,
+  open,
+}: {
+  onMute: (duration: number) => void;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+}) {
+  const { t } = useTranslation();
+  return (
+    <ResponsiveOverlay onOpenChange={onOpenChange} open={open}>
+      <ResponsiveOverlayContent>
+        <ResponsiveOverlayTitle>{t("conversations.mute")}</ResponsiveOverlayTitle>
+        <div className="mt-[var(--space-3)] flex flex-col gap-[var(--space-1)]">
+          {muteDurationOptions().map((option) => (
+            <Button
+              className="w-full justify-start"
+              key={option.seconds}
+              onClick={() => {
+                onMute(option.seconds);
+                onOpenChange(false);
+              }}
+              variant="ghost"
+            >
+              {t(option.labelKey)}
+            </Button>
+          ))}
+        </div>
+      </ResponsiveOverlayContent>
+    </ResponsiveOverlay>
+  );
+}
+
+export function FolderMembershipOverlay({
+  folderIds,
+  folders,
+  onOpenChange,
+  onToggleFolder,
+  open,
+}: {
+  folderIds: number[];
+  folders: ConversationFolder[];
+  onOpenChange: (open: boolean) => void;
+  onToggleFolder: (folderId: number, add: boolean) => void;
+  open: boolean;
+}) {
+  const { t } = useTranslation();
+  return (
+    <ResponsiveOverlay onOpenChange={onOpenChange} open={open}>
+      <ResponsiveOverlayContent>
+        <ResponsiveOverlayTitle>{t("conversations.folders.action")}</ResponsiveOverlayTitle>
+        <div className="mt-[var(--space-3)] flex flex-col gap-[var(--space-2)]">
+          {folders.map((folder) => {
+            const checked = folderIds.includes(folder.id);
+            return (
+              <label
+                className="flex min-h-[var(--touch-target-min)] items-center justify-between gap-[var(--space-3)]"
+                key={folder.id}
+              >
+                <span>{folder.name}</span>
+                <Checkbox
+                  aria-label={folder.name}
+                  checked={checked}
+                  onCheckedChange={(next) => onToggleFolder(folder.id, next === true)}
+                />
+              </label>
+            );
+          })}
+        </div>
+      </ResponsiveOverlayContent>
+    </ResponsiveOverlay>
   );
 }
 

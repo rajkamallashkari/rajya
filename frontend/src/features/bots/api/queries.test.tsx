@@ -7,16 +7,20 @@ import { setAccessSession } from "@/features/auth/model/access-session";
 import {
   buildStyleProfile,
   createBotRequest,
+  deactivateBot,
   getBot,
   getStyleProfile,
   listBotRequests,
   listBots,
+  listOwnedBots,
   rewriteDraft,
   suggestReplies,
   summarizeConversation,
   translateMessage,
   translateText,
+  updateBotRequest,
   updateStyleConsent,
+  withdrawBotRequest,
 } from "@/features/bots/api/http";
 import {
   useBots,
@@ -56,7 +60,15 @@ function Harness() {
       <p>{translate.data?.text ?? ""}</p>
       <p>{create.data?.status ?? ""}</p>
       <p>{start.data ? String(start.data.id) : ""}</p>
-      <Button onClick={() => create.mutate({ kind: "create", payload: { bio: "b", name: "N", persona_prompt: "A".repeat(80), username: "n" } })} type="button">
+      <Button
+        onClick={() =>
+          create.mutate({
+            kind: "create",
+            payload: { bio: "b", name: "N", persona_prompt: "A".repeat(80), username: "n" },
+          })
+        }
+        type="button"
+      >
         propose
       </Button>
       <Button onClick={() => start.mutate(99)} type="button">
@@ -92,11 +104,19 @@ describe("bot and helper queries", () => {
     setAccessSession(testSession());
     const listed = await listBots();
     expect(listed.bots[0]?.account.kind).toBe("bot");
+    expect((await listOwnedBots()).bots[0]?.persona_prompt).toBeTruthy();
     expect((await getBot(1)).account.username).toBe("nimbus");
-    expect((await listBotRequests()).bot_requests).toEqual([]);
+    expect((await listBotRequests()).bot_requests[0]?.status).toBe("pending");
+    const request = await createBotRequest({
+      kind: "create",
+      payload: { bio: "Sky", name: "Nimbus", persona_prompt: "A".repeat(80), username: "nimbus" },
+    });
+    expect(request.status).toBe("pending");
     expect(
-      (await createBotRequest({ kind: "create", payload: { bio: "Sky", name: "Nimbus", persona_prompt: "A".repeat(80), username: "nimbus" } })).status,
-    ).toBe("pending");
+      (await updateBotRequest(request.id, { payload: { ...request.payload, name: "Updated" } }))
+        .payload.name,
+    ).toBe("Updated");
+    expect((await withdrawBotRequest(request.id)).ok).toBe(true);
     expect((await rewriteDraft({ instruction: "Rewrite this draft", text: "hey" })).text).toBe(
       "Hello",
     );
@@ -126,11 +146,19 @@ describe("bot and helper queries", () => {
     await waitFor(() => {
       expect(screen.getAllByText("Hello").length).toBeGreaterThan(0);
     });
+    expect((await deactivateBot(1)).id).toBe(1);
   });
 
   it("surfaces a missing bot", async () => {
     setAccessSession(testSession());
-    server.use(http.get("*/api/v1/bots/:id", () => HttpResponse.json({ error: { code: "not_found", message: "not_found", details: {} } }, { status: 404 })));
+    server.use(
+      http.get("*/api/v1/bots/:id", () =>
+        HttpResponse.json(
+          { error: { code: "not_found", message: "not_found", details: {} } },
+          { status: 404 },
+        ),
+      ),
+    );
     await expect(getBot(9)).rejects.toBeTruthy();
   });
 });

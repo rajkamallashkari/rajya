@@ -32,6 +32,7 @@ export async function createConversation(body: {
   account_ids?: number[];
   kind?: string;
   title?: string;
+  username?: string;
 }) {
   return unwrap(
     await apiClient().POST("/api/v1/conversations", {
@@ -180,6 +181,16 @@ export async function reactToMessage(messageId: number, emoji: string) {
   );
 }
 
+export async function unreactToMessage(messageId: number, emoji: string) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/messages/{message_id}/reactions/{emoji}", {
+      headers: bearerHeaders(),
+      params: { path: { emoji, message_id: messageId } },
+    }),
+    "unreact_failed",
+  );
+}
+
 export async function pinMessage(conversationId: number, messageId: number) {
   return unwrap(
     await apiClient().POST("/api/v1/conversations/{conversation_id}/pins", {
@@ -188,6 +199,26 @@ export async function pinMessage(conversationId: number, messageId: number) {
       body: { message_id: messageId },
     }),
     "pin_failed",
+  );
+}
+
+export async function listPinnedMessages(conversationId: number) {
+  return unwrap(
+    await apiClient().GET("/api/v1/conversations/{conversation_id}/pins", {
+      headers: bearerHeaders(),
+      params: { path: { conversation_id: conversationId } },
+    }),
+    "pins_failed",
+  );
+}
+
+export async function unpinMessage(conversationId: number, messageId: number) {
+  return unwrap(
+    await apiClient().DELETE("/api/v1/conversations/{conversation_id}/pins/{message_id}", {
+      headers: bearerHeaders(),
+      params: { path: { conversation_id: conversationId, message_id: messageId } },
+    }),
+    "unpin_failed",
   );
 }
 

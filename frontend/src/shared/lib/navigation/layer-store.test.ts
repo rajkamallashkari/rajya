@@ -5,6 +5,7 @@ import {
   conversationLayer,
   layersForOpenConversation,
   partitionLayers,
+  scheduledMessagesLayer,
   settingsLayer,
   useLayerStore,
 } from "./layer-store";
@@ -76,6 +77,12 @@ describe("layer-store", () => {
       id: "settings",
       kind: "settings",
       title: "Settings",
+    });
+    expect(scheduledMessagesLayer("ada", "Scheduled Messages")).toEqual({
+      conversationId: "ada",
+      id: "scheduled:ada",
+      kind: "scheduled",
+      title: "Scheduled Messages",
     });
     expect(partitionLayers([])).toEqual({ conversation: undefined, details: [] });
     expect(partitionLayers([ada, adaProfile, memberProfile])).toEqual({

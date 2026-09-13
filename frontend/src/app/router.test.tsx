@@ -29,6 +29,7 @@ describe("AppRouter", () => {
 
   it("keeps the shell on the magic-link mailer path", () => {
     expect(appRoutes.some((route) => route.path === "/auth/magic")).toBe(true);
+    expect(appRoutes.some((route) => route.path === "/u/:username")).toBe(true);
   });
 
   it("renders the admin shell", async () => {

@@ -6,7 +6,6 @@ import {
   MessageSquare,
   Monitor,
   Palette,
-  Shield,
   ShieldCheck,
   ShieldEllipsis,
   Sparkles,
@@ -15,10 +14,8 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
-import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { LayerHeader } from "@/app/navigation/layer-header";
-import { useMe } from "@/features/admin/api/queries";
 import { AccountsPanel } from "@/features/settings/components/accounts-panel";
 import { AiPanel } from "@/features/settings/components/ai-panel";
 import { BotsPanel } from "@/features/settings/components/bots-panel";
@@ -95,8 +92,6 @@ export function SettingsPanel({ onClose }: { onClose?: () => void } = {}) {
 function SettingsHub(): ReactNode {
   const { t } = useTranslation();
   const setSettingsPanel = useShellStore((state) => state.setSettingsPanel);
-  const me = useMe();
-  const isAdmin = me.data?.user.is_admin === true;
   return (
     <nav aria-label={t("settings.title")} className="flex flex-col">
       {SETTINGS_PANELS.map((section) => {
@@ -117,21 +112,6 @@ function SettingsHub(): ReactNode {
           </Button>
         );
       })}
-      {isAdmin ? (
-        <Button
-          asChild
-          className="h-auto w-full justify-between px-[var(--space-list-x)] py-[var(--space-list-y)]"
-          variant="ghost"
-        >
-          <Link to="/admin">
-            <span className="flex min-w-0 items-center gap-[var(--control-gap)]">
-              <Shield aria-hidden="true" className={ICON_CLASS} />
-              <span className={WEIGHT_EMPHASIS}>{t("admin.title")}</span>
-            </span>
-            <ChevronRight aria-hidden="true" className={ICON_CLASS} />
-          </Link>
-        </Button>
-      ) : null}
     </nav>
   );
 }

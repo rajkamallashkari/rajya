@@ -2,6 +2,32 @@ require "swagger_helper"
 
 # rubocop:disable RSpec/VariableName
 # rubocop:disable RSpec/AnyInstance, RSpec/EmptyExampleGroup, RSpec/MultipleDescribes, RSpec/MultipleMemoizedHelpers, RSpec/ScatteredSetup -- rswag path groups + F-1 stub
+RSpec.describe "Pins index", type: :request do
+  path "/api/v1/conversations/{conversation_id}/pins" do
+    get "List pinned messages" do
+      tags "Messages"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :conversation_id, in: :path, type: :integer
+
+      response "200", "listed" do
+        schema "$ref" => "#/components/schemas/PinnedMessageList"
+        let(:user) { create(:user) }
+        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:message) { Messages::Send.call(conversation: conversation, sender: user.account, body: "Hi").value }
+        let(:conversation_id) { conversation.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+
+        before { Messages::Pin.call(message: message, actor: user.account) }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).fetch("pinned_messages").sole.fetch("message_id")).to eq(message.id)
+        end
+      end
+    end
+  end
+end
+
 RSpec.describe "Pins create", type: :request do
   path "/api/v1/conversations/{conversation_id}/pins" do
     post "Pin a message" do
@@ -69,14 +95,16 @@ RSpec.describe "Saved messages index", type: :request do
       response "200", "listed" do
         schema "$ref" => "#/components/schemas/SavedMessageList"
         let(:user) { create(:user) }
-        let(:conversation) { create_direct_between(user.account, create(:account)) }
+        let(:peer) { create(:account) }
+        let(:conversation) { create_direct_between(user.account, peer) }
         let(:message) { Messages::Send.call(conversation: conversation, sender: user.account, body: "Hi").value }
         let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
 
         before { Messages::Save.call(message: message, actor: user.account) }
 
         run_test! do |response|
-          expect(JSON.parse(response.body).fetch("saved_messages").sole.fetch("message_id")).to eq(message.id)
+          saved = JSON.parse(response.body).fetch("saved_messages").sole
+          expect(saved).to include("message_id" => message.id, "conversation_title" => peer.display_name)
         end
       end
 

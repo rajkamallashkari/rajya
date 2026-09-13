@@ -134,16 +134,24 @@ describe("settings hub stack", () => {
 
     await user.click(screen.getByRole("button", { name: en.settings.starred }));
     expect(document.querySelector("[data-starred-panel]")).not.toBeNull();
-    await user.click(screen.getByRole("button", { name: en.settings.starred_unsave }));
+    fireEvent.contextMenu(
+      screen.getByRole("button", {
+        name: en.settings.starred_open_message.replace("{{message}}", "Are you free later?"),
+      }),
+    );
+    await user.click(await screen.findByRole("menuitem", { name: en.settings.starred_unsave }));
     await user.click(screen.getByRole("button", { name: en.shell.back }));
 
     await user.click(screen.getByRole("button", { name: en.settings.scheduled }));
     expect(await screen.findByText("Ada Lovelace")).toBeInTheDocument();
-    await user.click(await screen.findByRole("button", { name: en.settings.scheduled_send_now }));
-    await user.click(screen.getByRole("button", { name: en.settings.scheduled_cancel }));
+    fireEvent.contextMenu(
+      screen.getByLabelText(en.settings.scheduled_actions.replace("{{message}}", "later")),
+    );
+    await user.click(await screen.findByRole("menuitem", { name: en.settings.scheduled_send_now }));
     await user.click(screen.getByRole("button", { name: en.shell.back }));
 
     await user.click(screen.getByRole("button", { name: en.settings.bots }));
+    await user.click(await screen.findByRole("button", { name: en.bots.add }));
     expect(await screen.findByRole("textbox", { name: en.bots.name })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.shell.back }));
 
@@ -219,7 +227,23 @@ describe("settings hub stack", () => {
     await user.click(screen.getAllByRole("button", { name: en.settings.dow["0"] })[1]!);
     await user.click(screen.getByRole("button", { name: en.shell.back }));
     await user.click(screen.getByRole("button", { name: en.settings.starred }));
-    await user.click(await screen.findByRole("button", { name: "Are you free later?" }));
+    expect(await screen.findByRole("button", { name: /Open message/ })).toHaveTextContent(
+      "Ada Lovelace",
+    );
+    expect(
+      screen.getAllByText(
+        (_, element) =>
+          element?.tagName === "SPAN" &&
+          element.textContent === "Ada Lovelace: Are you free later?",
+      ),
+    ).not.toHaveLength(0);
+    const savedMessage = screen.getByRole("button", {
+      name: en.settings.starred_open_message.replace("{{message}}", "Are you free later?"),
+    });
+    fireEvent.contextMenu(savedMessage);
+    expect(await screen.findByRole("menuitem", { name: en.settings.starred_unsave })).toBeVisible();
+    await user.keyboard("{Escape}");
+    await user.click(savedMessage);
     expect(useLayerStore.getState().layers[0]?.kind).toBe("conversation");
     expect(useShellStore.getState().destination).toBe("chats");
   });
@@ -358,7 +382,14 @@ describe("settings hub stack", () => {
     expect(await screen.findByText(en.lists.error_title)).toBeInTheDocument();
     failSaved = false;
     await user.click(screen.getByRole("button", { name: en.lists.error_retry }));
-    expect(await screen.findByRole("button", { name: en.settings.starred })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", {
+        name: en.settings.starred_open_message.replace(
+          "{{message}}",
+          en.settings.starred_no_content,
+        ),
+      }),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.shell.back }));
     await user.click(screen.getByRole("button", { name: en.settings.security }));
     expect(screen.queryByLabelText(en.settings.security_current_password)).toBeNull();

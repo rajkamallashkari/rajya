@@ -16,16 +16,32 @@ module Api
         render_result(
           Bots::Requests::Create.call(
             requester: current_account, kind: params[:kind], payload: params[:payload],
-            target_bot_id: params[:target_bot_id]
+            target_bot_id: params[:target_bot_id], avatar: params[:avatar],
+            avatar_provided: params.key?(:avatar)
           ),
           serializer: BotRequestResource, status: :created
         )
       end
 
+      def update
+        bot_request = policy_scope(BotRequest).find(params[:id])
+        authorize bot_request
+        render_result(
+          Bots::Requests::Update.call(
+            actor: current_account, request: bot_request, payload: params[:payload],
+            avatar: params[:avatar], avatar_provided: params.key?(:avatar)
+          ),
+          serializer: BotRequestResource
+        )
+      end
+
       def destroy
-        request = policy_scope(BotRequest).find(params[:id])
-        authorize request
-        render_result(Bots::Requests::Destroy.call(actor: current_account, request: request), serializer: OkResource)
+        bot_request = policy_scope(BotRequest).find(params[:id])
+        authorize bot_request
+        render_result(
+          Bots::Requests::Destroy.call(actor: current_account, request: bot_request),
+          serializer: OkResource
+        )
       end
     end
   end

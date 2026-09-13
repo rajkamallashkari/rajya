@@ -4,9 +4,11 @@ import { useAdminAuditEvents } from "@/features/admin/api/queries";
 import { displayMetric, queryListStatus } from "@/features/admin/model/display";
 import { Input, ListView } from "@/shared/ui";
 import { WEIGHT_EMPHASIS } from "@/shared/ui/metrics";
+import { useDateTimeFormatter } from "@/shared/hooks/use-date-time-formatter";
 
 export function AdminAuditPanel(): ReactNode {
   const { t } = useTranslation();
+  const formatDateTime = useDateTimeFormatter();
   const [actionName, setActionName] = useState("");
   const listed = useAdminAuditEvents(actionName.trim() || undefined);
   const rows = listed.data?.audit_events ?? [];
@@ -27,7 +29,7 @@ export function AdminAuditPanel(): ReactNode {
             <li key={row.id}>
               <p className={WEIGHT_EMPHASIS}>{row.action}</p>
               <p className="text-[var(--text-secondary)]">
-                {row.created_at}
+                {formatDateTime.dateTime(row.created_at)}
                 {row.impersonated_account ? ` ${row.impersonated_account.display_name}` : ""}
               </p>
               <p>{displayMetric(row.metadata)}</p>

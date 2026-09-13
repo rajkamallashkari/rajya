@@ -41,6 +41,35 @@ RSpec.describe Bots::Requests::Approve do
     expect(described_class.call(admin: stranger, request: pending).error_code).to eq(:forbidden)
   end
 
+  it "applies staged avatar replacement and removal only on approval" do
+    admin = create(:user, :admin)
+    owner = create(:user)
+    bot = create(:bot, owner_account: owner.account, persona_prompt: prompt)
+    bot.account.avatar.attach(blob_signed_id)
+    original_blob_id = bot.account.avatar.blob_id
+    request = create(
+      :bot_request, requester_account: owner.account, kind: "edit", target_bot: bot,
+      avatar_action: "replace",
+      payload: {
+        "name" => "Renamed", "username" => bot.account.username,
+        "bio" => "New", "persona_prompt" => prompt
+      }
+    )
+    request.avatar.attach(blob_signed_id(filename: "new.webp", content_type: "image/webp"))
+
+    expect(bot.account.avatar.blob_id).to eq(original_blob_id)
+    described_class.call(admin: admin, request: request)
+    expect(bot.account.reload.avatar.blob_id).not_to eq(original_blob_id)
+    expect(request.reload.avatar).not_to be_attached
+
+    removal = create(
+      :bot_request, requester_account: owner.account, kind: "edit", target_bot: bot,
+      avatar_action: "remove", payload: request.payload
+    )
+    described_class.call(admin: admin, request: removal)
+    expect(bot.account.reload.avatar).not_to be_attached
+  end
+
   it "refuses a second approval, a missing request, and a taken username" do
     admin = create(:user, :admin)
     taken = create(:account, username: "taken_bot")

@@ -20,7 +20,13 @@ import {
   splitHighlight,
   wrapMatchIndex,
 } from "@/features/search/model/highlight";
-import { jumpDateIso, startOfDayIso, endOfDayIso } from "@/features/search/model/jump-dates";
+import {
+  endOfDayIso,
+  jumpDateIso,
+  localDateInputValue,
+  localDateOffset,
+  startOfDayIso,
+} from "@/features/search/model/jump-dates";
 import {
   dateInputValue,
   EMPTY_SEARCH_FILTERS,
@@ -74,13 +80,17 @@ describe("search models", () => {
     expect(jumpDateIso("week", Date.parse("2026-08-31T12:00:00.000Z"))).toBe(
       "2026-08-24T12:00:00.000Z",
     );
-    expect(startOfDayIso("2026-01-02")).toBe("2026-01-02T00:00:00.000Z");
-    expect(endOfDayIso("2026-01-02")).toBe("2026-01-02T23:59:59.999Z");
+    expect(startOfDayIso("2026-01-02")).toBe(new Date(2026, 0, 2).toISOString());
+    expect(localDateInputValue(new Date(2026, 0, 2))).toBe("2026-01-02");
+    expect(localDateOffset(-1, new Date(2026, 0, 2, 12).getTime())).toBe("2026-01-01");
+    expect(endOfDayIso("2026-01-02")).toBe(new Date(2026, 0, 2, 23, 59, 59, 999).toISOString());
     expect(endOfDayIso("nope")).toBeNull();
     expect(filtersActive(EMPTY_SEARCH_FILTERS)).toBe(false);
     expect(filtersActive({ hasLink: true, kind: "image", senderAccountId: 2 })).toBe(true);
     expect(serializeFilters({ kind: "voice", hasAttachment: true })).toBe("|||voice|1|");
-    expect(toSearchQueryParams({ createdAfter: "a", createdBefore: "b", hasAttachment: true })).toEqual({
+    expect(
+      toSearchQueryParams({ createdAfter: "a", createdBefore: "b", hasAttachment: true }),
+    ).toEqual({
       created_after: "a",
       created_before: "b",
       has_attachment: true,
@@ -278,7 +288,7 @@ describe("search UI", () => {
     expect(onMessage).toHaveBeenCalled();
   });
 
-  it("jumps by date shortcuts", async () => {
+  it("selects valid date shortcuts and jumps on confirmation", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     const onJump = vi.fn();
     useSearchStore.getState().setDateOpen(true);
@@ -287,21 +297,32 @@ describe("search UI", () => {
         <JumpDateSheet onJump={onJump} />
       </AppProviders>,
     );
-    await user.click(screen.getByRole("button", { name: en.search.jump_today }));
-    await user.type(screen.getByLabelText(en.search.pick_date), "2026-01-02");
-    useSearchStore.getState().setDateOpen(true);
+    expect(screen.getByLabelText(en.search.pick_date)).toHaveAttribute(
+      "max",
+      localDateInputValue(),
+    );
+    await user.clear(screen.getByLabelText(en.search.pick_date));
+    expect(screen.getByText(en.search.pick_date)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.search.jump_yesterday }));
     await user.click(screen.getByRole("button", { name: en.search.jump_week }));
-    expect(onJump).toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: en.search.jump_month }));
+    expect(onJump).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: en.search.jump }));
+    expect(onJump).toHaveBeenCalledTimes(1);
+    useSearchStore.getState().setDateOpen(true);
+    await user.click(screen.getByRole("button", { name: en.search.jump_beginning }));
+    expect(onJump).toHaveBeenLastCalledWith("1970-01-01T00:00:00.000Z");
   });
 
   it("applies advanced filters from the sheet", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     useSearchStore.getState().openChatSearch();
     useSearchStore.getState().setMode("list");
-    useSearchStore.getState().setMembers([
-      { account: { display_name: "Ada", id: 1, kind: "human", username: "ada" }, role: "member" },
-    ]);
+    useSearchStore
+      .getState()
+      .setMembers([
+        { account: { display_name: "Ada", id: 1, kind: "human", username: "ada" }, role: "member" },
+      ]);
     render(
       <AppProviders>
         <ChatSearchBar conversationId={15} matchIndex={0} onCycle={vi.fn()} />

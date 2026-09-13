@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BottomSheet, BottomSheetContent, BottomSheetTitle, Button, Input } from "@/shared/ui";
+import {
+  Button,
+  Input,
+  ResponsiveOverlay as BottomSheet,
+  ResponsiveOverlayContent as BottomSheetContent,
+  ResponsiveOverlayTitle as BottomSheetTitle,
+} from "@/shared/ui";
 import { MS_PER_SECOND, SECONDS_PER_HOUR } from "@/features/composer/model/constants";
 
 function toLocalInput(iso: string): string {

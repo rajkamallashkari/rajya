@@ -25,6 +25,7 @@ import {
   revokeDeviceSession,
   revokeOtherDeviceSessions,
   sendScheduledMessageNow,
+  updateScheduledMessage,
   updatePreferences,
   upsertContactNickname,
   type Preferences,
@@ -213,6 +214,22 @@ export function useCreateScheduledMessage() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createScheduledMessage,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: scheduledMessageKeys.list() });
+    },
+  });
+}
+
+export function useUpdateScheduledMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      changes,
+    }: {
+      id: number;
+      changes: { body?: string; scheduled_at?: string };
+    }) => updateScheduledMessage(id, changes),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: scheduledMessageKeys.list() });
     },

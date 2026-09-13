@@ -357,49 +357,124 @@ describe("call UI", () => {
     rerender(<VideoCallView />);
   });
 
-  it("shows live, silenced, and stuck top bars", async () => {
+  it("names the peer, times the call, and restores it from the minimized bar", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     useCallStore.setState({
       callType: "audio",
       initiatorName: "Ada",
+      localStream: null,
       micOn: true,
       minimized: true,
+      participants: [participant(1), participant(2)],
+      startedAt: null,
       status: "active",
     });
     const { rerender } = render(<TopCallBar />);
+    expect(screen.getByText("Ada")).toBeInTheDocument();
+    expect(screen.getByText("00:00")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(`Ada, ${en.calls.status_active}`);
+    expect(screen.queryByRole("button", { name: en.calls.mute })).toBeNull();
+    expect(screen.getByRole("button", { name: en.calls.end })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Maximize call/ }));
     expect(useCallStore.getState().minimized).toBe(false);
+
+    useCallStore.setState({ callType: "audio", initiatorName: null, minimized: true });
+    rerender(<TopCallBar />);
+    expect(screen.getByText(en.calls.title_audio)).toBeInTheDocument();
+    useCallStore.setState({
+      participants: [participant(1), participant(2), participant(3)],
+    });
+    rerender(<TopCallBar />);
+    expect(screen.getByText("Group call · 3")).toBeInTheDocument();
+  });
+
+  it("keeps mute, camera, and end reachable without restoring the call", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
     useCallStore.setState({
       callType: "audio",
+      initiatorName: "Ada",
+      localStream: liveVideo(),
       micOn: true,
       minimized: true,
-      status: "ringing-outgoing",
+      participants: [participant(1), participant(2)],
+      status: "active",
     });
+    const { rerender } = render(<TopCallBar />);
+    const mute = screen.getByRole("button", { name: en.calls.mute });
+    expect(mute).toHaveAttribute("aria-pressed", "false");
+    expect(mute).toHaveAttribute("title", en.calls.mute);
+    expect(screen.queryByRole("button", { name: en.calls.video_off })).toBeNull();
+    await user.click(mute);
+    expect(engine.toggleMic).toHaveBeenCalled();
+    expect(useCallStore.getState().minimized).toBe(true);
+
+    useCallStore.setState({ micOn: false });
     rerender(<TopCallBar />);
-    await user.click(screen.getByRole("button", { name: en.calls.mute }));
-    await user.click(screen.getByRole("button", { name: en.calls.end }));
-    expect(engine.cancelCall).toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: en.calls.unmute })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    useCallStore.setState({ callType: "video", camOn: true, initiatorName: null, micOn: true });
+    rerender(<TopCallBar />);
+    expect(screen.getByText(en.calls.title_video)).toBeInTheDocument();
+    const camera = screen.getByRole("button", { name: en.calls.video_off });
+    expect(camera.className).toContain("hidden");
+    expect(camera.className).toContain("sm:inline-flex");
+    expect(screen.getByText(en.calls.title_video).className).toContain("truncate");
+    await user.click(camera);
+    expect(engine.toggleCamera).toHaveBeenCalled();
+    expect(useCallStore.getState().minimized).toBe(true);
+
+    useCallStore.setState({ camOn: false });
+    rerender(<TopCallBar />);
+    expect(screen.getByRole("button", { name: en.calls.video_on })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("cancels while ringing and hangs up once connected", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
     useCallStore.setState({
       callType: "audio",
-      micOn: false,
+      localStream: liveVideo(),
+      micOn: true,
       minimized: true,
-      status: "connecting",
+      participants: [participant(1), participant(2)],
+      status: "ringing-outgoing",
     });
+    const { rerender } = render(<TopCallBar />);
+    expect(screen.getByText(en.calls.ringing)).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(en.calls.ringing);
+    await user.click(screen.getByRole("button", { name: en.calls.end }));
+    expect(engine.cancelCall).toHaveBeenCalled();
+
+    useCallStore.setState({ minimized: true, status: "connecting" });
     rerender(<TopCallBar />);
+    expect(screen.getByText(en.calls.connecting)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.calls.end }));
     expect(engine.endCall).toHaveBeenCalled();
-    useCallStore.setState({ callType: "video", minimized: true, status: "active" });
-    rerender(<TopCallBar />);
+  });
+
+  it("shows silenced and stuck top bars", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
     useCallStore.setState({
       callType: "video",
       incomingSilenced: true,
       initiatorName: null,
       status: "ringing-incoming",
     });
-    rerender(<TopCallBar />);
+    const { rerender } = render(<TopCallBar />);
     await user.click(screen.getByRole("button", { name: /Incoming video/ }));
-    useCallStore.setState({ incomingSilenced: true, status: "ringing-incoming" });
+    useCallStore.setState({
+      callType: "audio",
+      incomingSilenced: true,
+      initiatorName: "Ada",
+      status: "ringing-incoming",
+    });
     rerender(<TopCallBar />);
+    expect(screen.getByRole("button", { name: /Incoming voice · Ada/ })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: en.calls.decline }));
     await user.click(screen.getByRole("button", { name: en.calls.accept }));
     useCallStore.setState({

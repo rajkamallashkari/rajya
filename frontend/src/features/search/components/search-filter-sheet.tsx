@@ -8,11 +8,11 @@ import {
 import { endOfDayIso, startOfDayIso } from "@/features/search/model/jump-dates";
 import { useSearchStore } from "@/features/search/store/search-store";
 import {
-  BottomSheet,
-  BottomSheetContent,
-  BottomSheetDescription,
-  BottomSheetTitle,
-} from "@/shared/ui/bottom-sheet";
+  ResponsiveOverlay as BottomSheet,
+  ResponsiveOverlayContent as BottomSheetContent,
+  ResponsiveOverlayDescription as BottomSheetDescription,
+  ResponsiveOverlayTitle as BottomSheetTitle,
+} from "@/shared/ui/responsive-overlay";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";

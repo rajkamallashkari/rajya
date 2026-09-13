@@ -38,12 +38,18 @@ RSpec.describe Conversations::Gallery do
     expect(second.has_more).to be(false)
   end
 
-  it "lists files and ready link previews" do
+  it "lists files and body links with ready preview details" do # rubocop:disable RSpec/ExampleLength
     user = create(:user)
     conversation = create_direct_between(user.account, create(:account))
-    message = create(:message, conversation: conversation, sender_account: user.account, position: 1)
+    message = create(
+      :message,
+      body: "Read https://example.test/docs and https://bare.test/path.",
+      conversation: conversation,
+      sender_account: user.account,
+      position: 1
+    )
     file = attach_file(message, kind: "file", filename: "notes.pdf")
-    preview = create(:link_preview, status: "ready", title: "Example", site_name: "Ex")
+    preview = create(:link_preview, status: "ready", title: "Example", site_name: "Ex", url: "https://example.test/docs")
     create(:message_link_preview, message: message, link_preview: preview)
     create(:link_preview, status: "pending")
 
@@ -51,8 +57,10 @@ RSpec.describe Conversations::Gallery do
     links = described_class.call(conversation: conversation, kind: "links")
 
     expect(files.items).to eq([ file ])
-    expect(links.items).to eq([ preview ])
-  end
+    expect(links.items.map(&:url)).to eq(%w[https://example.test/docs https://bare.test/path])
+    expect(links.items.first).to have_attributes(message: message, title: "Example")
+    expect(links.items.last).to have_attributes(message: message, title: nil)
+  end # rubocop:enable RSpec/ExampleLength
 
   it "treats a blank page as the first page" do
     conversation = create_direct_between(create(:account), create(:account))
@@ -76,8 +84,11 @@ RSpec.describe Conversations::Gallery do
     end
 
     it "does not grow queries as the gallery grows (F-4)" do
-      Settings.fetch(:gallery_page_size)
       expect do
+        Settings.invalidate(:gallery_page_size)
+        Settings.invalidate(:media_process_stale_after)
+        Settings.fetch(:gallery_page_size)
+        Settings.fetch(:media_process_stale_after)
         GalleryPageResource.new(
           described_class.call(conversation: holder.fetch(:conversation), kind: "images")
         ).to_h

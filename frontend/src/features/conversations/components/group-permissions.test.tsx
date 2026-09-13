@@ -12,6 +12,7 @@ const conversation: Conversation = {
   id: 2,
   kind: "group",
   title: "Team",
+  member_count: 0,
   last_activity_at: "2026-01-01T12:00:00.000Z",
   unread_count: 0,
   members: [],
@@ -28,11 +29,17 @@ describe("GroupPermissions", () => {
       </AppProviders>,
     );
     expect(screen.getByText(en.conversations.permissions.title)).toBeInTheDocument();
-    await user.click(screen.getAllByRole("button", { name: en.conversations.permissions.admin })[0]!);
+    await user.click(
+      screen.getAllByRole("button", { name: en.conversations.permissions.admin })[0]!,
+    );
     await waitFor(() => {
       expect(findConversation(2)?.member_permissions).toEqual({ add_members: "admin" });
     });
-    await user.click(screen.getByRole("button", { name: en.conversations.slow_mode.seconds.replace("{{count}}", "10") }));
+    await user.click(
+      screen.getByRole("button", {
+        name: en.conversations.slow_mode.seconds.replace("{{count}}", "10"),
+      }),
+    );
     await waitFor(() => {
       expect(findConversation(2)?.slow_mode_seconds).toBe(10);
     });

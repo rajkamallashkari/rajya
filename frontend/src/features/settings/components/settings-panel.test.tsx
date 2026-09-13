@@ -30,7 +30,7 @@ const adminMe = {
 };
 
 describe("SettingsPanel admin", () => {
-  it("hides the admin row unless the session user is an admin", async () => {
+  it("never lists an admin entry for a regular session", async () => {
     render(wrap(<SettingsPanel />));
     await waitFor(() => {
       expect(screen.getByRole("button", { name: en.settings.display })).toBeInTheDocument();
@@ -39,10 +39,13 @@ describe("SettingsPanel admin", () => {
     expect(screen.queryByRole("link", { name: en.admin.title })).toBeNull();
   });
 
-  it("links admins to the admin shell", async () => {
+  it("keeps the admin entry out of settings for admins", async () => {
     server.use(http.all("*/api/v1/users/me", () => HttpResponse.json(adminMe)));
     render(wrap(<SettingsPanel />));
-    const link = await screen.findByRole("link", { name: en.admin.title });
-    expect(link).toHaveAttribute("href", "/admin");
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: en.settings.display })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("link", { name: en.admin.title })).toBeNull();
+    expect(document.querySelector('a[href="/admin"]')).toBeNull();
   });
 });

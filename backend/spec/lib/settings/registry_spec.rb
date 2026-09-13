@@ -19,6 +19,7 @@ RSpec.describe Settings::Registry do
       :presence_ttl, :last_active_debounce, :presence_offline_grace,
       :mention_everyone_limit, :mention_everyone_period, :slow_mode_presets,
       :file_caps, :user_quota_bytes, :blocked_upload_extensions, :orphan_blob_max_age, :gallery_page_size,
+      :media_process_stale_after,
       :sticker_pack_max_bytes, :gif_search_limit, :ai_transcribe_models, :ai_bot_reply_models,
       :ai_reply_rate_limit, :ai_reply_retry_attempts, :ollama_base_url, :location_tile_request_cap,
       :notification_cascade_defaults, :stun_urls, :turn_port, :turn_credential_ttl,

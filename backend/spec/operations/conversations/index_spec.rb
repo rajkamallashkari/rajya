@@ -25,6 +25,15 @@ RSpec.describe Conversations::Index do
     expect(result.value.conversations.map(&:id)).to eq([ older.id, newer.id ])
   end
 
+  it "preloads membership accounts and their avatars" do
+    user = create(:user)
+    conversation = create_talk(kind: "group", owner: user.account, members: [ create(:account) ])
+    loaded = described_class.call(account: user.account, conversations: Conversation.all).value.conversations.sole
+
+    expect(loaded.association(:conversation_memberships)).to be_loaded
+    expect(loaded.conversation_memberships.first.account.association(:avatar_attachment)).to be_loaded
+  end
+
   it "omits archived conversations from the default list and returns them when asked (NR-14)" do
     user = create(:user)
     peer = create(:account)

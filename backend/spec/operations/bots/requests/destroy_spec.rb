@@ -9,6 +9,16 @@ RSpec.describe Bots::Requests::Destroy do
     expect(BotRequest.find_by(id: request.id)).to be_nil
   end
 
+  it "deletes a declined request and cleans up its staged avatar" do
+    user = create(:user)
+    request = create(:bot_request, requester_account: user.account, status: "declined")
+    request.avatar.attach(blob_signed_id)
+    blob_id = request.avatar.blob_id
+
+    expect(described_class.call(actor: user.account, request: request)).to be_success
+    expect(ActiveStorage::Blob.find_by(id: blob_id)).to be_nil
+  end
+
   it "forbids another account and a decided request" do
     owner = create(:user)
     request = create(:bot_request, requester_account: owner.account)

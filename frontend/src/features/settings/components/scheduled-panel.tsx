@@ -1,59 +1,52 @@
 import { useTranslation } from "react-i18next";
-import { useConversations } from "@/features/conversations/api/queries";
-import { conversationTitle } from "@/features/conversations/model/title";
-import {
-  useCancelScheduledMessage,
-  useScheduledMessages,
-  useSendScheduledMessageNow,
-} from "@/features/settings/api/queries";
+import { LayerHeader } from "@/app/navigation/layer-header";
+import { useScheduledMessages } from "@/features/settings/api/queries";
+import { ScheduledMessageList } from "@/features/settings/components/scheduled-message-list";
 import { queryListStatus } from "@/features/settings/model/map-sessions";
-import { Button, ListView } from "@/shared/ui";
-import { WEIGHT_EMPHASIS } from "@/shared/ui/metrics";
+import { ConversationIdentityRow } from "@/shared/ui/conversation-identity-row";
 
-export function ScheduledPanel() {
-  const { t } = useTranslation();
+export function ScheduledPanel({ conversationId }: { conversationId?: number } = {}) {
   const scheduled = useScheduledMessages();
-  const conversations = useConversations();
-  const cancel = useCancelScheduledMessage();
-  const sendNow = useSendScheduledMessageNow();
-  const rows = scheduled.data?.scheduled_messages ?? [];
-  const chats = conversations.data?.conversations ?? [];
+  const allRows = scheduled.data?.scheduled_messages ?? [];
+  const rows =
+    conversationId == null
+      ? allRows
+      : allRows.filter((row) => row.conversation_id === conversationId);
 
   return (
     <div className="flex flex-col gap-[var(--control-gap)]" data-scheduled-panel="">
-      <ListView
+      {conversationId != null && rows[0]?.conversation ? (
+        <ConversationIdentityRow
+          className="px-[var(--space-2)]"
+          conversation={rows[0].conversation}
+          openConversation
+        />
+      ) : null}
+      <ScheduledMessageList
         onRetry={() => {
           void scheduled.refetch();
         }}
+        rows={rows}
+        showConversationIdentity={conversationId == null}
         status={queryListStatus(scheduled.isPending, scheduled.isError, rows.length === 0)}
-      >
-        <ul className="flex flex-col gap-[var(--space-3)]">
-          {rows.map((row) => {
-            const conversation = chats.find((chat) => chat.id === row.conversation_id);
-            return (
-              <li className="flex flex-col gap-[var(--space-2)]" key={row.id}>
-                <p className={WEIGHT_EMPHASIS}>
-                  {conversation
-                    ? conversationTitle(conversation, t("settings.scheduled"))
-                    : t("settings.scheduled")}
-                </p>
-                <p className="text-[var(--text-secondary)]">{row.body}</p>
-                <p className="text-[length:var(--text-sm)] text-[var(--text-tertiary)]">
-                  {row.scheduled_at}
-                </p>
-                <div className="flex flex-wrap gap-[var(--control-gap)]">
-                  <Button onClick={() => sendNow.mutate(row.id)} type="button">
-                    {t("settings.scheduled_send_now")}
-                  </Button>
-                  <Button onClick={() => cancel.mutate(row.id)} type="button" variant="danger">
-                    {t("settings.scheduled_cancel")}
-                  </Button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </ListView>
+      />
+    </div>
+  );
+}
+
+export function ScheduledMessagesLayer({ conversationId }: { conversationId: number }) {
+  const { t } = useTranslation();
+
+  return (
+    <div
+      className="flex h-full min-h-0 flex-col bg-[var(--surface-panel)]"
+      data-scheduled-conversation-id={conversationId}
+      data-scheduled-messages-layer=""
+    >
+      <LayerHeader title={t("settings.scheduled")} />
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[var(--space-list-x)] py-[var(--space-4)]">
+        <ScheduledPanel conversationId={conversationId} />
+      </div>
     </div>
   );
 }

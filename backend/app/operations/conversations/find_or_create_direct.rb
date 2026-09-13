@@ -2,10 +2,11 @@ module Conversations
   # Unique `direct_key` makes the duplicate-DM race structurally impossible (F-13).
   # NR-1: a block 404s *new* directs; an existing thread is returned as-is.
   class FindOrCreateDirect < ApplicationOperation
-    def call(creator:, account_id:)
-      other = resolve_other(creator, account_id)
-      return failure(:not_found) if other.nil?
+    def call(creator:, account_id: nil, username: nil)
+      target = Accounts::ResolveDirectTarget.call(creator: creator, account_id: account_id, username: username)
+      return target if target.failure?
 
+      other = target.value
       key = Conversation.direct_key_for(creator.id, other.id)
       existing = Conversation.find_by(direct_key: key)
       return success(View.for(existing, creator, include_members: true)) if existing
@@ -17,12 +18,6 @@ module Conversations
     end
 
     private
-
-    def resolve_other(creator, account_id)
-      return creator if account_id.blank? || account_id.to_i == creator.id
-
-      Account.find_by(id: account_id)
-    end
 
     def insert_direct!(creator, other, key)
       Conversation.transaction do

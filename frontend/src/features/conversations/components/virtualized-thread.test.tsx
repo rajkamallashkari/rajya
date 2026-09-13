@@ -77,6 +77,7 @@ describe("VirtualizedThread", () => {
     );
     expect(screen.getByText("m1")).toBeInTheDocument();
     expect(screen.getByText("header")).toBeInTheDocument();
+    expect(document.querySelector("[data-thread-run]")).toHaveClass("px-[var(--space-list-x)]");
     await flush();
     const scroller = document.querySelector("[data-virtuoso]") as HTMLDivElement;
     Object.defineProperty(scroller, "scrollTop", { configurable: true, writable: true, value: 0 });
@@ -96,7 +97,9 @@ describe("VirtualizedThread", () => {
         scrollerRef={{ current: null }}
       />,
     );
-    expect(await screen.findByRole("button", { name: en.conversations.jump_to_latest })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: en.conversations.jump_to_latest }),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: en.conversations.jump_to_latest }));
     const live = document.querySelector("[data-virtuoso]") as HTMLDivElement;
     overflowAt(live, 3391);
@@ -291,9 +294,7 @@ describe("VirtualizedThread", () => {
       renderRun: (run: { messages: Message[] }) => <p>{run.messages[0]?.body}</p>,
       scrollerRef: { current: null },
     };
-    const { rerender } = render(
-      <VirtualizedThread {...view} hasMoreOlder loadingOlder />,
-    );
+    const { rerender } = render(<VirtualizedThread {...view} hasMoreOlder loadingOlder />);
     const scroller = document.querySelector("[data-virtuoso]") as HTMLDivElement;
     Object.defineProperty(scroller, "scrollTop", { configurable: true, writable: true, value: 0 });
     fireEvent.scroll(scroller);

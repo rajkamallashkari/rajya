@@ -21,6 +21,53 @@ RSpec.describe Accounts::ShowProfile do
     expect(profile.blocked_by_viewer).to be(true)
   end
 
+  it "exposes human contact fields only when the owner permits them" do
+    viewer = create(:account)
+    target = create(:account)
+    user = create(:user, account: target, email: "owner@example.com", phone: "+12025550147")
+    create(
+      :preference,
+      account: target,
+      data: { "privacy" => { "show_email_on_profile" => true, "show_phone_on_profile" => false } }
+    )
+
+    profile = described_class.call(viewer:, account_id: target.id).value
+
+    expect(profile.email).to eq(user.email)
+    expect(profile.phone).to be_nil
+  end
+
+  it "exposes a human phone number when the owner permits it" do
+    viewer = create(:account)
+    target = create(:account)
+    user = create(:user, account: target, email: "owner@example.com", phone: "+12025550147")
+    create(
+      :preference,
+      account: target,
+      data: { "privacy" => { "show_email_on_profile" => false, "show_phone_on_profile" => true } }
+    )
+
+    profile = described_class.call(viewer:, account_id: target.id).value
+
+    expect(profile.email).to be_nil
+    expect(profile.phone).to eq(user.phone)
+  end
+
+  it "never exposes contact fields for bots" do
+    viewer = create(:account)
+    target = create(:account, :bot_kind)
+    create(
+      :preference,
+      account: target,
+      data: { "privacy" => { "show_email_on_profile" => true, "show_phone_on_profile" => true } }
+    )
+
+    profile = described_class.call(viewer:, account_id: target.id).value
+
+    expect(profile.email).to be_nil
+    expect(profile.phone).to be_nil
+  end
+
   it "hides missing, deactivated, reverse-blocked, and mutually blocked accounts (NR-1)" do
     viewer = create(:account)
     expect(described_class.call(viewer: viewer, account_id: 0).error_code).to eq(:not_found)

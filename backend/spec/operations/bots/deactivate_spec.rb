@@ -16,15 +16,11 @@ RSpec.describe Bots::Deactivate do
     expect(described_class.call(actor: create(:user).account, bot: bot).error_code).to eq(:forbidden)
   end
 
-  it "lets an admin deactivate a system bot and keeps existing chats resolvable (BR-81)" do
+  it "does not let an admin deactivate an unowned system bot" do
     admin = create(:user, :admin)
     bot = create(:bot)
-    conversation = create_direct_between(admin.account, bot.account)
-    described_class.call(actor: admin.account, bot: bot)
 
-    expect(bot.reload).to be_deactivated
-    expect(conversation.conversation_memberships.find_by(account_id: bot.account_id)).to be_present
-    expect(described_class.call(actor: admin.account, bot: bot.reload).error_code).to eq(:not_found)
+    expect(described_class.call(actor: admin.account, bot: bot).error_code).to eq(:forbidden)
     expect(described_class.call(actor: admin.account, bot: nil).error_code).to eq(:not_found)
   end
 

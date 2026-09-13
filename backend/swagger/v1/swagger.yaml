@@ -51,6 +51,32 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Error"
+  "/api/v1/accounts/{id}/common_groups":
+    get:
+      summary: List conversations shared with an account
+      tags:
+      - Accounts
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: shared groups without member rosters
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ConversationIdentityList"
+        '404':
+          description: account blocking the viewer remains private
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
   "/api/v1/admin/settings":
     get:
       summary: List registry settings with current values
@@ -1223,9 +1249,15 @@ paths:
       - Bots
       security:
       - bearerAuth: []
+      parameters:
+      - name: owned
+        in: query
+        required: false
+        schema:
+          type: boolean
       responses:
         '200':
-          description: listed
+          description: owner-scoped with private prompt
           content:
             application/json:
               schema:
@@ -1292,6 +1324,9 @@ paths:
               properties:
                 kind:
                   type: string
+                avatar:
+                  type: string
+                  nullable: true
                 target_bot_id:
                   type: integer
                   nullable: true
@@ -1320,6 +1355,66 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/BotRequestList"
+  "/api/v1/bot_requests/{id}":
+    patch:
+      summary: Update a pending bot proposal
+      tags:
+      - Bots
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/BotRequest"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  nullable: true
+                payload:
+                  type: object
+                  additionalProperties: true
+                  properties:
+                    bio:
+                      type: string
+                    name:
+                      type: string
+                    persona_prompt:
+                      type: string
+                    username:
+                      type: string
+    delete:
+      summary: Withdraw a pending or declined proposal
+      tags:
+      - Bots
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: withdrawn
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Ok"
   "/api/v1/ai/rewrite":
     post:
       summary: Rewrite draft text
@@ -1411,26 +1506,6 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/Error"
-  "/api/v1/bot_requests/{id}":
-    delete:
-      summary: Withdraw a pending proposal
-      tags:
-      - Bots
-      security:
-      - bearerAuth: []
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-      responses:
-        '200':
-          description: withdrawn
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/Ok"
   "/api/v1/admin/bot_requests":
     get:
       summary: List bot proposals
@@ -1438,6 +1513,15 @@ paths:
       - Admin
       security:
       - bearerAuth: []
+      parameters:
+      - name: kind
+        in: query
+        schema:
+          type: string
+          enum:
+          - create
+          - edit
+        required: false
       responses:
         '200':
           description: listed
@@ -2302,6 +2386,18 @@ paths:
                   type: string
                 account_id:
                   type: integer
+                account_ids:
+                  type: array
+                  items:
+                    type: integer
+                description:
+                  type: string
+                title:
+                  type: string
+                username:
+                  type: string
+                  description: Exact account username; alternative to account_id for
+                    direct conversations
   "/api/v1/conversations/{id}":
     get:
       summary: Show a conversation
@@ -3492,6 +3588,25 @@ paths:
                 phone:
                   type: string
   "/api/v1/conversations/{conversation_id}/pins":
+    get:
+      summary: List pinned messages
+      tags:
+      - Messages
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: listed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/PinnedMessageList"
     post:
       summary: Pin a message
       tags:
@@ -5121,12 +5236,21 @@ components:
           type: string
         kind:
           type: string
+        avatar_url:
+          type: string
+          nullable: true
         bio:
           type: string
           nullable: true
-        shared_memory:
-          type: boolean
         blocked_by_viewer:
+          type: boolean
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        shared_memory:
           type: boolean
     CallParticipant:
       type: object
@@ -5212,6 +5336,7 @@ components:
       - initiator_account_id
       - kind
       - status
+      - member_count
       - participants
       - created_at
       properties:
@@ -5244,6 +5369,11 @@ components:
         title:
           type: string
           nullable: true
+        avatar_url:
+          type: string
+          nullable: true
+        member_count:
+          type: integer
         peer:
           "$ref": "#/components/schemas/Account"
           nullable: true
@@ -5976,6 +6106,9 @@ components:
         owner_account_id:
           type: integer
           nullable: true
+        persona_prompt:
+          type: string
+          nullable: true
     BotList:
       type: object
       required:
@@ -6019,6 +6152,9 @@ components:
             username:
               type: string
         decline_reason:
+          type: string
+          nullable: true
+        avatar_url:
           type: string
           nullable: true
         target_bot_id:
@@ -6171,6 +6307,10 @@ components:
             type: number
           nullable: true
           description: 'Voice-note peaks: floats in [0.0, 1.0], length waveform_peak_count.'
+        original_available:
+          type: boolean
+        processing_stalled:
+          type: boolean
         processing_status:
           type: string
           enum:
@@ -6205,6 +6345,7 @@ components:
       - byte_size
       - processing_status
       - message_id
+      - sent_at
       properties:
         id:
           type: integer
@@ -6237,6 +6378,10 @@ components:
           items:
             type: number
           nullable: true
+        original_available:
+          type: boolean
+        processing_stalled:
+          type: boolean
         processing_status:
           type: string
           enum:
@@ -6251,10 +6396,18 @@ components:
           nullable: true
         message_id:
           type: integer
+        sender:
+          "$ref": "#/components/schemas/Account"
+          nullable: true
+        sent_at:
+          type: string
+          format: date-time
     GalleryLink:
       type: object
       required:
       - url
+      - message_id
+      - sent_at
       properties:
         url:
           type: string
@@ -6267,6 +6420,14 @@ components:
         site_name:
           type: string
           nullable: true
+        message_id:
+          type: integer
+        sender:
+          "$ref": "#/components/schemas/Account"
+          nullable: true
+        sent_at:
+          type: string
+          format: date-time
     GalleryItem:
       type: object
       required:
@@ -6444,12 +6605,48 @@ components:
           type: string
         account:
           "$ref": "#/components/schemas/Account"
+    ConversationIdentity:
+      type: object
+      required:
+      - id
+      - kind
+      - member_count
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+          enum:
+          - direct
+          - group
+          - channel
+        title:
+          type: string
+          nullable: true
+        avatar_url:
+          type: string
+          nullable: true
+        member_count:
+          type: integer
+        peer:
+          "$ref": "#/components/schemas/Account"
+          nullable: true
+    ConversationIdentityList:
+      type: object
+      required:
+      - conversations
+      properties:
+        conversations:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ConversationIdentity"
     Conversation:
       type: object
       required:
       - id
       - kind
       - last_activity_at
+      - member_count
       - unread_count
       - members
       - member_permissions
@@ -6471,6 +6668,11 @@ components:
         description:
           type: string
           nullable: true
+        avatar_url:
+          type: string
+          nullable: true
+        member_count:
+          type: integer
         last_activity_at:
           type: string
           format: date-time
@@ -6629,6 +6831,10 @@ components:
           type: object
           additionalProperties:
             type: integer
+        my_reactions:
+          type: array
+          items:
+            type: string
         metadata:
           type: object
         sender_snapshot:
@@ -6944,17 +7150,33 @@ components:
           format: date-time
         message:
           "$ref": "#/components/schemas/Message"
+    PinnedMessageList:
+      type: object
+      required:
+      - pinned_messages
+      properties:
+        pinned_messages:
+          type: array
+          items:
+            "$ref": "#/components/schemas/PinnedMessage"
     SavedMessage:
       type: object
       required:
       - id
       - message_id
+      - conversation
+      - conversation_title
       - message
       properties:
         id:
           type: integer
         message_id:
           type: integer
+        conversation:
+          "$ref": "#/components/schemas/ConversationIdentity"
+        conversation_title:
+          type: string
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -6974,6 +7196,7 @@ components:
       required:
       - id
       - conversation_id
+      - conversation
       - body
       - scheduled_at
       - occurrences_sent
@@ -6982,6 +7205,8 @@ components:
           type: integer
         conversation_id:
           type: integer
+        conversation:
+          "$ref": "#/components/schemas/ConversationIdentity"
         body:
           type: string
         scheduled_at:

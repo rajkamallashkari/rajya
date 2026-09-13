@@ -3,43 +3,61 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { QrSheet } from "./qr-sheet";
 import { ReportSheet } from "./report-sheet";
-import {
-  isFinderCell,
-  isReservedQrCell,
-  qrModules,
-  QR_SIZE,
-} from "@/features/conversations/model/qr";
 import { REPORT_SUBJECTS } from "@/features/conversations/model/report";
 import { en } from "@/shared/lib/i18n/catalog";
 
-describe("qr model", () => {
-  it("places finders and encodes payload", () => {
-    expect(isFinderCell(0, 0)).toBe(true);
-    expect(isFinderCell(QR_SIZE - 1, 0)).toBe(true);
-    expect(isFinderCell(0, QR_SIZE - 1)).toBe(true);
-    expect(isFinderCell(10, 10)).toBe(false);
-    expect(isReservedQrCell(6, 10)).toBe(true);
-    const empty = qrModules("");
-    const filled = qrModules("rajya");
-    expect(empty).toHaveLength(QR_SIZE);
-    expect(filled.join()).not.toBe(empty.join());
-    expect(qrModules("rajya").join()).toBe(filled.join());
-    expect(REPORT_SUBJECTS).toContain("message");
-  });
-});
-
 describe("QrSheet", () => {
-  it("renders modules and copies", async () => {
+  it("encodes the payload with the real encoder, then copies", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     const onCopy = vi.fn();
     render(
-      <QrSheet onCopy={onCopy} onOpenChange={vi.fn()} open payload="https://rajya.pages.dev" />,
+      <QrSheet
+        onCopy={onCopy}
+        onOpenChange={vi.fn()}
+        open
+        payload="https://rajya.pages.dev/u/ada"
+      />,
     );
-    expect(document.querySelector("[data-qr-grid]")).not.toBeNull();
+    expect(document.querySelector("[data-qr-code]")).not.toBeNull();
+    expect(screen.getByRole("status", { name: en.qr.loading })).toBeInTheDocument();
+
+    const image = await screen.findByRole("img", { name: en.qr.image });
+    expect(image).toHaveAttribute("src", expect.stringContaining("data:image/svg+xml"));
+    expect(decodeURIComponent(image.getAttribute("src") ?? "")).toContain("<svg xmlns=");
+    expect(screen.queryByRole("status", { name: en.qr.loading })).toBeNull();
+    expect(REPORT_SUBJECTS).toContain("message");
+
     await user.click(screen.getByRole("button", { name: en.qr.copy }));
     expect(onCopy).toHaveBeenCalled();
-    render(<QrSheet onOpenChange={vi.fn()} open payload="x" />);
+  });
+
+  it("shows an error when the payload cannot be encoded", async () => {
+    render(<QrSheet onOpenChange={vi.fn()} open payload={"x".repeat(4000)} />);
+    expect(await screen.findByText(en.qr.error)).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: en.qr.image })).toBeNull();
     expect(screen.queryByRole("button", { name: en.qr.copy })).toBeNull();
+  });
+
+  it("skips encoding while closed or without a payload", async () => {
+    const { unmount } = render(
+      <QrSheet onOpenChange={vi.fn()} open={false} payload="https://rajya.pages.dev" />,
+    );
+    expect(document.querySelector("[data-qr-code]")).toBeNull();
+    unmount();
+
+    render(<QrSheet onOpenChange={vi.fn()} open payload="" />);
+    expect(screen.getByRole("status", { name: en.qr.loading })).toBeInTheDocument();
+    await Promise.resolve();
+    expect(screen.queryByRole("img", { name: en.qr.image })).toBeNull();
+  });
+
+  it("drops an in-flight encode after unmount", async () => {
+    const { unmount } = render(
+      <QrSheet onOpenChange={vi.fn()} open payload="https://rajya.pages.dev/u/grace" />,
+    );
+    unmount();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.queryByRole("img", { name: en.qr.image })).toBeNull();
   });
 });
 

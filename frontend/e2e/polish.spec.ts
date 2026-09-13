@@ -39,6 +39,29 @@ test.describe("polish regressions", () => {
     await expect(page.locator("[data-profile-panel]")).toBeVisible();
   });
 
+  test("renders a decodable share QR in the production bundle", async ({ page }) => {
+    const crashes: string[] = [];
+    page.on("pageerror", (error) => crashes.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "error" && /hook|react/i.test(message.text())) {
+        crashes.push(message.text());
+      }
+    });
+    await page.goto("/");
+    await page.getByRole("button", { name: en.shell.profile }).click();
+    await page.getByRole("button", { name: en.auth.profile.share }).click();
+    const qr = page.getByRole("img", { name: en.qr.image });
+    await expect(qr).toBeVisible();
+    await expect(qr).toHaveAttribute("src", /^data:image\/svg\+xml/);
+    const decoded = await qr.evaluate((node: HTMLImageElement) => ({
+      complete: node.complete,
+      width: node.naturalWidth,
+    }));
+    expect(decoded.complete).toBe(true);
+    expect(decoded.width).toBeGreaterThan(0);
+    expect(crashes).toEqual([]);
+  });
+
   test("checks username availability and previews an avatar in profile edit", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: en.shell.profile }).click();

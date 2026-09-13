@@ -49,3 +49,12 @@ export function getJumboInfo(text: string | null | undefined): JumboSize | null 
   }
   return count as JumboSize;
 }
+
+export function isEmojiOnly(text: string | null | undefined): boolean {
+  if (!text?.trim()) {
+    return false;
+  }
+  const clean = text.replace(/\s/g, "");
+  const count = countFromSegmenter(clean) ?? countFromRegex(clean);
+  return count > 0;
+}

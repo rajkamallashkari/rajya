@@ -30,10 +30,27 @@ RSpec.describe AttachmentResource do
     expect(described_class.new(attachment).to_h.fetch("transcript_status")).to eq("failed")
   end
 
+  it "reports stalled processing without claiming the derived media is ready or failed" do
+    attachment = create(:attachment, processing_status: "pending")
+    attachment.file.attach(io: StringIO.new("img"), filename: "pic.png", content_type: "image/png")
+    attachment.update_columns(updated_at: (Settings.fetch(:media_process_stale_after) + 1).seconds.ago)
+
+    expect(described_class.new(attachment).to_h).to include(
+      "original_available" => true,
+      "processing_stalled" => true,
+      "processing_status" => "pending",
+      "processing_error" => Catalog.t("media.processing.stalled")
+    )
+  end
+
   it "exposes the attached filename" do
     attachment = create(:attachment)
     attachment.file.attach(io: StringIO.new("img"), filename: "pic.png", content_type: "image/png")
 
-    expect(described_class.new(attachment).to_h.fetch("filename")).to eq("pic.png")
+    expect(described_class.new(attachment).to_h).to include(
+      "filename" => "pic.png",
+      "original_available" => true,
+      "processing_stalled" => false
+    )
   end
 end

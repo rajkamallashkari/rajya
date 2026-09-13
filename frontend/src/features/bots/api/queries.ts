@@ -2,13 +2,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   buildStyleProfile,
   createBotRequest,
+  deactivateBot,
   getStyleProfile,
+  listBotRequests,
   listBots,
+  listOwnedBots,
   rewriteDraft,
   suggestReplies,
   summarizeConversation,
   translateMessage,
+  updateBotRequest,
   updateStyleConsent,
+  withdrawBotRequest,
 } from "@/features/bots/api/http";
 import { botKeys, styleProfileKeys } from "@/features/bots/api/keys";
 import { createConversation } from "@/features/conversations/api/http";
@@ -18,6 +23,20 @@ export function useBots() {
   return useQuery({
     queryFn: listBots,
     queryKey: botKeys.list(),
+  });
+}
+
+export function useOwnedBots() {
+  return useQuery({
+    queryFn: listOwnedBots,
+    queryKey: botKeys.owned(),
+  });
+}
+
+export function useBotRequests() {
+  return useQuery({
+    queryFn: listBotRequests,
+    queryKey: botKeys.requests(),
   });
 }
 
@@ -31,10 +50,46 @@ export function useCreateBotRequest() {
   });
 }
 
+export function useUpdateBotRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ body, id }: { body: Parameters<typeof updateBotRequest>[1]; id: number }) =>
+      updateBotRequest(id, body),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: botKeys.requests() });
+    },
+  });
+}
+
+export function useWithdrawBotRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: withdrawBotRequest,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: botKeys.requests() });
+    },
+  });
+}
+
+export function useDeactivateBot() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deactivateBot,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: botKeys.owned() });
+      void queryClient.invalidateQueries({ queryKey: botKeys.list() });
+    },
+  });
+}
+
 export function useStartDirectChat() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (accountId: number) => createConversation({ account_id: accountId, kind: "direct" }),
+    mutationFn: (target: number | string) =>
+      createConversation({
+        ...(typeof target === "number" ? { account_id: target } : { username: target }),
+        kind: "direct",
+      }),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
     },
@@ -49,13 +104,8 @@ export function useRewrite() {
 
 export function useTranslateMessage() {
   return useMutation({
-    mutationFn: ({
-      id,
-      targetLanguage,
-    }: {
-      id: number;
-      targetLanguage: string;
-    }) => translateMessage(id, { target_language: targetLanguage }),
+    mutationFn: ({ id, targetLanguage }: { id: number; targetLanguage: string }) =>
+      translateMessage(id, { target_language: targetLanguage }),
   });
 }
 

@@ -2,6 +2,8 @@ import type { Message } from "@/features/conversations/api/http";
 import type { GroupableMessage } from "@/features/messages/model/constants";
 import { groupMessageRuns } from "@/features/messages/model/grouping";
 
+const CALL_SYSTEM_EVENTS = new Set(["call_ended", "call_missed", "call_started"]);
+
 export interface ThreadRun {
   id: string;
   kind: "system" | "user";
@@ -19,17 +21,36 @@ export function messageDayKey(iso: string): string {
   return `${String(date.getFullYear())}-${String(date.getMonth())}-${String(date.getDate())}`;
 }
 
-export function toGroupable(message: Message): GroupableMessage & { message: Message } {
+export function toGroupable(
+  message: Message,
+  accountIds?: ReadonlySet<number>,
+): GroupableMessage & { message: Message } {
+  const metadata =
+    message.metadata && typeof message.metadata === "object"
+      ? (message.metadata as Record<string, unknown>)
+      : {};
+  const callInitiatorId = metadata.initiator_account_id;
+  const callSenderId =
+    CALL_SYSTEM_EVENTS.has(message.system_event ?? "") &&
+    typeof callInitiatorId === "number" &&
+    (!accountIds || accountIds.has(callInitiatorId))
+      ? String(callInitiatorId)
+      : null;
   return {
     createdAt: Date.parse(message.created_at),
     id: String(message.id),
     message,
     senderId:
-      message.kind === "system" ? `system:${String(message.id)}` : String(message.sender?.id ?? 0),
+      message.kind === "system"
+        ? (callSenderId ?? `system:${String(message.id)}`)
+        : String(message.sender?.id ?? 0),
   };
 }
 
-export function buildThreadWindow(messages: Message[]): {
+export function buildThreadWindow(
+  messages: Message[],
+  accountIds?: readonly number[],
+): {
   groups: ThreadDayGroup[];
   groupCounts: number[];
   runs: ThreadRun[];
@@ -47,14 +68,17 @@ export function buildThreadWindow(messages: Message[]): {
       messages: [message],
     });
   }
+  const knownAccountIds = accountIds ? new Set(accountIds) : undefined;
   const merged = groups.map((group) => {
-    const groupable = group.runs.flatMap((run) => run.messages).map(toGroupable);
+    const groupable = group.runs
+      .flatMap((run) => run.messages)
+      .map((message) => toGroupable(message, knownAccountIds));
     const runs = groupMessageRuns(groupable).map((run) => {
       const rows = run.messages as Array<GroupableMessage & { message: Message }>;
       const first = rows[0]!.message;
       return {
         id: String(first.id),
-        kind: first.kind === "system" ? ("system" as const) : ("user" as const),
+        kind: run.senderId.startsWith("system:") ? ("system" as const) : ("user" as const),
         messages: rows.map((row) => row.message),
       };
     });

@@ -17,8 +17,10 @@ import { installTestCable } from "@/test/fake-cable";
 import {
   resetAdminConfig,
   resetAiHelpers,
+  resetBotLifecycle,
   resetIdentity,
   resetPreferences,
+  resetSavedAndScheduledMessages,
 } from "@/shared/lib/api/msw/handlers";
 import { resetMessagingStore } from "@/shared/lib/api/msw/messaging-store";
 import { _testReset as resetLayerStack } from "@/shared/lib/navigation/layer-stack";
@@ -57,8 +59,10 @@ afterEach(() => {
   server.resetHandlers();
   resetMessagingStore();
   resetAiHelpers();
+  resetBotLifecycle();
   resetIdentity();
   resetPreferences();
+  resetSavedAndScheduledMessages();
   resetAdminConfig();
 });
 

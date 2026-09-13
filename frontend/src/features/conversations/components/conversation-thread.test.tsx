@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -6,7 +7,9 @@ import { resetOsmTileBudget } from "@/features/messages/model/osm-tiles";
 import {
   bindNumericId,
   ConversationThread,
+  appendUniqueAttachments,
   buildMessageMenuActions,
+  fileUniquenessKey,
   jumpRestoreTop,
   nextInfoId,
   pollResultsId,
@@ -15,12 +18,13 @@ import {
   savedReplyViews,
   voteFromThread,
 } from "./conversation-thread";
-import { commonGroupsFromCache, ProfilePanel } from "./profile-panel";
+import { ProfilePanel } from "./profile-panel";
 import { AppProviders } from "@/app/providers";
-import { createQueryClient } from "@/shared/lib/query/client";
 import { setAccessSession } from "@/features/auth/model/access-session";
 import { ADA_DEMO } from "@/features/conversations/model/demo";
 import type { Message } from "@/features/conversations/api/http";
+import type { MessagePage } from "@/features/conversations/api/http";
+import { messageKeys } from "@/features/conversations/api/keys";
 import {
   attachPoll,
   findConversation,
@@ -32,16 +36,19 @@ import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { resetLayerStore, useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { resetSearchStore, useSearchStore } from "@/features/search/store/search-store";
+import { resetShellStore, useShellStore } from "@/features/settings/store/shell-store";
 import { SEARCH_FIXTURE_NEEDLE } from "@/features/search/model/constants";
 import { testSession } from "@/test/access-session";
 import { testCable } from "@/test/fake-cable";
 import { server } from "@/test/msw";
 import { THREAD_LOAD_OLDER_PX } from "@/features/conversations/model/constants";
+import { Button } from "@/shared/ui";
 
 afterEach(() => {
   resetOsmTileBudget();
   resetLayerStore();
   resetSearchStore();
+  resetShellStore();
 });
 
 async function liveThreadReady(text?: string): Promise<void> {
@@ -49,6 +56,32 @@ async function liveThreadReady(text?: string): Promise<void> {
   if (text) {
     expect(screen.getByText(text)).toBeInTheDocument();
   }
+}
+
+function ClearCachedReactions({ messageId }: { messageId: number }) {
+  const queryClient = useQueryClient();
+  return (
+    <Button
+      onClick={() =>
+        queryClient.setQueryData<InfiniteData<MessagePage>>(messageKeys.page(1), (current) =>
+          current
+            ? {
+                ...current,
+                pages: current.pages.map((page) => ({
+                  ...page,
+                  messages: page.messages.map((message) =>
+                    message.id === messageId ? { ...message, my_reactions: undefined } : message,
+                  ),
+                })),
+              }
+            : current,
+        )
+      }
+      type="button"
+    >
+      clear-cached-reactions
+    </Button>
+  );
 }
 
 describe("conversation layers", () => {
@@ -146,6 +179,7 @@ describe("conversation layers", () => {
     );
     await screen.findByRole("textbox");
     expect(screen.getByText("See you at the gate")).toBeInTheDocument();
+    expect(document.querySelector("header [data-account-identity-row]")).not.toBeNull();
     expect(document.querySelector("[data-conversation-thread]")?.getAttribute("style")).toContain(
       "--wallpaper-image",
     );
@@ -186,8 +220,25 @@ describe("conversation layers", () => {
     await user.click(
       screen.getByRole("button", { name: en.messages.menu.react.replace("{{emoji}}", "👍") }),
     );
+    await waitFor(() => {
+      expect(document.querySelector("[data-reaction-badges]")).not.toBeNull();
+    });
+    await user.click(
+      within(document.querySelector("[data-reaction-badges]") as HTMLElement).getByRole("button"),
+    );
+    fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
+    await user.click(screen.getByRole("button", { name: en.reactions.more }));
+    await user.click(screen.getByRole("button", { name: en.reactions.customize }));
+    await user.click(
+      screen.getByRole("button", { name: en.reactions.react_with.replace("{{emoji}}", "🚀") }),
+    );
+    await user.click(screen.getByRole("button", { name: en.reactions.done }));
+    await user.click(screen.getByRole("button", { name: en.reactions.close_picker }));
     fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.pin }));
+    await user.click(await screen.findByRole("button", { name: en.pins.jump }));
+    expect(useLayerStore.getState().layers[0]?.focusMessageId).toBeDefined();
+    await user.click(screen.getByRole("button", { name: en.pins.unpin }));
     fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
     await user.click(screen.getByRole("menuitem", { name: en.messages.menu.save }));
     fireEvent.contextMenu(bubbles[bubbles.length - 1] as HTMLElement);
@@ -263,6 +314,223 @@ describe("conversation layers", () => {
 
     expect(await screen.findByText(en.conversations.blocked_banner)).toBeInTheDocument();
     expect(document.querySelector("[data-blocked-banner]")).not.toBeNull();
+  });
+
+  it("unifies adjacent text and calls while showing one group avatar per received run", async () => {
+    setAccessSession(testSession());
+    const sender = {
+      avatar_url: "https://media.test/grace.webp",
+      display_name: "Grace",
+      id: 22,
+      kind: "human",
+      username: "grace",
+    };
+    const messages: Message[] = [
+      {
+        body: "Group text",
+        conversation_id: 2,
+        created_at: "2026-01-01T12:00:00.000Z",
+        deleted: false,
+        id: 201,
+        kind: "text",
+        position: 1,
+        revision: 1,
+        sender,
+        silent: false,
+      },
+      {
+        attachments: [
+          {
+            byte_size: 5,
+            content_type: "text/plain",
+            filename: "notes.txt",
+            id: 77,
+            kind: "file",
+            processing_status: "ready",
+          },
+        ],
+        body: "Group media",
+        conversation_id: 2,
+        created_at: "2026-01-01T12:00:10.000Z",
+        deleted: false,
+        id: 202,
+        kind: "file",
+        position: 2,
+        revision: 1,
+        sender,
+        silent: false,
+      },
+      {
+        body: "Own group text",
+        conversation_id: 2,
+        created_at: "2026-01-01T12:00:20.000Z",
+        deleted: false,
+        id: 203,
+        kind: "text",
+        position: 3,
+        revision: 1,
+        sender: {
+          display_name: "Ada",
+          id: 1,
+          kind: "human",
+          username: "ada",
+        },
+        silent: false,
+      },
+      {
+        body: "Voice call",
+        conversation_id: 2,
+        created_at: "2026-01-01T12:01:00.000Z",
+        deleted: false,
+        id: 204,
+        kind: "system",
+        metadata: {
+          initiator_account_id: 1,
+          kind: "audio",
+          status: "ended",
+        } as unknown as Message["metadata"],
+        position: 4,
+        revision: 1,
+        silent: false,
+        system_event: "call_ended",
+      },
+    ];
+    const group = findConversation(2);
+    if (!group) {
+      throw new Error("missing group fixture");
+    }
+    group.members.push({ account: sender, role: "member" });
+    messagingStore().messages[2] = messages;
+
+    const view = render(
+      <AppProviders>
+        <ConversationThread conversationId="2" />
+      </AppProviders>,
+    );
+    await liveThreadReady("Group media");
+    expect(screen.getAllByRole("img", { name: "Grace" })).toHaveLength(1);
+    expect(
+      screen
+        .getByText("Group text")
+        .closest("[data-message-group]")
+        ?.querySelectorAll("[role='img']"),
+    ).toHaveLength(1);
+    expect(
+      screen
+        .getByText("Own group text")
+        .closest("[data-message-group]")
+        ?.querySelector("[role='img']"),
+    ).toBeNull();
+    const ownBubble = screen.getByText("Own group text").closest("[data-message-bubble]");
+    const callBubble = screen.getByRole("article", { name: /Audio/ });
+    expect(ownBubble).toHaveAttribute("data-role", "first");
+    expect(callBubble.closest("[data-message-bubble]")).toHaveAttribute("data-role", "last");
+    expect(callBubble.closest("[data-message-group]")).toBe(
+      ownBubble?.closest("[data-message-group]"),
+    );
+
+    view.unmount();
+    messagingStore().messages[1] = messages.map((message, index) => ({
+      ...message,
+      conversation_id: 1,
+      id: 301 + index,
+      position: index + 1,
+    }));
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    await liveThreadReady("Group media");
+    expect(screen.queryByRole("img", { name: "Grace" })).toBeNull();
+    expect(document.querySelector("[data-message-group] [role='img']")).toBeNull();
+    expect(
+      document
+        .querySelector("[data-call-message]")
+        ?.closest("[data-message-bubble]")
+        ?.querySelector("[role='img']"),
+    ).toBeNull();
+  });
+
+  it("handles reactions while pinned messages are still loading", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    const row = findMessage(101);
+    if (!row) {
+      throw new Error("missing seeded message");
+    }
+    const body = row.body ?? "";
+    row.my_reactions = undefined;
+    row.reaction_summary = { "🚀": 1 };
+    server.use(
+      http.get("*/api/v1/conversations/:conversation_id/pins", async () => {
+        await delay(2_000);
+        return HttpResponse.json({ pinned_messages: [] });
+      }),
+    );
+
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+        <ClearCachedReactions messageId={row.id} />
+      </AppProviders>,
+    );
+    await screen.findByText(body);
+    const bubble = Array.from(document.querySelectorAll("[data-message-bubble]")).find((element) =>
+      element.textContent?.includes(body),
+    );
+    if (!bubble) {
+      throw new Error("missing seeded message bubble");
+    }
+    fireEvent.contextMenu(bubble);
+    await user.click(screen.getByRole("menuitem", { name: en.messages.menu.pin }));
+    await user.click(screen.getByRole("button", { name: "clear-cached-reactions" }));
+    const updatedBubble = Array.from(document.querySelectorAll("[data-message-bubble]")).find(
+      (element) => element.textContent?.includes(body),
+    );
+    if (!updatedBubble) {
+      throw new Error("missing updated message bubble");
+    }
+    await user.click(screen.getByText("🚀").closest("button") as HTMLElement);
+  });
+
+  it("removes an existing reaction from the menu", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    const row = findMessage(101);
+    if (!row) {
+      throw new Error("missing seeded message");
+    }
+    const body = row.body ?? "";
+    server.use(
+      http.get("*/api/v1/conversations/:conversation_id/messages", () =>
+        HttpResponse.json({
+          messages: [{ ...row, my_reactions: ["👍"] }],
+          meta: {
+            has_more_after: false,
+            has_more_before: false,
+            newest_position: row.position,
+            oldest_position: row.position,
+          },
+        }),
+      ),
+    );
+    render(
+      <AppProviders>
+        <ConversationThread conversationId="1" />
+      </AppProviders>,
+    );
+    await screen.findByText(body);
+    const clearedBubble = Array.from(document.querySelectorAll("[data-message-bubble]")).find(
+      (element) => element.textContent?.includes(body),
+    );
+    if (!clearedBubble) {
+      throw new Error("missing cleared message bubble");
+    }
+    fireEvent.contextMenu(clearedBubble);
+    await user.click(
+      screen.getByRole("button", { name: en.messages.menu.react.replace("{{emoji}}", "👍") }),
+    );
   });
 
   it("votes in a live poll, opens results, and renders location and contact cards", async () => {
@@ -409,7 +677,7 @@ describe("conversation layers", () => {
         <ConversationThread conversationId="3" />
       </AppProviders>,
     );
-    expect(await screen.findByLabelText(en.conversations.untitled)).toBeInTheDocument();
+    expect(await screen.findByRole("textbox")).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole("textbox"), { key: SHORTCUTS.editLast });
     expect(screen.queryByText(en.composer.editing)).toBeNull();
   });
@@ -492,7 +760,7 @@ describe("conversation layers", () => {
     expect(document.querySelector("[data-profile-panel]")).not.toBeNull();
   });
 
-  it("shows invite management on a live group and a profile QR on a direct", async () => {
+  it("shows invite management on a live group and profile sharing in the direct header", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     setAccessSession(testSession());
     const writeText = vi.fn().mockResolvedValue(undefined);
@@ -500,6 +768,18 @@ describe("conversation layers", () => {
       configurable: true,
       value: { writeText },
     });
+    server.use(
+      http.get("*/api/v1/accounts/:id", () =>
+        HttpResponse.json({
+          bio: null,
+          blocked_by_viewer: false,
+          display_name: "Grace",
+          id: 2,
+          kind: "human",
+          username: "grace",
+        }),
+      ),
+    );
     const { rerender } = render(
       <AppProviders>
         <ProfilePanel conversationId="2" />
@@ -520,15 +800,72 @@ describe("conversation layers", () => {
         <ProfilePanel conversationId="1" />
       </AppProviders>,
     );
-    expect(await screen.findByRole("button", { name: en.invites.profile_qr })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: en.auth.profile.share })).toBeInTheDocument();
+    expect(screen.queryByText(en.invites.profile_qr)).toBeNull();
     expect(screen.queryByText(en.invites.manage)).toBeNull();
-    await user.click(screen.getByRole("button", { name: en.invites.profile_qr }));
-    expect(document.querySelector("[data-qr-grid]")).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: en.auth.profile.share }));
+    expect(document.querySelector("[data-qr-code]")).not.toBeNull();
     await user.click(screen.getByRole("button", { name: en.qr.copy }));
     expect(writeText).toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: en.ui.close }));
     await waitFor(() => {
-      expect(document.querySelector("[data-qr-grid]")).toBeNull();
+      expect(document.querySelector("[data-qr-code]")).toBeNull();
+    });
+  });
+
+  it("shares account profile links from the header and hides sharing without a username", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    setAccessSession(testSession());
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    server.use(
+      http.get("*/api/v1/accounts/:id", () =>
+        HttpResponse.json({
+          bio: null,
+          blocked_by_viewer: false,
+          display_name: "Grace",
+          id: 2,
+          kind: "human",
+          username: "grace",
+        }),
+      ),
+    );
+    const { rerender } = render(
+      <AppProviders>
+        <ProfilePanel accountId="2" conversationId="1" />
+      </AppProviders>,
+    );
+
+    const share = await screen.findByRole("button", { name: en.auth.profile.share });
+    expect(screen.queryByText(en.invites.profile_qr)).toBeNull();
+    await user.click(share);
+    expect(document.querySelector("[data-qr-code]")).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: en.qr.copy }));
+    expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/\/u\/grace$/));
+    await user.click(screen.getByRole("button", { name: en.ui.close }));
+
+    server.use(
+      http.get("*/api/v1/accounts/:id", () =>
+        HttpResponse.json({
+          bio: null,
+          blocked_by_viewer: false,
+          display_name: "Nameless",
+          id: 3,
+          kind: "human",
+          username: null,
+        }),
+      ),
+    );
+    rerender(
+      <AppProviders>
+        <ProfilePanel accountId="3" conversationId="1" />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: en.auth.profile.share })).toBeNull();
     });
   });
 
@@ -567,18 +904,43 @@ describe("conversation layers", () => {
     ]);
   });
 
-  it("derives common groups only from cached memberships", () => {
-    const queryClient = createQueryClient();
-    expect(commonGroupsFromCache(queryClient, 2)).toEqual([]);
-    const direct = findConversation(1);
-    const group = findConversation(2);
-    if (!direct || !group) {
-      throw new Error("missing profile fixtures");
+  it("places peer identity and private contact details once above profile actions", async () => {
+    setAccessSession(testSession());
+    server.use(
+      http.get("*/api/v1/accounts/:id", () =>
+        HttpResponse.json({
+          bio: "Read https://example.com/about",
+          blocked_by_viewer: false,
+          display_name: "Grace",
+          email: "grace@example.com",
+          id: 2,
+          kind: "human",
+          phone: "+12025550147",
+          username: "grace",
+        }),
+      ),
+    );
+    render(
+      <AppProviders>
+        <ProfilePanel conversationId="1" />
+      </AppProviders>,
+    );
+
+    const identity = await screen.findByText("@grace");
+    const top = identity.closest("[data-top-profile-identity]");
+    const actions = document.querySelector("[data-account-actions]");
+    const report = screen.getByRole("button", { name: en.report.action });
+    if (!top || !actions) {
+      throw new Error("missing ordered profile sections");
     }
-    queryClient.setQueryData(["conversations", "detail", 0], undefined);
-    queryClient.setQueryData(["conversations", "detail", direct.id], direct);
-    queryClient.setQueryData(["conversations", "list"], { conversations: [group] });
-    expect(commonGroupsFromCache(queryClient, 2)).toEqual([]);
+    expect(
+      within(top as HTMLElement).getByRole("link", { name: "https://example.com/about" }),
+    ).toBeInTheDocument();
+    expect(within(top as HTMLElement).getByText("grace@example.com")).toBeInTheDocument();
+    expect(within(top as HTMLElement).getByText("+12025550147")).toBeInTheDocument();
+    expect(document.querySelectorAll("[data-account-identity]")).toHaveLength(1);
+    expect(top.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(top.compareDocumentPosition(report) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("opens a report sheet from a peer message", async () => {
@@ -1023,6 +1385,46 @@ describe("conversation layers", () => {
         silent: false,
         created_at: "2026-01-01T13:00:00.000Z",
       },
+      {
+        id: 199,
+        conversation_id: 1,
+        position: 99,
+        revision: 1,
+        kind: "system",
+        system_event: "call_ended",
+        body: "Voice call · 1m 12s",
+        deleted: false,
+        silent: false,
+        created_at: "2026-01-01T13:01:00.000Z",
+        metadata: {
+          duration_seconds: 72,
+          initiated_at: "2026-01-01T12:59:48.000Z",
+          kind: "audio",
+          status: "ended",
+        } as unknown as Message["metadata"],
+      },
+      {
+        id: 200,
+        conversation_id: 1,
+        position: 100,
+        revision: 1,
+        kind: "system",
+        system_event: "permissions_changed",
+        body: "Ada changed group permissions: Send messages: Members → Admins",
+        deleted: false,
+        silent: false,
+        created_at: "2026-01-01T13:02:00.000Z",
+        metadata: {
+          changes: [
+            {
+              new_value: "admin",
+              permission: "send_messages",
+              previous_value: "member",
+            },
+          ],
+          name: "Ada",
+        } as unknown as Message["metadata"],
+      },
     ];
     render(
       <AppProviders>
@@ -1033,6 +1435,22 @@ describe("conversation layers", () => {
       "data-system-message",
       "member_left",
     );
+    expect(
+      screen
+        .getByRole("article", { name: "Audio: 1m 12s" })
+        .querySelector("[data-call-message='call_ended']"),
+    ).not.toBeNull();
+    expect(screen.getByRole("article", { name: "Audio: 1m 12s" })).toHaveAttribute(
+      "data-side",
+      "received",
+    );
+    const permissions = screen.getByLabelText(
+      "Ada changed group permissions: Send messages: Members → Admins",
+    );
+    expect(permissions).toHaveAttribute("data-system-message", "permissions_changed");
+    expect(
+      within(permissions).getByText(en.conversations.permissions.send_messages),
+    ).toBeInTheDocument();
     await user.type(screen.getByRole("textbox"), "tick-body");
     await user.keyboard("{Enter}");
     const sent = await screen.findByText("tick-body");
@@ -1175,11 +1593,12 @@ describe("conversation layers", () => {
     expect(dateChip).toBeInstanceOf(HTMLButtonElement);
     await user.click(dateChip as HTMLButtonElement);
     await user.click(screen.getByRole("button", { name: en.search.jump_today }));
+    await user.click(screen.getByRole("button", { name: en.search.jump }));
     await waitFor(() => {
       expect(useLayerStore.getState().layers[0]?.focusMessageId).toBeTruthy();
     });
     useSearchStore.setState({ jumpStack: [] });
-    await user.click(screen.getByRole("button", { name: en.shell.back }));
+    await user.click(await screen.findByRole("button", { name: en.shell.back }));
     expect(useLayerStore.getState().layers).toHaveLength(0);
   });
 
@@ -1332,6 +1751,17 @@ describe("conversation layers", () => {
     });
     expect(sentPayload).not.toHaveProperty("body");
 
+    sentPayload = null;
+    await user.upload(screen.getByLabelText(en.composer.attach_files), [
+      new File(["clip"], "clip.mp4", { type: "video/mp4" }),
+      new File(["sound"], "sound.mp3", { type: "audio/mpeg" }),
+      new File(["unknown"], "unknown.bin", { type: "" }),
+    ]);
+    await user.click(screen.getByLabelText(en.composer.send));
+    await waitFor(() => {
+      expect(sentPayload).toMatchObject({ attachment_signed_ids: ["signed", "signed", "signed"] });
+    });
+
     const picker = screen.getByLabelText(en.composer.attach_files);
     Object.defineProperty(picker, "files", { configurable: true, value: null });
     fireEvent.change(picker);
@@ -1360,7 +1790,55 @@ describe("conversation layers", () => {
       name: en.composer.scheduled_count_one.replace("{{count}}", "1"),
     });
     await user.click(count);
-    expect(screen.getByText("Later")).toBeInTheDocument();
+    expect(useShellStore.getState()).toMatchObject({
+      destination: "chats",
+      profileSettingsOpen: false,
+    });
+    expect(useLayerStore.getState().layers.at(-1)).toEqual({
+      conversationId: "1",
+      id: "scheduled:1",
+      kind: "scheduled",
+      title: en.settings.scheduled,
+    });
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("keeps attachment selection unique across batches and permits changed or removed files", () => {
+    let nextId = 0;
+    const createId = () => `file-${String(++nextId)}`;
+    const original = new File(["same"], "photo.png", {
+      lastModified: 100,
+      type: "image/png",
+    });
+    const duplicate = new File(["same"], "photo.png", {
+      lastModified: 100,
+      type: "image/png",
+    });
+    const changedSize = new File(["changed"], "photo.png", {
+      lastModified: 100,
+      type: "image/png",
+    });
+    const changedDate = new File(["same"], "photo.png", {
+      lastModified: 200,
+      type: "image/png",
+    });
+
+    let attachments = appendUniqueAttachments([], [original, duplicate], createId);
+    expect(attachments).toHaveLength(1);
+    expect(appendUniqueAttachments(attachments, [duplicate], createId)).toBe(attachments);
+    attachments = appendUniqueAttachments(attachments, [changedSize, changedDate], createId);
+    expect(attachments).toHaveLength(3);
+    expect(fileUniquenessKey(original)).not.toBe(fileUniquenessKey(changedSize));
+    expect(fileUniquenessKey(original)).not.toBe(fileUniquenessKey(changedDate));
+
+    attachments = attachments.filter((attachment) => attachment.file !== original);
+    attachments = appendUniqueAttachments(attachments, [duplicate], createId);
+    expect(attachments).toHaveLength(3);
+    expect(attachments.at(-1)?.file).toBe(duplicate);
+
+    const blank = new File([], "", { lastModified: 0, type: "" });
+    expect(fileUniquenessKey(blank)).toContain("(unnamed)");
+    expect(fileUniquenessKey(blank)).toContain("(unknown)");
   });
 
   it("keeps the draft and explains rewrite and schedule failures", async () => {

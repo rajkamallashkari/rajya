@@ -185,14 +185,26 @@ describe("ConversationList", () => {
       "[data-chat-list-item]",
     ) as HTMLElement;
     fireEvent.contextMenu(ada.querySelector("[style]") as HTMLElement);
-    await user.click(screen.getByRole("menuitem", { name: en.conversations.mute_1h }));
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.mute }));
+    await user.click(screen.getByRole("button", { name: en.conversations.mute_1h }));
     fireEvent.contextMenu(
       (await screen.findByText(ADA_DEMO.name))
         .closest("[data-chat-list-item]")!
         .querySelector("[style]") as HTMLElement,
     );
-    await user.click(screen.getByRole("menuitem", { name: "Work" }));
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.folders.action }));
+    await user.click(screen.getByRole("checkbox", { name: "Work" }));
+    await user.click(screen.getByRole("button", { name: en.ui.close }));
+    fireEvent.contextMenu(screen.getByRole("tab", { name: "Home" }));
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.folders.rename }));
+    const rename = screen.getByLabelText(en.conversations.folders.rename_name);
+    await user.clear(rename);
+    await user.type(rename, "Household");
+    await user.click(screen.getByRole("button", { name: en.conversations.folders.rename_save }));
+    expect(await screen.findByRole("tab", { name: "Household" })).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Work" }));
+    fireEvent.contextMenu(screen.getByRole("tab", { name: "Work" }));
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.folders.delete }));
     await user.click(screen.getByRole("button", { name: en.conversations.folders.delete }));
     expect(await screen.findByRole("tab", { name: en.conversations.folders.all })).toHaveAttribute(
       "aria-selected",

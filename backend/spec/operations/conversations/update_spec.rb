@@ -1,6 +1,14 @@
 require "rails_helper"
 
 RSpec.describe Conversations::Update do
+  def permission_event(previous:, current:)
+    actor = create(:user).account
+    conversation = create_talk(kind: "group", owner: actor, members: [ create(:account) ])
+    conversation.update!(member_permissions: previous)
+    described_class.call(account: actor, conversation: conversation, member_permissions: current)
+    [ actor, conversation.reload.messages.find_by!(system_event: "permissions_changed") ]
+  end
+
   it "updates title and description on a group" do
     owner = create(:user)
     conversation = create_talk(kind: "group", owner: owner.account, members: [ create(:account) ])
@@ -60,6 +68,35 @@ RSpec.describe Conversations::Update do
       .to eq(%w[permissions_changed slow_mode_changed forwarding_restricted])
   end
 
+  it "names the actor and values in permission event text and payload" do
+    actor, event = permission_event(previous: {}, current: { "send_messages" => "admin" })
+
+    expect(event.body).to eq(
+      "#{actor.display_name} changed group permissions: Send messages: Members → Admins"
+    )
+    expect(event.metadata).to include(
+      "actor_account_id" => actor.id, "name" => actor.display_name,
+      "changes" => [
+        { "new_value" => "admin", "permission" => "send_messages", "previous_value" => "member" }
+      ]
+    )
+  end
+
+  it "describes multiple permission changes in registry order" do
+    actor, event = permission_event(
+      previous: { "send_media" => "owner", "send_messages" => "admin" },
+      current: { "add_members" => "admin", "send_media" => "admin" }
+    )
+
+    expect(event.metadata.fetch("changes").pluck("permission")).to eq(
+      %w[add_members send_media send_messages]
+    )
+    expect(event.body).to eq(
+      "#{actor.display_name} changed group permissions: " \
+      "Add members: Members → Admins; Send media: Owner → Admins; Send messages: Admins → Members"
+    )
+  end
+
   it "writes forwarding_unrestricted when the restriction is lifted" do
     owner = create(:user)
     conversation = create_talk(kind: "group", owner: owner.account, members: [ create(:account) ])
@@ -91,6 +128,20 @@ RSpec.describe Conversations::Update do
 
     described_class.call(account: owner.account, conversation: conversation, member_permissions: {})
     expect(conversation.reload.member_permissions).to eq({})
+  end
+
+  it "does not write an event for an explicit default permission" do
+    owner = create(:user)
+    conversation = create_talk(kind: "group", owner: owner.account, members: [ create(:account) ])
+
+    described_class.call(
+      account: owner.account,
+      conversation: conversation,
+      member_permissions: { "send_messages" => "member" }
+    )
+
+    expect(conversation.reload.member_permissions).to eq("send_messages" => "member")
+    expect(conversation.messages.where(system_event: "permissions_changed")).not_to exist
   end
 
   it "forbids a member and an admin whose edit_info is owner-only" do

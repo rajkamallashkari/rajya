@@ -4,11 +4,11 @@ import { StyleProfileConsent } from "@/features/bots/components/style-profile-co
 import { useBots, useStartDirectChat } from "@/features/bots/api/queries";
 import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
 import {
-  BottomSheet,
-  BottomSheetContent,
-  BottomSheetDescription,
-  BottomSheetTitle,
-} from "@/shared/ui/bottom-sheet";
+  ResponsiveOverlay as BottomSheet,
+  ResponsiveOverlayContent as BottomSheetContent,
+  ResponsiveOverlayDescription as BottomSheetDescription,
+  ResponsiveOverlayTitle as BottomSheetTitle,
+} from "@/shared/ui/responsive-overlay";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { ChunkFallback } from "@/shared/ui/chunk-fallback";

@@ -10,6 +10,7 @@ RSpec.describe Conversations::Show do
     expect(view.include_members).to be(true)
     expect(view.membership.role).to eq("owner")
     expect(view.conversation.conversation_memberships.map(&:account_id)).to include(owner.account.id, member.id)
+    expect(view.conversation.conversation_memberships.first.account.association(:avatar_attachment)).to be_loaded
   end
 
   it "clears a manual unread mark when opening (NR-22)" do

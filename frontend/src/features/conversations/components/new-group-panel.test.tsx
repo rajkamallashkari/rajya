@@ -22,6 +22,7 @@ describe("NewGroupPanel", () => {
     await user.type(screen.getByLabelText(en.compose.group_name), "Crew");
     await user.click(await screen.findByRole("button", { name: /Nimbus.*@nimbus/ }));
     expect(screen.getByRole("button", { name: en.compose.create_group })).toBeEnabled();
+    expect(useLayerStore.getState().layers).toHaveLength(0);
     await user.click(
       screen.getByRole("button", { name: en.compose.remove_member.replace("{{name}}", "Nimbus") }),
     );

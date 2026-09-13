@@ -1,6 +1,6 @@
 import { LAYER_SENTINEL_KEY } from "@/shared/lib/navigation/constants";
 
-type LayerEntry = { close: () => void; id: string };
+type LayerEntry = { close: () => void; id: string; url: string };
 
 const stack: LayerEntry[] = [];
 
@@ -87,11 +87,16 @@ function removeFromStack(id: string): boolean {
 export function addLayer(id: string, close: () => void): void {
   install();
   removeFromStack(id);
-  stack.push({ close, id });
+  stack.push({ close, id, url: currentUrl() });
   schedule();
 }
 
 export function removeLayer(id: string): void {
+  const entry = stack.find((layer) => layer.id === id);
+  if (entry && entry.url !== currentUrl()) {
+    abortAllLayers();
+    return;
+  }
   if (removeFromStack(id)) {
     schedule();
   }

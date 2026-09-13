@@ -7,21 +7,47 @@ export function jumpDateIso(kind: JumpDateKind, now: number): string {
   return new Date(now - days * MS_PER_DAY).toISOString();
 }
 
-export function startOfDayIso(value: string): string | null {
+export function localDateInputValue(value: Date | number = Date.now()): string {
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function localDateOffset(days: number, now: number = Date.now()): string {
+  const date = new Date(now);
+  date.setDate(date.getDate() + days);
+  return localDateInputValue(date);
+}
+
+function parseLocalDate(value: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return null;
   }
-  const parsed = Date.parse(`${value}T00:00:00.000Z`);
-  if (!Number.isFinite(parsed)) {
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(year!, month! - 1, day!);
+  if (
+    !Number.isFinite(parsed.getTime()) ||
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month! - 1 ||
+    parsed.getDate() !== day
+  ) {
     return null;
   }
-  return new Date(parsed).toISOString();
+  return parsed;
+}
+
+export function startOfDayIso(value: string): string | null {
+  return parseLocalDate(value)?.toISOString() ?? null;
 }
 
 export function endOfDayIso(value: string): string | null {
-  const start = startOfDayIso(value);
-  if (!start) {
+  const parsed = parseLocalDate(value);
+  if (!parsed) {
     return null;
   }
-  return new Date(Date.parse(start) + MS_PER_DAY - 1).toISOString();
+  parsed.setDate(parsed.getDate() + 1);
+  parsed.setMilliseconds(-1);
+  return parsed.toISOString();
 }

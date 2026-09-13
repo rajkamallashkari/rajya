@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BottomSheet, BottomSheetContent, BottomSheetTitle } from "@/shared/ui/bottom-sheet";
+import {
+  ResponsiveOverlay as BottomSheet,
+  ResponsiveOverlayContent as BottomSheetContent,
+  ResponsiveOverlayTitle as BottomSheetTitle,
+} from "@/shared/ui/responsive-overlay";
 import { Button, Input } from "@/shared/ui";
 
 function toLocalInput(iso: string): string {

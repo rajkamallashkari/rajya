@@ -7,7 +7,7 @@ RSpec.describe GalleryPageResource do
     ).to_h
   end
 
-  it "serializes attachment items with the parent message id" do
+  it "serializes attachment items with the parent message id" do # rubocop:disable RSpec/ExampleLength
     user = create(:user)
     conversation = create_direct_between(user.account, create(:account))
     message = create(:message, conversation: conversation, sender_account: user.account)
@@ -16,18 +16,39 @@ RSpec.describe GalleryPageResource do
     json = page_json([ attachment ])
 
     expect(json.fetch("meta")).to include("page" => 1, "has_more" => false)
-    expect(json.dig("items", 0, "attachment")).to include("id" => attachment.id, "message_id" => message.id)
+    expect(json.dig("items", 0, "attachment")).to include(
+      "id" => attachment.id,
+      "message_id" => message.id,
+      "sender" => include("display_name" => user.account.display_name),
+      "sent_at" => message.created_at
+    )
     expect(json.fetch("items").first).to include("item_kind" => "attachment", "link" => nil)
-  end
+  end # rubocop:enable RSpec/ExampleLength
 
-  it "serializes ready link previews" do
-    preview = create(:link_preview, status: "ready", title: "Doc", description: "Body", site_name: "Site")
-    json = page_json([ preview ])
+  it "serializes ready link previews" do # rubocop:disable RSpec/ExampleLength
+    user = create(:user)
+    message = create(:message, sender_account: user.account)
+    link = Conversations::Gallery::LinkItem.new(
+      url: "https://example.test",
+      title: "Doc",
+      description: "Body",
+      site_name: "Site",
+      message: message
+    )
+    json = page_json([ link ])
 
     expect(json.fetch("items").last).to include(
       "item_kind" => "link",
       "attachment" => nil,
-      "link" => { "url" => preview.url, "title" => "Doc", "description" => "Body", "site_name" => "Site" }
+      "link" => include(
+        "url" => link.url,
+        "title" => "Doc",
+        "description" => "Body",
+        "site_name" => "Site",
+        "message_id" => message.id,
+        "sender" => include("display_name" => user.account.display_name),
+        "sent_at" => message.created_at
+      )
     )
-  end
+  end # rubocop:enable RSpec/ExampleLength
 end

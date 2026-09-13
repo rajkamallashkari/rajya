@@ -11,6 +11,7 @@ module Bots
           metadata: { "reason" => reason.to_s }, ip: ip
         )
 
+        Avatar.cleanup!(request)
         request.update!(status: "declined", decline_reason: reason.to_s.strip.presence)
         success(request)
       end

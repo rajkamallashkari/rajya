@@ -1,7 +1,7 @@
 module Bots
   module Requests
     class Create < ApplicationOperation
-      def call(requester:, kind:, payload:, target_bot_id: nil)
+      def call(requester:, kind:, payload:, target_bot_id: nil, avatar: nil, avatar_provided: false)
         return failure(:not_found) unless FeatureFlag.enabled?(:bot_builder, account: requester)
 
         chosen = kind.to_s.presence || "create"
@@ -19,14 +19,33 @@ module Bots
           return failure(:conflict) if BotRequest.pending.where(kind: "edit", target_bot_id: target.id).exists?
         end
 
-        request = BotRequest.create!(
-          requester_account: requester, kind: chosen, status: "pending",
-          payload: attrs, target_bot: target
+        request = create_request!(
+          requester: requester, chosen: chosen, attrs: attrs, target: target,
+          avatar: avatar, avatar_provided: avatar_provided
         )
+        return failure(:validation_failed) if request.nil?
+
         success(request)
+      rescue ActiveRecord::RecordNotUnique
+        failure(:conflict)
       end
 
       private
+
+      def create_request!(requester:, chosen:, attrs:, target:, avatar:, avatar_provided:)
+        request = nil
+        BotRequest.transaction do
+          request = BotRequest.create!(
+            requester_account: requester, kind: chosen, status: "pending",
+            payload: attrs, target_bot: target
+          )
+          unless Avatar.stage!(request, value: avatar, provided: avatar_provided)
+            request = nil
+            raise ActiveRecord::Rollback
+          end
+        end
+        request
+      end
 
       def normalize(payload)
         raw = payload.respond_to?(:to_unsafe_h) ? payload.to_unsafe_h : payload.to_h

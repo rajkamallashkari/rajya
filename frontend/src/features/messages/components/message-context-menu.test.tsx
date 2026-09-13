@@ -29,6 +29,7 @@ describe("MessageContextMenu", () => {
       onTranscribe: vi.fn(),
       onTranslate: vi.fn(),
       onUnsend: vi.fn(),
+      onUpdateQuickReactions: vi.fn(),
     };
     const onClose = vi.fn();
     const { rerender } = render(
@@ -39,6 +40,33 @@ describe("MessageContextMenu", () => {
     );
     expect(actions.onReact).toHaveBeenCalledWith("👍");
     expect(onClose).toHaveBeenCalled();
+
+    rerender(<MessageContextMenu actions={actions} onClose={onClose} x={20} y={20} />);
+    await user.click(screen.getByRole("button", { name: "More reactions" }));
+    expect(screen.getByRole("region", { name: "Emoji picker" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Customize" }));
+    await user.click(
+      screen.getByRole("region", { name: "Emoji picker" }).querySelectorAll("button")[1]!,
+    );
+    await user.click(screen.getByRole("button", { name: "React with 🚀" }));
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    expect(actions.onUpdateQuickReactions).toHaveBeenCalledWith([
+      "🚀",
+      "❤️",
+      "😂",
+      "😮",
+      "😭",
+      "🙏",
+    ]);
+    await user.click(screen.getByRole("button", { name: "React with 😀" }));
+    expect(actions.onReact).toHaveBeenLastCalledWith("😀");
+    expect(onClose).toHaveBeenCalled();
+    rerender(<MessageContextMenu actions={actions} onClose={onClose} x={20} y={20} />);
+    await user.click(screen.getByRole("button", { name: "More reactions" }));
+    await user.click(
+      screen.getByRole("region", { name: "Emoji picker" }).querySelectorAll("button")[1]!,
+    );
+    expect(actions.onReact).toHaveBeenLastCalledWith("👍");
 
     rerender(
       <MessageContextMenu

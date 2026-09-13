@@ -31,7 +31,12 @@ import {
   type GifView,
   type StickerView,
 } from "@/features/composer/model/picker";
-import { postReceipts, listMessages, type Message } from "@/features/conversations/api/http";
+import {
+  postReceipts,
+  listMessages,
+  type Conversation,
+  type Message,
+} from "@/features/conversations/api/http";
 import {
   useBulkForward,
   useBulkSave,
@@ -46,6 +51,7 @@ import {
   useMessagePage,
   usePinMessage,
   usePinnedIds,
+  usePinnedMessages,
   usePollResults,
   useReactMessage,
   useReactionDetails,
@@ -58,6 +64,7 @@ import {
   useVotePoll,
 } from "@/features/conversations/api/queries";
 import { ConversationScheduledMessages } from "@/features/conversations/components/conversation-scheduled-messages";
+import { PinnedMessageBanner } from "@/features/conversations/components/pinned-message-banner";
 import { MessageInfoSheet } from "@/features/conversations/components/message-info-sheet";
 import { ReminderSheet } from "@/features/conversations/components/reminder-sheet";
 import { ReportHost } from "@/features/conversations/components/report-host";
@@ -76,17 +83,24 @@ import type { ThreadRun } from "@/features/conversations/model/thread-window";
 import { useGifSearch, useRetryTranscript, useStickerPacks } from "@/features/media/api/queries";
 import { presignAndUpload } from "@/features/media/model/direct-upload";
 import {
+  CallMessageBubble,
+  MessageBubble,
   MessageContextMenu,
   MessageGroup,
+  PermissionSystemMessage,
   PollResultsSheet,
   ReactionDetailsSheet,
   SelectionToolbar,
   StreamingBubble,
+  SystemMessage,
   TypingBubble,
   type MessageMenuActions,
+  type SystemEventKey,
 } from "@/features/messages";
 import { tickStatus } from "@/features/messages/model/ticks";
 import { copyText } from "@/features/messages/model/copy-text";
+import { callMetadata } from "@/features/messages/components/call-message-bubble";
+import { bubbleRole } from "@/features/messages/model/grouping";
 import {
   contactViewFromApi,
   locationViewFromApi,
@@ -106,16 +120,47 @@ import {
   useBlocks,
   useCreateScheduledMessage,
   usePreferences,
+  useUpdatePreferences,
 } from "@/features/settings/api/queries";
 import { asPreferenceDocument } from "@/features/settings/model/map-preferences";
 import { DEFAULT_QUICK_REACTIONS } from "@/features/messages/model/menu";
 import { parseWallpaper, resolveAppearance, wallpaperLayerStyle } from "@/shared/lib/theme";
 import { useThemeControls } from "@/app/theme-provider";
+import { AccountIdentityRow } from "@/shared/ui/account-identity-row";
+import { ConversationIdentityRow } from "@/shared/ui/conversation-identity-row";
 import { IconButton } from "@/shared/ui/icon-button";
 import { showToast } from "@/shared/ui/toast";
 import { ListView } from "@/shared/ui/list-view";
 
 const THREAD_SURFACE = "chat-wallpaper flex h-full min-h-0 flex-col bg-[var(--surface-chat)]";
+const CALL_SYSTEM_EVENTS = new Set(["call_ended", "call_missed", "call_started"]);
+
+export function fileUniquenessKey(file: File): string {
+  return JSON.stringify([
+    file.name || "(unnamed)",
+    file.size,
+    file.type || "(unknown)",
+    file.lastModified,
+  ]);
+}
+
+export function appendUniqueAttachments(
+  current: Array<ComposerAttachment & { file: File }>,
+  files: File[],
+  createId: () => string = () => crypto.randomUUID(),
+): Array<ComposerAttachment & { file: File }> {
+  const keys = new Set(current.map((attachment) => fileUniquenessKey(attachment.file)));
+  const additions: Array<ComposerAttachment & { file: File }> = [];
+  for (const file of files) {
+    const key = fileUniquenessKey(file);
+    if (keys.has(key)) {
+      continue;
+    }
+    keys.add(key);
+    additions.push({ file, id: createId(), name: file.name });
+  }
+  return additions.length > 0 ? [...current, ...additions] : current;
+}
 
 export function ConversationThread({ conversationId }: { conversationId: string }): ReactNode {
   const liveId = parseConversationId(conversationId);
@@ -160,14 +205,29 @@ function DemoThread({
           })
         }
         showBack={mobile}
-        title={conversation.name}
+        title={
+          <AccountIdentityRow
+            account={{
+              display_name: conversation.name,
+              id: 0,
+              kind: "human",
+              username: "",
+            }}
+            compact
+          />
+        }
       />
       <div
         className="flex min-h-0 flex-1 flex-col gap-[var(--space-4)] overflow-y-auto px-[var(--space-list-x)] py-[var(--space-list-y)]"
         data-layer-scroll={conversationId}
       >
         {received.length > 0 ? (
-          <MessageGroup messages={received} senderName={conversation.name} side="received" />
+          <MessageGroup
+            messages={received}
+            senderName={conversation.name}
+            showAvatar={false}
+            side="received"
+          />
         ) : null}
         {sent.length > 0 ? <MessageGroup messages={sent} side="sent" /> : null}
       </div>
@@ -211,6 +271,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const { t, i18n } = useTranslation();
   const { input } = useThemeControls();
   const preferences = usePreferences();
+  const updatePreferences = useUpdatePreferences();
   const blocks = useBlocks();
   const { cancelGeneration, publishActivity } = useConversationChannel(conversationId);
   const typists = useTypingIndicators(conversationId);
@@ -231,6 +292,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const bulkForward = useBulkForward(conversationId);
   const vote = useVotePoll(conversationId);
   const pinned = usePinnedIds(conversationId);
+  const pinnedMessages = usePinnedMessages(conversationId);
   const saved = useSavedIds();
   const savedReplies = useSavedReplies();
   const commands = useConversationCommands(conversationId);
@@ -318,6 +380,9 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
   const quickReactions = asPreferenceDocument(preferences.data?.data)?.chat?.quick_reactions ?? [
     ...DEFAULT_QUICK_REACTIONS,
   ];
+  const addAttachments = (files: File[]): void => {
+    setAttachments((current) => appendUniqueAttachments(current, files));
+  };
 
   useEffect(() => {
     jumpedQuery.current = "";
@@ -413,6 +478,20 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         attachment_signed_ids: signedIds,
         body: body || undefined,
         client_nonce: newClientNonce(),
+        optimistic_attachments: pending.map((row, index) => ({
+          byte_size: row.file.size,
+          content_type: row.file.type || "application/octet-stream",
+          filename: row.file.name,
+          id: -(Date.now() + index + 1),
+          kind: row.file.type.startsWith("image/")
+            ? "image"
+            : row.file.type.startsWith("video/")
+              ? "video"
+              : row.file.type.startsWith("audio/")
+                ? "audio"
+                : "file",
+          processing_status: "pending",
+        })),
         silent,
       });
       setAttachments((current) => current.filter((row) => !pending.includes(row)));
@@ -446,7 +525,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           })
         }
         showBack={mobile}
-        title={title}
+        title={<ConversationIdentityRow compact conversation={conversation} />}
       >
         {chatOpen ? (
           <ChatSearchBar
@@ -501,6 +580,16 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           {t("conversations.blocked_banner")}
         </p>
       ) : null}
+      <PinnedMessageBanner
+        canUnpin={Boolean(conversation.permissions.pin_messages)}
+        onJump={(messageId) => {
+          pushJumpFromScroller();
+          openConversation(conversationLayer(String(conversationId), title, String(messageId)));
+        }}
+        onUnpin={(messageId) => pin.mutate({ messageId, pinned: true })}
+        pins={pinnedMessages.data?.pinned_messages ?? []}
+        viewerId={viewerId}
+      />
       {chatOpen ? (
         <SearchResultsPanel
           conversationId={conversationId}
@@ -548,6 +637,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         />
       ) : null}
       <VirtualizedThread
+        accountIds={conversation.members.map((member) => member.account.id)}
         conversationId={String(conversationId)}
         focusMessageId={focusMessageId}
         footer={
@@ -601,9 +691,11 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         }}
         renderRun={(run) => (
           <ThreadRunView
+            conversation={conversation}
             conversationId={conversationId}
             onOpenMenu={(id, point) => setMenu({ id, x: point.clientX, y: point.clientY })}
             onOpenPollResults={(id) => setResultsPollId(pollResultsId(messages, id))}
+            onToggleReaction={(id, emoji, mine) => react.mutate({ emoji, id, mine })}
             onVote={(id, optionIds) => voteFromThread(messages, id, optionIds, vote.mutate)}
             run={run}
             translations={translations}
@@ -631,7 +723,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         }}
         suggestions={replyChips}
       />
-      <ConversationScheduledMessages conversationId={conversationId} locale={i18n.language} />
+      <ConversationScheduledMessages conversationId={conversationId} />
       <Composer
         attachments={attachments}
         editing={editingId !== null}
@@ -701,6 +793,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
           });
         }}
         onGifQueryChange={setGifQuery}
+        onFiles={addAttachments}
         onPickGif={(gif: GifView) => {
           send.mutate({ client_nonce: newClientNonce(), gif_id: gif.id });
         }}
@@ -723,14 +816,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         multiple
         onChange={(event) => {
           const files = Array.from(event.currentTarget.files ?? []);
-          setAttachments((current) => [
-            ...current,
-            ...files.map((file) => ({
-              file,
-              id: crypto.randomUUID(),
-              name: file.name,
-            })),
-          ]);
+          addAttachments(files);
           event.currentTarget.value = "";
         }}
         ref={fileInput}
@@ -773,8 +859,11 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
               setDraft(body);
             },
             onInfo: setInfoId,
-            onPin: (id) => pin.mutate(id),
-            onReact: (id, emoji) => react.mutate({ emoji, id }),
+            onPin: (id) => pin.mutate({ messageId: id, pinned: (pinned.data ?? []).includes(id) }),
+            onReact: (id, emoji) => {
+              const message = messages.find((row) => row.id === id);
+              react.mutate({ emoji, id, mine: message?.my_reactions?.includes(emoji) });
+            },
             onReactions: setReactionsId,
             onRemind: setRemindId,
             onRegenerate: (id) => regenerate.mutate(id),
@@ -798,7 +887,9 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
               );
             },
             onUnsend: (id) => unsend.mutate(id),
-            pinned: pinned.data,
+            onUpdateQuickReactions: (next) =>
+              updatePreferences.mutate({ chat: { quick_reactions: next } }),
+            pinned: pinned.data ?? [],
             quickReactions,
             restrictForwarding: Boolean(conversation.restrict_forwarding),
             saved: saved.data,
@@ -833,6 +924,7 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
         subjectType="message"
       />
       <MessageInfoSheet
+        conversationKind={conversation.kind}
         info={info.data}
         onOpenChange={(open) => setInfoId(nextInfoId(open, infoId))}
         open={infoId != null}
@@ -862,18 +954,22 @@ function LiveThread({ conversationId }: { conversationId: number }): ReactNode {
 }
 
 function ThreadRunView({
+  conversation,
   conversationId,
   onOpenMenu,
   onOpenPollResults,
+  onToggleReaction,
   onVote,
   run,
   translations = {},
   untitled,
   viewerId,
 }: {
+  conversation: Conversation;
   conversationId: number;
   onOpenMenu: (id: number, point: { clientX: number; clientY: number }) => void;
   onOpenPollResults: (id: number) => void;
+  onToggleReaction: (id: number, emoji: string, mine: boolean) => void;
   onVote: (id: number, optionIds: string[]) => void;
   run: ThreadRun;
   translations?: Record<number, string>;
@@ -883,52 +979,110 @@ function ThreadRunView({
   const { t } = useTranslation();
   const pushLayer = useLayerStore((state) => state.pushLayer);
   const deleted = t("messages.deleted");
-  const first = run.messages[0]!;
-  if (first.kind === "system") {
+  if (run.kind === "system") {
     return (
-      <div>
-        {run.messages.map((item) => (
-          <p
-            className="px-[var(--space-4)] py-[var(--space-3)] text-center text-[length:var(--text-sm)] text-[var(--text-tertiary)]"
-            data-message-id={item.id}
-            data-system-message={item.system_event ?? ""}
-            key={item.id}
-          >
-            {item.body}
-          </p>
-        ))}
+      <div className="flex flex-col gap-[var(--space-0_5)]">
+        {run.messages.map((item) => {
+          const event = item.system_event ?? "";
+          return (
+            <div data-message-id={item.id} key={item.id}>
+              {CALL_SYSTEM_EVENTS.has(event) ? (
+                <CallMessageBubble
+                  body={item.body}
+                  createdAt={item.created_at}
+                  event={event}
+                  id={String(item.id)}
+                  metadata={item.metadata}
+                  viewerId={viewerId}
+                />
+              ) : event === "permissions_changed" ? (
+                <PermissionSystemMessage body={item.body} metadata={item.metadata} />
+              ) : (
+                <SystemMessage eventKey={event as SystemEventKey} text={item.body} />
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }
-  const side = first.sender?.id === viewerId ? "sent" : "received";
+  const count = run.messages.length;
   return (
-    <MessageGroup
-      messages={run.messages.map((item) => ({
-        attachments: item.attachments,
-        body: item.deleted ? deleted : (item.body ?? ""),
-        contacts: (item.contacts ?? []).map(contactViewFromApi),
-        createdAt: item.created_at,
-        id: String(item.id),
-        location: item.location ? locationViewFromApi(item.location) : undefined,
-        poll: item.poll ? pollViewFromApi(item.poll) : undefined,
-        status: tickStatus(item),
-        translation: translations[item.id],
-      }))}
-      onOpenContactProfile={(accountId, name) =>
-        pushLayer({
-          accountId,
-          conversationId: String(conversationId),
-          id: `account:${accountId}`,
-          kind: "profile",
-          title: name,
-        })
-      }
-      onOpenMenu={bindNumericId(onOpenMenu)}
-      onOpenPollResults={bindNumericId(onOpenPollResults)}
-      onVote={bindNumericId(onVote)}
-      senderName={first.sender?.display_name ?? untitled}
-      side={side}
-    />
+    <div className="flex flex-col gap-[var(--space-0_5)]" data-message-group="">
+      {run.messages.map((item, index) => {
+        const event = item.system_event ?? "";
+        const isCall = item.kind === "system" && CALL_SYSTEM_EVENTS.has(event);
+        const initiatorId = isCall ? callMetadata(item.metadata).initiator_account_id : undefined;
+        const sender = isCall
+          ? conversation.members.find((member) => member.account.id === initiatorId)?.account
+          : item.sender;
+        const side = sender?.id === viewerId ? "sent" : "received";
+        const showRunAvatar =
+          side === "received" &&
+          (conversation.kind === "group" || conversation.kind === "channel") &&
+          sender != null;
+        const role = bubbleRole(index, count);
+        const avatarProps = {
+          reserveAvatar: showRunAvatar && index < count - 1,
+          role,
+          senderName: sender?.display_name ?? untitled,
+          senderSrc: sender?.avatar_url,
+          showAvatar: showRunAvatar && index === count - 1,
+        };
+
+        return (
+          <div data-message-id={item.id} key={item.id}>
+            {isCall ? (
+              <CallMessageBubble
+                body={item.body}
+                createdAt={item.created_at}
+                event={event}
+                id={String(item.id)}
+                metadata={item.metadata}
+                viewerId={viewerId}
+                {...avatarProps}
+              />
+            ) : (
+              <MessageBubble
+                attachments={item.attachments}
+                body={item.deleted ? deleted : (item.body ?? "")}
+                contacts={(item.contacts ?? []).map(contactViewFromApi)}
+                createdAt={item.created_at}
+                id={String(item.id)}
+                location={item.location ? locationViewFromApi(item.location) : undefined}
+                onOpenContactProfile={(accountId, name) =>
+                  pushLayer({
+                    accountId,
+                    conversationId: String(conversationId),
+                    id: `account:${accountId}`,
+                    kind: "profile",
+                    title: name,
+                  })
+                }
+                onOpenMenu={(point) => onOpenMenu(item.id, point)}
+                onOpenPollResults={() => onOpenPollResults(item.id)}
+                onToggleReaction={(emoji) =>
+                  onToggleReaction(item.id, emoji, item.my_reactions?.includes(emoji) ?? false)
+                }
+                onVote={(optionIds) => onVote(item.id, optionIds)}
+                poll={item.poll ? pollViewFromApi(item.poll) : undefined}
+                reactions={Object.entries(item.reaction_summary ?? {})
+                  .filter(([, reactionCount]) => reactionCount > 0)
+                  .map(([emoji, reactionCount]) => ({
+                    count: reactionCount,
+                    emoji,
+                    mine: item.my_reactions?.includes(emoji) ?? false,
+                  }))}
+                side={side}
+                status={tickStatus(item)}
+                translation={translations[item.id]}
+                {...avatarProps}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -1012,6 +1166,7 @@ export function buildMessageMenuActions({
   onSave,
   onSelect,
   onUnsend,
+  onUpdateQuickReactions,
   pinned,
   quickReactions,
   restrictForwarding = false,
@@ -1037,6 +1192,7 @@ export function buildMessageMenuActions({
   onTranscribe?: (attachmentId: number) => void;
   onTranslate?: (id: number) => void;
   onUnsend: (id: number) => void;
+  onUpdateQuickReactions?: (reactions: string[]) => void;
   pinned: number[];
   quickReactions?: string[];
   restrictForwarding?: boolean;
@@ -1077,6 +1233,7 @@ export function buildMessageMenuActions({
     onTranscribe: Boolean(onTranscribe) && voice ? () => onTranscribe?.(voice.id) : undefined,
     onTranslate: Boolean(onTranslate) && canCopy ? () => onTranslate?.(message.id) : undefined,
     onUnsend: () => onUnsend(message.id),
+    onUpdateQuickReactions,
     quickReactions,
   };
 }

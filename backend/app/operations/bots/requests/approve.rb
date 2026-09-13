@@ -10,8 +10,10 @@ module Bots
         affected = nil
         BotRequest.transaction do
           affected = request.edit_kind? ? apply_edit!(request) : build_bot!(request)
+          Avatar.apply!(request, affected.account)
           request.update!(status: "approved", bot: affected, decline_reason: nil)
         end
+        affected.account.association(:avatar_attachment).load_target
         success(affected)
       rescue ActiveRecord::RecordInvalid
         failure(:validation_failed)

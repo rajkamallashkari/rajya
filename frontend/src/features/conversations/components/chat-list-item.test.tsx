@@ -2,7 +2,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ChatListItem } from "./chat-list-item";
-import { ConversationMenu, SwipeActions } from "./conversation-menu";
+import {
+  ConversationMenu,
+  FolderMembershipOverlay,
+  MuteDurationOverlay,
+  SwipeActions,
+} from "./conversation-menu";
 import { SWIPE_COMMIT_PX } from "@/features/conversations/model/constants";
 import { MUTE_UNTIL_ON } from "@/features/conversations/model/settings";
 import { en } from "@/shared/lib/i18n/catalog";
@@ -166,6 +171,8 @@ describe("ConversationMenu", () => {
   it("closes from the scrim and hides missing actions", async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 });
     const onClose = vi.fn();
+    const onOpenFolders = vi.fn();
+    const onOpenMute = vi.fn();
     render(
       <ConversationMenu
         muted={false}
@@ -185,6 +192,8 @@ describe("ConversationMenu", () => {
         onClose={onClose}
         onMarkRead={vi.fn()}
         onMute={vi.fn()}
+        onOpenFolders={onOpenFolders}
+        onOpenMute={onOpenMute}
         onPin={vi.fn()}
         pinned
         unread
@@ -220,6 +229,8 @@ describe("ConversationMenu", () => {
         onArchive={vi.fn()}
         onClose={onClose}
         onMute={vi.fn()}
+        onOpenFolders={onOpenFolders}
+        onOpenMute={onOpenMute}
         onPin={vi.fn()}
         pinned={false}
         unread={false}
@@ -227,11 +238,51 @@ describe("ConversationMenu", () => {
         y={0}
       />,
     );
-    expect(screen.getByRole("menuitem", { name: en.conversations.mute_1h })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: en.conversations.mute })).toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", { name: en.conversations.folders.action }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: en.conversations.unarchive })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Work" })).toBeInTheDocument();
-    await user.click(screen.getByRole("menuitem", { name: en.conversations.mute_1h }));
-    await user.click(screen.getByRole("menuitem", { name: "Work" }));
-    render(<SwipeActions archived muted onArchive={vi.fn()} onMarkRead={vi.fn()} onMute={vi.fn()} />);
+    expect(screen.queryByRole("menuitem", { name: "Work" })).toBeNull();
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.mute }));
+    expect(onOpenMute).toHaveBeenCalled();
+    await user.click(screen.getByRole("menuitem", { name: en.conversations.folders.action }));
+    expect(onOpenFolders).toHaveBeenCalled();
+    render(
+      <SwipeActions archived muted onArchive={vi.fn()} onMarkRead={vi.fn()} onMute={vi.fn()} />,
+    );
+  });
+
+  it("selects a mute duration and toggles folder memberships in responsive overlays", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    const onMute = vi.fn();
+    const onToggleFolder = vi.fn();
+    const onOpenChange = vi.fn();
+    const { unmount } = render(
+      <MuteDurationOverlay onMute={onMute} onOpenChange={onOpenChange} open />,
+    );
+    await user.click(screen.getByRole("button", { name: en.conversations.mute_8h }));
+    expect(onMute).toHaveBeenCalled();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    unmount();
+
+    render(
+      <FolderMembershipOverlay
+        folderIds={[1]}
+        folders={[
+          { conversation_ids: [2], id: 1, name: "Work", position: 0 },
+          { conversation_ids: [], id: 2, name: "Home", position: 1 },
+        ]}
+        onOpenChange={onOpenChange}
+        onToggleFolder={onToggleFolder}
+        open
+      />,
+    );
+    expect(screen.getByRole("checkbox", { name: "Work" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Home" })).not.toBeChecked();
+    await user.click(screen.getByRole("checkbox", { name: "Work" }));
+    await user.click(screen.getByRole("checkbox", { name: "Home" }));
+    expect(onToggleFolder).toHaveBeenNthCalledWith(1, 1, false);
+    expect(onToggleFolder).toHaveBeenNthCalledWith(2, 2, true);
   });
 });

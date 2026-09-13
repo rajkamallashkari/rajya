@@ -20,6 +20,8 @@
     "approve": "Approve",
     "audit": "Audit log",
     "back_to_chats": "Back to chats",
+    "bot_request_all": "All",
+    "bot_request_filter": "Filter bot requests",
     "bots": "Bot requests",
     "buckets": "Storage buckets",
     "capability": "Capability",
@@ -32,6 +34,7 @@
     "dashboard": "Dashboard",
     "deactivate_account": "Deactivate account",
     "decline": "Decline",
+    "decline_reason": "Decline reason",
     "dismiss": "Dismiss",
     "disk": "Disk",
     "email": "Email",
@@ -147,6 +150,8 @@
       "failed": "Could not start verification."
     },
     "accounts": {
+      "add": "Add account",
+      "add_cancel": "Cancel adding account",
       "title": "Accounts on this device",
       "seed_a": "Use account A",
       "seed_b": "Use account B",
@@ -214,6 +219,7 @@
       "phone": "Phone",
       "report": "Report",
       "save": "Save",
+      "share": "Share profile",
       "unblock": "Unblock",
       "username_available": "Username is available.",
       "username_checking": "Checking username…",
@@ -223,24 +229,47 @@
     }
   },
   "bots": {
+    "add": "Propose a bot",
+    "avatar_change": "Change bot image",
+    "avatar_file_invalid": "Choose a JPEG, PNG, GIF, or WebP image.",
+    "avatar_remove": "Remove image",
+    "avatar_size_invalid": "Image must be smaller than 5 MB.",
+    "avatar_upload_failed": "Could not upload the bot image.",
     "bio": "Bio",
     "builder": "Propose a bot",
     "builder_submit": "Submit for review",
+    "cancel": "Cancel",
+    "deactivate_confirm": "Confirm deactivate",
+    "deactivate_named": "Deactivate {{name}}",
     "directory": "Bots",
+    "edit": "Edit bot",
+    "edit_named": "Edit {{name}}",
+    "edit_request": "Edit request",
     "empty": "No bots yet",
+    "manage_empty": "No bots to manage",
+    "manage_empty_description": "Propose your first bot for admin review.",
     "memory_disclosure": "Remembers what everyone tells it",
     "memory_notice": "This bot remembers what everyone tells it — including people in other chats.",
+    "mine": "Your bots",
     "name": "Name",
     "open": "Message {{name}}",
     "persona_prompt": "Persona",
     "prompt_too_short": "Persona must be at least {{count}} characters.",
     "proposed": "Proposal submitted",
+    "re_request": "Submit again",
+    "requests": "Submitted requests",
+    "save_failed": "Could not save the bot request.",
+    "status_declined": "Declined",
+    "status_pending": "Pending",
     "style": "Writing style",
-    "username": "Username"
+    "update_request": "Update request",
+    "username": "Username",
+    "withdraw": "Withdraw request"
   },
   "calls": {
     "accept": "Accept call",
     "audio_devices": "Audio devices",
+    "bar_state": "{{title}}, {{state}}",
     "connecting": "Connecting…",
     "decline": "Decline call",
     "direction_incoming": "Incoming",
@@ -249,6 +278,7 @@
     "empty_description": "Voice and video calls with people in your chats will show up here.",
     "end": "End call",
     "flip_camera": "Flip camera",
+    "group_people": "Group call · {{people}}",
     "hide_controls": "Hide call controls",
     "incoming": "Incoming call",
     "incoming_audio": "Incoming voice call",
@@ -368,9 +398,12 @@
     "filters_to": "To date",
     "in_chat": "Search in conversation",
     "in_chat_list": "Search all messages",
+    "jump": "Jump",
+    "jump_beginning": "Jump to beginning",
     "jump_date": "Jump to date",
+    "jump_month": "1 month ago",
     "jump_today": "Today",
-    "jump_week": "Last week",
+    "jump_week": "1 week ago",
     "jump_yesterday": "Yesterday",
     "kind": {
       "audio": "Audio",
@@ -390,6 +423,7 @@
     "people": "People",
     "pick_date": "Pick a date",
     "placeholder": "Search",
+    "quick_jump": "Quick jump",
     "type_to_search": "Type to search"
   },
   "shell": {
@@ -428,8 +462,9 @@
     "push_demo": "Open conversation layer"
   },
   "ui": {
-    "close": "Close",
     "avatar_unnamed": "Avatar",
+    "cancel": "Cancel",
+    "close": "Close",
     "select_placeholder": "Select"
   },
   "gallery": {
@@ -692,13 +727,20 @@
     "archive": "Archive",
     "unarchive": "Unarchive",
     "folders": {
+      "action": "Folders",
       "all": "All",
-      "unread": "Unread",
       "archived": "Archived",
       "create": "New folder",
+      "delete": "Remove",
+      "delete_description": "Remove “{{name}}”? Conversations in it will stay in your chat list.",
+      "delete_title": "Remove folder",
+      "form_description": "Enter a name for this folder.",
       "name": "Folder name",
+      "rename": "Rename",
+      "rename_name": "New folder name",
+      "rename_save": "Save",
       "save": "Create folder",
-      "delete": "Remove folder"
+      "unread": "Unread"
     },
     "jump_to_latest": "Jump to latest",
     "last_message_deleted": "Message deleted",
@@ -710,6 +752,7 @@
       "common_groups": "Groups in common",
       "members": "{{count}} members"
     },
+    "profile_link_unavailable": "This profile link is unavailable. Check the username or ask for a new link.",
     "permissions": {
       "add_members": "Add members",
       "admin": "Admins",
@@ -744,6 +787,7 @@
     "approve": "Approve",
     "channel": "Channel",
     "copy": "Copy link",
+    "copy_token": "Copy invite link {{token}}",
     "create": "Create invite",
     "empty": "No invite links yet",
     "follow": "Follow channel",
@@ -763,6 +807,7 @@
     "pending_notice": "Your join request is awaiting admin approval.",
     "profile_qr": "Profile QR",
     "reject": "Reject",
+    "require_approval": "Require approval to join",
     "request": "Request to join",
     "requests": "Join requests",
     "revoke": "Revoke",
@@ -776,6 +821,7 @@
     "counter": "{{current}} / {{total}}",
     "download": "Download file",
     "failed": "Processing failed",
+    "file_fallback": "The direct file action failed. Opened the signed URL in a new tab instead.",
     "file_kind": {
       "archive": "Archive",
       "code": "Code",
@@ -788,10 +834,14 @@
     "gallery_empty": "Nothing shared yet",
     "gallery_empty_description": "Photos, files, and links from this chat will show up here.",
     "gallery_title": "Media, files and links",
+    "jump_to_message": "Jump to message",
     "lightbox": "Media viewer",
+    "load_failed": "Could not load this media.",
     "load_more": "Load more",
+    "loading": "Loading media",
     "more": "+{{count}}",
     "next": "Next",
+    "open_file": "Open file",
     "pause": "Pause",
     "photo": "Photo",
     "play": "Play",
@@ -806,14 +856,48 @@
       "mb": "{{value}} MB"
     },
     "speed": "Playback speed {{rate}}",
+    "stalled": "Processing stalled; original available.",
     "tabs": {
       "files": "Files",
       "images": "Media",
       "links": "Links"
     },
+    "unknown_sender": "Unknown sender",
     "video_thumb": "Video thumbnail"
   },
   "messages": {
+    "call": {
+      "accessible": "{{title}}: {{detail}}",
+      "audio": "Audio",
+      "duration": "{{minutes}}m {{seconds}}s",
+      "status": {
+        "active": {
+          "received": "Ongoing...",
+          "sent": "Ongoing..."
+        },
+        "busy": {
+          "received": "Busy",
+          "sent": "Busy"
+        },
+        "declined": {
+          "received": "Declined",
+          "sent": "Declined"
+        },
+        "ended": {
+          "received": "Call ended",
+          "sent": "Call ended"
+        },
+        "missed": {
+          "received": "Missed",
+          "sent": "No answer"
+        },
+        "ringing": {
+          "received": "Calling...",
+          "sent": "Calling..."
+        }
+      },
+      "video": "Video"
+    },
     "ticks": {
       "sent": "Sent",
       "delivered": "Delivered",
@@ -892,6 +976,7 @@
       "call_ended": "Call ended",
       "call_missed": "Missed call",
       "permissions_changed": "Group permissions updated",
+      "permissions_changed_by": "{{name}} changed group permissions",
       "slow_mode_changed": "Slow mode updated",
       "forwarding_restricted": "Forwarding restricted",
       "forwarding_unrestricted": "Forwarding unrestricted"
@@ -912,9 +997,29 @@
     "voters_hidden": "Voters are hidden"
   },
   "reactions": {
+    "attachment": "Attachment",
+    "badge": "{{emoji}} reaction, {{count}} total",
+    "badge_mine": "{{emoji}} reaction, {{count}} total, including yours",
+    "choose_slot": "Choose reaction {{slot}}",
+    "close_picker": "Close emoji picker",
     "count": "{{emoji}} {{count}}",
+    "customize": "Customize",
+    "done": "Done",
     "empty": "No reactions yet",
+    "group": "Message reactions",
+    "more": "More reactions",
+    "picker": "Emoji picker",
+    "react_with": "React with {{emoji}}",
+    "quick": "Your reactions",
     "title": "Reactions"
+  },
+  "pins": {
+    "jump": "Jump to pinned message",
+    "label": "Pinned message",
+    "label_position": "Pinned message {{position}}/{{count}}",
+    "next": "Next pinned message",
+    "previous": "Previous pinned message",
+    "unpin": "Unpin message"
   },
   "reminders": {
     "note": "Note",
@@ -1026,6 +1131,9 @@
   },
   "qr": {
     "copy": "Copy link",
+    "error": "This link is too long to fit in a QR code.",
+    "image": "Scannable QR code",
+    "loading": "Generating QR code",
     "title": "QR code"
   },
   "report": {
@@ -1141,8 +1249,16 @@
       "update": "Save reply"
     },
     "scheduled": "Scheduled messages",
+    "scheduled_actions": "Actions for scheduled message: {{message}}",
     "scheduled_cancel": "Cancel",
+    "scheduled_close_editor": "Close",
+    "scheduled_edit": "Edit message",
+    "scheduled_message_text": "Message text",
+    "scheduled_reschedule": "Reschedule",
+    "scheduled_save": "Save",
+    "scheduled_send_at": "Send at",
     "scheduled_send_now": "Send now",
+    "scheduled_unknown_chat": "Unknown chat",
     "security": "Security",
     "security_add_passkey": "Add passkey",
     "security_confirm_password": "Confirm password",
@@ -1156,8 +1272,14 @@
     "security_password": "Password",
     "security_password_failed": "Could not update the password.",
     "security_save_password": "Save password",
-    "starred": "Starred messages",
+    "starred": "Saved messages",
+    "starred_actions": "Actions for saved message: {{message}}",
+    "starred_no_content": "Message without text",
+    "starred_open_message": "Open message: {{message}}",
     "starred_unsave": "Unsave",
+    "starred_unsave_message": "Unsave message: {{message}}",
+    "starred_unknown_chat": "Unknown chat",
+    "starred_unknown_sender": "Unknown sender",
     "sticker_packs": {
       "add": "Add sticker",
       "create": "Create pack",

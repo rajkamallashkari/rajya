@@ -48,6 +48,7 @@ module Api
           kind: params[:kind],
           account_id: params[:account_id],
           account_ids: params[:account_ids],
+          username: params[:username],
           title: params[:title],
           description: params[:description]
         }

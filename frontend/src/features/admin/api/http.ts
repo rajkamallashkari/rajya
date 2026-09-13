@@ -216,9 +216,12 @@ export async function updateAdminPromptTemplate(capability: string, template: st
   );
 }
 
-export async function listAdminBotRequests() {
+export async function listAdminBotRequests(kind?: "create" | "edit") {
   return unwrap(
-    await apiClient().GET("/api/v1/admin/bot_requests", { headers: bearerHeaders() }),
+    await apiClient().GET("/api/v1/admin/bot_requests", {
+      headers: bearerHeaders(),
+      params: { query: kind ? { kind } : {} },
+    }),
     "admin_bots_failed",
   );
 }

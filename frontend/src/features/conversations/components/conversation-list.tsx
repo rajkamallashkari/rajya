@@ -13,6 +13,7 @@ import {
   useMuteConversation,
   usePinConversation,
   useReorderFolders,
+  useUpdateFolder,
 } from "@/features/conversations/api/queries";
 import { ChatListItem } from "@/features/conversations/components/chat-list-item";
 import { ComposeMenu } from "@/features/conversations/components/compose-menu";
@@ -30,7 +31,6 @@ import {
   isGroupConversation,
   isMuted,
 } from "@/features/conversations/model/title";
-import { formatMessageTime } from "@/features/messages";
 import { GlobalSearchHits, SearchFilterSheet } from "@/features/search";
 import { useSearchStore } from "@/features/search/store/search-store";
 import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
@@ -39,6 +39,7 @@ import { IconButton } from "@/shared/ui/icon-button";
 import { Input } from "@/shared/ui/input";
 import { ListView, type ListViewStatus } from "@/shared/ui/list-view";
 import { Logo } from "@/shared/ui/logo";
+import { useDateTimeFormatter } from "@/shared/hooks/use-date-time-formatter";
 import { useResolvedTheme } from "@/app/theme-provider";
 import { useComposeStore } from "@/features/conversations/store/compose-store";
 
@@ -49,7 +50,7 @@ export function ConversationList({
 }: {
   searchRef?: RefObject<HTMLInputElement | null>;
 }): ReactNode {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const resolvedTheme = useResolvedTheme();
   const openConversation = useLayerStore((state) => state.openConversation);
   const pushLayer = useLayerStore((state) => state.pushLayer);
@@ -72,6 +73,7 @@ export function ConversationList({
   const createFolder = useCreateFolder();
   const destroyFolder = useDestroyFolder();
   const reorderFolders = useReorderFolders();
+  const updateFolder = useUpdateFolder();
   const folderMembership = useFolderMembership();
   const folderRows = foldersQuery.data?.folders ?? EMPTY_FOLDERS;
   const source = parsed.kind === "archived" ? archived : inbox;
@@ -139,6 +141,7 @@ export function ConversationList({
             onSuccess: () => setTab("all"),
           })
         }
+        onRename={(id, name) => updateFolder.mutate({ id, name })}
         onReorder={(ids) => reorderFolders.mutate(ids)}
         onTabChange={setTab}
         tab={tab}
@@ -159,7 +162,6 @@ export function ConversationList({
               folders={folderRows}
               item={item}
               key={item.id}
-              locale={i18n.language}
               onArchive={() =>
                 archiveConversation.mutate({ archived: parsed.kind !== "archived", id: item.id })
               }
@@ -201,7 +203,6 @@ function LiveChatRow({
   archived,
   folders,
   item,
-  locale,
   onArchive,
   onMarkRead,
   onMarkUnread,
@@ -215,7 +216,6 @@ function LiveChatRow({
   archived: boolean;
   folders: ConversationFolder[];
   item: Conversation;
-  locale: string;
   onArchive: () => void;
   onMarkRead: () => void;
   onMarkUnread: () => void;
@@ -227,6 +227,7 @@ function LiveChatRow({
   untitled: string;
 }): ReactNode {
   const { t } = useTranslation();
+  const formatDateTime = useDateTimeFormatter();
   const typists = useTypingIndicators(item.id);
   const name = conversationTitle(item, untitled);
   const preview = lastActivityFromPreview(
@@ -255,7 +256,7 @@ function LiveChatRow({
       onToggleFolder={onToggleFolder}
       pinned={Boolean(item.pinned_at)}
       selected={selected}
-      timestampLabel={formatMessageTime(item.last_activity_at, locale)}
+      timestampLabel={formatDateTime.compact(item.last_activity_at)}
       unreadCount={item.unread_count}
     />
   );

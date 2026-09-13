@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { getAccessSession } from "@/features/auth/model/access-session";
 import { conversationKeys, inviteKeys, messageKeys } from "@/features/conversations/api/keys";
 import { getMessage, type Message } from "@/features/conversations/api/http";
+import { mediaKeys } from "@/features/media/api/keys";
 import {
   applyReceiptTick,
   upsertMessages,
@@ -53,10 +54,16 @@ export async function routeRealtimeEvent(
     case "message_deleted":
     case "message_edited":
     case "message_reacted":
-    case "attachment_processed":
     case "poll_closed":
     case "poll_voted":
       await mergeFetchedMessage(event.message_id, event.conversation_id, deps);
+      return;
+    case "attachment_processed":
+      await mergeFetchedMessage(event.message_id, event.conversation_id, deps);
+      await deps.cache.invalidateQueries({
+        queryKey: mediaKeys.gallery(event.conversation_id, "images"),
+      });
+      await deps.cache.invalidateQueries({ queryKey: mediaKeys.url(event.attachment_id, "thumb") });
       return;
     case "message_pinned":
     case "message_unpinned":

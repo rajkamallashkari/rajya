@@ -8,6 +8,10 @@ class MessageResource < ApplicationResource
   attribute :forward_count, &:forward_count
   attribute :attachment_count, &:attachment_count
   attribute :reaction_summary, &:reaction_summary
+  attribute :my_reactions do
+    account = params[:current_account]
+    account ? object.reactions.where(account: account).order(:emoji).pluck(:emoji) : []
+  end
   attribute :metadata, &:metadata
   attribute :sender_snapshot, &:sender_snapshot
   attribute :forwarded_from_account_id, &:forwarded_from_account_id

@@ -68,19 +68,26 @@ RSpec.describe "Conversations create direct", type: :request do
           account_id: { type: :integer },
           account_ids: { type: :array, items: { type: :integer } },
           title: { type: :string },
-          description: { type: :string }
+          description: { type: :string },
+          username: {
+            type: :string,
+            description: "Exact account username; alternative to account_id for direct conversations"
+          }
         }
       }
 
       response "201", "direct created" do
         schema "$ref" => "#/components/schemas/Conversation"
         let(:user) { create(:user) }
-        let(:peer) { create(:account) }
+        let(:peer) { create(:account, username: "Shared.Profile") }
         let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
-        let(:payload) { { kind: "direct", account_id: peer.id } }
+        let(:payload) { { kind: "direct", username: peer.username.upcase } }
 
         run_test! do |response|
-          expect(JSON.parse(response.body).fetch("kind")).to eq("direct")
+          expect(JSON.parse(response.body)).to include(
+            "kind" => "direct",
+            "peer" => include("id" => peer.id, "username" => peer.username)
+          )
         end
       end
     end
@@ -120,6 +127,77 @@ RSpec.describe "Conversations create group", type: :request do
   end
 end
 
+RSpec.describe "Conversations create direct by username", type: :request do
+  let(:user) { create(:user) }
+  let(:headers) { auth_headers_for(user) }
+
+  it "opens self-chat and bot conversations" do
+    bot = create(:bot)
+
+    post "/api/v1/conversations", headers: headers,
+                                  params: { kind: "direct", username: user.account.username.upcase }
+    self_body = JSON.parse(response.body)
+    post "/api/v1/conversations", headers: headers,
+                                  params: { kind: "direct", username: bot.account.username.upcase }
+    bot_body = JSON.parse(response.body)
+
+    expect(self_body).to include("peer" => include("id" => user.account.id))
+    expect(bot_body).to include("peer" => include("id" => bot.account.id, "kind" => "bot"))
+  end
+
+  it "resolves an undiscoverable account without exposing private contact fields" do
+    peer = create(:user)
+    create(:preference, account: peer.account, data: {
+             "privacy" => {
+               "discoverable_by_username" => false,
+               "show_email_on_profile" => false,
+               "show_phone_on_profile" => false
+             }
+           })
+
+    post "/api/v1/conversations", headers: headers,
+                                  params: { kind: "direct", username: peer.account.username }
+
+    expect(response).to have_http_status(:created)
+    expect(JSON.parse(response.body).fetch("peer")).not_to include("email", "phone")
+  end
+
+  it "returns not found for missing, deactivated, or blocked new targets" do
+    deactivated = create(:account, :deactivated)
+    blocked = create(:account)
+    create(:block, blocker_account: blocked, blocked_account: user.account)
+
+    [ "missing-user", deactivated.username, blocked.username ].each do |username|
+      post "/api/v1/conversations", headers: headers, params: { kind: "direct", username: username }
+
+      expect(response).to have_http_status(:not_found)
+      expect(JSON.parse(response.body).dig("error", "code")).to eq("not_found")
+    end
+  end
+
+  it "opens an existing direct after either account blocks" do
+    peer = create(:account)
+    conversation = create_direct_between(user.account, peer)
+    create(:block, blocker_account: user.account, blocked_account: peer)
+
+    post "/api/v1/conversations", headers: headers,
+                                  params: { kind: "direct", username: peer.username.upcase }
+
+    expect(response).to have_http_status(:created)
+    expect(JSON.parse(response.body).fetch("id")).to eq(conversation.id)
+  end
+
+  it "rejects account_id and username together" do
+    peer = create(:account)
+
+    post "/api/v1/conversations", headers: headers,
+                                  params: { kind: "direct", account_id: peer.id, username: peer.username }
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(JSON.parse(response.body).dig("error", "code")).to eq("validation_failed")
+  end
+end
+
 RSpec.describe "Conversations create blocked", type: :request do
   path "/api/v1/conversations" do
     post "Create a conversation" do
@@ -131,7 +209,14 @@ RSpec.describe "Conversations create blocked", type: :request do
         type: :object,
         properties: {
           kind: { type: :string },
-          account_id: { type: :integer }
+          account_id: { type: :integer },
+          account_ids: { type: :array, items: { type: :integer } },
+          description: { type: :string },
+          title: { type: :string },
+          username: {
+            type: :string,
+            description: "Exact account username; alternative to account_id for direct conversations"
+          }
         }
       }
 
@@ -163,7 +248,14 @@ RSpec.describe "Conversations create blocked reverse", type: :request do
         type: :object,
         properties: {
           kind: { type: :string },
-          account_id: { type: :integer }
+          account_id: { type: :integer },
+          account_ids: { type: :array, items: { type: :integer } },
+          description: { type: :string },
+          title: { type: :string },
+          username: {
+            type: :string,
+            description: "Exact account username; alternative to account_id for direct conversations"
+          }
         }
       }
 

@@ -11,7 +11,7 @@ import {
 const base = { id: "a", senderId: "1", createdAt: 1_000 };
 
 describe("grouping", () => {
-  it("groups consecutive messages from one sender within the window", () => {
+  it("groups all consecutive messages from one sender regardless of time gap", () => {
     const messages = [
       base,
       { id: "b", senderId: "1", createdAt: 1_000 + MESSAGE_GROUP_WINDOW_MS },
@@ -19,10 +19,9 @@ describe("grouping", () => {
       { id: "d", senderId: "2", createdAt: 1_000 + MESSAGE_GROUP_WINDOW_MS * 2 + 2 },
     ];
     const runs = groupMessageRuns(messages);
-    expect(runs).toHaveLength(3);
-    expect(runs[0]?.messages.map((item) => item.id)).toEqual(["a", "b"]);
-    expect(runs[1]?.messages.map((item) => item.id)).toEqual(["c"]);
-    expect(runs[2]?.senderId).toBe("2");
+    expect(runs).toHaveLength(2);
+    expect(runs[0]?.messages.map((item) => item.id)).toEqual(["a", "b", "c"]);
+    expect(runs[1]?.senderId).toBe("2");
   });
 
   it("does not group different senders or a missing neighbour", () => {

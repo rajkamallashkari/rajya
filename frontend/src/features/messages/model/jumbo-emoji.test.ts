@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getJumboInfo, jumboSizeToken } from "./jumbo-emoji";
+import { getJumboInfo, isEmojiOnly, jumboSizeToken } from "./jumbo-emoji";
 
 describe("getJumboInfo", () => {
   it("accepts one to three emoji graphemes and rejects mixed text", () => {
@@ -26,6 +26,8 @@ describe("getJumboInfo", () => {
       expect(getJumboInfo("🎉")).toBe(1);
       expect(getJumboInfo("abc")).toBeNull();
       expect(getJumboInfo("\uFE0F")).toBeNull();
+      expect(isEmojiOnly("🎉")).toBe(true);
+      expect(isEmojiOnly("abc")).toBe(false);
     } finally {
       Object.defineProperty(intl, "Segmenter", { configurable: true, value: original });
     }

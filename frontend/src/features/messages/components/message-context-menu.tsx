@@ -8,6 +8,7 @@ import {
   Pencil,
   Pin,
   PinOff,
+  Plus,
   Reply,
   RotateCcw,
   Smile,
@@ -22,6 +23,7 @@ import { DEFAULT_QUICK_REACTIONS } from "@/features/messages/model/menu";
 import { cn } from "@/shared/lib/cn";
 import { menuPosFromElement } from "@/shared/lib/menu-position";
 import { Button, DismissLayer } from "@/shared/ui";
+import { ReactionPicker } from "@/features/messages/components/reaction-picker";
 import {
   ICON_CLASS,
   MENU_CONTENT_CLASS,
@@ -44,6 +46,7 @@ export interface MessageMenuActions {
   onInfo?: () => void;
   onPin?: () => void;
   onReact?: (emoji: string) => void;
+  onUpdateQuickReactions?: (reactions: string[]) => void;
   onReply?: () => void;
   onReport?: () => void;
   onRetry?: () => void;
@@ -73,6 +76,7 @@ export function MessageContextMenu({
   const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ left: x, top: y });
+  const [pickerOpen, setPickerOpen] = useState(false);
   const reactions = actions.quickReactions ?? DEFAULT_QUICK_REACTIONS;
   const persisted = actions.hasId !== false && !actions.isFailed;
 
@@ -204,6 +208,14 @@ export function MessageContextMenu({
                 {emoji}
               </Button>
             ))}
+            <Button
+              aria-label={t("reactions.more")}
+              className="min-h-[var(--touch-target-min)] min-w-[var(--touch-target-min)]"
+              onClick={() => setPickerOpen(true)}
+              variant="ghost"
+            >
+              <Plus className={ICON_CLASS} />
+            </Button>
           </div>
         ) : null}
         {items
@@ -229,6 +241,18 @@ export function MessageContextMenu({
             </Button>
           ))}
       </div>
+      {pickerOpen ? (
+        <ReactionPicker
+          onClose={() => setPickerOpen(false)}
+          onCustomize={(next) => actions.onUpdateQuickReactions?.(next)}
+          onSelect={(emoji) => {
+            actions.onReact?.(emoji);
+            setPickerOpen(false);
+            onClose();
+          }}
+          quickReactions={reactions}
+        />
+      ) : null}
     </>
   );
 }

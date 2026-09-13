@@ -1,26 +1,21 @@
 import type { BubbleRole, GroupableMessage, MessageRun } from "./constants";
-import { MESSAGE_GROUP_WINDOW_MS } from "./constants";
 
 export function isWithinGroupWindow(
   current: GroupableMessage,
   other: GroupableMessage | null | undefined,
-  windowMs: number = MESSAGE_GROUP_WINDOW_MS,
 ): boolean {
-  if (!other || current.senderId !== other.senderId) {
+  if (!other) {
     return false;
   }
-  return Math.abs(current.createdAt - other.createdAt) <= windowMs;
+  return current.senderId === other.senderId;
 }
 
-export function groupMessageRuns(
-  messages: GroupableMessage[],
-  windowMs: number = MESSAGE_GROUP_WINDOW_MS,
-): MessageRun[] {
+export function groupMessageRuns(messages: GroupableMessage[]): MessageRun[] {
   const runs: MessageRun[] = [];
   for (const message of messages) {
     const last = runs[runs.length - 1];
     const previous = last?.messages[last.messages.length - 1];
-    if (last && isWithinGroupWindow(message, previous, windowMs)) {
+    if (last && message.senderId === previous?.senderId) {
       last.messages.push(message);
     } else {
       runs.push({ senderId: message.senderId, messages: [message] });

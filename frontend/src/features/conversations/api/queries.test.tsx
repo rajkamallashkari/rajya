@@ -128,9 +128,7 @@ function VoiceHarness() {
     <div>
       <p data-voice-count="">{page.messages.length}</p>
       <p data-voice-kind={page.messages[0]?.kind ?? ""} />
-      <p data-voice-status={send.status}>
-        {send.error ? JSON.stringify(send.error) : "ok"}
-      </p>
+      <p data-voice-status={send.status}>{send.error ? JSON.stringify(send.error) : "ok"}</p>
       <Button
         onClick={() =>
           send.mutate({
@@ -185,8 +183,17 @@ function Harness() {
       <Button onClick={() => react.mutate({ emoji: "👍", id: 102 })} type="button">
         {en.messages.menu.react.replace("{{emoji}}", "👍")}
       </Button>
-      <Button onClick={() => pin.mutate(102)} type="button">
+      <Button
+        onClick={() => react.mutate({ emoji: "🚀", id: 102, mine: true })}
+        type="button"
+      >
+        remove-reaction
+      </Button>
+      <Button onClick={() => pin.mutate({ messageId: 102, pinned: false })} type="button">
         {en.messages.menu.pin}
+      </Button>
+      <Button onClick={() => pin.mutate({ messageId: 102, pinned: true })} type="button">
+        {en.messages.menu.unpin}
       </Button>
       <Button onClick={() => save.mutate(102)} type="button">
         {en.messages.menu.save}
@@ -201,7 +208,58 @@ function Harness() {
   );
 }
 
+function SendCacheHarness() {
+  const queryClient = useQueryClient();
+  const send = useSendMessage(99);
+  return (
+    <div>
+      <Button
+        disabled={send.isPending}
+        onClick={() => send.mutate({ body: "cache-race", client_nonce: "cache-race" })}
+        type="button"
+      >
+        send-cache-race
+      </Button>
+      <Button onClick={() => queryClient.clear()} type="button">
+        clear-cache
+      </Button>
+    </div>
+  );
+}
+
 describe("message queries", () => {
+  it("accepts a send response after its optimistic cache was cleared", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    server.use(
+      http.post("*/api/v1/messages", async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return HttpResponse.json({
+          body: "cache-race",
+          client_nonce: null,
+          conversation_id: 99,
+          created_at: "2026-01-01T00:00:00.000Z",
+          deleted: false,
+          id: 999,
+          kind: "text",
+          position: 1,
+          revision: 1,
+          silent: false,
+        });
+      }),
+    );
+    render(
+      <AppProviders>
+        <SendCacheHarness />
+      </AppProviders>,
+    );
+    await user.click(screen.getByRole("button", { name: "send-cache-race" }));
+    await user.click(screen.getByRole("button", { name: "clear-cache" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "send-cache-race" })).toBeEnabled();
+    });
+  });
+
   it("computes cursor params", () => {
     expect(olderPageParam(page({ has_more_before: true, oldest_position: 3 }))).toEqual({
       before: 3,
@@ -320,6 +378,8 @@ describe("message queries", () => {
     await user.click(
       screen.getByRole("button", { name: en.messages.menu.react.replace("{{emoji}}", "👍") }),
     );
+    await user.click(screen.getByRole("button", { name: "remove-reaction" }));
+    await user.click(screen.getByRole("button", { name: en.messages.menu.unpin }));
     await user.click(screen.getByRole("button", { name: en.messages.menu.pin }));
     await user.click(screen.getByRole("button", { name: en.messages.menu.save }));
     await user.click(screen.getByRole("button", { name: "vote" }));
@@ -716,7 +776,10 @@ describe("message queries", () => {
           <Button onClick={() => wallpaper.mutate({ id: 1, wallpaper: null })} type="button">
             wallpaper-clear
           </Button>
-          <Button onClick={() => createGroup.mutate({ account_ids: [2], title: "Crew" })} type="button">
+          <Button
+            onClick={() => createGroup.mutate({ account_ids: [2], title: "Crew" })}
+            type="button"
+          >
             create-group
           </Button>
           <Button
@@ -725,10 +788,16 @@ describe("message queries", () => {
           >
             remind
           </Button>
-          <Button onClick={() => createReply.mutate({ shortcut: "/brb", body: "brb" })} type="button">
+          <Button
+            onClick={() => createReply.mutate({ shortcut: "/brb", body: "brb" })}
+            type="button"
+          >
             reply-add
           </Button>
-          <Button onClick={() => updateReply.mutate({ id: 1, shortcut: "/omw", body: "later" })} type="button">
+          <Button
+            onClick={() => updateReply.mutate({ id: 1, shortcut: "/omw", body: "later" })}
+            type="button"
+          >
             reply-edit
           </Button>
           <Button onClick={() => destroyReply.mutate(1)} type="button">
@@ -782,6 +851,18 @@ describe("message queries", () => {
         ),
       ),
       http.patch("*/api/v1/conversation_folders/reorder", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+      http.post("*/api/v1/conversation_folders/:id/conversations", () =>
+        HttpResponse.json(
+          { error: { code: "fail", message: "fail", details: {} } },
+          { status: 500 },
+        ),
+      ),
+      http.delete("*/api/v1/conversation_folders/:id/conversations/:conversation_id", () =>
         HttpResponse.json(
           { error: { code: "fail", message: "fail", details: {} } },
           { status: 500 },
@@ -902,9 +983,9 @@ describe("message queries", () => {
     await user.click(screen.getByRole("button", { name: "rename-folder" }));
     await user.click(screen.getByRole("button", { name: "reorder-folders" }));
     await user.click(screen.getByRole("button", { name: "reorder-missing" }));
-    await user.click(screen.getByRole("button", { name: "destroy-folder" }));
     await user.click(screen.getByRole("button", { name: "add-folder" }));
     await user.click(screen.getByRole("button", { name: "remove-folder" }));
+    await user.click(screen.getByRole("button", { name: "destroy-folder" }));
   });
 
   it("archives into an empty archived cache and unarchives without an inbox cache", async () => {

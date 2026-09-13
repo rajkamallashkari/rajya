@@ -4,7 +4,11 @@ import { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import { Avatar } from "@/shared/ui/avatar";
-import { BottomSheet, BottomSheetContent, BottomSheetTitle } from "@/shared/ui/bottom-sheet";
+import {
+  ResponsiveOverlay as BottomSheet,
+  ResponsiveOverlayContent as BottomSheetContent,
+  ResponsiveOverlayTitle as BottomSheetTitle,
+} from "@/shared/ui/responsive-overlay";
 import { Button } from "@/shared/ui/button";
 import { WEIGHT_EMPHASIS } from "@/shared/ui/metrics";
 

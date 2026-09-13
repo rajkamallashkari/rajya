@@ -65,6 +65,8 @@ export function buildConversations(): Conversation[] {
       kind: group ? "group" : "direct",
       title: group ? demo.name : null,
       description: null,
+      avatar_url: null,
+      member_count: group ? 3 : 2,
       last_activity_at: MESSAGE_STAMP,
       unread_count: demo.unreadCount,
       muted_until: null,
@@ -120,6 +122,7 @@ export interface MessagingStore {
   conversations: Conversation[];
   messages: Record<number, Message[]>;
   nextId: number;
+  pins: Record<number, number[]>;
 }
 
 export function createMessagingStore(): MessagingStore {
@@ -128,7 +131,7 @@ export function createMessagingStore(): MessagingStore {
   conversations.forEach((conversation, index) => {
     messages[conversation.id] = buildMessages(conversation.id, index);
   });
-  return { conversations, messages, nextId: 10_000 };
+  return { conversations, messages, nextId: 10_000, pins: {} };
 }
 
 let store = createMessagingStore();
@@ -447,13 +450,23 @@ export function upsertConversation(conversation: Conversation): Conversation {
   return conversation;
 }
 
-export function createDirectConversation(actorId: number, peerId: number): Conversation {
-  const existing = findDirectWithPeer(peerId);
+export function createDirectConversation(
+  actorId: number,
+  peerId: number,
+  peerOverride?: Account,
+): Conversation {
+  const selfChat = actorId === peerId;
+  const existing = selfChat
+    ? store.conversations.find(
+        (row) => row.kind === "direct" && row.member_count === 1 && row.peer?.id === actorId,
+      )
+    : findDirectWithPeer(peerId);
   if (existing) {
     return existing;
   }
   const actor = DIRECTORY_HUMANS.find((row) => row.id === actorId) ?? VIEWER;
   const peer =
+    peerOverride ??
     DIRECTORY_HUMANS.find((row) => row.id === peerId) ??
     peerAccount(peerId, `User ${String(peerId)}`);
   return upsertConversation({
@@ -461,6 +474,8 @@ export function createDirectConversation(actorId: number, peerId: number): Conve
     kind: "direct",
     title: null,
     description: null,
+    avatar_url: null,
+    member_count: selfChat ? 1 : 2,
     last_activity_at: MESSAGE_STAMP,
     unread_count: 0,
     muted_until: null,
@@ -468,10 +483,12 @@ export function createDirectConversation(actorId: number, peerId: number): Conve
     role: "member",
     ...conversationPermissionDefaults(),
     peer,
-    members: [
-      { account: actor, role: "member" },
-      { account: peer, role: "member" },
-    ],
+    members: selfChat
+      ? [{ account: actor, role: "member" }]
+      : [
+          { account: actor, role: "member" },
+          { account: peer, role: "member" },
+        ],
     pinned_at: null,
     manually_unread_at: null,
   });
@@ -497,6 +514,7 @@ export function appendSent(
   nonce?: string,
   silent = false,
   voice?: { durationMs: number; waveform: number[] },
+  attachmentSignedIds: string[] = [],
 ): Message {
   const rows = store.messages[conversationId] ?? [];
   if (nonce) {
@@ -508,12 +526,13 @@ export function appendSent(
   const last = rows[rows.length - 1];
   const created = new Date().toISOString();
   const isVoice = voice != null;
+  const hasImage = !isVoice && attachmentSignedIds.length > 0;
   const message: Message = {
     id: store.nextId,
     conversation_id: conversationId,
     position: (last?.position ?? 0) + 1,
     revision: 1,
-    kind: isVoice ? "voice" : "text",
+    kind: isVoice ? "voice" : hasImage ? "image" : "text",
     body: isVoice ? null : body,
     deleted: false,
     silent,
@@ -521,7 +540,7 @@ export function appendSent(
     created_at: created,
     sender: VIEWER,
     tick: "sent",
-    attachment_count: isVoice ? 1 : undefined,
+    attachment_count: isVoice || hasImage ? 1 : undefined,
     attachments: isVoice
       ? [
           {
@@ -535,7 +554,18 @@ export function appendSent(
             filename: "voice.weba",
           },
         ]
-      : undefined,
+      : hasImage
+        ? [
+            {
+              byte_size: 1,
+              content_type: "image/png",
+              filename: "upload.png",
+              id: store.nextId + 1000,
+              kind: "image",
+              processing_status: "pending",
+            },
+          ]
+        : undefined,
   };
   store.nextId += 1;
   store.messages[conversationId] = [...rows, message];
@@ -553,6 +583,19 @@ export function appendSent(
   }
   publishMswStore({ type: "append", message });
   return message;
+}
+
+export function completeAttachmentProcessing(messageId: number): Message | null {
+  return replaceMessage(messageId, (message) => ({
+    ...message,
+    attachments: message.attachments?.map((attachment) => ({
+      ...attachment,
+      height: attachment.kind === "image" ? 9 : attachment.height,
+      processing_error: null,
+      processing_status: "ready",
+      width: attachment.kind === "image" ? 16 : attachment.width,
+    })),
+  }));
 }
 
 function replaceMessage(id: number, mapper: (message: Message) => Message): Message | null {
@@ -586,12 +629,30 @@ export function tombstoneMessage(id: number): Message | null {
   }));
 }
 
-export function reactStoredMessage(id: number): Message | null {
-  return replaceMessage(id, (message) => ({
-    ...message,
-    revision: message.revision + 1,
-    reaction_summary: { ...message.reaction_summary, "👍": 1 },
-  }));
+export function reactStoredMessage(id: number, emoji = "👍", add = true): Message | null {
+  return replaceMessage(id, (message) => {
+    const count = Math.max(0, (message.reaction_summary?.[emoji] ?? 0) + (add ? 1 : -1));
+    return {
+      ...message,
+      my_reactions: add
+        ? [...new Set([...(message.my_reactions ?? []), emoji])]
+        : (message.my_reactions ?? []).filter((value) => value !== emoji),
+      reaction_summary: { ...message.reaction_summary, [emoji]: count },
+      revision: message.revision + 1,
+    };
+  });
+}
+
+export function pinnedMessageIds(conversationId: number): number[] {
+  return store.pins[conversationId] ?? [];
+}
+
+export function pinStoredMessage(conversationId: number, messageId: number): void {
+  store.pins[conversationId] = [...new Set([...(store.pins[conversationId] ?? []), messageId])];
+}
+
+export function unpinStoredMessage(conversationId: number, messageId: number): void {
+  store.pins[conversationId] = (store.pins[conversationId] ?? []).filter((id) => id !== messageId);
 }
 
 export function voteStoredPoll(pollId: number, optionIds: number[]): Message | null {

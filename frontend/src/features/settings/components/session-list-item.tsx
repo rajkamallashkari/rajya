@@ -3,9 +3,9 @@ import { useTranslation } from "react-i18next";
 import type { SessionView } from "@/features/conversations/model/report";
 import { Badge, Button } from "@/shared/ui";
 import { ICON_CLASS, WEIGHT_EMPHASIS } from "@/shared/ui/metrics";
+import { useDateTimeFormatter } from "@/shared/hooks/use-date-time-formatter";
 
 export function SessionListItem({
-  locale = "en",
   onRevoke,
   session,
 }: {
@@ -14,11 +14,9 @@ export function SessionListItem({
   session: SessionView;
 }) {
   const { t } = useTranslation();
+  const formatDateTime = useDateTimeFormatter();
   const label = session.deviceLabel?.trim() ? session.deviceLabel : t("sessions.unknown_device");
-  const lastSeen = new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(session.lastSeenAt));
+  const lastSeen = formatDateTime.dateTime(session.lastSeenAt);
   return (
     <article
       className="flex min-h-[var(--control-height)] items-center gap-[var(--control-gap)] px-[var(--space-list-x)] py-[var(--space-list-y)]"

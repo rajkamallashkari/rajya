@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -20,6 +21,25 @@ describe("ContextMenu", () => {
       </ContextMenu>,
     );
     fireEvent.contextMenu(screen.getByText("target"));
+    expect(await screen.findByRole("menuitem", { name: "Edit" })).toBeInTheDocument();
+  });
+
+  it("opens from the keyboard context-menu shortcut", async () => {
+    const user = userEvent.setup();
+    const onKeyDown = vi.fn();
+    render(
+      <ContextMenu>
+        <ContextMenuTrigger asChild onKeyDown={onKeyDown}>
+          <button type="button">{"target"}</button>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem>{"Edit"}</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    screen.getByRole("button", { name: "target" }).focus();
+    await user.keyboard("{Shift>}{F10}{/Shift}");
+    expect(onKeyDown).toHaveBeenCalled();
     expect(await screen.findByRole("menuitem", { name: "Edit" })).toBeInTheDocument();
   });
 });

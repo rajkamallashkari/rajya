@@ -1,3 +1,5 @@
+import { type ReactNode } from "react";
+import { MemoryRouter, Route, Routes } from "react-router";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
@@ -12,7 +14,16 @@ import { en } from "@/shared/lib/i18n/catalog";
 import { server } from "@/test/msw";
 import { SelfProfilePane } from "./self-profile-pane";
 
+const ADMIN_SHELL_STUB = "admin shell reached";
 const AVATAR_TOO_LARGE_BYTES = AVATAR_MAX_BYTES + 1;
+
+function wrap(ui: ReactNode) {
+  return (
+    <AppProviders>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </AppProviders>
+  );
+}
 
 function seedAccount(): void {
   setAccessSession({
@@ -46,11 +57,7 @@ describe("SelfProfilePane", () => {
 
   it("shows profile fields, cancels edits, and saves inline", async () => {
     const user = userEvent.setup();
-    render(
-      <AppProviders>
-        <SelfProfilePane />
-      </AppProviders>,
-    );
+    render(wrap(<SelfProfilePane />));
 
     expect(await screen.findByText("Building small tools.")).toBeInTheDocument();
     expect(screen.getByText("@ada")).toBeInTheDocument();
@@ -111,22 +118,14 @@ describe("SelfProfilePane", () => {
         }),
       ),
     );
-    render(
-      <AppProviders>
-        <SelfProfilePane />
-      </AppProviders>,
-    );
+    render(wrap(<SelfProfilePane />));
     expect(await screen.findByText("ada@example.com")).toBeInTheDocument();
     expect(screen.getByText("+12025550147")).toBeInTheDocument();
   });
 
   it("validates edits and surfaces unavailable usernames and save failures", async () => {
     const user = userEvent.setup();
-    render(
-      <AppProviders>
-        <SelfProfilePane />
-      </AppProviders>,
-    );
+    render(wrap(<SelfProfilePane />));
     await user.click(await screen.findByRole("button", { name: en.auth.profile.edit }));
     const name = screen.getByLabelText(en.auth.onboarding.display_name);
     const username = screen.getByLabelText(en.auth.onboarding.username);
@@ -171,11 +170,7 @@ describe("SelfProfilePane", () => {
         return HttpResponse.json({ available: username === "available" });
       }),
     );
-    render(
-      <AppProviders>
-        <SelfProfilePane />
-      </AppProviders>,
-    );
+    render(wrap(<SelfProfilePane />));
     await user.click(await screen.findByRole("button", { name: en.auth.profile.edit }));
     const username = screen.getByLabelText(en.auth.onboarding.username);
 
@@ -253,11 +248,7 @@ describe("SelfProfilePane", () => {
           : HttpResponse.json({ blob_signed_id: "signed", skip_upload: true }),
       ),
     );
-    const { container } = render(
-      <AppProviders>
-        <SelfProfilePane />
-      </AppProviders>,
-    );
+    const { container } = render(wrap(<SelfProfilePane />));
     await user.click(await screen.findByRole("button", { name: en.auth.profile.edit }));
     const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
     const inputClick = vi.spyOn(input, "click");
@@ -326,11 +317,7 @@ describe("SelfProfilePane", () => {
         });
       }),
     );
-    render(
-      <AppProviders>
-        <SelfProfilePane />
-      </AppProviders>,
-    );
+    render(wrap(<SelfProfilePane />));
     await user.click(await screen.findByRole("button", { name: en.lists.error_retry }));
     expect(await screen.findByRole("heading", { name: "Ada" })).toBeInTheDocument();
   });
@@ -346,11 +333,7 @@ describe("SelfProfilePane", () => {
       token: "tok-2",
       username: "bob",
     });
-    render(
-      <AppProviders>
-        <SelfProfilePane />
-      </AppProviders>,
-    );
+    render(wrap(<SelfProfilePane />));
     const identity = await screen.findByRole("button", { name: en.auth.accounts.switcher });
     fireEvent.contextMenu(identity);
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
@@ -361,5 +344,73 @@ describe("SelfProfilePane", () => {
     fireEvent.contextMenu(screen.getByRole("button", { name: en.auth.accounts.switcher }));
     await user.click(screen.getByRole("button", { name: en.auth.accounts.logout_all }));
     expect(useAccountsStore.getState().accounts).toEqual([]);
+  });
+
+  it("shares the public profile link through the QR overlay", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    render(wrap(<SelfProfilePane />));
+
+    await user.click(await screen.findByRole("button", { name: en.auth.profile.share }));
+    expect(await screen.findByRole("img", { name: en.qr.image })).toBeInTheDocument();
+    expect(document.querySelector("[data-qr-code]")).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: en.qr.copy }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${globalThis.location.origin}/u/ada`);
+    });
+  });
+
+  it("hides the admin action from non-admin sessions", async () => {
+    render(wrap(<SelfProfilePane />));
+    expect(await screen.findByRole("button", { name: en.auth.profile.edit })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: en.admin.title })).toBeNull();
+    expect(screen.queryByRole("button", { name: en.admin.title })).toBeNull();
+  });
+
+  it("links admins to the admin shell from the profile header", async () => {
+    server.use(
+      http.get("*/api/v1/users/me", () =>
+        HttpResponse.json({
+          account: {
+            bio: null,
+            display_name: "Ada",
+            id: 1,
+            kind: "human",
+            username: "ada",
+          },
+          user: {
+            email: "ada@example.com",
+            has_passkey: false,
+            has_password: true,
+            id: 1,
+            is_admin: true,
+            onboarded: true,
+            phone: null,
+            phone_verified: false,
+          },
+        }),
+      ),
+    );
+    const user = userEvent.setup();
+    render(
+      <AppProviders>
+        <MemoryRouter>
+          <Routes>
+            <Route element={<SelfProfilePane />} path="/" />
+            <Route element={<p>{ADMIN_SHELL_STUB}</p>} path="/admin" />
+          </Routes>
+        </MemoryRouter>
+      </AppProviders>,
+    );
+    const link = await screen.findByRole("link", { name: en.admin.title });
+    expect(link).toHaveAttribute("href", "/admin");
+
+    await user.click(link);
+    expect(await screen.findByText(ADMIN_SHELL_STUB)).toBeInTheDocument();
   });
 });

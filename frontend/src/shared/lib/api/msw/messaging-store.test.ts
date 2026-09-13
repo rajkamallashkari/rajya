@@ -13,11 +13,14 @@ import {
   MESSAGE_STAMP,
   pageFor,
   patchMessage,
+  pinnedMessageIds,
+  pinStoredMessage,
   reactStoredMessage,
   resetMessagingStore,
   seedPositions,
   setConversationTicks,
   tombstoneMessage,
+  unpinStoredMessage,
   upsertConversation,
   voteStoredPoll,
   closeStoredPoll,
@@ -44,6 +47,13 @@ describe("messaging store", () => {
     expect(accountSearchHits("ada", 2).some((row) => row.username === "ada")).toBe(true);
     expect(findDirectWithPeer(2)?.id).toBe(1);
     expect(createDirectConversation(1, 2)?.id).toBe(1);
+    const selfChat = createDirectConversation(1, 1);
+    expect(selfChat).toMatchObject({
+      member_count: 1,
+      members: [{ account: VIEWER, role: "member" }],
+      peer: VIEWER,
+    });
+    expect(createDirectConversation(1, 1).id).toBe(selfChat.id);
     expect(createDirectConversation(99, 43).peer?.id).toBe(43);
     expect(upsertConversation({ ...findConversation(1)!, title: "Relabeled" }).title).toBe(
       "Relabeled",
@@ -72,6 +82,13 @@ describe("messaging store", () => {
     expect(tombstoneMessage(0)).toBeNull();
     expect(reactStoredMessage(0)).toBeNull();
     expect(reactStoredMessage(sent.id)?.revision).toBe(2);
+    expect(reactStoredMessage(orphan.id, "🚀", false)?.my_reactions).toEqual([]);
+    expect(pinnedMessageIds(88)).toEqual([]);
+    pinStoredMessage(88, sent.id);
+    expect(pinnedMessageIds(88)).toEqual([sent.id]);
+    unpinStoredMessage(88, sent.id);
+    unpinStoredMessage(89, sent.id);
+    expect(pinnedMessageIds(88)).toEqual([]);
     expect(voteStoredPoll(0, [])).toBeNull();
     expect(closeStoredPoll(0)).toBeNull();
     expect(findPoll(0)).toBeUndefined();

@@ -1,5 +1,6 @@
 require "rails_helper"
 
+# rubocop:disable RSpec/ExampleLength -- Avatar lifecycle setup and assertions belong together.
 RSpec.describe Bots::Requests::Create do
   def prompt
     "A" * Ai::Limits.prompt_minimum_length
@@ -15,6 +16,26 @@ RSpec.describe Bots::Requests::Create do
     expect(result).to be_success
     expect(result.value).to have_attributes(kind: "create", status: "pending")
     expect(result.value.proposed_persona_prompt.length).to eq(Ai::Limits.prompt_minimum_length)
+  end
+
+  it "stages a valid avatar and rejects invalid avatar content" do
+    user = create(:user)
+    payload = { name: "Nimbus", username: "nimbus_bot", bio: "Weather pal", persona_prompt: prompt }
+    image = blob_signed_id
+
+    result = described_class.call(
+      requester: user.account, kind: "create", payload: payload,
+      avatar: image, avatar_provided: true
+    )
+    expect(result.value.avatar).to be_attached
+    expect(result.value.avatar_action).to eq("replace")
+
+    invalid = blob_signed_id(filename: "bot.pdf", content_type: "application/pdf")
+    rejected = described_class.call(
+      requester: user.account, kind: "create", payload: payload.merge(username: "other_bot"),
+      avatar: invalid, avatar_provided: true
+    )
+    expect(rejected.error_code).to eq(:validation_failed)
   end
 
   it "rejects a short persona prompt and an edit of someone else's bot" do
@@ -102,6 +123,18 @@ RSpec.describe Bots::Requests::Create do
     expect(duplicate.error_code).to eq(:conflict)
   end
 
+  it "maps a database uniqueness race to conflict" do
+    user = create(:user)
+    allow(BotRequest).to receive(:create!).and_raise(ActiveRecord::RecordNotUnique)
+
+    result = described_class.call(
+      requester: user.account, kind: "create",
+      payload: { name: "Nimbus", username: "nimbus_bot", bio: "Weather pal", persona_prompt: prompt }
+    )
+
+    expect(result.error_code).to eq(:conflict)
+  end
+
   it "returns not_found when bot_builder is off" do
     user = create(:user)
     create(:feature_flag, key: "bot_builder", description: FeatureFlagRegistry.description_for(:bot_builder),
@@ -114,3 +147,4 @@ RSpec.describe Bots::Requests::Create do
     ).to eq(:not_found)
   end
 end
+# rubocop:enable RSpec/ExampleLength

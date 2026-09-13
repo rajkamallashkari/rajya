@@ -14,6 +14,7 @@ const inbox: Conversation[] = [
   {
     id: 1,
     kind: "direct",
+    member_count: 2,
     last_activity_at: "2026-01-01T12:00:00.000Z",
     unread_count: 2,
     members: [],
@@ -22,6 +23,7 @@ const inbox: Conversation[] = [
   {
     id: 2,
     kind: "group",
+    member_count: 0,
     last_activity_at: "2026-01-01T12:00:00.000Z",
     unread_count: 0,
     members: [],
@@ -33,6 +35,7 @@ const archived: Conversation[] = [
   {
     id: 3,
     kind: "direct",
+    member_count: 2,
     last_activity_at: "2026-01-01T12:00:00.000Z",
     unread_count: 1,
     archived_at: "2026-01-01T12:00:00.000Z",
@@ -54,12 +57,14 @@ describe("folder tabs", () => {
     expect(folderTabValue({ kind: "all" })).toBe("all");
     expect(folderTabValue({ kind: "folder", id: 9 })).toBe("folder:9");
     expect(visibleConversations(inbox, archived, folders, { kind: "all" })).toEqual(inbox);
-    expect(visibleConversations(inbox, archived, folders, { kind: "unread" }).map((row) => row.id)).toEqual([
-      1,
-    ]);
+    expect(
+      visibleConversations(inbox, archived, folders, { kind: "unread" }).map((row) => row.id),
+    ).toEqual([1]);
     expect(visibleConversations(inbox, archived, folders, { kind: "archived" })).toEqual(archived);
     expect(
-      visibleConversations(inbox, archived, folders, { kind: "folder", id: 9 }).map((row) => row.id),
+      visibleConversations(inbox, archived, folders, { kind: "folder", id: 9 }).map(
+        (row) => row.id,
+      ),
     ).toEqual([2]);
     expect(visibleConversations(inbox, archived, folders, { kind: "folder", id: 8 })).toEqual([]);
     expect(archivedUnreadCount(archived)).toBe(1);

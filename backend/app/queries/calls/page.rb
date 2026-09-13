@@ -43,7 +43,16 @@ module Calls
     private
 
     def scoped
-      @scope.includes(:conversation, call_participants: :account).order(created_at: :desc, id: :desc)
+      @scope.includes(
+        conversation: {
+          conversation_memberships: {
+            account: [ avatar_attachment: :blob ]
+          }
+        },
+        call_participants: {
+          account: [ avatar_attachment: :blob ]
+        }
+      ).order(created_at: :desc, id: :desc)
     end
   end
 end

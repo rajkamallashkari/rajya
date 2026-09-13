@@ -1,7 +1,14 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { qrModules } from "@/features/conversations/model/qr";
-import { Button } from "@/shared/ui";
-import { BottomSheet, BottomSheetContent, BottomSheetTitle } from "@/shared/ui/bottom-sheet";
+import { qrImageDataUrl } from "@/features/conversations/model/qr";
+import { Button, Spinner } from "@/shared/ui";
+import {
+  ResponsiveOverlay,
+  ResponsiveOverlayContent,
+  ResponsiveOverlayTitle,
+} from "@/shared/ui/responsive-overlay";
+
+type QrState = { status: "error" } | { status: "loading" } | { status: "ready"; url: string };
 
 export function QrSheet({
   onCopy,
@@ -15,25 +22,38 @@ export function QrSheet({
   payload: string;
 }) {
   const { t } = useTranslation();
-  const modules = qrModules(payload);
+  const [qr, setQr] = useState<QrState>({ status: "loading" });
+
+  useEffect(() => {
+    if (!open || !payload) {
+      return undefined;
+    }
+    let cancelled = false;
+    setQr({ status: "loading" });
+    void qrImageDataUrl(payload).then((url) => {
+      if (!cancelled) {
+        setQr(url == null ? { status: "error" } : { status: "ready", url });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, payload]);
+
   return (
-    <BottomSheet onOpenChange={onOpenChange} open={open}>
-      <BottomSheetContent>
-        <BottomSheetTitle>{t("qr.title")}</BottomSheetTitle>
+    <ResponsiveOverlay onOpenChange={onOpenChange} open={open}>
+      <ResponsiveOverlayContent>
+        <ResponsiveOverlayTitle>{t("qr.title")}</ResponsiveOverlayTitle>
         <div
-          aria-hidden="true"
-          className="mx-auto grid w-max gap-[var(--hairline)] bg-[var(--text-inverse)] p-[var(--space-3)]"
-          data-qr-grid=""
-          style={{ gridTemplateColumns: `repeat(${modules.length}, var(--space-2))` }}
+          className="mx-auto mt-[var(--space-4)] flex aspect-square w-full max-w-[16rem] items-center justify-center rounded-[var(--radius-md)] bg-white p-[var(--space-3)]"
+          data-qr-code=""
         >
-          {modules.flatMap((row, y) =>
-            row.map((on, x) => (
-              <span
-                className={on ? "bg-[var(--text-primary)]" : "bg-[var(--text-inverse)]"}
-                data-qr-on={on ? "true" : "false"}
-                key={`${y}-${x}`}
-              />
-            )),
+          {qr.status === "ready" ? (
+            <img alt={t("qr.image")} className="block h-auto w-full" src={qr.url} />
+          ) : qr.status === "error" ? (
+            <p className="text-center text-[var(--danger)]">{t("qr.error")}</p>
+          ) : (
+            <Spinner label={t("qr.loading")} />
           )}
         </div>
         {onCopy ? (
@@ -41,7 +61,7 @@ export function QrSheet({
             {t("qr.copy")}
           </Button>
         ) : null}
-      </BottomSheetContent>
-    </BottomSheet>
+      </ResponsiveOverlayContent>
+    </ResponsiveOverlay>
   );
 }

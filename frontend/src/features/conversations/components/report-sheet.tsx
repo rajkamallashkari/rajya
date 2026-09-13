@@ -2,7 +2,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReportReason, ReportSubjectType } from "@/features/conversations/model/report";
 import { Button, Textarea } from "@/shared/ui";
-import { BottomSheet, BottomSheetContent, BottomSheetTitle } from "@/shared/ui/bottom-sheet";
+import {
+  ResponsiveOverlay as BottomSheet,
+  ResponsiveOverlayContent as BottomSheetContent,
+  ResponsiveOverlayTitle as BottomSheetTitle,
+} from "@/shared/ui/responsive-overlay";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio";
 

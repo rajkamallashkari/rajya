@@ -71,6 +71,7 @@ export const appRoutes = [
   { path: "/c/:conversationId", element: <ShellRoute /> },
   { path: "/c/:conversationId/m/:messageId", element: <ShellRoute /> },
   { path: "/m/:messageId", element: <ShellRoute /> },
+  { path: "/u/:username", element: <ShellRoute /> },
   { path: "/invite/:token", element: <InviteRoute /> },
   { path: "/dev/gallery", element: <GalleryRoute /> },
   { path: "/dev/accounts", element: <AccountsRoute /> },

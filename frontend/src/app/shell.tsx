@@ -8,6 +8,7 @@ import { AuthGate } from "@/features/auth/components/auth-gate";
 import { OnboardingWizard } from "@/features/auth/components/onboarding-wizard";
 import { ListErrorBoundary } from "@/app/error-boundaries/error-boundary";
 import { CallsDestination } from "@/features/calls/components/calls-destination";
+import { useStartDirectChat } from "@/features/bots/api/queries";
 import { LayerHost } from "@/app/navigation/layer-host";
 import { PrimaryNav } from "@/app/navigation/primary-nav";
 import { SettingsLayer } from "@/app/lazy/settings-layer";
@@ -29,6 +30,7 @@ import { conversationTitle } from "@/features/conversations/model/title";
 import { useAccountsStore } from "@/features/auth/store/accounts-store";
 import { needsSignIn, SIGN_IN_QUERY } from "@/features/auth/model/session-gate";
 import { useStopImpersonation } from "@/features/admin/api/queries";
+import { ScheduledMessagesLayer } from "@/features/settings/components/scheduled-panel";
 import { useShellStore } from "@/features/settings/store/shell-store";
 import { shouldHideMobileTabBar } from "@/shared/lib/navigation/destinations";
 import { useMobileViewport } from "@/shared/hooks/use-mobile-viewport";
@@ -36,6 +38,7 @@ import { useShortcuts } from "@/shared/hooks/use-shortcuts";
 import { conversationLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
 import { cn } from "@/shared/lib/cn";
 import { useSearchStore } from "@/features/search/store/search-store";
+import { showToast } from "@/shared/ui/toast";
 
 export function AppShell() {
   const { t } = useTranslation();
@@ -67,6 +70,7 @@ export function AppShell() {
   const conversations = useConversations();
   const activeAccountId = useAccountsStore((state) => state.activeAccountId);
   const chatsOpenedRef = useRef(false);
+  const profileLinkAttemptRef = useRef<string | null>(null);
   const params = useParams();
   const [searchParams] = useSearchParams();
   const signedOut = needsSignIn(
@@ -76,6 +80,8 @@ export function AppShell() {
   );
   const showChrome = !signedOut && !needsOnboarding;
   const navigate = useNavigate();
+  const setDestination = useShellStore((state) => state.setDestination);
+  const startDirect = useStartDirectChat();
   useAccountChannel();
   useSignalingChannel();
   useWebRTCManager();
@@ -116,6 +122,48 @@ export function AppShell() {
   }, [conversations.data, openConversation, params.conversationId, params.messageId, t]);
 
   useEffect(() => {
+    const username = params.username;
+    if (!username) {
+      profileLinkAttemptRef.current = null;
+      return;
+    }
+    if (signedOut || needsOnboarding || activeAccountId == null) {
+      return;
+    }
+    const attempt = `${String(activeAccountId)}:${username.toLowerCase()}`;
+    if (profileLinkAttemptRef.current === attempt) {
+      return;
+    }
+    profileLinkAttemptRef.current = attempt;
+    setDestination("chats");
+    startDirect.mutate(username, {
+      onError: () => {
+        showToast({ title: t("conversations.profile_link_unavailable"), variant: "danger" });
+        navigate("/", { replace: true });
+      },
+      onSuccess: (conversation) => {
+        openConversation(
+          conversationLayer(
+            String(conversation.id),
+            conversationTitle(conversation, t("conversations.untitled")),
+          ),
+        );
+        navigate(`/c/${String(conversation.id)}`, { replace: true });
+      },
+    });
+  }, [
+    activeAccountId,
+    navigate,
+    needsOnboarding,
+    openConversation,
+    params.username,
+    setDestination,
+    signedOut,
+    startDirect,
+    t,
+  ]);
+
+  useEffect(() => {
     const messageId = params.messageId;
     if (!messageId || params.conversationId) {
       return;
@@ -138,7 +186,7 @@ export function AppShell() {
       isPending: conversations.isPending,
       layerCount,
       mobile,
-      permalink: Boolean(params.conversationId || params.messageId),
+      permalink: Boolean(params.conversationId || params.messageId || params.username),
       rows: conversations.data?.conversations ?? [],
     });
     if (action.kind === "ignore" || action.kind === "wait") {
@@ -165,6 +213,7 @@ export function AppShell() {
     openConversation,
     params.conversationId,
     params.messageId,
+    params.username,
     t,
   ]);
 
@@ -226,6 +275,9 @@ export function AppShell() {
                   }
                   if (layer.kind === "settings") {
                     return <SettingsLayer />;
+                  }
+                  if (layer.kind === "scheduled") {
+                    return <ScheduledMessagesLayer conversationId={Number(layer.conversationId)} />;
                   }
                   if (layer.kind === "compose_message") {
                     return <NewMessagePanel />;

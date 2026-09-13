@@ -65,8 +65,8 @@ RSpec.describe Attachments::Process do
     expect(attachment.processing_error).to eq("blocked_type")
   end
 
-  it "no-ops when the attachment is missing or has no file" do
-    expect(described_class.call(attachment_id: 0).value).to be_nil
+  it "retries an attachment id that is not committed yet and no-ops without a file" do
+    expect { described_class.call(attachment_id: 0) }.to raise_error(ActiveRecord::RecordNotFound)
     expect(described_class.call(attachment: create(:attachment)).value.processing_status).to eq("pending")
   end
 
@@ -125,16 +125,22 @@ RSpec.describe Attachments::Process do
     expect(attachment.reload.processing_error).to eq("unreadable")
   end
 
-  it "processes a PDF thumbnail variant" do
+  it "attaches a PDF thumbnail when pdftoppm rasterizes the first page" do
     attachment = attach_blob(
       content_type: "application/pdf", filename: "a.pdf", io: StringIO.new("%PDF-1.4\n")
     )
-    variant = instance_double(ActiveStorage::VariantWithRecord, processed: true)
-    allow_any_instance_of(ActiveStorage::Blob).to receive(:variant).and_return(variant)
+    allow(SecureRandom).to receive(:uuid).and_return("fixed")
+    out_path = File.join(Dir.tmpdir, "pdf_thumb_fixed.png")
+    allow_any_instance_of(described_class).to receive(:system) do
+      File.binwrite(out_path, png_bytes)
+      true
+    end
 
     described_class.call(attachment: attachment)
 
     expect(attachment.reload.processing_status).to eq("ready")
+    expect(attachment.thumbnail).to be_attached
+    expect(File).not_to exist(out_path)
   end
 
   it "records video dimensions from ffprobe and skips a missing thumbnail file" do
@@ -151,11 +157,10 @@ RSpec.describe Attachments::Process do
   it "records image dimensions, variants, and a blurhash" do
     stub_vips!
     attachment = attach_blob(content_type: "image/png", filename: "a.png", io: StringIO.new(png_bytes))
-    rgb = instance_double("Vips::Image", width: 8, height: 8, bands: 3)
-    rgba = instance_double("Vips::Image", width: 8, height: 8, write_to_memory: "\x00" * 256)
+    rgb = instance_double("Vips::Image", width: 8, height: 8, has_alpha?: false, write_to_memory: "\x00" * 192)
     thumb = Tempfile.new([ "thumb", ".png" ])
     variant = instance_double(ActiveStorage::VariantWithRecord, processed: true)
-    allow(rgb).to receive_messages(cast: rgb, add_alpha: rgba)
+    allow(rgb).to receive_messages(colourspace: rgb, cast: rgb, flatten: rgb)
     allow(Vips::Image).to receive(:new_from_file).and_return(rgb)
     allow(ImageProcessing::Vips).to receive_message_chain(:source, :resize_to_fit, :convert, :call).and_return(thumb)
     allow(Blurhash).to receive(:encode).and_return("Lhash")
@@ -164,10 +169,23 @@ RSpec.describe Attachments::Process do
     described_class.call(attachment: attachment)
 
     expect(attachment.reload).to have_attributes(width: 8, height: 8, blurhash: "Lhash", processing_status: "ready")
-    expect(rgb).to have_received(:add_alpha)
+    expect(rgb).not_to have_received(:flatten)
   ensure
     thumb&.close
     thumb&.unlink
+  end
+
+  it "marks a readable image ready when eager variant generation lags" do
+    stub_vips!
+    attachment = attach_blob(content_type: "image/png", filename: "a.png", io: StringIO.new(png_bytes))
+    image = instance_double("Vips::Image", width: 8, height: 8)
+    allow(Vips::Image).to receive(:new_from_file).and_return(image)
+    allow(ImageProcessing::Vips).to receive(:source).and_raise(StandardError, "blurhash unavailable")
+    allow_any_instance_of(ActiveStorage::Blob).to receive(:variant).and_raise(StandardError, "variant unavailable")
+
+    described_class.call(attachment: attachment)
+
+    expect(attachment.reload).to have_attributes(width: 8, height: 8, processing_status: "ready")
   end
 
   it "leaves blurhash unset when thumbnail encoding raises" do
@@ -198,13 +216,13 @@ RSpec.describe Attachments::Process do
     expect(attachment.reload.blurhash).to be_nil
   end
 
-  it "encodes blurhash without adding alpha when the thumbnail already has it" do
+  it "flattens the alpha band before encoding a blurhash" do
     stub_vips!
     attachment = attach_blob(content_type: "image/png", filename: "a.png", io: StringIO.new(png_bytes))
-    rgba = instance_double("Vips::Image", width: 8, height: 8, bands: 4, write_to_memory: "\x00" * 256)
+    rgba = instance_double("Vips::Image", width: 8, height: 8, has_alpha?: true, write_to_memory: "\x00" * 192)
     thumb = Tempfile.new([ "thumb", ".png" ])
     variant = instance_double(ActiveStorage::VariantWithRecord, processed: true)
-    allow(rgba).to receive_messages(cast: rgba, add_alpha: rgba)
+    allow(rgba).to receive_messages(colourspace: rgba, cast: rgba, flatten: rgba)
     allow(Vips::Image).to receive(:new_from_file).and_return(rgba)
     allow(ImageProcessing::Vips).to receive_message_chain(:source, :resize_to_fit, :convert, :call).and_return(thumb)
     allow(Blurhash).to receive(:encode).and_return("Lrgba")
@@ -213,10 +231,21 @@ RSpec.describe Attachments::Process do
     described_class.call(attachment: attachment)
 
     expect(attachment.reload.blurhash).to eq("Lrgba")
-    expect(rgba).not_to have_received(:add_alpha)
+    expect(rgba).to have_received(:flatten)
   ensure
     thumb&.close
     thumb&.unlink
+  end
+
+  # The examples above stub Blurhash away, so only a real encode proves the
+  # pixel array we hand it has the shape it demands.
+  it "encodes a blurhash through the real libvips and Blurhash stack" do
+    attachment = attach_blob(content_type: "image/png", filename: "a.png", io: StringIO.new(png_bytes))
+
+    described_class.call(attachment: attachment)
+
+    expect(attachment.reload).to have_attributes(width: 1, height: 1, processing_status: "ready")
+    expect(attachment.blurhash).to be_present
   end
 
   it "marks an image failed when libvips cannot be loaded" do
@@ -283,15 +312,16 @@ RSpec.describe Attachments::Process do
     expect(File).not_to exist(out_path)
   end
 
-  it "marks an unreadable PDF as failed" do
+  it "keeps a PDF ready when pdftoppm cannot rasterize it" do
     attachment = attach_blob(
       content_type: "application/pdf", filename: "a.pdf", io: StringIO.new("%PDF-1.4\n")
     )
-    allow_any_instance_of(ActiveStorage::Blob).to receive(:variant).and_raise(StandardError, "nope")
+    allow_any_instance_of(described_class).to receive(:system).and_return(false)
 
     described_class.call(attachment: attachment)
 
-    expect(attachment.reload.processing_error).to eq("unreadable")
+    expect(attachment.reload).to have_attributes(processing_status: "ready", processing_error: nil)
+    expect(attachment.thumbnail).not_to be_attached
   end
 
   it "marks a non-PDF file ready without generating a thumbnail" do

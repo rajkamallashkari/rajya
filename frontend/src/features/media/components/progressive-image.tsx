@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BlurhashCanvas } from "@/features/media/components/blurhash-canvas";
 import { aspectStyle } from "@/features/media/model/constants";
 import { progressiveStage } from "@/features/media/model/progressive";
@@ -25,12 +25,17 @@ export function ProgressiveImage({
 }) {
   const [thumbLoaded, setThumbLoaded] = useState(false);
   const [fullLoaded, setFullLoaded] = useState(false);
+  useEffect(() => setThumbLoaded(false), [thumbSrc]);
+  useEffect(() => setFullLoaded(false), [fullSrc]);
   const stage = progressiveStage(thumbLoaded, fullLoaded);
   const box = aspectStyle(width, height);
 
   return (
     <div
-      className={cn("relative overflow-hidden bg-[var(--surface-input)]", className)}
+      className={cn(
+        "relative block h-full w-full min-w-0 overflow-hidden bg-[var(--surface-input)]",
+        className,
+      )}
       data-progressive-stage={stage}
       style={box}
     >
@@ -39,7 +44,7 @@ export function ProgressiveImage({
         <img
           alt=""
           className={cn(
-            "absolute inset-0 h-full w-full object-cover",
+            "absolute inset-0 block h-full w-full object-cover",
             thumbLoaded && stage !== "full" ? "opacity-100" : "opacity-0",
           )}
           decoding="async"
@@ -51,7 +56,7 @@ export function ProgressiveImage({
         <img
           alt={alt}
           className={cn(
-            "absolute inset-0 h-full w-full object-cover",
+            "absolute inset-0 block h-full w-full object-cover",
             fullLoaded ? "opacity-100" : "opacity-0",
           )}
           decoding="async"

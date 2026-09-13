@@ -90,10 +90,42 @@ module Conversations
     def write_permissions_event!(account, conversation, previous)
       return unless conversation.member_permissions.as_json != previous[:member_permissions].as_json
 
+      changes = permission_changes(previous[:member_permissions], conversation.member_permissions)
+      return if changes.empty?
+
       SystemEvents::Write.call(
         conversation: conversation, event: "permissions_changed", actor: account,
-        payload: { name: account.display_name }
+        payload: {
+          changes: changes,
+          changes_text: permission_changes_text(changes),
+          name: account.display_name
+        }
       )
+    end
+
+    def permission_changes(previous, current)
+      MemberPermissions::KEYS.filter_map do |permission|
+        previous_value = MemberPermissions.min_role(previous, permission)
+        new_value = MemberPermissions.min_role(current, permission)
+        next if previous_value == new_value
+
+        {
+          "new_value" => new_value,
+          "permission" => permission,
+          "previous_value" => previous_value
+        }
+      end
+    end
+
+    def permission_changes_text(changes)
+      changes.map do |change|
+        Catalog.t(
+          "system_events.permission_change",
+          new_value: Catalog.t("system_events.permission_roles.#{change.fetch("new_value")}"),
+          permission: Catalog.t("system_events.permission_names.#{change.fetch("permission")}"),
+          previous_value: Catalog.t("system_events.permission_roles.#{change.fetch("previous_value")}")
+        )
+      end.join(Catalog.t("system_events.permission_change_separator"))
     end
 
     def write_slow_mode_event!(account, conversation, previous)

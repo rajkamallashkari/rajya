@@ -20,6 +20,19 @@ RSpec.describe Conversations::FindOrCreateDirect do
     expect(conversation.conversation_memberships.map(&:account_id)).to eq([ account.id ])
   end
 
+  it "creates directs for case-insensitive human and bot usernames" do
+    creator = create(:user).account
+    human = create(:account, username: "Hidden.Human")
+    bot = create(:bot, account: create(:account, :bot_kind, username: "Helper.Bot"))
+    create(:preference, account: human, data: { "privacy" => { "discoverable_by_username" => false } })
+
+    human_direct = described_class.call(creator: creator, username: "HIDDEN.HUMAN").value.conversation
+    bot_direct = described_class.call(creator: creator, username: "helper.bot").value.conversation
+
+    expect(human_direct.conversation_memberships.map(&:account_id)).to contain_exactly(creator.id, human.id)
+    expect(bot_direct.conversation_memberships.map(&:account_id)).to contain_exactly(creator.id, bot.account.id)
+  end
+
   it "returns not_found for a missing account or a blocked new DM (NR-1)" do
     alice = create(:user).account
     bob = create(:account)
@@ -38,6 +51,7 @@ RSpec.describe Conversations::FindOrCreateDirect do
     create(:block, blocker_account: alice, blocked_account: bob)
 
     expect(described_class.call(creator: alice, account_id: bob.id).value.conversation.id).to eq(existing.id)
+    expect(described_class.call(creator: alice, username: bob.username.upcase).value.conversation.id).to eq(existing.id)
   end
 
   it "recovers from a direct_key race by returning the winning row (F-13)" do

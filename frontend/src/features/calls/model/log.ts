@@ -1,4 +1,8 @@
 import { DURATION_PAD, SECONDS_PER_MINUTE } from "@/features/composer/model/constants";
+import {
+  DEFAULT_DATE_TIME_PREFERENCES,
+  formatPreferenceDateTime,
+} from "@/shared/lib/date-time";
 
 export type CallLogDirection = "incoming" | "outgoing";
 
@@ -25,10 +29,7 @@ export function callLogStatusKey(status: string): `calls.status_${CallLogStatus}
 }
 
 export function formatCallLogWhen(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(iso));
+  return formatPreferenceDateTime(iso, locale, DEFAULT_DATE_TIME_PREFERENCES);
 }
 
 export function formatCallDuration(seconds: number): string {

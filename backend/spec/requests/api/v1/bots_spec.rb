@@ -8,16 +8,37 @@ RSpec.describe "Bots directory", type: :request do
       tags "Bots"
       produces "application/json"
       security [ { bearerAuth: [] } ]
+      parameter name: :owned, in: :query, type: :boolean, required: false
 
       response "200", "listed" do
         schema "$ref" => "#/components/schemas/BotList"
         let(:user) { create(:user) }
         let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+        let(:owned) { nil }
 
-        before { create(:bot) }
+        let!(:public_bot) { create(:bot) }
 
         run_test! do |response|
-          expect(JSON.parse(response.body).fetch("bots").size).to be >= 1
+          bot = JSON.parse(response.body).fetch("bots").first
+          expect(bot.fetch("id")).to eq(public_bot.id)
+          expect(bot.fetch("persona_prompt")).to be_nil
+        end
+      end
+
+      response "200", "owner-scoped with private prompt" do
+        schema "$ref" => "#/components/schemas/BotList"
+        let(:user) { create(:user) }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+        let(:owned) { true }
+        let!(:mine) { create(:bot, owner_account: user.account) }
+
+        let!(:public_bot) { create(:bot) }
+
+        run_test! do |response|
+          bots = JSON.parse(response.body).fetch("bots")
+          expect(bots.pluck("id")).to eq([ mine.id ])
+          expect(bots.pluck("id")).not_to include(public_bot.id)
+          expect(bots.first.fetch("persona_prompt")).to eq(mine.persona_prompt)
         end
       end
     end
@@ -58,6 +79,7 @@ RSpec.describe "Bot requests create", type: :request do
         type: :object,
         properties: {
           kind: { type: :string },
+          avatar: { type: :string, nullable: true },
           target_bot_id: { type: :integer, nullable: true },
           payload: {
             type: :object,
@@ -88,6 +110,61 @@ RSpec.describe "Bot requests create", type: :request do
 
         run_test! do |response|
           expect(JSON.parse(response.body).fetch("status")).to eq("pending")
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe "Bot request update", type: :request do
+  path "/api/v1/bot_requests/{id}" do
+    patch "Update a pending bot proposal" do
+      tags "Bots"
+      consumes "application/json"
+      produces "application/json"
+      security [ { bearerAuth: [] } ]
+      parameter name: :id, in: :path, type: :integer
+      parameter name: :payload, in: :body, schema: {
+        type: :object,
+        properties: {
+          avatar: { type: :string, nullable: true },
+          payload: {
+            type: :object,
+            additionalProperties: true,
+            properties: {
+              bio: { type: :string },
+              name: { type: :string },
+              persona_prompt: { type: :string },
+              username: { type: :string }
+            }
+          }
+        }
+      }
+
+      response "200", "updated" do
+        schema "$ref" => "#/components/schemas/BotRequest"
+        let(:user) { create(:user) }
+        let(:request) do
+          create(
+            :bot_request, requester_account: user.account,
+            payload: {
+              "bio" => "Sky", "name" => "Nimbus", "persona_prompt" => "A" * Ai::Limits.prompt_minimum_length,
+              "username" => "nimbus_request"
+            }
+          )
+        end
+        let(:id) { request.id }
+        let(:Authorization) { "Bearer #{bearer_token_for(user)}" }
+        let(:payload) do
+          {
+            payload: request.payload.merge(
+              "name" => "Updated", "persona_prompt" => "U" * Ai::Limits.prompt_minimum_length
+            )
+          }
+        end
+
+        run_test! do |response|
+          expect(JSON.parse(response.body).dig("payload", "name")).to eq("Updated")
         end
       end
     end
@@ -279,7 +356,7 @@ end
 
 RSpec.describe "Bot request destroy", type: :request do
   path "/api/v1/bot_requests/{id}" do
-    delete "Withdraw a pending proposal" do
+    delete "Withdraw a pending or declined proposal" do
       tags "Bots"
       produces "application/json"
       security [ { bearerAuth: [] } ]
@@ -306,11 +383,13 @@ RSpec.describe "Admin bot requests", type: :request do
       tags "Admin"
       produces "application/json"
       security [ { bearerAuth: [] } ]
+      parameter name: :kind, in: :query, schema: { type: :string, enum: %w[create edit] }, required: false
 
       response "200", "listed" do
         schema "$ref" => "#/components/schemas/BotRequestList"
         let(:admin) { create(:user, :admin) }
         let(:Authorization) { "Bearer #{bearer_token_for(admin)}" }
+        let(:kind) { nil }
 
         run_test! do |response|
           expect(JSON.parse(response.body).fetch("bot_requests")).to eq([])

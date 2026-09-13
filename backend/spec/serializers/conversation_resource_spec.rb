@@ -31,6 +31,11 @@ RSpec.describe ConversationResource do
       .to contain_exactly(owner.account.id, member.id)
   end
 
+  it "includes compact group identity fields" do
+    json, = group_json
+    expect(json).to include("avatar_url" => nil, "member_count" => 2)
+  end
+
   it "includes a last_message preview when one exists" do
     json, _conversation, _owner, _member, message = group_json
     expect(json.fetch("last_message")).to include(
@@ -117,7 +122,7 @@ RSpec.describe ConversationResource do
         .to be_nil
       conversation.conversation_memberships.find_by!(account: member.account)
                   .update_columns(last_message_at: 11.seconds.ago)
-      expect(described_class.new(Conversations::View.for(conversation, member.account)).to_h["slow_mode_until"])
+      expect(described_class.new(Conversations::View.for(conversation.reload, member.account)).to_h["slow_mode_until"])
         .to be_nil
     end
   end

@@ -14,7 +14,7 @@ export type Corner = "tl" | "tr" | "bl" | "br";
 
 export const ALBUM_GAP_PX = 2;
 export const ALBUM_MAX_WIDTH_PX = 280;
-export const ALBUM_CELL_HEIGHT_PX = 150;
+export const ALBUM_CELL_HEIGHT_PX = 280;
 export const ALBUM_SINGLE_MAX_HEIGHT_PX = 280;
 export const ALBUM_VISIBLE_MAX = 4;
 export const ALBUM_ASPECT_MIN = 0.5;
@@ -36,6 +36,7 @@ export const MEDIA_URL_STALE_MAX_MS = 86_400_000;
 export const LIGHTBOX_MAX_ZOOM = 3;
 export const LIGHTBOX_ZOOM_STEP = 1;
 export const GALLERY_FIRST_PAGE = 1;
+export const GALLERY_PROCESSING_REFETCH_MS = 2_000;
 export const GIF_SEARCH_MIN_QUERY_LENGTH = registry.gif_search_min_query_length.default as number;
 export const FALLBACK_STICKER_TYPE = "image/png";
 export const FALLBACK_STICKER_NAME = "sticker.png";

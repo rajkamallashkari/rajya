@@ -1,5 +1,12 @@
 export { Avatar } from "./avatar";
+export { AccountIdentityRow, type AccountIdentityRowProps } from "./account-identity-row";
+export {
+  ConversationIdentityRow,
+  type ConversationIdentity,
+  type ConversationIdentityRowProps,
+} from "./conversation-identity-row";
 export { Badge } from "./badge";
+export { BioContent } from "./bio-content";
 export {
   BottomSheet,
   BottomSheetContent,
@@ -34,6 +41,13 @@ export { Logo } from "./logo";
 export { Popover, PopoverContent, PopoverTrigger } from "./popover";
 export { ProgressRing } from "./progress-ring";
 export { RadioGroup, RadioGroupItem } from "./radio";
+export {
+  ResponsiveOverlay,
+  ResponsiveOverlayContent,
+  ResponsiveOverlayDescription,
+  ResponsiveOverlayTitle,
+  ResponsiveOverlayTrigger,
+} from "./responsive-overlay";
 export { ScrollArea } from "./scroll-area";
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 export { Separator } from "./separator";

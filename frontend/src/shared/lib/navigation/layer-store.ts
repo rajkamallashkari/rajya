@@ -2,7 +2,13 @@ import { create } from "zustand";
 import { abortAllLayers } from "@/shared/lib/navigation/layer-stack";
 
 export type LayerKind =
-  "compose_group" | "compose_message" | "conversation" | "gallery" | "profile" | "settings";
+  | "compose_group"
+  | "compose_message"
+  | "conversation"
+  | "gallery"
+  | "profile"
+  | "scheduled"
+  | "settings";
 
 const COMPOSE_KINDS = new Set<LayerKind>(["compose_group", "compose_message"]);
 
@@ -56,6 +62,15 @@ export function settingsLayer(title: string): LayerEntry {
     conversationId: SETTINGS_LAYER_ID,
     id: SETTINGS_LAYER_ID,
     kind: "settings",
+    title,
+  };
+}
+
+export function scheduledMessagesLayer(conversationId: string, title: string): LayerEntry {
+  return {
+    conversationId,
+    id: `scheduled:${conversationId}`,
+    kind: "scheduled",
     title,
   };
 }

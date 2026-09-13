@@ -13,6 +13,7 @@ import type { PreferenceDocument } from "@/shared/lib/config/preferences-registr
 import {
   appendSent,
   createDirectConversation,
+  DIRECTORY_HUMANS,
   findConversation,
   findMessage,
   folderRecords,
@@ -21,6 +22,8 @@ import {
   MESSAGE_STAMP,
   messagingStore,
   pageFor,
+  pinnedMessageIds,
+  pinStoredMessage,
   messageSearchHits,
   searchFiltersFromRequest,
   accountSearchHits,
@@ -30,6 +33,7 @@ import {
   reactStoredMessage,
   setConversationTicks,
   tombstoneMessage,
+  unpinStoredMessage,
   voteStoredPoll,
   closeStoredPoll,
   findPoll,
@@ -283,7 +287,8 @@ export function resetIdentity() {
 const nimbusBot = {
   id: 1,
   memory_enabled: true,
-  owner_account_id: null,
+  owner_account_id: 1,
+  persona_prompt: "A helpful weather bot.",
   account: {
     id: 99,
     username: "nimbus",
@@ -317,7 +322,26 @@ const editBotRequest = {
   id: 2,
   kind: "edit" as const,
   payload: { username: "nimbus" },
+  target_bot_id: 1,
 };
+
+let botRecords: components["schemas"]["Bot"][] = [
+  { ...nimbusBot, account: { ...nimbusBot.account } },
+];
+let botRequestRecords: components["schemas"]["BotRequest"][] = [
+  { ...pendingBotRequest, payload: { ...pendingBotRequest.payload } },
+  { ...editBotRequest, payload: { ...editBotRequest.payload } },
+  { ...namelessBotRequest, payload: { ...namelessBotRequest.payload } },
+];
+
+export function resetBotLifecycle() {
+  botRecords = [{ ...nimbusBot, account: { ...nimbusBot.account } }];
+  botRequestRecords = [
+    { ...pendingBotRequest, payload: { ...pendingBotRequest.payload } },
+    { ...editBotRequest, payload: { ...editBotRequest.payload } },
+    { ...namelessBotRequest, payload: { ...namelessBotRequest.payload } },
+  ];
+}
 
 function listedAdminUsers(q?: string | null) {
   const rows = [
@@ -585,6 +609,18 @@ function deepMerge(
   return next;
 }
 
+function conversationIdentity(id: number): components["schemas"]["ConversationIdentity"] {
+  const conversation = findConversation(id)!;
+  return {
+    avatar_url: conversation.avatar_url,
+    id: conversation.id,
+    kind: conversation.kind,
+    member_count: conversation.member_count,
+    peer: conversation.peer,
+    title: conversation.title,
+  };
+}
+
 const translationBody = {
   text: "Hello",
   source_language: "es",
@@ -592,9 +628,10 @@ const translationBody = {
   cached: false,
 };
 
-const scheduled = {
+const initialScheduled = {
   id: 1,
   conversation_id: 1,
+  conversation: conversationIdentity(1),
   body: "later",
   scheduled_at: MESSAGE_STAMP,
   created_at: MESSAGE_STAMP,
@@ -602,6 +639,13 @@ const scheduled = {
   recurrence_rule: "FREQ=DAILY",
   next_run_at: MESSAGE_STAMP,
 };
+let scheduledMessages = [{ ...initialScheduled }];
+const unsavedMessageIds = new Set<number>();
+
+export function resetSavedAndScheduledMessages() {
+  scheduledMessages = [{ ...initialScheduled }];
+  unsavedMessageIds.clear();
+}
 const savedReply = {
   id: 1,
   shortcut: "/omw",
@@ -739,6 +783,8 @@ function callLogPage(): CallListBody {
         duration_seconds: 72,
         created_at: MESSAGE_STAMP,
         title: grace.display_name,
+        avatar_url: grace.avatar_url,
+        member_count: 2,
         peer: grace,
         participants: [
           callParticipant(1, VIEWER.id, "left", false),
@@ -755,6 +801,8 @@ function callLogPage(): CallListBody {
         duration_seconds: 180,
         created_at: MESSAGE_STAMP,
         title: "Team",
+        avatar_url: null,
+        member_count: 3,
         participants: [callParticipant(3, VIEWER.id, "left", false)],
       },
     ],
@@ -959,7 +1007,17 @@ export const handlerMap = {
     return HttpResponse.json({ accounts: accountSearchHits(q, actorIdFromRequest(request)) });
   }),
   "/api/v1/accounts/{id}": http.get("*/api/v1/accounts/:id", () =>
-    HttpResponse.json({ ...session.account, blocked_by_viewer: false }),
+    HttpResponse.json({
+      ...session.account,
+      blocked_by_viewer: false,
+    }),
+  ),
+  "/api/v1/accounts/{id}/common_groups": http.get("*/api/v1/accounts/:id/common_groups", () =>
+    HttpResponse.json({
+      conversations: messagingStore()
+        .conversations.filter((conversation) => conversation.kind !== "direct")
+        .map((conversation) => conversationIdentity(conversation.id)),
+    }),
   ),
   "/api/v1/attachments/{id}/download": http.get("*/api/v1/attachments/:id/download", () =>
     HttpResponse.json({
@@ -1072,9 +1130,28 @@ export const handlerMap = {
   }),
   "/api/v1/conversations": http.all("*/api/v1/conversations", async ({ request }) => {
     if (request.method === "POST") {
-      const body = (await request.json().catch(() => ({}))) as { account_id?: number };
+      const body = (await request.json().catch(() => ({}))) as {
+        account_id?: number;
+        username?: string;
+      };
       if (typeof body.account_id === "number") {
         const conversation = createDirectConversation(actorIdFromRequest(request), body.account_id);
+        publishMswRealtime({ type: "sidebar_update", conversation_id: conversation.id });
+        return HttpResponse.json(conversation, { status: 201 });
+      }
+      if (typeof body.username === "string") {
+        const username = body.username.toLowerCase();
+        const account = [...DIRECTORY_HUMANS, ...botRecords.map((bot) => bot.account)].find(
+          (candidate) => candidate.username.toLowerCase() === username,
+        );
+        if (!account) {
+          return jsonError(404);
+        }
+        const conversation = createDirectConversation(
+          actorIdFromRequest(request),
+          account.id,
+          account,
+        );
         publishMswRealtime({ type: "sidebar_update", conversation_id: conversation.id });
         return HttpResponse.json(conversation, { status: 201 });
       }
@@ -1206,13 +1283,21 @@ export const handlerMap = {
                 url: "https://example.com",
                 title: "Example",
                 description: "Body",
+                message_id: 1,
+                sender: VIEWER,
+                sent_at: MESSAGE_STAMP,
                 site_name: "Ex",
               },
             },
             {
               item_kind: "link" as const,
               attachment: null,
-              link: { url: "https://example.org/bare" },
+              link: {
+                message_id: 1,
+                sender: VIEWER,
+                sent_at: MESSAGE_STAMP,
+                url: "https://example.org/bare",
+              },
             },
           ],
           meta: { has_more: false, page: 1, per_page: 30, total: 2 },
@@ -1232,6 +1317,8 @@ export const handlerMap = {
                   kind: kind === "files" ? ("file" as const) : ("image" as const),
                   message_id: 1,
                   processing_status: "ready" as const,
+                  sender: VIEWER,
+                  sent_at: MESSAGE_STAMP,
                   width: 16,
                   height: 9,
                 },
@@ -1421,6 +1508,7 @@ export const handlerMap = {
       body?: string;
       client_nonce?: string;
       conversation_id?: number;
+      attachment_signed_ids?: string[];
       silent?: boolean;
       voice_duration_ms?: number;
       voice_waveform?: number[];
@@ -1435,6 +1523,7 @@ export const handlerMap = {
       body.client_nonce,
       body.silent,
       voice,
+      body.attachment_signed_ids,
     );
     publishMswRealtime({
       type: "message_created",
@@ -1505,13 +1594,17 @@ export const handlerMap = {
   "/api/v1/messages/{message_id}/reactions/{emoji}": http.delete(
     "*/api/v1/messages/:message_id/reactions/:emoji",
     ({ params }) => {
-      const next = reactStoredMessage(Number(params.message_id));
+      const next = reactStoredMessage(
+        Number(params.message_id),
+        decodeURIComponent(String(params.emoji)),
+        false,
+      );
       return next ? HttpResponse.json(next) : jsonError(404);
     },
   ),
   "/api/v1/messages/{message_id}/reactions": http.all(
     "*/api/v1/messages/:message_id/reactions",
-    ({ params, request }) => {
+    async ({ params, request }) => {
       const message = findMessage(Number(params.message_id));
       if (!message) {
         return jsonError(404);
@@ -1524,22 +1617,40 @@ export const handlerMap = {
         }));
         return HttpResponse.json({ reactions });
       }
-      reactStoredMessage(Number(params.message_id));
-      return HttpResponse.json(message, { status: 201 });
+      const body = (await request.json()) as { emoji?: string };
+      const next = reactStoredMessage(Number(params.message_id), body.emoji);
+      return HttpResponse.json(next, { status: 201 });
     },
   ),
   "/api/v1/conversations/{conversation_id}/pins/{message_id}": http.delete(
     "*/api/v1/conversations/:conversation_id/pins/:message_id",
-    okResponse,
+    ({ params }) => {
+      unpinStoredMessage(Number(params.conversation_id), Number(params.message_id));
+      return okResponse();
+    },
   ),
-  "/api/v1/conversations/{conversation_id}/pins": http.post(
+  "/api/v1/conversations/{conversation_id}/pins": http.all(
     "*/api/v1/conversations/:conversation_id/pins",
     async ({ request, params }) => {
+      if (request.method === "GET") {
+        const pinned_messages = pinnedMessageIds(Number(params.conversation_id))
+          .map((messageId) => findMessage(messageId))
+          .filter((message) => message != null)
+          .map((message) => ({
+            id: message.id,
+            conversation_id: Number(params.conversation_id),
+            message_id: message.id,
+            created_at: MESSAGE_STAMP,
+            message,
+          }));
+        return HttpResponse.json({ pinned_messages });
+      }
       const body = (await request.json()) as { message_id?: number };
       const message = findMessage(body.message_id ?? 0);
       if (!message) {
         return jsonError(404);
       }
+      pinStoredMessage(Number(params.conversation_id), message.id);
       return HttpResponse.json(
         {
           id: message.id,
@@ -1596,7 +1707,10 @@ export const handlerMap = {
     }
     return HttpResponse.json({ message_reminders: [messageReminder] });
   }),
-  "/api/v1/saved_messages/{id}": http.delete("*/api/v1/saved_messages/:id", okResponse),
+  "/api/v1/saved_messages/{id}": http.delete("*/api/v1/saved_messages/:id", ({ params }) => {
+    unsavedMessageIds.add(Number(params.id));
+    return HttpResponse.json(ok);
+  }),
   "/api/v1/saved_messages": http.all("*/api/v1/saved_messages", async ({ request }) => {
     if (request.method === "POST") {
       const body = (await request.json()) as { message_id?: number };
@@ -1604,37 +1718,87 @@ export const handlerMap = {
       if (!message) {
         return jsonError(404);
       }
+      unsavedMessageIds.delete(message.id);
+      const conversation = findConversation(message.conversation_id);
       return HttpResponse.json(
-        { id: message.id, message_id: message.id, created_at: MESSAGE_STAMP, message },
+        {
+          id: message.id,
+          message_id: message.id,
+          conversation: conversationIdentity(message.conversation_id),
+          conversation_title: conversation?.title ?? conversation?.peer?.display_name ?? null,
+          created_at: MESSAGE_STAMP,
+          message,
+        },
         { status: 201 },
       );
     }
     const message = Object.values(messagingStore().messages).flat()[0];
-    if (!message) {
+    if (!message || unsavedMessageIds.has(message.id)) {
       return HttpResponse.json({ saved_messages: [] });
     }
+    const conversation = findConversation(message.conversation_id);
     return HttpResponse.json({
       saved_messages: [
-        { id: message.id, message_id: message.id, created_at: MESSAGE_STAMP, message },
+        {
+          id: message.id,
+          message_id: message.id,
+          conversation: conversationIdentity(message.conversation_id),
+          conversation_title: conversation?.title ?? conversation?.peer?.display_name ?? null,
+          created_at: MESSAGE_STAMP,
+          message,
+        },
       ],
     });
   }),
-  "/api/v1/scheduled_messages": http.all("*/api/v1/scheduled_messages", ({ request }) => {
+  "/api/v1/scheduled_messages": http.all("*/api/v1/scheduled_messages", async ({ request }) => {
     if (request.method === "POST") {
-      return HttpResponse.json(scheduled, { status: 201 });
+      const body = (await request.json()) as {
+        body?: string;
+        conversation_id?: number;
+        scheduled_at?: string;
+      };
+      const created = {
+        ...initialScheduled,
+        ...body,
+        conversation: conversationIdentity(body.conversation_id!),
+        id: Math.max(0, ...scheduledMessages.map((row) => row.id)) + 1,
+      };
+      scheduledMessages.push(created);
+      return HttpResponse.json(created, { status: 201 });
     }
-    return HttpResponse.json({ scheduled_messages: [scheduled] });
+    return HttpResponse.json({ scheduled_messages: scheduledMessages });
   }),
   "/api/v1/scheduled_messages/{id}/send_now": http.post(
     "*/api/v1/scheduled_messages/:id/send_now",
-    () => HttpResponse.json(appendSent(1, scheduled.body), { status: 201 }),
+    ({ params }) => {
+      const id = Number(params.id);
+      const scheduled = scheduledMessages.find((row) => row.id === id);
+      if (!scheduled) {
+        return jsonError(404);
+      }
+      scheduledMessages = scheduledMessages.filter((row) => row.id !== id);
+      return HttpResponse.json(appendSent(scheduled.conversation_id, scheduled.body), {
+        status: 201,
+      });
+    },
   ),
-  "/api/v1/scheduled_messages/{id}": http.all("*/api/v1/scheduled_messages/:id", ({ request }) => {
-    if (request.method === "PATCH") {
-      return HttpResponse.json(scheduled);
-    }
-    return HttpResponse.json(ok);
-  }),
+  "/api/v1/scheduled_messages/{id}": http.all(
+    "*/api/v1/scheduled_messages/:id",
+    async ({ params, request }) => {
+      const id = Number(params.id);
+      const index = scheduledMessages.findIndex((row) => row.id === id);
+      if (index < 0) {
+        return jsonError(404);
+      }
+      if (request.method === "PATCH") {
+        const body = (await request.json()) as { body?: string; scheduled_at?: string };
+        scheduledMessages[index] = { ...scheduledMessages[index]!, ...body };
+        return HttpResponse.json(scheduledMessages[index]);
+      }
+      scheduledMessages.splice(index, 1);
+      return HttpResponse.json(ok);
+    },
+  ),
   "/api/v1/polls/{id}/vote": http.post("*/api/v1/polls/:id/vote", async ({ request, params }) => {
     const body = (await request.json()) as { option_ids?: number[] };
     const next = voteStoredPoll(Number(params.id), body.option_ids ?? []);
@@ -1842,51 +2006,129 @@ export const handlerMap = {
   "/api/v1/ai/translate_text": http.post("*/api/v1/ai/translate_text", () =>
     HttpResponse.json(translationBody),
   ),
-  "/api/v1/bots": http.get("*/api/v1/bots", () => HttpResponse.json({ bots: [nimbusBot] })),
-  "/api/v1/bots/{id}": http.get("*/api/v1/bots/:id", ({ params }) => {
-    if (Number(params.id) !== nimbusBot.id) {
+  "/api/v1/bots": http.get("*/api/v1/bots", ({ request }) => {
+    const owned = new URL(request.url).searchParams.get("owned") === "true";
+    return HttpResponse.json({
+      bots: owned
+        ? botRecords.filter((bot) => bot.owner_account_id === actorIdFromRequest(request))
+        : botRecords,
+    });
+  }),
+  "/api/v1/bots/{id}": http.all("*/api/v1/bots/:id", ({ params, request }) => {
+    const bot = botRecords.find((row) => row.id === Number(params.id));
+    if (!bot) {
       return jsonError(404);
     }
-    return HttpResponse.json(nimbusBot);
+    if (request.method === "DELETE") {
+      botRecords = botRecords.filter((row) => row.id !== bot.id);
+    }
+    return HttpResponse.json(bot);
   }),
   "/api/v1/bot_requests": http.all("*/api/v1/bot_requests", async ({ request }) => {
     if (request.method === "POST") {
-      return HttpResponse.json(
-        {
-          id: 1,
-          kind: "create",
-          status: "pending",
-          payload: {
-            bio: "Sky",
-            name: "Nimbus",
-            persona_prompt: "A".repeat(80),
-            username: "nimbus",
-          },
-        },
-        { status: 201 },
-      );
+      const body = (await request.json()) as {
+        avatar?: string | null;
+        kind?: "create" | "edit";
+        payload?: components["schemas"]["BotRequest"]["payload"];
+        target_bot_id?: number;
+      };
+      const created: components["schemas"]["BotRequest"] = {
+        avatar_url: body.avatar ? "/rails/active_storage/blobs/avatar" : null,
+        created_at: new Date().toISOString(),
+        id: Math.max(0, ...botRequestRecords.map((row) => row.id)) + 1,
+        kind: body.kind ?? "create",
+        payload: body.payload ?? {},
+        requester_account_id: actorIdFromRequest(request),
+        status: "pending",
+        target_bot_id: body.target_bot_id ?? null,
+      };
+      botRequestRecords = [created, ...botRequestRecords];
+      return HttpResponse.json(created, { status: 201 });
     }
-    return HttpResponse.json({ bot_requests: [] });
+    return HttpResponse.json({
+      bot_requests: botRequestRecords.filter(
+        (row) =>
+          row.requester_account_id === actorIdFromRequest(request) && row.status !== "approved",
+      ),
+    });
   }),
-  "/api/v1/bot_requests/{id}": http.delete("*/api/v1/bot_requests/:id", () =>
-    HttpResponse.json({ ok: true }),
+  "/api/v1/bot_requests/{id}": http.all(
+    "*/api/v1/bot_requests/:id",
+    async ({ params, request }) => {
+      const id = Number(params.id);
+      const row = botRequestRecords.find((item) => item.id === id);
+      if (!row) return jsonError(404);
+      if (request.method === "PATCH") {
+        const body = (await request.json()) as {
+          avatar?: string | null;
+          payload?: components["schemas"]["BotRequest"]["payload"];
+        };
+        row.payload = body.payload ?? row.payload;
+        if ("avatar" in body)
+          row.avatar_url = body.avatar ? "/rails/active_storage/blobs/avatar" : null;
+        row.status = "pending";
+        row.decline_reason = null;
+        return HttpResponse.json(row);
+      }
+      botRequestRecords = botRequestRecords.filter((item) => item.id !== id);
+      return HttpResponse.json({ ok: true });
+    },
   ),
-  "/api/v1/admin/bot_requests": http.get("*/api/v1/admin/bot_requests", () =>
-    HttpResponse.json({ bot_requests: [pendingBotRequest, editBotRequest, namelessBotRequest] }),
-  ),
+  "/api/v1/admin/bot_requests": http.get("*/api/v1/admin/bot_requests", ({ request }) => {
+    const kind = new URL(request.url).searchParams.get("kind");
+    return HttpResponse.json({
+      bot_requests: botRequestRecords.filter(
+        (row) => row.status === "pending" && (!kind || row.kind === kind),
+      ),
+    });
+  }),
   "/api/v1/admin/bot_requests/{id}/approve": http.post(
     "*/api/v1/admin/bot_requests/:id/approve",
-    () => HttpResponse.json(nimbusBot),
+    ({ params }) => {
+      const request = botRequestRecords.find((row) => row.id === Number(params.id));
+      if (!request) return jsonError(404);
+      request.status = "approved";
+      const existing = botRecords.find((bot) => bot.id === request.target_bot_id);
+      if (existing) {
+        existing.account = {
+          ...existing.account,
+          bio: request.payload.bio ?? existing.account.bio,
+          display_name: request.payload.name ?? existing.account.display_name,
+          username: request.payload.username ?? existing.account.username,
+        };
+        existing.persona_prompt = request.payload.persona_prompt ?? existing.persona_prompt;
+        return HttpResponse.json(existing);
+      }
+      const bot = {
+        account: {
+          avatar_url: request.avatar_url,
+          bio: request.payload.bio ?? null,
+          display_name: request.payload.name ?? "Bot",
+          id: 100 + request.id,
+          kind: "bot" as const,
+          shared_memory: true,
+          username: request.payload.username ?? `bot${String(request.id)}`,
+        },
+        id: Math.max(0, ...botRecords.map((row) => row.id)) + 1,
+        memory_enabled: true,
+        owner_account_id: request.requester_account_id,
+        persona_prompt: request.payload.persona_prompt,
+      };
+      botRecords.push(bot);
+      return HttpResponse.json(bot);
+    },
   ),
   "/api/v1/admin/bot_requests/{id}/decline": http.post(
     "*/api/v1/admin/bot_requests/:id/decline",
-    () =>
-      HttpResponse.json({
-        id: 1,
-        kind: "create",
-        status: "declined",
-        payload: {},
-      }),
+    async ({ params, request }) => {
+      const row = botRequestRecords.find((item) => item.id === Number(params.id));
+      if (!row) return jsonError(404);
+      const body = (await request.json().catch(() => ({}))) as { reason?: string };
+      row.status = "declined";
+      row.decline_reason = body.reason ?? null;
+      row.avatar_url = null;
+      return HttpResponse.json(row);
+    },
   ),
   "/api/v1/admin/settings": http.all("*/api/v1/admin/settings", async ({ request }) => {
     if (request.method === "PATCH") {

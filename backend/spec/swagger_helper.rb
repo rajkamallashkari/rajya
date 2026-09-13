@@ -84,9 +84,12 @@ RSpec.configure do |config|
                 username: { type: :string },
                 display_name: { type: :string },
                 kind: { type: :string },
+                avatar_url: { type: :string, nullable: true },
                 bio: { type: :string, nullable: true },
-                shared_memory: { type: :boolean },
-                blocked_by_viewer: { type: :boolean }
+                blocked_by_viewer: { type: :boolean },
+                email: { type: :string, nullable: true },
+                phone: { type: :string, nullable: true },
+                shared_memory: { type: :boolean }
               }
             },
             CallParticipant: {
@@ -135,7 +138,7 @@ RSpec.configure do |config|
               type: :object,
               required: %w[
                 id conversation_id conversation_kind initiator_account_id kind status
-                participants created_at
+                member_count participants created_at
               ],
               properties: {
                 id: { type: :integer },
@@ -149,6 +152,8 @@ RSpec.configure do |config|
                 duration_seconds: { type: :integer, nullable: true },
                 created_at: { type: :string, format: :"date-time" },
                 title: { type: :string, nullable: true },
+                avatar_url: { type: :string, nullable: true },
+                member_count: { type: :integer },
                 peer: { "$ref" => "#/components/schemas/Account", nullable: true },
                 participants: { type: :array, items: { "$ref" => "#/components/schemas/CallParticipant" } }
               }
@@ -578,7 +583,8 @@ RSpec.configure do |config|
                 id: { type: :integer },
                 account: { "$ref" => "#/components/schemas/Account" },
                 memory_enabled: { type: :boolean },
-                owner_account_id: { type: :integer, nullable: true }
+                owner_account_id: { type: :integer, nullable: true },
+                persona_prompt: { type: :string, nullable: true }
               }
             },
             BotList: {
@@ -606,6 +612,7 @@ RSpec.configure do |config|
                   }
                 },
                 decline_reason: { type: :string, nullable: true },
+                avatar_url: { type: :string, nullable: true },
                 target_bot_id: { type: :integer, nullable: true },
                 bot_id: { type: :integer, nullable: true },
                 requester_account_id: { type: :integer },
@@ -692,6 +699,8 @@ RSpec.configure do |config|
                   nullable: true,
                   description: "Voice-note peaks: floats in [0.0, 1.0], length waveform_peak_count."
                 },
+                original_available: { type: :boolean },
+                processing_stalled: { type: :boolean },
                 processing_status: { type: :string, enum: %w[pending ready failed] },
                 processing_error: { type: :string, nullable: true },
                 filename: { type: :string, nullable: true },
@@ -702,7 +711,7 @@ RSpec.configure do |config|
             },
             GalleryAttachment: {
               type: :object,
-              required: %w[id kind content_type byte_size processing_status message_id],
+              required: %w[id kind content_type byte_size processing_status message_id sent_at],
               properties: {
                 id: { type: :integer },
                 kind: { type: :string, enum: %w[image video audio voice file] },
@@ -713,20 +722,27 @@ RSpec.configure do |config|
                 duration_ms: { type: :integer, nullable: true },
                 blurhash: { type: :string, nullable: true },
                 waveform: { type: :array, items: { type: :number }, nullable: true },
+                original_available: { type: :boolean },
+                processing_stalled: { type: :boolean },
                 processing_status: { type: :string, enum: %w[pending ready failed] },
                 processing_error: { type: :string, nullable: true },
                 filename: { type: :string, nullable: true },
-                message_id: { type: :integer }
+                message_id: { type: :integer },
+                sender: { "$ref" => "#/components/schemas/Account", nullable: true },
+                sent_at: { type: :string, format: "date-time" }
               }
             },
             GalleryLink: {
               type: :object,
-              required: %w[url],
+              required: %w[url message_id sent_at],
               properties: {
                 url: { type: :string },
                 title: { type: :string, nullable: true },
                 description: { type: :string, nullable: true },
-                site_name: { type: :string, nullable: true }
+                site_name: { type: :string, nullable: true },
+                message_id: { type: :integer },
+                sender: { "$ref" => "#/components/schemas/Account", nullable: true },
+                sent_at: { type: :string, format: "date-time" }
               }
             },
             GalleryItem: {
@@ -842,10 +858,32 @@ RSpec.configure do |config|
                 account: { "$ref" => "#/components/schemas/Account" }
               }
             },
+            ConversationIdentity: {
+              type: :object,
+              required: %w[id kind member_count],
+              properties: {
+                id: { type: :integer },
+                kind: { type: :string, enum: %w[direct group channel] },
+                title: { type: :string, nullable: true },
+                avatar_url: { type: :string, nullable: true },
+                member_count: { type: :integer },
+                peer: { "$ref" => "#/components/schemas/Account", nullable: true }
+              }
+            },
+            ConversationIdentityList: {
+              type: :object,
+              required: %w[conversations],
+              properties: {
+                conversations: {
+                  type: :array,
+                  items: { "$ref" => "#/components/schemas/ConversationIdentity" }
+                }
+              }
+            },
             Conversation: {
               type: :object,
               required: %w[
-                id kind last_activity_at unread_count members member_permissions
+                id kind last_activity_at member_count unread_count members member_permissions
                 slow_mode_seconds restrict_forwarding permissions
               ],
               properties: {
@@ -853,6 +891,8 @@ RSpec.configure do |config|
                 kind: { type: :string, enum: %w[direct group channel] },
                 title: { type: :string, nullable: true },
                 description: { type: :string, nullable: true },
+                avatar_url: { type: :string, nullable: true },
+                member_count: { type: :integer },
                 last_activity_at: { type: :string, format: :"date-time" },
                 unread_count: { type: :integer },
                 muted_until: { type: :string, format: :"date-time", nullable: true },
@@ -929,6 +969,7 @@ RSpec.configure do |config|
                 forward_count: { type: :integer },
                 attachment_count: { type: :integer },
                 reaction_summary: { type: :object, additionalProperties: { type: :integer } },
+                my_reactions: { type: :array, items: { type: :string } },
                 metadata: { type: :object },
                 sender_snapshot: { type: :object },
                 forwarded_from_account_id: { type: :integer, nullable: true },
@@ -1115,12 +1156,21 @@ RSpec.configure do |config|
                 message: { "$ref" => "#/components/schemas/Message" }
               }
             },
+            PinnedMessageList: {
+              type: :object,
+              required: %w[pinned_messages],
+              properties: {
+                pinned_messages: { type: :array, items: { "$ref" => "#/components/schemas/PinnedMessage" } }
+              }
+            },
             SavedMessage: {
               type: :object,
-              required: %w[id message_id message],
+              required: %w[id message_id conversation conversation_title message],
               properties: {
                 id: { type: :integer },
                 message_id: { type: :integer },
+                conversation: { "$ref" => "#/components/schemas/ConversationIdentity" },
+                conversation_title: { type: :string, nullable: true },
                 created_at: { type: :string, format: :"date-time" },
                 message: { "$ref" => "#/components/schemas/Message" }
               }
@@ -1134,10 +1184,11 @@ RSpec.configure do |config|
             },
             ScheduledMessage: {
               type: :object,
-              required: %w[id conversation_id body scheduled_at occurrences_sent],
+              required: %w[id conversation_id conversation body scheduled_at occurrences_sent],
               properties: {
                 id: { type: :integer },
                 conversation_id: { type: :integer },
+                conversation: { "$ref" => "#/components/schemas/ConversationIdentity" },
                 body: { type: :string },
                 scheduled_at: { type: :string, format: :"date-time" },
                 client_nonce: { type: :string, format: :uuid, nullable: true },

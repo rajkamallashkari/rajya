@@ -63,6 +63,17 @@ RSpec.describe MessageResource do
     expect(json.fetch("tick")).to eq("sent")
   end
 
+  it "includes the current account reactions" do
+    user = create(:user)
+    conversation = create_direct_between(user.account, create(:account))
+    message = send_from(user, conversation, body: "Hi")
+    Messages::React.call(message: message, actor: user.account, emoji: "🎉")
+
+    json = described_class.new(message.reload, params: { current_account: user.account }).to_h
+
+    expect(json.fetch("my_reactions")).to eq([ "🎉" ])
+  end
+
   it "omits tick state on an incoming message" do
     sender = create(:user)
     peer = create(:user)

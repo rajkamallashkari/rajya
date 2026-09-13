@@ -100,6 +100,7 @@ module Calls
     def metadata
       {
         "call_id" => @call.id,
+        "initiator_account_id" => @call.initiator_account_id,
         "kind" => @call.kind,
         "status" => @call.status,
         "duration_seconds" => @call.duration_seconds,

@@ -143,6 +143,20 @@ export async function createScheduledMessage(body: {
   );
 }
 
+export async function updateScheduledMessage(
+  id: number,
+  body: { body?: string; scheduled_at?: string },
+) {
+  return unwrap(
+    await apiClient().PATCH("/api/v1/scheduled_messages/{id}", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+      body,
+    }),
+    "scheduled_update_failed",
+  );
+}
+
 export async function cancelScheduledMessage(id: number) {
   return unwrap(
     await apiClient().DELETE("/api/v1/scheduled_messages/{id}", {

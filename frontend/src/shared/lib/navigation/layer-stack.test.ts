@@ -76,4 +76,21 @@ describe("layer-stack", () => {
       stackIds: [],
     });
   });
+
+  it("does not pop a deliberate route navigation when layers unmount", async () => {
+    const back = vi.spyOn(window.history, "back");
+    window.history.replaceState({}, "", "/profile");
+    addLayer("settings", vi.fn());
+    await flush();
+
+    window.history.pushState({}, "", "/admin");
+    removeLayer("settings");
+    await flush();
+
+    expect(window.location.pathname).toBe("/admin");
+    expect(back).not.toHaveBeenCalled();
+    expect(_testSnapshot().pushedCount).toBe(0);
+    window.history.replaceState({}, "", "/");
+    back.mockRestore();
+  });
 });

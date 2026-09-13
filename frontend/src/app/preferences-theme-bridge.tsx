@@ -5,7 +5,9 @@ import { useThemeOverridePalette } from "@/features/admin/api/queries";
 import {
   asPreferenceDocument,
   mapPreferencesToTheme,
+  preferenceLocale,
 } from "@/features/settings/model/map-preferences";
+import { DateTimePreferencesProvider } from "@/shared/hooks/use-date-time-formatter";
 import type { SemanticOverrides } from "@/shared/lib/theme";
 
 export function PreferencesThemeBridge({ children }: { children: ReactNode }) {
@@ -15,6 +17,7 @@ export function PreferencesThemeBridge({ children }: { children: ReactNode }) {
   const fonts = useFontConfigs();
   const accents = useAccentConfigs();
   const palettes = useThemeOverridePalette();
+  const locale = preferenceLocale(asPreferenceDocument(preferences.data?.data));
 
   useEffect(() => {
     if (!preferences.data || !fonts.data || !accents.data || !palettes.data) {
@@ -32,5 +35,11 @@ export function PreferencesThemeBridge({ children }: { children: ReactNode }) {
     );
   }, [accents.data, fonts.data, palettes.data, preferences.data, resolved, setInput]);
 
-  return children;
+  return (
+    <DateTimePreferencesProvider
+      value={{ dateFormat: locale.date_format, timeFormat: locale.time_format }}
+    >
+      {children}
+    </DateTimePreferencesProvider>
+  );
 }

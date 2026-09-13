@@ -198,10 +198,11 @@ en:
 
   media:
     processing:
-      ffmpeg_missing: "Media tools are unavailable. Try again later."
-      unreadable: "This file could not be processed."
       blocked_type: "This file type is not allowed."
+      ffmpeg_missing: "Media tools are unavailable. Try again later."
       probe_failed: "This file could not be inspected."
+      stalled: "Media processing stopped. Try again."
+      unreadable: "This file could not be processed."
 
   report:
     reasons:
@@ -236,6 +237,22 @@ en:
     role_changed: "%{name} is now %{role}"
     message_pinned: "%{name} pinned a message"
     message_unpinned: "%{name} unpinned a message"
+    permission_change: "%{permission}: %{previous_value} → %{new_value}"
+    permission_change_separator: "; "
+    permission_names:
+      add_members: "Add members"
+      create_invites: "Create invites"
+      create_polls: "Create polls"
+      edit_info: "Edit group info"
+      mention_everyone: "Mention @everyone and @admins"
+      pin_messages: "Pin messages"
+      send_media: "Send media"
+      send_messages: "Send messages"
+    permission_roles:
+      admin: "Admins"
+      member: "Members"
+      owner: "Owner"
+    permissions_changed: "%{name} changed group permissions: %{changes_text}"
     call_started: "Calling…"
     call_ended: "Call ended"
     call_missed: "Missed call"
@@ -247,7 +264,6 @@ en:
     call_ended_video: "Video call"
     call_ended_duration: "%{kind} · %{minutes}m %{seconds}s"
     conversation_created: "Group created by %{name}"
-    permissions_changed: "Group permissions updated"
     slow_mode_changed: "Slow mode updated"
     forwarding_restricted: "Forwarding restricted"
     forwarding_unrestricted: "Forwarding unrestricted"

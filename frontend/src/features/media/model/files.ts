@@ -47,9 +47,9 @@ export function formatByteSize(bytes: number): { value: string; unit: "b" | "kb"
     return { value: String(bytes), unit: "b" };
   }
   if (bytes < BYTE_UNITS * BYTE_UNITS) {
-    return { value: (bytes / BYTE_UNITS).toFixed(1), unit: "kb" };
+    return { value: String(parseFloat((bytes / BYTE_UNITS).toFixed(1))), unit: "kb" };
   }
-  return { value: (bytes / (BYTE_UNITS * BYTE_UNITS)).toFixed(1), unit: "mb" };
+  return { value: String(parseFloat((bytes / (BYTE_UNITS * BYTE_UNITS)).toFixed(1))), unit: "mb" };
 }
 
 export function truncateFilename(name: string, max: number = FILENAME_TRUNCATE): string {

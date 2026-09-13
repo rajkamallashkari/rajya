@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useResolvedTheme } from "@/app/theme-provider";
@@ -36,7 +36,17 @@ export function resetConsumedMagicTokens(): void {
   consumedMagicTokens.clear();
 }
 
-export function AuthGate({ initialMode = "register" }: { initialMode?: GateMode }) {
+export function AuthGate({
+  activateSession = true,
+  initialMode = "register",
+  onCancel,
+  onAuthenticated,
+}: {
+  activateSession?: boolean;
+  initialMode?: GateMode;
+  onAuthenticated?: () => void;
+  onCancel?: () => void;
+}) {
   const { t } = useTranslation();
   const location = useLocation();
   const resolvedTheme = useResolvedTheme();
@@ -53,11 +63,19 @@ export function AuthGate({ initialMode = "register" }: { initialMode?: GateMode 
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const completeSession = useCallback(
+    (session: Parameters<typeof persistSession>[0]): void => {
+      persistSession(session, activateSession);
+      onAuthenticated?.();
+    },
+    [activateSession, onAuthenticated],
+  );
+
   const applySession = async (work: () => Promise<Parameters<typeof persistSession>[0]>) => {
     setBusy(true);
     setErrorKey(null);
     try {
-      persistSession(await work());
+      completeSession(await work());
     } catch {
       throw new Error("auth_failed");
     } finally {
@@ -74,14 +92,14 @@ export function AuthGate({ initialMode = "register" }: { initialMode?: GateMode 
     setBusy(true);
     setErrorKey(null);
     void verifyMagicLink(token)
-      .then((session) => persistSession(session))
+      .then(completeSession)
       .catch(() => {
         setErrorKey("auth.gate.magic_failed");
       })
       .finally(() => {
         setBusy(false);
       });
-  }, [location.pathname, location.search]);
+  }, [completeSession, location.pathname, location.search]);
 
   const onPasswordSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -126,7 +144,7 @@ export function AuthGate({ initialMode = "register" }: { initialMode?: GateMode 
       if (!credential) {
         return;
       }
-      persistSession(
+      completeSession(
         await authenticatePasskey(passkeyNonce(options), serializeAssertionCredential(credential)),
       );
     } catch (error) {
@@ -193,6 +211,11 @@ export function AuthGate({ initialMode = "register" }: { initialMode?: GateMode 
         <h1 className="text-[length:var(--text-lg)] font-semibold">
           {t(mode === "login" ? "auth.gate.title_login" : "auth.gate.title_register")}
         </h1>
+        {onCancel ? (
+          <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>
+            {t("auth.accounts.add_cancel")}
+          </Button>
+        ) : null}
         {showGoogle ? (
           <Button type="button" variant="secondary" disabled={busy} onClick={() => void onGoogle()}>
             {t("auth.gate.google")}

@@ -31,6 +31,20 @@ function message(id: number, extras: Partial<Message> = {}): Message {
   } as Message;
 }
 
+function call(id: number, initiatorId: number | null = 1, extras: Partial<Message> = {}): Message {
+  return message(id, {
+    kind: "system",
+    metadata: {
+      call_id: id,
+      initiator_account_id: initiatorId,
+      status: "ended",
+    } as unknown as Message["metadata"],
+    sender: undefined,
+    system_event: "call_ended",
+    ...extras,
+  });
+}
+
 describe("thread window", () => {
   it("groups by calendar day and sender runs", () => {
     const messages = [
@@ -65,6 +79,58 @@ describe("thread window", () => {
     expect(shouldShowJumpPill(false, 2)).toBe(true);
     expect(nextPendingCount(true, 2, [message(3)], 4)).toBe(0);
     expect(nextPendingCount(false, 2, [message(3)], 1)).toBe(2);
+  });
+
+  it("uses the account grouping key for calls with a resolvable initiator", () => {
+    const accountIds = new Set([1, 2]);
+    expect(toGroupable(message(1)).senderId).toBe("1");
+    expect(toGroupable(call(2), accountIds).senderId).toBe("1");
+    expect(toGroupable(call(3, 2), accountIds).senderId).toBe("2");
+    expect(toGroupable(call(4, 999), accountIds).senderId).toBe("system:4");
+    expect(toGroupable(call(5)).senderId).toBe("1");
+  });
+
+  it("groups text-to-call and call-to-text adjacency for sent and received runs", () => {
+    const received = { display_name: "Priya", id: 2, kind: "human", username: "priya" } as const;
+    const rows = [
+      message(1),
+      call(2),
+      call(3),
+      message(4),
+      call(5, 2),
+      message(6, { sender: received }),
+      call(7, 2),
+    ];
+
+    expect(
+      buildThreadWindow(rows, [1, 2]).runs.map((run) => ({
+        ids: run.messages.map((row) => row.id),
+        kind: run.kind,
+      })),
+    ).toEqual([
+      { ids: [1, 2, 3, 4], kind: "user" },
+      { ids: [5, 6, 7], kind: "user" },
+    ]);
+  });
+
+  it("keeps system, unresolved-call, time-window, sender, and day boundaries", () => {
+    const nextDay = "2026-01-02T12:00:00.000Z";
+    const rows = [
+      message(1),
+      message(2, { kind: "system", sender: undefined, system_event: "member_left" }),
+      call(3),
+      call(4, null),
+      message(5),
+      call(6, 2),
+      message(7, { created_at: "2026-01-01T13:00:00.000Z" }),
+      call(8, 1, { created_at: nextDay }),
+      message(9, { created_at: nextDay }),
+    ];
+
+    expect(
+      buildThreadWindow(rows, [1, 2]).runs.map((run) => run.messages.map((row) => row.id)),
+    ).toEqual([[1], [2], [3], [4], [5], [6], [7], [8, 9]]);
+    expect(toGroupable(call(10, null)).senderId).toBe("system:10");
   });
 
   it("builds a 10k-message window without quadratic grouping", () => {

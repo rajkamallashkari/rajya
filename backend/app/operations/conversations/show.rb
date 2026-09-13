@@ -1,7 +1,10 @@
 module Conversations
   class Show < ApplicationOperation
     def call(account:, conversation:, clear_unread: false)
-      loaded = Conversation.includes(last_message: :sender_account, conversation_memberships: :account)
+      loaded = Conversation.includes(
+        last_message: { sender_account: [ avatar_attachment: :blob ] },
+        conversation_memberships: { account: [ avatar_attachment: :blob ] }
+      )
                            .find(conversation.id)
       view = View.for(loaded, account, include_members: true)
       clear_manual_unread!(view.membership) if clear_unread

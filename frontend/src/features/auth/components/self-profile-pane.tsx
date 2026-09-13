@@ -1,4 +1,4 @@
-import { Camera, Pencil, Settings } from "lucide-react";
+import { Camera, Pencil, Settings, Share2, Shield } from "lucide-react";
 import {
   type ChangeEvent,
   type FormEvent,
@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import { useMe, useUpdateProfile } from "@/features/auth/api/queries";
 import { AccountSwitcher } from "@/features/auth/components/account-switcher";
 import { checkUsername } from "@/features/auth/api/identity";
@@ -20,12 +21,16 @@ import {
   USERNAME_MIN_LENGTH,
 } from "@/features/auth/model/limits";
 import { visibleProfileContacts } from "@/features/auth/model/self-profile";
+import { QrSheet } from "@/features/conversations/components/qr-sheet";
+import { profileUrl } from "@/features/conversations/model/links";
 import { presignAndUpload } from "@/features/media/model/direct-upload";
+import { copyText } from "@/features/messages/model/copy-text";
 import { useLongPress } from "@/shared/hooks/use-long-press";
 import { asPreferenceDocument, preferencePrivacy } from "@/features/settings/model/map-preferences";
 import { usePreferences } from "@/features/settings/api/queries";
 import { useShellStore } from "@/features/settings/store/shell-store";
 import { Avatar } from "@/shared/ui/avatar";
+import { BioContent } from "@/shared/ui/bio-content";
 import { Button } from "@/shared/ui/button";
 import { IconButton } from "@/shared/ui/icon-button";
 import { Input } from "@/shared/ui/input";
@@ -40,6 +45,7 @@ export function SelfProfilePane(): ReactNode {
   const update = useUpdateProfile();
   const setProfileSettingsOpen = useShellStore((state) => state.setProfileSettingsOpen);
   const [editing, setEditing] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -60,6 +66,10 @@ export function SelfProfilePane(): ReactNode {
     showPhone: privacy.show_phone_on_profile,
   });
   const identityName = me.data?.account.display_name ?? "";
+  const isAdmin = me.data?.user.is_admin === true;
+  const publicProfileUrl = me.data
+    ? profileUrl(globalThis.location.origin, me.data.account.username)
+    : "";
   const openSwitcher = () => setSwitcherOpen(true);
   const longPress = useLongPress(openSwitcher, { enabled: !editing });
 
@@ -196,28 +206,48 @@ export function SelfProfilePane(): ReactNode {
       data-profile-pane=""
     >
       <header className="flex items-center gap-[var(--control-gap)] px-[var(--space-list-x)] py-[var(--space-list-y)]">
-        <h1 className={WEIGHT_EMPHASIS} id="destination-profile-title">
+        <h1 className={`min-w-0 flex-1 truncate ${WEIGHT_EMPHASIS}`} id="destination-profile-title">
           {t("shell.profile")}
         </h1>
-        <span className="flex-1" />
-        <IconButton
-          aria-label={t("auth.profile.edit")}
-          disabled={editing}
-          onClick={() => {
-            setErrorKey(null);
-            setEditing(true);
-          }}
-          type="button"
-        >
-          <Pencil className={ICON_CLASS} />
-        </IconButton>
-        <IconButton
-          aria-label={t("shell.settings")}
-          onClick={() => setProfileSettingsOpen(true)}
-          type="button"
-        >
-          <Settings className={ICON_CLASS} />
-        </IconButton>
+        <div className="flex shrink-0 items-center gap-[var(--control-gap)]">
+          {publicProfileUrl ? (
+            <IconButton
+              aria-label={t("auth.profile.share")}
+              onClick={() => setQrOpen(true)}
+              title={t("auth.profile.share")}
+              type="button"
+            >
+              <Share2 className={ICON_CLASS} />
+            </IconButton>
+          ) : null}
+          <IconButton
+            aria-label={t("auth.profile.edit")}
+            disabled={editing}
+            onClick={() => {
+              setErrorKey(null);
+              setEditing(true);
+            }}
+            title={t("auth.profile.edit")}
+            type="button"
+          >
+            <Pencil className={ICON_CLASS} />
+          </IconButton>
+          <IconButton
+            aria-label={t("shell.settings")}
+            onClick={() => setProfileSettingsOpen(true)}
+            title={t("shell.settings")}
+            type="button"
+          >
+            <Settings className={ICON_CLASS} />
+          </IconButton>
+          {isAdmin ? (
+            <IconButton aria-label={t("admin.title")} asChild title={t("admin.title")}>
+              <Link to="/admin">
+                <Shield className={ICON_CLASS} />
+              </Link>
+            </IconButton>
+          ) : null}
+        </div>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto px-[var(--space-list-x)] py-[var(--space-4)]">
         <ListView onRetry={() => void me.refetch()} status={status}>
@@ -363,7 +393,11 @@ export function SelfProfilePane(): ReactNode {
                 <p className="text-[var(--text-secondary)]">
                   {t("auth.profile.handle", { username: me.data.account.username })}
                 </p>
-                {me.data.account.bio ? <p>{me.data.account.bio}</p> : null}
+                {me.data.account.bio ? (
+                  <p>
+                    <BioContent>{me.data.account.bio}</BioContent>
+                  </p>
+                ) : null}
                 {contacts.email ? (
                   <p data-profile-email="">
                     <span className="text-[var(--text-secondary)]">{t("auth.profile.email")} </span>
@@ -381,6 +415,12 @@ export function SelfProfilePane(): ReactNode {
           ) : null}
         </ListView>
       </div>
+      <QrSheet
+        onCopy={() => void copyText(publicProfileUrl)}
+        onOpenChange={setQrOpen}
+        open={qrOpen}
+        payload={publicProfileUrl}
+      />
       <AccountSwitcher onOpenChange={setSwitcherOpen} open={switcherOpen} />
     </section>
   );

@@ -18,14 +18,18 @@ export function LayerHeader({
   onBack?: () => void;
   onTitleClick?: () => void;
   showBack?: boolean;
-  title: string;
+  title: ReactNode;
 }): ReactNode {
   const { t } = useTranslation();
   const popLayer = useLayerStore((state) => state.popLayer);
   return (
     <header className="flex items-center gap-[var(--control-gap)] px-[var(--space-list-x)] py-[var(--space-list-y)]">
       {showBack ? (
-        <IconButton aria-label={t("shell.back")} onClick={() => (onBack ?? popLayer)()} type="button">
+        <IconButton
+          aria-label={t("shell.back")}
+          onClick={() => (onBack ?? popLayer)()}
+          type="button"
+        >
           <ChevronLeft className="h-[var(--icon-size)] w-[var(--icon-size)]" />
         </IconButton>
       ) : null}

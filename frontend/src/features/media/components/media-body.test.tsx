@@ -1,7 +1,13 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetOsmTileBudget } from "@/features/messages/model/osm-tiles";
+import {
+  conversationLayer,
+  resetLayerStore,
+  useLayerStore,
+} from "@/shared/lib/navigation/layer-store";
 
 vi.mock("@/features/messages/model/highlight", () => ({
   highlightCode: vi.fn().mockResolvedValue(null),
@@ -9,7 +15,12 @@ vi.mock("@/features/messages/model/highlight", () => ({
 import { AppProviders } from "@/app/providers";
 import { AlbumGrid } from "@/features/media/components/album-grid";
 import { AttachmentBody } from "@/features/media/components/attachment-body";
-import { DocumentBubble } from "@/features/media/components/document-bubble";
+import {
+  DocumentBubble,
+  openFile,
+  safeOpen,
+  triggerDownload,
+} from "@/features/media/components/document-bubble";
 import { MediaGalleryPanel } from "@/features/media/components/media-gallery-panel";
 import { VideoBubble } from "@/features/media/components/video-bubble";
 import { RemoteProgressiveImage } from "@/features/media/components/remote-progressive-image";
@@ -18,11 +29,15 @@ import { MessageBubble } from "@/features/messages/components/message-bubble";
 import type { Attachment } from "@/features/media/model/constants";
 import { en } from "@/shared/lib/i18n/catalog";
 import { setAccessSession } from "@/features/auth/model/access-session";
+import { dismissToast, getToast } from "@/shared/ui/toast";
 import { testSession } from "@/test/access-session";
 import { resetVoicePlayer } from "@/features/media/store/voice-player";
+import { server } from "@/test/msw";
 
 afterEach(() => {
   resetOsmTileBudget();
+  resetLayerStore();
+  vi.restoreAllMocks();
 });
 
 const readyImage = (id: number): Attachment => ({
@@ -51,14 +66,19 @@ describe("album grid and attachment body", () => {
       </AppProviders>,
     );
     expect(document.querySelector("[data-album-extra]")).not.toBeNull();
+    const multiCell = document.querySelector("[data-album-cell]") as HTMLElement;
+    const multiImageBox = multiCell.querySelector("[data-progressive-stage]") as HTMLElement;
+    expect(multiCell).toHaveClass("h-full", "min-w-0", "overflow-hidden");
+    expect(multiImageBox).toHaveClass("h-full", "w-full", "min-w-0");
+    await waitFor(() => {
+      expect(multiImageBox.querySelector("img")).not.toBeNull();
+    });
+    expect(multiImageBox.querySelector("img")).toHaveClass("h-full", "w-full", "object-cover");
     await user.click(screen.getAllByRole("button")[0]!);
     expect(onPhotoClick).toHaveBeenCalledWith(0);
     const { container } = render(
       <AppProviders>
-        <AlbumGrid
-          attachments={[{ ...readyImage(9), filename: undefined }]}
-          maxWidth={null}
-        />
+        <AlbumGrid attachments={[{ ...readyImage(9), filename: undefined }]} maxWidth={null} />
         <AlbumGrid attachments={[]} maxWidth={null} />
         <AttachmentBody attachments={[]} messageId="0" />
         <AttachmentBody
@@ -77,25 +97,52 @@ describe("album grid and attachment body", () => {
       </AppProviders>,
     );
     expect(container.querySelector("[data-album-grid]")).not.toBeNull();
+    const singleCell = container.querySelector("[data-album-cell]") as HTMLElement;
+    expect(singleCell).toHaveClass("h-full", "overflow-hidden");
+    expect(singleCell.querySelector("[data-progressive-stage]")).toHaveClass(
+      "h-full",
+      "w-full",
+      "min-w-0",
+    );
     await user.click(screen.getByRole("button", { name: en.media.photo }));
     expect(container.querySelector("[data-document-bubble]")).not.toBeNull();
   });
 
   it("renders failed, pending, video, voice, and file attachments", async () => {
     const user = userEvent.setup();
+    vi.spyOn(window, "open").mockImplementation(() => null);
     setAccessSession(testSession());
     render(
       <AppProviders>
-        <MessageBubble
-          attachments={[readyImage(8)]}
-          body=""
-          id="8"
-          side="sent"
-        />
+        <MessageBubble attachments={[readyImage(8)]} body="" id="8" side="sent" />
         <AttachmentBody
           attachments={[
             { ...readyImage(1), processing_status: "failed", processing_error: en.media.failed },
             { ...readyImage(2), processing_status: "pending" },
+            {
+              ...readyImage(10),
+              original_available: true,
+              processing_stalled: true,
+              processing_status: "pending",
+            },
+            {
+              byte_size: 2,
+              content_type: "application/pdf",
+              filename: "pending.pdf",
+              id: 15,
+              kind: "file",
+              processing_status: "pending",
+            },
+            {
+              byte_size: 2,
+              content_type: "application/pdf",
+              filename: "stalled.pdf",
+              id: 16,
+              kind: "file",
+              original_available: true,
+              processing_stalled: true,
+              processing_status: "pending",
+            },
             readyImage(6),
             readyImage(7),
             {
@@ -132,19 +179,31 @@ describe("album grid and attachment body", () => {
     );
     expect(document.querySelector("[data-attachment-failed]")).not.toBeNull();
     expect(document.querySelector("[data-attachment-pending]")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "p2.png" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "p10.png" })).toBeInTheDocument();
+    expect(screen.getAllByText(en.media.stalled)).toHaveLength(2);
+    expect(await screen.findByRole("img", { name: "p10.png" })).toBeInTheDocument();
     expect(document.querySelector("[data-video-bubble]")).not.toBeNull();
     expect(document.querySelector("[data-voice-note]")).not.toBeNull();
     expect(document.querySelector("[data-document-bubble]")).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: "p2.png" }));
+    expect(document.querySelector("[data-media-lightbox]")).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: en.ui.close }));
     await user.click(screen.getByRole("button", { name: "p6.png" }));
     expect(document.querySelector("[data-media-lightbox]")).not.toBeNull();
     await user.click(screen.getByRole("button", { name: en.ui.close }));
-    await user.click(screen.getByRole("button", { name: en.media.retry }));
+    for (const retry of screen.getAllByRole("button", { name: en.media.retry })) {
+      await user.click(retry);
+    }
     await user.click(screen.getByRole("button", { name: en.media.play_video }));
     expect(document.querySelector("[data-media-lightbox]")).not.toBeNull();
     await user.click(screen.getByRole("button", { name: en.ui.close }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: en.media.download })).not.toBeDisabled();
+      expect(screen.getAllByRole("button", { name: en.media.download })).toHaveLength(2);
+      expect(screen.getAllByRole("button", { name: en.media.download })[0]).not.toBeDisabled();
+      expect(screen.getAllByRole("button", { name: en.media.download })[1]).not.toBeDisabled();
     });
+    await user.click(screen.getAllByRole("button", { name: en.media.download })[0]!);
     const play = vi.fn().mockResolvedValue(undefined);
     class FakeAudio {
       currentTime = 0;
@@ -167,18 +226,190 @@ describe("album grid and attachment body", () => {
     await user.click(screen.getByRole("button", { name: en.media.pause }));
     await user.click(screen.getByRole("button", { name: en.media.play }));
     await user.click(screen.getByRole("button", { name: en.media.pause }));
-    await user.click(screen.getByRole("button", { name: en.media.speed.replace("{{rate}}", "1×") }));
+    await user.click(
+      screen.getByRole("button", { name: en.media.speed.replace("{{rate}}", "1×") }),
+    );
     fireEvent.click(document.querySelector("canvas") as HTMLCanvasElement);
-    await user.click(screen.getByRole("button", { name: en.media.download }));
+    await user.click(
+      document.querySelector(
+        `[data-voice-note] button[aria-label="${en.media.download}"]`,
+      ) as HTMLButtonElement,
+    );
     resetVoicePlayer();
     vi.unstubAllGlobals();
   });
 });
 
 describe("gallery panel", () => {
+  it("renders pending originals, video, and retryable failed tiles", async () => {
+    const user = userEvent.setup();
+    setAccessSession(testSession());
+    server.use(
+      http.get("*/api/v1/conversations/77/media", ({ request }) => {
+        if (new URL(request.url).searchParams.get("kind") === "files") {
+          return HttpResponse.json({
+            items: [
+              {
+                attachment: {
+                  byte_size: 12,
+                  content_type: "application/pdf",
+                  filename: "unknown.pdf",
+                  id: 704,
+                  kind: "file",
+                  message_id: 4,
+                  processing_status: "ready",
+                  sender: null,
+                  sent_at: "2026-01-01T00:00:00.000Z",
+                },
+                item_kind: "attachment",
+                link: null,
+              },
+              {
+                attachment: {
+                  byte_size: 12,
+                  content_type: "application/pdf",
+                  filename: "stalled.pdf",
+                  id: 707,
+                  kind: "file",
+                  message_id: 7,
+                  original_available: true,
+                  processing_stalled: true,
+                  processing_status: "pending",
+                  sender: null,
+                  sent_at: "2026-01-01T00:00:00.000Z",
+                },
+                item_kind: "attachment",
+                link: null,
+              },
+            ],
+            meta: { has_more: false, page: 1, per_page: 30, total: 1 },
+          });
+        }
+        return HttpResponse.json({
+          items: [
+            {
+              attachment: {
+                byte_size: 12,
+                content_type: "video/mp4",
+                filename: "clip.mp4",
+                id: 701,
+                kind: "video",
+                message_id: 1,
+                processing_status: "ready",
+                sender: null,
+                sent_at: "2026-01-01T00:00:00.000Z",
+              },
+              item_kind: "attachment",
+              link: null,
+            },
+            {
+              attachment: {
+                byte_size: 12,
+                content_type: "image/png",
+                filename: "stalled.png",
+                id: 706,
+                kind: "image",
+                message_id: 6,
+                original_available: true,
+                processing_stalled: true,
+                processing_status: "pending",
+                sender: null,
+                sent_at: "2026-01-01T00:00:00.000Z",
+              },
+              item_kind: "attachment",
+              link: null,
+            },
+            {
+              attachment: {
+                byte_size: 12,
+                content_type: "video/mp4",
+                filename: "processing.mp4",
+                id: 705,
+                kind: "video",
+                message_id: 5,
+                processing_status: "pending",
+                sender: null,
+                sent_at: "2026-01-01T00:00:00.000Z",
+              },
+              item_kind: "attachment",
+              link: null,
+            },
+            {
+              attachment: {
+                byte_size: 12,
+                content_type: "image/png",
+                id: 702,
+                kind: "image",
+                message_id: 2,
+                processing_status: "failed",
+                sender: null,
+                sent_at: "2026-01-01T00:00:00.000Z",
+              },
+              item_kind: "attachment",
+              link: null,
+            },
+            {
+              attachment: {
+                byte_size: 12,
+                content_type: "image/png",
+                id: 703,
+                kind: "image",
+                message_id: 3,
+                processing_status: "pending",
+                sender: null,
+                sent_at: "2026-01-01T00:00:00.000Z",
+              },
+              item_kind: "attachment",
+              link: null,
+            },
+          ],
+          meta: { has_more: false, page: 1, per_page: 30, total: 3 },
+        });
+      }),
+    );
+    render(
+      <AppProviders>
+        <MediaGalleryPanel conversationId="77" />
+      </AppProviders>,
+    );
+
+    const galleryTile = await screen.findByRole("button", { name: "clip.mp4" });
+    expect(galleryTile).toHaveClass("h-full", "w-full", "min-w-0");
+    expect(galleryTile.parentElement).toHaveClass("aspect-square", "min-w-0");
+    expect(galleryTile.querySelector("[data-progressive-stage]")).toHaveClass(
+      "h-full",
+      "w-full",
+      "min-w-0",
+    );
+    await waitFor(() => {
+      expect(galleryTile.querySelector("img")).not.toBeNull();
+    });
+    expect(galleryTile.querySelector("img")).toHaveClass("h-full", "w-full", "object-cover");
+    expect(document.querySelector("[data-gallery-images] svg")).not.toBeNull();
+    expect(screen.getByText(en.media.processing)).toBeInTheDocument();
+    expect(screen.getByText(en.media.failed)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: en.media.photo })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "stalled.png" })).toBeInTheDocument();
+    expect(screen.getByText(en.media.stalled)).toBeInTheDocument();
+    for (const retry of screen.getAllByRole("button", { name: en.media.retry })) {
+      await user.click(retry);
+    }
+    await user.click(screen.getByRole("tab", { name: en.media.tabs.files }));
+    expect(await screen.findAllByText(new RegExp(en.media.unknown_sender))).toHaveLength(2);
+    expect(screen.getByText(en.media.stalled)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: en.media.open_file })[1]).not.toBeDisabled();
+    });
+    await user.click(screen.getByRole("button", { name: en.media.retry }));
+    await user.click(screen.getAllByRole("button", { name: en.media.download })[1]!);
+    await user.click(screen.getAllByRole("button", { name: en.media.jump_to_message })[0]!);
+    expect(useLayerStore.getState().layers[0]?.focusMessageId).toBe("4");
+  });
+
   it("switches tabs on a live conversation", async () => {
     const user = userEvent.setup();
     setAccessSession(testSession());
+    useLayerStore.getState().openConversation(conversationLayer("1", "Ada"));
     render(
       <AppProviders>
         <MediaGalleryPanel conversationId="1" />
@@ -194,6 +425,8 @@ describe("gallery panel", () => {
     await user.click(screen.getAllByRole("tab", { name: en.media.tabs.images })[0]!);
     await user.click(await screen.findByRole("button", { name: en.media.photo }));
     expect(document.querySelector("[data-media-lightbox]")).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: en.media.jump_to_message }));
+    expect(useLayerStore.getState().layers[0]?.focusMessageId).toBe("1");
     await user.click(screen.getByRole("button", { name: en.ui.close }));
     await user.click((await screen.findAllByRole("button", { name: en.media.load_more }))[0]!);
     await user.click(screen.getAllByRole("tab", { name: en.media.tabs.links })[0]!);
@@ -212,6 +445,54 @@ describe("gallery panel", () => {
 });
 
 describe("standalone bubbles", () => {
+  it("opens documents and downloads successful responses", async () => {
+    const user = userEvent.setup();
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    setAccessSession(testSession());
+    render(
+      <AppProviders>
+        <DocumentBubble
+          attachment={{
+            byte_size: 12,
+            content_type: "application/pdf",
+            filename: "report.pdf",
+            id: 909,
+            kind: "file",
+            processing_status: "ready",
+          }}
+        />
+      </AppProviders>,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: en.media.open_file })).toBeEnabled();
+    });
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      async () => new Response(new Blob(["report"]), { status: 200 }),
+    );
+    await user.click(screen.getByRole("button", { name: en.media.open_file }));
+    await waitFor(() => expect(click).toHaveBeenCalled());
+    expect(open).not.toHaveBeenCalled();
+    await openFile("https://media.test/file");
+    await triggerDownload("https://media.test/file", "report.pdf");
+    expect(click).toHaveBeenCalled();
+
+    vi.mocked(globalThis.fetch).mockResolvedValue(new Response(null, { status: 500 }));
+    dismissToast();
+    await user.click(screen.getByRole("button", { name: en.media.open_file }));
+    await waitFor(() => expect(getToast()?.title).toBe(en.media.file_fallback));
+    await triggerDownload("https://media.test/file", "report.pdf");
+    expect(open).toHaveBeenCalledTimes(2);
+    safeOpen("https://example.test/report.pdf");
+    expect(open).toHaveBeenLastCalledWith(
+      "https://example.test/report.pdf",
+      "_blank",
+      "noopener,noreferrer",
+    );
+  });
+
   it("renders video and document helpers", async () => {
     setAccessSession(testSession());
     render(
@@ -236,6 +517,28 @@ describe("standalone bubbles", () => {
             processing_status: "pending",
           }}
           wantFull={false}
+        />
+        <RemoteProgressiveImage
+          alt="ready file"
+          attachment={{
+            byte_size: 1,
+            content_type: "application/pdf",
+            id: 15,
+            kind: "file",
+            processing_status: "ready",
+          }}
+          wantFull
+        />
+        <RemoteProgressiveImage
+          alt="pending file"
+          attachment={{
+            byte_size: 1,
+            content_type: "application/pdf",
+            id: 16,
+            kind: "file",
+            processing_status: "pending",
+          }}
+          wantFull
         />
         <RemoteProgressiveImage
           alt={en.media.photo}

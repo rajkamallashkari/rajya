@@ -300,6 +300,10 @@ module Settings
         type: :integer, category: :media, default: 3, min: 1, max: 10,
         description: "Retries for transient attachment processing failures (F-17)."
       },
+      media_process_stale_after: {
+        type: :integer, category: :media, default: 300, min: 30, max: 3_600,
+        description: "Seconds before pending attachment processing is presented as failed."
+      },
       orphan_blob_max_age: {
         type: :integer, category: :media, default: 3_600, min: 60, max: 86_400,
         description: "Seconds before an unattached blob is treated as orphaned (BR-95)."

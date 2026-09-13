@@ -1,7 +1,6 @@
 import {
   ALBUM_CELL_HEIGHT_PX,
-  ALBUM_SINGLE_MAX_HEIGHT_PX,
-  clampedAspect,
+  ALBUM_GAP_PX,
   type Attachment,
   type Corner,
 } from "@/features/media/model/constants";
@@ -16,19 +15,15 @@ export interface AlbumLayout {
 
 export function computeAlbumLayout(
   attachments: Pick<Attachment, "width" | "height">[],
-  containerWidth: number,
+  _containerWidth: number,
   cellHeight: number = ALBUM_CELL_HEIGHT_PX,
 ): AlbumLayout {
   switch (attachments.length) {
     case 1: {
-      const height = Math.min(
-        Math.round(containerWidth / clampedAspect(attachments[0]?.width, attachments[0]?.height)),
-        ALBUM_SINGLE_MAX_HEIGHT_PX,
-      );
       return {
         areas: '"a"',
         columns: "1fr",
-        rows: `${String(height)}px`,
+        rows: `${String(cellHeight)}px`,
         cellAreas: ["a"],
         cellCorners: [["tl", "tr", "bl", "br"]],
       };
@@ -48,7 +43,7 @@ export function computeAlbumLayout(
       return {
         areas: '"a b" "a c"',
         columns: "1fr 1fr",
-        rows: `${String(cellHeight)}px ${String(cellHeight)}px`,
+        rows: `repeat(2, calc((${String(cellHeight)}px - ${String(ALBUM_GAP_PX)}px) / 2))`,
         cellAreas: ["a", "b", "c"],
         cellCorners: [["tl", "bl"], ["tr"], ["br"]],
       };
@@ -56,7 +51,7 @@ export function computeAlbumLayout(
       return {
         areas: '"a b" "c d"',
         columns: "1fr 1fr",
-        rows: `${String(cellHeight)}px ${String(cellHeight)}px`,
+        rows: `repeat(2, calc((${String(cellHeight)}px - ${String(ALBUM_GAP_PX)}px) / 2))`,
         cellAreas: ["a", "b", "c", "d"],
         cellCorners: [["tl"], ["tr"], ["bl"], ["br"]],
       };

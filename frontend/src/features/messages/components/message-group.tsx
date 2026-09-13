@@ -7,6 +7,7 @@ import type { PollView } from "@/features/messages/model/poll";
 import { bubbleRole } from "@/features/messages/model/grouping";
 import { cn } from "@/shared/lib/cn";
 import { Avatar } from "@/shared/ui";
+import type { ReactionBadgeView } from "@/features/messages/components/reaction-badges";
 
 export interface GroupMessage {
   attachments?: Attachment[];
@@ -16,6 +17,7 @@ export interface GroupMessage {
   id: string;
   location?: LocationView;
   poll?: PollView;
+  reactions?: ReactionBadgeView[];
   status?: TickStatus;
   translation?: string;
 }
@@ -27,9 +29,11 @@ export function MessageGroup({
   onOpenMenu,
   onOpenPollResults,
   onRetry,
+  onToggleReaction,
   onVote,
   senderName,
   senderSrc,
+  showAvatar = true,
   side,
 }: {
   messages: GroupMessage[];
@@ -38,13 +42,15 @@ export function MessageGroup({
   onOpenMenu?: (id: string, point: { clientX: number; clientY: number }) => void;
   onOpenPollResults?: (id: string) => void;
   onRetry?: (id: string) => void;
+  onToggleReaction?: (id: string, emoji: string) => void;
   onVote?: (id: string, optionIds: string[]) => void;
   senderName?: string | null;
   senderSrc?: string | null;
+  showAvatar?: boolean;
   side: MessageSide;
 }) {
   const count = messages.length;
-  const showGroupAvatar = side === "received";
+  const showGroupAvatar = side === "received" && showAvatar;
 
   return (
     <div
@@ -77,15 +83,17 @@ export function MessageGroup({
               location={message.location}
               onMentionClick={onMentionClick}
               onOpenContactProfile={onOpenContactProfile}
-              onOpenMenu={
-                onOpenMenu ? (point) => onOpenMenu(message.id, point) : undefined
-              }
+              onOpenMenu={onOpenMenu ? (point) => onOpenMenu(message.id, point) : undefined}
               onOpenPollResults={
                 onOpenPollResults ? () => onOpenPollResults(message.id) : undefined
               }
               onRetry={onRetry ? () => onRetry(message.id) : undefined}
+              onToggleReaction={
+                onToggleReaction ? (emoji) => onToggleReaction(message.id, emoji) : undefined
+              }
               onVote={onVote ? (optionIds) => onVote(message.id, optionIds) : undefined}
               poll={message.poll}
+              reactions={message.reactions}
               reserveAvatar={false}
               role={role}
               showAvatar={false}

@@ -1,2 +1,5 @@
 #!/usr/bin/env ruby
-exec "./bin/rails", "server", *ARGV
+backend_root = File.expand_path("..", __dir__)
+Dir.chdir(backend_root)
+
+exec({ "SOLID_QUEUE_IN_PUMA" => "true" }, "./bin/rails", "server", *ARGV)

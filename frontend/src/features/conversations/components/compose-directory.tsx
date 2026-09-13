@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { useBots } from "@/features/bots/api/queries";
 import {
   botMatchesComposeQuery,
-  COMPOSE_AT,
   composeSearchNeedle,
 } from "@/features/conversations/model/compose";
 import { usePeopleSearch } from "@/features/search/api/queries";
@@ -13,7 +12,7 @@ import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_QUERY_LENGTH } from "@/features/search/m
 import { meetsMinQueryLength } from "@/features/search/model/highlight";
 import { cn } from "@/shared/lib/cn";
 import type { components } from "@/shared/lib/api/schema";
-import { Avatar } from "@/shared/ui/avatar";
+import { AccountIdentityRow } from "@/shared/ui/account-identity-row";
 import { Button } from "@/shared/ui/button";
 import { IconButton } from "@/shared/ui/icon-button";
 import { Input } from "@/shared/ui/input";
@@ -190,35 +189,28 @@ function DirectoryRow({
   selected: boolean;
   selection: "multi" | "single";
 }): ReactNode {
-  return (
-    <Button
-      className="h-auto w-full justify-start gap-[var(--control-gap)] px-[var(--space-list-x)] py-[var(--space-3)]"
-      disabled={busy}
-      onClick={() => onSelect(account)}
-      type="button"
-      variant="ghost"
-    >
-      {selection === "multi" ? (
-        <span
-          className={cn(
-            "flex h-[var(--control-height)] w-[var(--control-height)] items-center justify-center rounded-[var(--radius-sm)] border",
-            selected
-              ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)]"
-              : "border-[var(--border-default)]",
-          )}
-        >
-          {selected ? <Check className={ICON_CLASS} /> : null}
-        </span>
-      ) : null}
-      <Avatar name={account.display_name} />
-      <span className="min-w-0 flex-1 text-left">
-        <span className="block truncate">{account.display_name}</span>
-        {account.username ? (
-          <span className="block truncate text-[length:var(--text-sm)] text-[var(--text-secondary)]">
-            {`${COMPOSE_AT}${account.username}`}
-          </span>
-        ) : null}
+  const selectionControl =
+    selection === "multi" ? (
+      <span
+        aria-hidden
+        className={cn(
+          "flex h-[var(--control-height)] w-[var(--control-height)] shrink-0 items-center justify-center rounded-[var(--radius-sm)] border",
+          selected
+            ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-contrast)]"
+            : "border-[var(--border-default)]",
+        )}
+      >
+        {selected ? <Check className={ICON_CLASS} /> : null}
       </span>
-    </Button>
+    ) : null;
+
+  return (
+    <AccountIdentityRow
+      account={account}
+      className="w-full px-[var(--space-list-x)] py-[var(--space-1)]"
+      disabled={busy}
+      onSelect={onSelect}
+      trailing={selectionControl}
+    />
   );
 }

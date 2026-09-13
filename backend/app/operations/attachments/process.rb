@@ -4,6 +4,7 @@ module Attachments
   class Process < ApplicationOperation
     def call(attachment_id: nil, attachment: nil)
       record = attachment || Attachment.find_by(id: attachment_id)
+      raise ActiveRecord::RecordNotFound, "attachment #{attachment_id} is not committed yet" if record.nil? && attachment_id
       return success(record) if record.nil? || !record.file.attached?
 
       sniff!(record)
@@ -65,6 +66,10 @@ module Attachments
           saver: { quality: quality.fetch(name) }
         ).processed
       end
+    rescue StandardError
+      # The original image is already usable. Variant generation is an
+      # optimization and IssueUrl retries it lazily with an original fallback.
+      nil
     end
 
     def blurhash_for(path)
@@ -72,10 +77,11 @@ module Attachments
 
       size = Settings.fetch(:image_variant_dimensions).fetch("thumb")
       thumb = ImageProcessing::Vips.source(path).resize_to_fit(size, size).convert("png").call
-      image = Vips::Image.new_from_file(thumb.path).cast(:uchar)
-      # rubocop:disable Rajya/NoMagicNumbers -- RGB is 3 bands; add alpha for Blurhash's RGBA input
-      image = image.add_alpha if image.bands == 3
-      # rubocop:enable Rajya/NoMagicNumbers
+      # Blurhash.encode rejects any array that is not exactly three bytes per
+      # pixel, so the thumbnail has to reach it as sRGB with no alpha band.
+      image = Vips::Image.new_from_file(thumb.path).colourspace(:srgb)
+      image = image.flatten if image.has_alpha?
+      image = image.cast(:uchar)
       Blurhash.encode(
         image.width, image.height, image.write_to_memory.unpack("C*"),
         x_comp: Settings.fetch(:blurhash_x_components),
@@ -141,16 +147,32 @@ module Attachments
     def process_file(record)
       return unless record.pdf?
 
-      dims = Settings.fetch(:image_variant_dimensions)
-      quality = Settings.fetch(:image_variant_quality)
-      size = dims.fetch("thumb")
-      record.file.blob.variant(
-        resize_to_limit: [ size, size ],
-        format: :webp,
-        saver: { quality: quality.fetch("thumb") }
-      ).processed
-    rescue StandardError
-      raise PermanentFailure, "unreadable"
+      attach_pdf_thumbnail(record)
+    end
+
+    # Active Storage blocks libvips' PDF loader (Vips.block_untrusted), so the
+    # first page is rasterized out of process the way video frames are. The
+    # thumbnail is an optimization — the PDF itself stays downloadable without it.
+    def attach_pdf_thumbnail(record)
+      size = Settings.fetch(:image_variant_dimensions).fetch("thumb")
+      prefix = File.join(Dir.tmpdir, "pdf_thumb_#{SecureRandom.uuid}")
+      out_path = "#{prefix}.png"
+      record.file.blob.open do |tempfile|
+        ok = system(
+          "pdftoppm", "-png", "-singlefile", "-scale-to", size.to_s, tempfile.path, prefix,
+          exception: false
+        )
+        return unless ok && File.exist?(out_path)
+
+        record.thumbnail.attach(
+          io: File.open(out_path),
+          filename: "thumb.png",
+          content_type: "image/png",
+          service_name: record.file.blob.service_name
+        )
+      end
+    ensure
+      File.unlink(out_path) if File.exist?(out_path)
     end
 
     def require_ffmpeg!

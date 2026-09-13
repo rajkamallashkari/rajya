@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   approveJoinRequest,
@@ -13,11 +14,13 @@ import { conversationKeys, inviteKeys } from "@/features/conversations/api/keys"
 import { QrSheet } from "@/features/conversations/components/qr-sheet";
 import { inviteUrl } from "@/features/conversations/model/links";
 import { copyText } from "@/features/messages/model/copy-text";
-import { Button } from "@/shared/ui/button";
+import { Button, IconButton, Switch } from "@/shared/ui";
+import { ICON_CLASS } from "@/shared/ui/metrics";
 
 export function InviteManager({ conversationId }: { conversationId: number }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [requiresApproval, setRequiresApproval] = useState(false);
   const [qrPayload, setQrPayload] = useState<string | null>(null);
   const invites = useQuery({
     queryFn: () => listInvites(conversationId),
@@ -28,7 +31,7 @@ export function InviteManager({ conversationId }: { conversationId: number }) {
     queryKey: inviteKeys.joinRequests(conversationId),
   });
   const create = useMutation({
-    mutationFn: () => createInvite(conversationId),
+    mutationFn: () => createInvite(conversationId, { requires_approval: requiresApproval }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: inviteKeys.list(conversationId) });
     },
@@ -57,11 +60,31 @@ export function InviteManager({ conversationId }: { conversationId: number }) {
   const pending = requests.data?.join_requests ?? [];
 
   return (
-    <div className="flex flex-col gap-[var(--space-4)] px-[var(--space-list-x)]" data-invite-manager="">
+    <div
+      className="flex flex-col gap-[var(--space-4)] px-[var(--space-list-x)]"
+      data-invite-manager=""
+    >
       <p className="[font-weight:var(--font-weight-emphasis)]">{t("invites.manage")}</p>
-      {rows.length === 0 ? <p className="text-[var(--text-secondary)]">{t("invites.empty")}</p> : null}
+      {rows.length === 0 ? (
+        <p className="text-[var(--text-secondary)]">{t("invites.empty")}</p>
+      ) : null}
       {rows.map((invite) => (
-        <div className="flex flex-col gap-[var(--space-2)]" key={invite.id}>
+        <div
+          className="flex flex-col gap-[var(--space-2)] rounded-[var(--radius-md)] border border-[var(--border-default)] p-[var(--space-3)]"
+          key={invite.id}
+        >
+          <div className="flex items-center justify-between gap-[var(--space-2)]">
+            <code className="min-w-0 truncate text-[length:var(--text-sm)]">{invite.token}</code>
+            <IconButton
+              aria-label={t("invites.copy_token", { token: invite.token })}
+              onClick={() => {
+                void copyText(inviteUrl(origin, invite.token));
+              }}
+              type="button"
+            >
+              <Copy className={ICON_CLASS} />
+            </IconButton>
+          </div>
           <p className="text-[var(--text-secondary)]">
             {invite.max_uses == null
               ? t("invites.unlimited")
@@ -71,16 +94,6 @@ export function InviteManager({ conversationId }: { conversationId: number }) {
             <p className="text-[var(--text-secondary)]">{t("invites.approval")}</p>
           ) : null}
           <div className="flex flex-wrap gap-[var(--space-2)]">
-            <Button
-              onClick={() => {
-                void copyText(inviteUrl(origin, invite.token));
-              }}
-              size="sm"
-              type="button"
-              variant="secondary"
-            >
-              {t("invites.copy")}
-            </Button>
             <Button
               onClick={() => setQrPayload(inviteUrl(origin, invite.token))}
               size="sm"
@@ -100,6 +113,14 @@ export function InviteManager({ conversationId }: { conversationId: number }) {
           </div>
         </div>
       ))}
+      <label className="flex min-h-[var(--touch-target-min)] items-center justify-between gap-[var(--space-3)]">
+        <span>{t("invites.require_approval")}</span>
+        <Switch
+          checked={requiresApproval}
+          onCheckedChange={setRequiresApproval}
+          aria-label={t("invites.require_approval")}
+        />
+      </label>
       <Button disabled={create.isPending} onClick={() => create.mutate()} type="button">
         {t("invites.create")}
       </Button>
@@ -108,7 +129,10 @@ export function InviteManager({ conversationId }: { conversationId: number }) {
         <p className="text-[var(--text-secondary)]">{t("invites.no_requests")}</p>
       ) : (
         pending.map((request) => (
-          <div className="flex items-center justify-between gap-[var(--space-2)]" key={request.id}>
+          <div
+            className="flex items-center justify-between gap-[var(--space-2)] rounded-[var(--radius-md)] border border-[var(--border-default)] p-[var(--space-3)]"
+            key={request.id}
+          >
             <p>{request.account.display_name}</p>
             <div className="flex gap-[var(--space-2)]">
               <Button onClick={() => approve.mutate(request.id)} size="sm" type="button">

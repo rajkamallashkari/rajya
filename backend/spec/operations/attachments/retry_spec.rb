@@ -15,6 +15,15 @@ RSpec.describe Attachments::Retry do
     expect(described_class.call(attachment: create(:attachment)).error_code).to eq(:validation_failed)
   end
 
+  it "requeues processing that has stalled" do
+    attachment = create(:attachment, processing_status: "pending")
+    attachment.update_columns(updated_at: (Settings.fetch(:media_process_stale_after) + 1).seconds.ago)
+
+    expect do
+      expect(described_class.call(attachment: attachment)).to be_success
+    end.to have_enqueued_job(Attachments::ProcessJob).with(attachment.id)
+  end
+
   it "returns not_found when media is disabled" do
     create(:feature_flag, key: "media_attachments",
                           description: FeatureFlagRegistry.description_for(:media_attachments), enabled: false)

@@ -143,6 +143,11 @@ describe("admin configuration API", () => {
     });
     get.mockResolvedValue({ data: { bot_requests: [] } });
     await expect(listAdminBotRequests()).resolves.toEqual({ bot_requests: [] });
+    await expect(listAdminBotRequests("edit")).resolves.toEqual({ bot_requests: [] });
+    expect(get).toHaveBeenLastCalledWith(
+      "/api/v1/admin/bot_requests",
+      expect.objectContaining({ params: { query: { kind: "edit" } } }),
+    );
     post.mockResolvedValue({ data: { id: 1 } });
     await expect(approveAdminBotRequest(1)).resolves.toEqual({ id: 1 });
     await expect(declineAdminBotRequest(1, "Too thin")).resolves.toEqual({ id: 1 });

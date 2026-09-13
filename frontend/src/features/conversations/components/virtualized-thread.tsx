@@ -16,7 +16,7 @@ import {
   THREAD_VIEWPORT_BOTTOM_PX,
   THREAD_VIEWPORT_TOP_PX,
 } from "@/features/conversations/model/constants";
-import { formatThreadDate } from "@/features/conversations/model/dates";
+import { useDateTimeFormatter } from "@/shared/hooks/use-date-time-formatter";
 import {
   buildThreadWindow,
   nextPendingCount,
@@ -46,13 +46,13 @@ function scrollerIsAtBottom(node: HTMLElement | null): boolean {
 }
 
 export function VirtualizedThread({
+  accountIds,
   conversationId,
   focusMessageId,
   footer,
   header,
   hasMoreOlder,
   loadingOlder,
-  locale,
   messages,
   onDateClick,
   onLoadOlder,
@@ -61,6 +61,7 @@ export function VirtualizedThread({
   restoreScrollTop = null,
   scrollerRef,
 }: {
+  accountIds?: readonly number[];
   conversationId: string;
   focusMessageId?: string;
   footer?: ReactNode;
@@ -76,9 +77,13 @@ export function VirtualizedThread({
   restoreScrollTop?: number | null;
   scrollerRef: Ref<HTMLElement | null>;
 }) {
+  const formatDateTime = useDateTimeFormatter();
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const scrollerNodeRef = useRef<HTMLElement | null>(null);
-  const { groups, groupCounts, runs } = useMemo(() => buildThreadWindow(messages), [messages]);
+  const { groups, groupCounts, runs } = useMemo(
+    () => buildThreadWindow(messages, accountIds),
+    [accountIds, messages],
+  );
   const groupsRef = useRef(groups);
   groupsRef.current = groups;
   const runsRef = useRef(runs);
@@ -219,7 +224,11 @@ export function VirtualizedThread({
       });
     };
 
-    if (restoreEpoch > 0 && restoreScrollTop != null && lastAppliedEpochRef.current !== restoreEpoch) {
+    if (
+      restoreEpoch > 0 &&
+      restoreScrollTop != null &&
+      lastAppliedEpochRef.current !== restoreEpoch
+    ) {
       lastAppliedEpochRef.current = restoreEpoch;
       lastFocusRef.current = focusMessageId;
       applyRestore(restoreScrollTop);
@@ -259,29 +268,32 @@ export function VirtualizedThread({
     }
   }, [focusMessageId, restoreEpoch, restoreScrollTop, runs]);
 
-  const assignScroller = useCallback((node: HTMLElement | Window | null) => {
-    detachScrollerScrollRef.current?.();
-    detachScrollerScrollRef.current = null;
-    const element = node instanceof HTMLElement ? node : null;
-    scrollerNodeRef.current = element;
-    if (element) {
-      element.setAttribute("data-layer-scroll", conversationId);
-      const onScroll = (): void => {
-        onScrollerScrollRef.current();
-      };
-      element.addEventListener("scroll", onScroll);
-      detachScrollerScrollRef.current = () => {
-        element.removeEventListener("scroll", onScroll);
-      };
-    }
-    if (typeof scrollerRef === "function") {
-      scrollerRef(element);
-      return;
-    }
-    if (scrollerRef) {
-      scrollerRef.current = element;
-    }
-  }, [conversationId, scrollerRef]);
+  const assignScroller = useCallback(
+    (node: HTMLElement | Window | null) => {
+      detachScrollerScrollRef.current?.();
+      detachScrollerScrollRef.current = null;
+      const element = node instanceof HTMLElement ? node : null;
+      scrollerNodeRef.current = element;
+      if (element) {
+        element.setAttribute("data-layer-scroll", conversationId);
+        const onScroll = (): void => {
+          onScrollerScrollRef.current();
+        };
+        element.addEventListener("scroll", onScroll);
+        detachScrollerScrollRef.current = () => {
+          element.removeEventListener("scroll", onScroll);
+        };
+      }
+      if (typeof scrollerRef === "function") {
+        scrollerRef(element);
+        return;
+      }
+      if (scrollerRef) {
+        scrollerRef.current = element;
+      }
+    },
+    [conversationId, scrollerRef],
+  );
 
   if (runs.length === 0) {
     return (
@@ -331,7 +343,7 @@ export function VirtualizedThread({
           const group = groupsRef.current[groupIndex]!;
           return (
             <div className="flex h-[var(--space-10)] items-center justify-center">
-              <DateDivider label={formatThreadDate(group.iso, locale)} onClick={onDateClick} />
+              <DateDivider label={formatDateTime.date(group.iso)} onClick={onDateClick} />
             </div>
           );
         }}
@@ -340,7 +352,11 @@ export function VirtualizedThread({
         initialTopMostItemIndex={initialTopMostRef.current!}
         itemContent={(index) => {
           const run = runsRef.current[index]!;
-          return renderRun(run);
+          return (
+            <div className="px-[var(--space-list-x)] py-[var(--space-1)]" data-thread-run="">
+              {renderRun(run)}
+            </div>
+          );
         }}
         overscan={THREAD_OVERSCAN_PX}
         rangeChanged={(range) => {

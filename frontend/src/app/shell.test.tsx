@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { http, HttpResponse } from "msw";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppProviders } from "@/app/providers";
 import { AppShell } from "@/app/shell";
@@ -13,6 +14,7 @@ import { messagingStore } from "@/shared/lib/api/msw/messaging-store";
 import { en } from "@/shared/lib/i18n/catalog";
 import { SHORTCUTS } from "@/shared/lib/shortcuts/constants";
 import { settingsLayer, useLayerStore } from "@/shared/lib/navigation/layer-store";
+import { server } from "@/test/msw";
 
 function liveToken(): string {
   const encoded = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3_600 }))
@@ -45,6 +47,10 @@ function renderShell(): void {
       </MemoryRouter>
     </AppProviders>,
   );
+}
+
+function LocationPath() {
+  return <output data-location-path="">{useLocation().pathname}</output>;
 }
 
 describe("AppShell", () => {
@@ -140,6 +146,90 @@ describe("AppShell", () => {
     window.dispatchEvent(new KeyboardEvent("keydown", { key: SHORTCUTS.popLayer, bubbles: true }));
   });
 
+  it("opens per-chat scheduled messages as a filtered chat layer and restores the chat", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 1280,
+    });
+    server.use(
+      http.get("*/api/v1/scheduled_messages", () =>
+        HttpResponse.json({
+          scheduled_messages: [
+            {
+              body: "current chat",
+              conversation: {
+                id: 1,
+                kind: "direct",
+                member_count: 2,
+                peer: { display_name: "Ada", id: 2, kind: "human", username: "ada" },
+              },
+              conversation_id: 1,
+              id: 8,
+              occurrences_sent: 0,
+              scheduled_at: "2099-01-01T12:00:00.000Z",
+            },
+            {
+              body: "different chat",
+              conversation_id: 2,
+              id: 9,
+              occurrences_sent: 0,
+              scheduled_at: "2099-01-01T12:00:00.000Z",
+            },
+          ],
+        }),
+      ),
+    );
+    renderShell();
+    const count = await screen.findByRole("button", {
+      name: en.composer.scheduled_count_one.replace("{{count}}", "1"),
+    });
+    const chatScroll = document.querySelector<HTMLElement>("[data-layer-scroll='1']");
+    expect(chatScroll).not.toBeNull();
+    if (chatScroll) {
+      chatScroll.scrollTop = 72;
+    }
+
+    await user.click(count);
+
+    expect(useShellStore.getState()).toMatchObject({
+      destination: "chats",
+      profileSettingsOpen: false,
+      settingsPanel: "hub",
+    });
+    expect(useLayerStore.getState().layers.at(-1)).toEqual({
+      conversationId: "1",
+      id: "scheduled:1",
+      kind: "scheduled",
+      title: en.settings.scheduled,
+    });
+    expect(document.querySelector("[data-layer='scheduled']")).toHaveAttribute(
+      "aria-label",
+      en.settings.scheduled,
+    );
+    expect(document.querySelector("[data-scheduled-conversation-id='1']")).not.toBeNull();
+    expect(await screen.findByText("current chat")).toBeInTheDocument();
+    expect(screen.queryByText("different chat")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: en.shell.back }));
+
+    expect(useLayerStore.getState().layers).toEqual([
+      expect.objectContaining({ conversationId: "1", kind: "conversation" }),
+    ]);
+    expect(useShellStore.getState().destination).toBe("chats");
+    expect(document.querySelector("[data-layer-scroll='1']")).toBe(chatScroll);
+    expect(chatScroll).toHaveProperty("scrollTop", 72);
+
+    await user.click(screen.getByRole("button", { name: en.shell.profile }));
+    await user.click(screen.getByRole("button", { name: en.shell.settings }));
+    await user.click(await screen.findByRole("button", { name: en.settings.scheduled }));
+    expect(useShellStore.getState().destination).toBe("profile");
+    expect(document.querySelector("[data-settings-section='scheduled']")).not.toBeNull();
+    expect(await screen.findByText("current chat")).toBeInTheDocument();
+    expect(screen.getByText("different chat")).toBeInTheDocument();
+  });
+
   it("opens a conversation focused on a permalink message", async () => {
     render(
       <AppProviders>
@@ -192,6 +282,84 @@ describe("AppShell", () => {
     await waitFor(() => {
       expect(useLayerStore.getState().layers).toEqual([]);
     });
+  });
+
+  it("resolves a shared username case-insensitively and canonicalizes the URL", async () => {
+    render(
+      <AppProviders>
+        <MemoryRouter initialEntries={["/u/GRACE"]}>
+          <LocationPath />
+          <Routes>
+            <Route element={<AppShell />} path="/u/:username" />
+            <Route element={<AppShell />} path="/c/:conversationId" />
+          </Routes>
+        </MemoryRouter>
+      </AppProviders>,
+    );
+
+    await waitFor(() => {
+      expect(useLayerStore.getState().layers[0]).toEqual(
+        expect.objectContaining({ conversationId: "1", kind: "conversation" }),
+      );
+      expect(document.querySelector("[data-location-path]")).toHaveTextContent("/c/1");
+    });
+    expect(useShellStore.getState().destination).toBe("chats");
+  });
+
+  it("opens bot profile links and shows an actionable error for missing usernames", async () => {
+    const { unmount } = render(
+      <AppProviders>
+        <MemoryRouter initialEntries={["/u/NIMBUS"]}>
+          <LocationPath />
+          <Routes>
+            <Route element={<AppShell />} path="/u/:username" />
+            <Route element={<AppShell />} path="/c/:conversationId" />
+          </Routes>
+        </MemoryRouter>
+      </AppProviders>,
+    );
+
+    await waitFor(() => {
+      expect(useLayerStore.getState().layers[0]).toEqual(
+        expect.objectContaining({ kind: "conversation" }),
+      );
+      expect(document.querySelector("[data-location-path]")?.textContent).toMatch(/^\/c\/\d+$/);
+    });
+    unmount();
+    useLayerStore.getState().clearLayers();
+
+    render(
+      <AppProviders>
+        <MemoryRouter initialEntries={["/u/not-a-user"]}>
+          <LocationPath />
+          <Routes>
+            <Route element={<AppShell />} path="/u/:username" />
+            <Route element={<AppShell />} path="/" />
+          </Routes>
+        </MemoryRouter>
+      </AppProviders>,
+    );
+
+    expect(await screen.findByText(en.conversations.profile_link_unavailable)).toBeInTheDocument();
+    expect(document.querySelector("[data-location-path]")).toHaveTextContent("/");
+    expect(useShellStore.getState().destination).toBe("chats");
+  });
+
+  it("preserves a profile deep link while the auth gate is open", () => {
+    useAccountsStore.getState().removeAll();
+    render(
+      <AppProviders>
+        <MemoryRouter initialEntries={["/u/grace"]}>
+          <LocationPath />
+          <Routes>
+            <Route element={<AppShell />} path="/u/:username" />
+          </Routes>
+        </MemoryRouter>
+      </AppProviders>,
+    );
+
+    expect(screen.getByRole("dialog", { name: en.auth.gate.aria })).toBeInTheDocument();
+    expect(document.querySelector("[data-location-path]")).toHaveTextContent("/u/grace");
   });
 
   it("hides primary tabs until the account is signed in and onboarded", () => {

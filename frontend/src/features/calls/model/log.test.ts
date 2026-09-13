@@ -22,7 +22,7 @@ describe("call log model", () => {
 
   it("formats datetime, duration, and status copy", () => {
     expect(formatCallDuration(72)).toBe("01:12");
-    expect(formatCallLogWhen("2026-01-01T12:00:00.000Z", "en-GB")).toMatch(/1 Jan 2026/);
+    expect(formatCallLogWhen("2026-01-01T12:00:00.000Z", "en-GB")).toMatch(/Jan 1, 2026/);
     expect(callLogDetail({ status: "ended", duration_seconds: 72 }, (key) => key)).toBe("01:12");
     expect(callLogDetail({ status: "ended", duration_seconds: 0 }, (key) => key)).toBe(
       "calls.status_ended",

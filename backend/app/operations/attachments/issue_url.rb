@@ -6,6 +6,8 @@ module Attachments
 
       ttl = Settings.fetch(:signed_url_ttl)
       url = url_for(attachment, variant, ttl)
+      return failure(:not_found) if url.blank?
+
       success(UrlPayload.new(url: url, expires_at: ttl.seconds.from_now))
     end
 
@@ -23,7 +25,7 @@ module Attachments
       return attachment.thumbnail.url(expires_in: ttl) if attachment.thumbnail.attached?
       return variant_url(attachment, ttl) if attachment.kind == "image" || attachment.pdf?
 
-      blob.url(expires_in: ttl)
+      nil
     end
 
     def variant_url(attachment, ttl)

@@ -7,8 +7,12 @@ class BotRequestPolicy < ApplicationPolicy
     human?
   end
 
+  def update?
+    owns_request? && (record.pending? || record.status == "declined")
+  end
+
   def destroy?
-    human?
+    owns_request? && (record.pending? || record.status == "declined")
   end
 
   class Scope < ApplicationPolicy::Scope
@@ -17,5 +21,11 @@ class BotRequestPolicy < ApplicationPolicy
 
       scope.where(requester_account_id: account.id)
     end
+  end
+
+  private
+
+  def owns_request?
+    human? && record.requester_account_id == account.id
   end
 end

@@ -12,4 +12,16 @@ RSpec.describe Bots::Requests::Index do
     all = described_class.call(actor: user.account, admin: true).value.bot_requests.map(&:id)
     expect(all.size).to eq(2)
   end
+
+  it "filters the admin queue by pending status and optional kind" do
+    user = create(:user)
+    pending_edit = create(:bot_request, requester_account: user.account, kind: "edit")
+    create(:bot_request, requester_account: user.account, kind: "create")
+    create(:bot_request, requester_account: user.account, status: "approved")
+
+    requests = described_class.call(
+      actor: user.account, admin: true, status: "pending", kind: "edit"
+    ).value.bot_requests
+    expect(requests).to contain_exactly(pending_edit)
+  end
 end

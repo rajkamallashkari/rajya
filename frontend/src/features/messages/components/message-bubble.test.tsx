@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetOsmTileBudget } from "@/features/messages/model/osm-tiles";
+import { AppProviders } from "@/app/providers";
 
 vi.mock("@/features/messages/model/highlight", () => ({
   highlightCode: vi.fn().mockResolvedValue(null),
@@ -9,6 +10,7 @@ vi.mock("@/features/messages/model/highlight", () => ({
 
 import { MessageBubble, formatMessageTime } from "./message-bubble";
 import { MessageGroup } from "./message-group";
+import { ReactionBadges } from "./reaction-badges";
 import { TickIndicator } from "./tick-indicator";
 import { TypingBubble } from "./typing-bubble";
 import { DateDivider } from "./date-divider";
@@ -40,7 +42,34 @@ describe("TickIndicator", () => {
 });
 
 describe("MessageBubble", () => {
-  it("applies grouping chrome, hover timestamps, ticks, and jumbo", async () => {
+  it("renders reaction badges and keeps long emoji-only messages bubbleless", async () => {
+    const user = userEvent.setup();
+    const onToggleReaction = vi.fn();
+    const { rerender } = render(
+      <MessageBubble
+        body="hello"
+        onToggleReaction={onToggleReaction}
+        reactions={[{ count: 3, emoji: "🎉", mine: true }]}
+        side="sent"
+      />,
+    );
+    const badge = screen.getByRole("button", {
+      name: "🎉 reaction, 3 total, including yours",
+    });
+    expect(badge).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("3")).toBeInTheDocument();
+    await user.click(badge);
+    expect(onToggleReaction).toHaveBeenCalledWith("🎉");
+
+    rerender(<MessageBubble body="😀 😃 😄 😁 😆" side="received" />);
+    expect(document.querySelector(".message-bubble")?.className).toContain("bg-transparent");
+    expect(document.querySelector("[data-jumbo='false']")).not.toBeNull();
+
+    rerender(<MessageBubble body="😀 hello" side="received" />);
+    expect(document.querySelector(".message-bubble")?.className).not.toContain("bg-transparent");
+  });
+
+  it("applies grouping chrome, always-visible timestamps, ticks, and jumbo", async () => {
     const user = userEvent.setup();
     const { rerender } = render(
       <MessageBubble
@@ -54,10 +83,7 @@ describe("MessageBubble", () => {
     );
     const bubble = document.querySelector("[data-message-bubble]");
     expect(bubble).toHaveAttribute("data-role", "first");
-    expect(document.querySelector("time")).toBeNull();
-    await user.hover(bubble as HTMLElement);
     expect(document.querySelector("time")).not.toBeNull();
-    await user.unhover(bubble as HTMLElement);
 
     rerender(
       <MessageBubble
@@ -140,22 +166,87 @@ describe("MessageBubble", () => {
     expect(formatMessageTime("2026-08-27T15:04:00.000Z", "en-GB")).toMatch(/\d{2}:\d{2}/);
   });
 
-  it("always shows timestamps when the appearance token asks for it", () => {
-    document.documentElement.dataset.timestamps = "always";
+  it("renders attachments before captions and always shows bubble time", () => {
     render(
-      <MessageBubble
-        body="hello"
-        createdAt="2026-08-27T15:04:00.000Z"
-        role="first"
-        side="received"
-      />,
+      <AppProviders>
+        <MessageBubble
+          attachments={[
+            {
+              byte_size: 5,
+              content_type: "text/plain",
+              filename: "notes.txt",
+              id: 77,
+              kind: "file",
+              processing_status: "ready",
+            },
+          ]}
+          body="caption"
+          createdAt="2026-08-27T15:04:00.000Z"
+          id="7"
+          role="first"
+          side="received"
+        />
+      </AppProviders>,
     );
-    expect(document.querySelector("time")).not.toBeNull();
-    document.documentElement.dataset.timestamps = "last";
+    const attachment = document.querySelector("[data-attachment-body]");
+    const caption = document.querySelector("[data-message-content]");
+    expect(attachment).not.toBeNull();
+    expect(caption).not.toBeNull();
+    expect(
+      (attachment as Node).compareDocumentPosition(caption as Node) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(document.querySelectorAll("time")).toHaveLength(1);
   });
 });
 
 describe("MessageGroup", () => {
+  it("squares only the sender-side corners across complete runs", () => {
+    const run = ["first", "middle-a", "middle-b", "last"].map((body, index) => ({
+      body,
+      id: String(index),
+    }));
+    render(
+      <>
+        <MessageBubble body="received-single" role="single" side="received" />
+        <MessageGroup messages={run} side="received" />
+        <MessageBubble body="sent-single" role="single" side="sent" />
+        <MessageGroup messages={run} side="sent" />
+      </>,
+    );
+    const bubbles = Array.from(document.querySelectorAll(".message-bubble"));
+    const received = bubbles.slice(0, 5);
+    const sent = bubbles.slice(5);
+
+    expect(received[0]).toHaveClass(
+      "rounded-tl-[var(--radius-bubble)]",
+      "rounded-bl-[var(--radius-bubble)]",
+    );
+    expect(received[1]).toHaveClass("rounded-bl-none");
+    expect(received[1]).not.toHaveClass("rounded-tl-none");
+    expect(received[2]).toHaveClass("rounded-tl-none", "rounded-bl-none");
+    expect(received[3]).toHaveClass("rounded-tl-none", "rounded-bl-none");
+    expect(received[4]).toHaveClass("rounded-tl-none", "rounded-bl-[var(--radius-bubble)]");
+    received.forEach((bubble) => {
+      expect(bubble).toHaveClass("rounded-tr-[var(--radius-bubble)]");
+      expect(bubble).toHaveClass("rounded-br-[var(--radius-bubble)]");
+    });
+
+    expect(sent[0]).toHaveClass(
+      "rounded-tr-[var(--radius-bubble)]",
+      "rounded-br-[var(--radius-bubble)]",
+    );
+    expect(sent[1]).toHaveClass("rounded-br-none");
+    expect(sent[1]).not.toHaveClass("rounded-tr-none");
+    expect(sent[2]).toHaveClass("rounded-tr-none", "rounded-br-none");
+    expect(sent[3]).toHaveClass("rounded-tr-none", "rounded-br-none");
+    expect(sent[4]).toHaveClass("rounded-tr-none", "rounded-br-[var(--radius-bubble)]");
+    sent.forEach((bubble) => {
+      expect(bubble).toHaveClass("rounded-tl-[var(--radius-bubble)]");
+      expect(bubble).toHaveClass("rounded-bl-[var(--radius-bubble)]");
+    });
+  });
+
   it("renders a received run with one avatar and a sent run with retry", async () => {
     const user = userEvent.setup();
     const onRetry = vi.fn();
@@ -204,12 +295,14 @@ describe("MessageGroup", () => {
 
     const onVote = vi.fn();
     const onOpenPollResults = vi.fn();
+    const onToggleReaction = vi.fn();
     rerender(
       <MessageGroup
         messages={[
           {
             body: "",
             id: "p1",
+            reactions: [{ count: 2, emoji: "👍", mine: true }],
             poll: {
               allowsMultiple: false,
               closed: false,
@@ -231,6 +324,7 @@ describe("MessageGroup", () => {
           },
         ]}
         onOpenPollResults={onOpenPollResults}
+        onToggleReaction={onToggleReaction}
         onVote={onVote}
         side="received"
       />,
@@ -239,6 +333,35 @@ describe("MessageGroup", () => {
     expect(onVote).toHaveBeenCalledWith("p1", ["a"]);
     await user.click(screen.getByRole("button", { name: en.polls.results }));
     expect(onOpenPollResults).toHaveBeenCalledWith("p1");
+    await user.click(screen.getByText("👍").closest("button")!);
+    expect(onToggleReaction).toHaveBeenCalledWith("p1", "👍");
+  });
+});
+
+describe("ReactionBadges", () => {
+  it("renders sent and received reactions without bubbling clicks", async () => {
+    const user = userEvent.setup();
+    const parentClick = vi.fn();
+    const onToggle = vi.fn();
+    const { rerender } = render(
+      <div onClick={parentClick}>
+        <ReactionBadges
+          onToggle={onToggle}
+          reactions={[{ count: 1, emoji: "🚀", mine: false }]}
+          side="sent"
+        />
+      </div>,
+    );
+    await user.click(screen.getByText("🚀").closest("button")!);
+    expect(onToggle).toHaveBeenCalledWith("🚀");
+    expect(parentClick).not.toHaveBeenCalled();
+
+    rerender(
+      <ReactionBadges reactions={[{ count: 2, emoji: "👍", mine: true }]} side="received" />,
+    );
+    expect(screen.getByText("2")).toBeInTheDocument();
+    rerender(<ReactionBadges reactions={[]} side="received" />);
+    expect(document.querySelector("[data-reaction-badges]")).toBeNull();
   });
 });
 
@@ -257,10 +380,9 @@ describe("thread chrome", () => {
     rerender(<TypingBubble senderName={en.gallery.messages.sender} />);
     expect(screen.getByRole("status", { name: en.messages.activity.typing })).toBeInTheDocument();
     rerender(<TypingBubble activity="recording_audio" showAvatar={false} />);
-    expect(screen.getByRole("status", { name: en.messages.activity.recording_audio })).toHaveAttribute(
-      "data-activity",
-      "recording_audio",
-    );
+    expect(
+      screen.getByRole("status", { name: en.messages.activity.recording_audio }),
+    ).toHaveAttribute("data-activity", "recording_audio");
     expect(document.querySelector("[data-typing-bubble]")).not.toBeNull();
     rerender(<SystemMessage eventKey="icon_changed" />);
     expect(screen.getByText(en.messages.system.icon_changed)).toBeInTheDocument();

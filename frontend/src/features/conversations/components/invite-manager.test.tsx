@@ -41,18 +41,33 @@ describe("InviteManager", () => {
     );
     expect(await screen.findByText(en.invites.unlimited)).toBeInTheDocument();
     expect(screen.getByText(en.invites.approval)).toBeInTheDocument();
+    expect(screen.getByText("lim")).toBeInTheDocument();
+    await user.click(screen.getByRole("switch", { name: en.invites.require_approval }));
     await user.click(screen.getByRole("button", { name: en.invites.create }));
     await waitFor(() => {
       expect(screen.getAllByRole("button", { name: en.invites.revoke })).toHaveLength(3);
     });
-    await user.click(screen.getAllByRole("button", { name: en.invites.copy })[0]!);
+    expect(screen.getAllByText(en.invites.approval)).toHaveLength(2);
+    await user.click(
+      screen.getByRole("button", {
+        name: en.invites.copy_token.replace("{{token}}", "lim"),
+      }),
+    );
     expect(writeText).toHaveBeenCalled();
     await user.click(screen.getAllByRole("button", { name: en.invites.show_qr })[0]!);
-    expect(document.querySelector("[data-qr-grid]")).not.toBeNull();
+    expect(document.querySelector("[data-qr-code]")).not.toBeNull();
+    expect(await screen.findByRole("img", { name: en.qr.image })).toHaveAttribute(
+      "src",
+      expect.stringContaining("data:image/svg+xml"),
+    );
+    writeText.mockClear();
     await user.click(screen.getByRole("button", { name: en.qr.copy }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${globalThis.location.origin}/invite/lim`);
+    });
     await user.click(screen.getByRole("button", { name: en.ui.close }));
     await waitFor(() => {
-      expect(document.querySelector("[data-qr-grid]")).toBeNull();
+      expect(document.querySelector("[data-qr-code]")).toBeNull();
     });
     await user.click(screen.getAllByRole("button", { name: en.invites.revoke })[0]!);
     await waitFor(() => {

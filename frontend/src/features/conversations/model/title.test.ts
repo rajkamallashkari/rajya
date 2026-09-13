@@ -12,6 +12,7 @@ import { conversationPermissionDefaults } from "@/features/conversations/model/p
 const base: components["schemas"]["Conversation"] = {
   id: 1,
   kind: "direct",
+  member_count: 2,
   title: null,
   last_activity_at: "2026-01-01T12:00:00.000Z",
   unread_count: 0,

@@ -4,7 +4,10 @@ module Api
       def index
         authorize Bot
         skip_policy_scope
-        render_result(Bots::Index.call, serializer: BotListResource)
+        render_result(
+          Bots::Index.call(actor: current_account, owned: params[:owned] == "true"),
+          serializer: BotListResource
+        )
       end
 
       def show

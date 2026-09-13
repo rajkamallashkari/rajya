@@ -236,10 +236,10 @@ export function useUpdateAdminPromptTemplate() {
   });
 }
 
-export function useAdminBotRequests() {
+export function useAdminBotRequests(kind?: "create" | "edit") {
   return useQuery({
-    queryFn: listAdminBotRequests,
-    queryKey: adminKeys.bots(),
+    queryFn: () => listAdminBotRequests(kind),
+    queryKey: [...adminKeys.bots(), kind],
   });
 }
 

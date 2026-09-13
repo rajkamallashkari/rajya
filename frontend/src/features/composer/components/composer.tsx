@@ -75,6 +75,7 @@ export function Composer({
   onDismissReply,
   onEditLast,
   onGifQueryChange,
+  onFiles,
   onPickGif,
   onPickSticker,
   onRemoveAttachment,
@@ -104,6 +105,7 @@ export function Composer({
   onDismissReply?: () => void;
   onEditLast?: () => void;
   onGifQueryChange?: (query: string) => void;
+  onFiles?: (files: File[]) => void;
   onPickGif?: (gif: GifView) => void;
   onPickSticker?: (sticker: StickerView) => void;
   onRemoveAttachment?: (id: string) => void;
@@ -332,6 +334,18 @@ export function Composer({
       className="relative border-t border-[var(--border-subtle)] bg-[var(--surface-panel)]"
       data-composer=""
       data-composer-row={voiceActive ? "voice" : "compose"}
+      onDragOver={(event) => {
+        if (event.dataTransfer.types.includes("Files")) {
+          event.preventDefault();
+        }
+      }}
+      onDrop={(event) => {
+        const files = Array.from(event.dataTransfer.files);
+        if (files.length > 0) {
+          event.preventDefault();
+          onFiles?.(files);
+        }
+      }}
     >
       <ComposerStrip
         editing={editing}
@@ -378,6 +392,13 @@ export function Composer({
               className="max-h-[var(--composer-textarea-max-height)] min-h-[var(--control-height)] flex-1"
               onChange={(event) => setText(event.target.value)}
               onKeyDown={onKeyDown}
+              onPaste={(event) => {
+                const files = Array.from(event.clipboardData.files);
+                if (files.length > 0) {
+                  event.preventDefault();
+                  onFiles?.(files);
+                }
+              }}
               placeholder={fieldLabel}
               rows={1}
               value={text}

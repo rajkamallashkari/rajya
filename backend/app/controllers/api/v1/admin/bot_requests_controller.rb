@@ -6,7 +6,9 @@ module Api
           authorize :bot_request, :index?, policy_class: ::Admin::BotRequestPolicy
           skip_policy_scope
           render_result(
-            Bots::Requests::Index.call(actor: current_account, admin: true),
+            Bots::Requests::Index.call(
+              actor: current_account, admin: true, kind: params[:kind], status: "pending"
+            ),
             serializer: BotRequestListResource
           )
         end

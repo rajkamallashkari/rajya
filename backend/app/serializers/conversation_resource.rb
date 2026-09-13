@@ -15,6 +15,14 @@ class ConversationResource < ApplicationResource
     conversation.description
   end
 
+  attribute :avatar_url do
+    nil
+  end
+
+  attribute :member_count do
+    active_memberships.size
+  end
+
   attribute :last_activity_at do
     conversation.last_activity_at
   end
@@ -93,7 +101,7 @@ class ConversationResource < ApplicationResource
   attribute :members do
     next [] unless object.include_members
 
-    conversation.conversation_memberships.select(&:active?).map do |membership|
+    active_memberships.map do |membership|
       { "role" => membership.role, "account" => AccountResource.new(membership.account).to_h }
     end
   end
@@ -107,8 +115,12 @@ class ConversationResource < ApplicationResource
   def peer_account
     return unless conversation.direct?
 
-    others = conversation.conversation_memberships.select(&:active?).map(&:account)
+    others = active_memberships.map(&:account)
     others.find { |account| account.id != object.viewer.id } || object.viewer
+  end
+
+  def active_memberships
+    @active_memberships ||= conversation.conversation_memberships.select(&:active?)
   end
 
   def slow_mode_reset_at

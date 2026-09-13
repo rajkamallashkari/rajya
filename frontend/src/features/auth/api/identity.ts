@@ -65,6 +65,16 @@ export async function fetchAccount(id: number) {
   return { account: result.data, missing: false as const };
 }
 
+export async function fetchCommonGroups(id: number) {
+  return unwrap(
+    await apiClient().GET("/api/v1/accounts/{id}/common_groups", {
+      headers: bearerHeaders(),
+      params: { path: { id } },
+    }),
+    "common_groups_failed",
+  );
+}
+
 export async function loginWithPassword(email: string, password: string) {
   return unwrap(
     await apiClient().POST("/auth/login", { body: { email, password } }),

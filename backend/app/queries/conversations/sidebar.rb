@@ -14,7 +14,10 @@ module Conversations
       @scope
         .joins(:conversation_memberships)
         .where(conversation_memberships: { account_id: @account.id, status: "active" })
-        .includes(last_message: :sender_account, conversation_memberships: :account)
+        .includes(
+          last_message: { sender_account: [ avatar_attachment: :blob ] },
+          conversation_memberships: { account: [ avatar_attachment: :blob ] }
+        )
         .order(memberships[:pinned_at].desc.nulls_last, conversations[:last_activity_at].desc)
         .to_a
     end

@@ -675,6 +675,15 @@
     "max": 10,
     "allow_nil": false
   },
+  "media_process_stale_after": {
+    "type": "integer",
+    "category": "media",
+    "default": 300,
+    "description": "Seconds before pending attachment processing is presented as failed.",
+    "min": 30,
+    "max": 3600,
+    "allow_nil": false
+  },
   "orphan_blob_max_age": {
     "type": "integer",
     "category": "media",

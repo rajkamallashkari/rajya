@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import type { ConversationFolder } from "@/features/conversations/api/http";
 import {
   ConversationMenu,
+  FolderMembershipOverlay,
+  MuteDurationOverlay,
   SwipeActions,
 } from "@/features/conversations/components/conversation-menu";
 import { useChatListGestures } from "@/features/conversations/hooks/use-chat-list-gestures";
@@ -70,7 +72,9 @@ export function ChatListItem({
   unreadCount = 0,
 }: ChatListItemProps) {
   const { t } = useTranslation();
+  const [foldersOpen, setFoldersOpen] = useState(false);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const [muteOpen, setMuteOpen] = useState(false);
   const unread = unreadCount > 0 || markedUnread;
   const gestures = useChatListGestures({
     canSwipeRight: unread,
@@ -189,11 +193,25 @@ export function ChatListItem({
           onMarkRead={onMarkRead}
           onMarkUnread={onMarkUnread}
           onMute={onMute}
+          onOpenFolders={() => setFoldersOpen(true)}
+          onOpenMute={() => setMuteOpen(true)}
           onPin={onPin}
           pinned={pinned}
           unread={unread}
           x={menu.x}
           y={menu.y}
+        />
+      ) : null}
+      {onMute ? (
+        <MuteDurationOverlay onMute={onMute} onOpenChange={setMuteOpen} open={muteOpen} />
+      ) : null}
+      {onToggleFolder ? (
+        <FolderMembershipOverlay
+          folderIds={folderIds}
+          folders={folders}
+          onOpenChange={setFoldersOpen}
+          onToggleFolder={onToggleFolder}
+          open={foldersOpen}
         />
       ) : null}
     </div>

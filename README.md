@@ -41,11 +41,18 @@ Legacy apps live **outside** this repo at `../legacy/{cognify,botverse}`
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Compose v2+)
 - [mise](https://mise.jdx.dev/) for Ruby / Node versions from `.tool-versions`
   (`brew install mise` — then `mise install` in this directory)
+- libvips, ffmpeg, and poppler (`brew install vips ffmpeg poppler`) —
+  `Attachments::Process` needs them for image dimensions/blurhash/variants,
+  video/audio probing, and PDF page-one thumbnails (`pdftoppm`). Without libvips
+  or ffmpeg every upload lands in `processing_status: "failed"`.
 - Optional: [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/) for phone HTTPS over WiFi
 
 ```bash
 # Install toolchains declared in .tool-versions
 mise install
+
+# Media processing dependencies
+brew install vips ffmpeg poppler
 
 # Start stateful deps only (hybrid DX — TARGET §1.2)
 docker compose -f docker-compose.dev.yml up -d
@@ -93,10 +100,13 @@ body, never a redirect query string). Authorized **redirect URIs are unused**.
 
 Password register remains valid for agents and CI without Google credentials.
 
-`bin/dev` (repo root) starts Rails `:3000`, the Solid Queue worker, and Vite
-`:5173`. Vite proxies `/api`, `/auth`, and `/cable` to Rails — leave
-`VITE_API_ORIGIN` unset locally. `backend/bin/dev` is only Puma. Leave
-`VITE_MSW` unset so the SPA talks to Rails, not browser mocks.
+`bin/dev` (repo root) starts Rails `:3000`, an explicit Solid Queue worker, and
+Vite `:5173`. `backend/bin/dev` starts Rails/Puma with Solid Queue embedded;
+use it when running only the backend. `cd backend && bin/rails server` remains
+web-only unless `SOLID_QUEUE_IN_PUMA=true` is set. Do not set that variable for
+the root `bin/dev`, because its Procfile already starts a worker. Vite proxies
+`/api`, `/auth`, and `/cable` to Rails — leave `VITE_API_ORIGIN` unset locally.
+Leave `VITE_MSW` unset so the SPA talks to Rails, not browser mocks.
 
 AI helpers need one configured provider. Put `GROQ_API_KEY` in the repo-root
 `.env`, or run Ollama on the host (`ollama serve`, `ollama pull llama3.2`) and

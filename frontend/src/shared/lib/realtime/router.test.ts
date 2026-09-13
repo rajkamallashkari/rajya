@@ -4,6 +4,7 @@ import { setAccessSession } from "@/features/auth/model/access-session";
 import { messageKeys } from "@/features/conversations/api/keys";
 import type { Message } from "@/features/conversations/api/http";
 import type { MessagePages } from "@/features/conversations/api/cache";
+import { mediaKeys } from "@/features/media/api/keys";
 import { dispatchRealtimePayload, routeRealtimeEvent, type RealtimeEvent } from "./router";
 import { realtimeKeys } from "./keys";
 import { testSession } from "@/test/access-session";
@@ -62,6 +63,8 @@ describe("routeRealtimeEvent", () => {
       { type: "attachment_processed", conversation_id: 1, message_id: 1, attachment_id: 9 },
       deps,
     );
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: mediaKeys.gallery(1, "images") });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: mediaKeys.url(9, "thumb") });
     await routeRealtimeEvent({ type: "poll_voted", conversation_id: 1, message_id: 1 }, deps);
     await routeRealtimeEvent({ type: "poll_closed", conversation_id: 1, message_id: 1 }, deps);
     await routeRealtimeEvent({ type: "message_pinned", conversation_id: 1, message_id: 1 }, deps);

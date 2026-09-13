@@ -17,6 +17,7 @@ import {
 import { mediaKeys } from "@/features/media/api/keys";
 import {
   GALLERY_FIRST_PAGE,
+  GALLERY_PROCESSING_REFETCH_MS,
   GIF_SEARCH_MIN_QUERY_LENGTH,
   MEDIA_URL_STALE_BUFFER_MS,
   MEDIA_URL_STALE_MAX_MS,
@@ -59,6 +60,14 @@ export function useConversationGallery(conversationId: number, kind: GalleryKind
     initialPageParam: GALLERY_FIRST_PAGE,
     queryFn: ({ pageParam }) => listConversationMedia(conversationId, kind, pageParam),
     queryKey: mediaKeys.gallery(conversationId, kind),
+    refetchInterval: (query) => {
+      const data = query.state.data as InfiniteData<GalleryPage> | undefined;
+      return data?.pages.some((page) =>
+        page.items.some((item) => item.attachment?.processing_status === "pending"),
+      )
+        ? GALLERY_PROCESSING_REFETCH_MS
+        : false;
+    },
   });
 }
 
