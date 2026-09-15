@@ -66,6 +66,22 @@ Postgres: `postgres://postgres:postgres@localhost:55432/rajya_development` (host
 Redis: `redis://localhost:6380/0` (host port 6380, not 6379 — same reason)  
 Mailpit SMTP: `localhost:1025` · UI: `http://localhost:8025`
 
+> **Colima users:** this project uses Colima as the Docker runtime (`brew install colima`).
+> Colima does **not** start on boot by default. After every machine restart, run
+> `colima start` before `docker compose … up -d`, otherwise the containers will not
+> exist and Rails will fail with `ActiveRecord::ConnectionNotEstablished` on port 55432
+> and Vite will log `write EPIPE` (it proxies to a dead Rails process).
+>
+> ```bash
+> colima start                                           # once per boot
+> docker compose -f docker-compose.dev.yml up -d        # starts Postgres/Redis/Mailpit
+> ```
+>
+> To start Colima automatically on login:
+> ```bash
+> brew services start colima
+> ```
+
 Copy `.env.example` → `.env` (gitignored). Rails and Vite both read that one
 file — do not add `frontend/.env.development`.
 
@@ -74,7 +90,8 @@ file — do not add `frontend/.env.development`.
 ## Run locally
 
 ```bash
-docker compose -f docker-compose.dev.yml up -d
+colima start                                       # if not already running (once per boot)
+docker compose -f docker-compose.dev.yml up -d     # Postgres :55432, Redis :6380, Mailpit :8025
 cd backend && bin/rails db:prepare db:seed
 cd .. && bin/dev
 ```
